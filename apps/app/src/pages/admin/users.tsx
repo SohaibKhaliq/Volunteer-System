@@ -41,6 +41,8 @@ import {
 
 import { toast } from '@/components/atoms/use-toast';
 import ManageRolesModal from '@/components/admin/ManageRolesModal';
+import UserProfileModal from '@/components/admin/UserProfileModal';
+import EditUserModal from '@/components/admin/EditUserModal';
 
 interface User {
   id: number;
@@ -161,6 +163,22 @@ export default function AdminUsers() {
   const [rolesModalUser, setRolesModalUser] = useState<User | null>(null);
   const [availableRoles, setAvailableRoles] = useState<any[]>([]);
   const [userRoleIds, setUserRoleIds] = useState<Set<number>>(new Set());
+
+  // Profile & Edit modal state
+  const [profileModalUser, setProfileModalUser] = useState<User | null>(null);
+  const [editModalUser, setEditModalUser] = useState<User | null>(null);
+
+  const openProfileModal = (user: User) => setProfileModalUser(user);
+  const closeProfileModal = () => setProfileModalUser(null);
+
+  const openEditModal = (user: User) => setEditModalUser(user);
+  const closeEditModal = () => setEditModalUser(null);
+
+  const handleUserUpdated = (updated: User) => {
+    queryClient.invalidateQueries(['users']);
+    toast({ title: 'User updated', variant: 'success' });
+    closeEditModal();
+  };
 
   const openRolesModal = async (user: User) => {
     setRolesModalUser(user);
@@ -368,12 +386,12 @@ export default function AdminUsers() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
 
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openProfileModal(user)}>
                           <Eye className="h-4 w-4 mr-2" />
                           View Profile
                         </DropdownMenuItem>
 
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openEditModal(user)}>
                           <Edit className="h-4 w-4 mr-2" />
                           Edit User
                         </DropdownMenuItem>
@@ -444,6 +462,21 @@ export default function AdminUsers() {
         roles={availableRoles}
         selectedRoleIds={userRoleIds}
         onToggleRole={toggleUserRole}
+      />
+
+      {/* Profile Modal */}
+      <UserProfileModal
+        open={!!profileModalUser}
+        onClose={closeProfileModal}
+        user={profileModalUser}
+      />
+
+      {/* Edit Modal */}
+      <EditUserModal
+        open={!!editModalUser}
+        onClose={closeEditModal}
+        user={editModalUser}
+        onSuccess={handleUserUpdated}
       />
       <div className="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
         <div className="text-sm text-muted-foreground">
