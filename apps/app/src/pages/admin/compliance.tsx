@@ -51,9 +51,7 @@ export default function AdminCompliance() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [docTypeFilter, setDocTypeFilter] = useState<string>('all');
 
-  const { data: docs, isLoading } = useQuery<ComplianceDocument[]>(['compliance'], () =>
-    api.list('compliance')
-  );
+  const { data: docs, isLoading } = useQuery<ComplianceDocument[]>(['compliance'], () => api.list('compliance'));
 
   // Mutations
   const approveMutation = useMutation({
@@ -115,7 +113,7 @@ export default function AdminCompliance() {
     const colors: Record<string, string> = {
       low: 'bg-green-500',
       medium: 'bg-yellow-500',
-      high: 'bg-red-500',
+      high: 'bg-red-500'
     };
     return <Badge className={colors[risk]}>{risk.toUpperCase()} RISK</Badge>;
   };
@@ -126,16 +124,14 @@ export default function AdminCompliance() {
       wwcc: 'WWCC',
       police_check: 'Police Check',
       certification: 'Certification',
-      other: 'Other',
+      other: 'Other'
     };
     return labels[type] || type;
   };
 
   const isExpiringSoon = (expiresAt?: string) => {
     if (!expiresAt) return false;
-    const daysUntilExpiry = Math.ceil(
-      (new Date(expiresAt).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-    );
+    const daysUntilExpiry = Math.ceil((new Date(expiresAt).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
     return daysUntilExpiry <= 30 && daysUntilExpiry > 0;
   };
 
@@ -163,9 +159,7 @@ export default function AdminCompliance() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Compliance & Verification</h2>
-          <p className="text-muted-foreground">
-            Manage volunteer compliance documents and background checks
-          </p>
+          <p className="text-muted-foreground">Manage volunteer compliance documents and background checks</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm">
@@ -200,12 +194,8 @@ export default function AdminCompliance() {
           <DropdownMenuContent>
             <DropdownMenuItem onClick={() => setStatusFilter('all')}>All</DropdownMenuItem>
             <DropdownMenuItem onClick={() => setStatusFilter('pending')}>Pending</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setStatusFilter('approved')}>
-              Approved
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setStatusFilter('rejected')}>
-              Rejected
-            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setStatusFilter('approved')}>Approved</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setStatusFilter('rejected')}>Rejected</DropdownMenuItem>
             <DropdownMenuItem onClick={() => setStatusFilter('expired')}>Expired</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -218,16 +208,10 @@ export default function AdminCompliance() {
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuItem onClick={() => setDocTypeFilter('all')}>All Types</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setDocTypeFilter('background_check')}>
-              Background Check
-            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setDocTypeFilter('background_check')}>Background Check</DropdownMenuItem>
             <DropdownMenuItem onClick={() => setDocTypeFilter('wwcc')}>WWCC</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setDocTypeFilter('police_check')}>
-              Police Check
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setDocTypeFilter('certification')}>
-              Certification
-            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setDocTypeFilter('police_check')}>Police Check</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setDocTypeFilter('certification')}>Certification</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -285,11 +269,7 @@ export default function AdminCompliance() {
                 <TableRow
                   key={doc.id}
                   className={
-                    isExpired(doc.expiresAt)
-                      ? 'bg-red-50'
-                      : isExpiringSoon(doc.expiresAt)
-                      ? 'bg-yellow-50'
-                      : ''
+                    isExpired(doc.expiresAt) ? 'bg-red-50' : isExpiringSoon(doc.expiresAt) ? 'bg-yellow-50' : '' 
                   }
                 >
                   <TableCell>
@@ -302,16 +282,12 @@ export default function AdminCompliance() {
                     <Badge variant="outline">{getDocTypeLabel(doc.docType)}</Badge>
                   </TableCell>
                   <TableCell>{getStatusBadge(doc.status)}</TableCell>
-                  <TableCell className="text-sm">
-                    {new Date(doc.uploadedAt).toLocaleDateString()}
-                  </TableCell>
+                  <TableCell className="text-sm">{new Date(doc.uploadedAt).toLocaleDateString()}</TableCell>
                   <TableCell>
                     {doc.expiresAt ? (
                       <div className="text-sm">
                         <div>{new Date(doc.expiresAt).toLocaleDateString()}</div>
-                        {isExpired(doc.expiresAt) && (
-                          <Badge className="bg-red-500 mt-1">Expired</Badge>
-                        )}
+                        {isExpired(doc.expiresAt) && (<Badge className="bg-red-500 mt-1">Expired</Badge>)}
                         {isExpiringSoon(doc.expiresAt) && !isExpired(doc.expiresAt) && (
                           <Badge className="bg-orange-500 mt-1">Expiring Soon</Badge>
                         )}
@@ -321,9 +297,7 @@ export default function AdminCompliance() {
                     )}
                   </TableCell>
                   <TableCell>{getRiskBadge(doc.riskLevel)}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {doc.verifiedBy || 'Not verified'}
-                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{doc.verifiedBy || 'Not verified'}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -344,10 +318,7 @@ export default function AdminCompliance() {
                         <DropdownMenuSeparator />
                         {doc.status === 'pending' && (
                           <>
-                            <DropdownMenuItem
-                              onClick={() => approveMutation.mutate(doc.id)}
-                              className="text-green-600"
-                            >
+                            <DropdownMenuItem onClick={() => approveMutation.mutate(doc.id)} className="text-green-600">
                               <CheckCircle className="h-4 w-4 mr-2" />
                               Approve
                             </DropdownMenuItem>
@@ -366,9 +337,7 @@ export default function AdminCompliance() {
                           </>
                         )}
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => sendReminderMutation.mutate(doc.userId)}
-                        >
+                        <DropdownMenuItem onClick={() => sendReminderMutation.mutate(doc.userId)}>
                           <Mail className="h-4 w-4 mr-2" />
                           Send Reminder
                         </DropdownMenuItem>
