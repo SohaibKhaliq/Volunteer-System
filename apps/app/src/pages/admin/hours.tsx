@@ -4,14 +4,10 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CalendarClock, CheckCircle, XCircle } from "lucide-react";
+import { CalendarClock, CheckCircle, XCircle } from 'lucide-react';
+import { hourEntries as mockHours } from '@/lib/mock/adminMock';
 
-// Mock hour entries
-const mockHours = [
-  { id: 1, volunteer: "Alice", event: "Food Drive", date: "2025-11-01", hours: 5, status: "Approved" },
-  { id: 2, volunteer: "Bob", event: "Park Cleanup", date: "2025-11-03", hours: 3, status: "Pending" },
-  { id: 3, volunteer: "Carol", event: "Community Outreach", date: "2025-11-05", hours: 4, status: "Rejected" },
-];
+// Using shared hour entries from adminMock
 
 export default function AdminHours() {
   return (
