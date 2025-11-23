@@ -2,7 +2,7 @@ import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Communication from 'App/Models/Communication'
 
 export default class CommunicationsController {
-  public async index({ request }: HttpContextContract) {
+  public async index({}: HttpContextContract) {
     return Communication.all()
   }
 
