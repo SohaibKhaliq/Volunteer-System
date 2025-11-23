@@ -220,7 +220,11 @@ export default function AdminEvents() {
                 </PopoverTrigger>
                 <PopoverContent className="w-[300px] p-0">
                   <Command>
-                    <CommandInput placeholder="Search users..." value={contactQuery} onValueChange={setContactQuery} />
+                    <CommandInput
+                      placeholder="Search users..."
+                      value={contactQuery}
+                      onValueChange={(v) => React.startTransition(() => setContactQuery(v))}
+                    />
                     <CommandGroup>
                       {contactResults.map((u: any) => (
                         <CommandItem key={u.id} onSelect={() => setSelectedContact(u)}>
