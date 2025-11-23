@@ -1,8 +1,25 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Logger from '@ioc:Adonis/Core/Logger'
+import Hash from '@ioc:Adonis/Core/Hash'
+import Database from '@ioc:Adonis/Lucid/Database'
+import Role from 'App/Models/Role'
 import User from 'App/Models/User'
 
 export default class UsersController {
+  public async me({ auth, response }: HttpContextContract) {
+    try {
+      await auth.use('api').authenticate()
+
+      const user = await User.query().where('id', auth.user!.id).preload('roles').firstOrFail()
+
+      // hide sensitive fields
+      const { password, ...safeUser } = user.toJSON() as any
+
+      return response.ok(safeUser)
+    } catch (error) {
+      return response.badRequest({ error: { message: 'Unable to fetch current user' } })
+    }
+  }
   public async destroy({ params, response, auth, bouncer }: HttpContextContract) {
     try {
       await auth.use('api').authenticate()
@@ -11,7 +28,7 @@ export default class UsersController {
 
       if (!user) {
         return response.notFound({
-          error: { message: 'User not found' },
+          error: { message: 'User not found' }
         })
       }
 
@@ -19,7 +36,7 @@ export default class UsersController {
 
       if (await bouncer.denies('deleteUser' as never, authenticatedUser, user)) {
         return response.unauthorized({
-          error: { message: 'You are not allowed to delete this user' },
+          error: { message: 'You are not allowed to delete this user' }
         })
       }
 
@@ -30,8 +47,42 @@ export default class UsersController {
       console.log(error)
       Logger.error('Failed to delete user: ', { error: error.message })
       return response.badRequest({
-        error: { message: 'Unable delete the user' },
+        error: { message: 'Unable delete the user' }
       })
+    }
+  }
+
+  public async store({ request, response, auth }: HttpContextContract) {
+    try {
+      await auth.use('api').authenticate()
+
+      const payload = request.only([
+        'email',
+        'firstName',
+        'lastName',
+        'password',
+        'fingerprint',
+        'isAdmin'
+      ])
+      // ensure a password exists for the user (default to "password" for dev seeding)
+      payload.password = payload.password
+        ? await Hash.make(payload.password)
+        : await Hash.make('password')
+
+      const user = await User.create(payload)
+
+      // if flagged isAdmin, attach admin role if it exists
+      if (payload.isAdmin) {
+        const adminRole = await Role.findBy('name', 'admin')
+        if (adminRole) {
+          await Database.table('user_roles').insert({ user_id: user.id, role_id: adminRole.id })
+        }
+      }
+
+      return response.created(user)
+    } catch (error) {
+      Logger.error('Failed to create user: %o', error?.message || error)
+      return response.badRequest({ error: { message: 'Unable to create user' } })
     }
   }
 }
