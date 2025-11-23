@@ -49,7 +49,16 @@ export default class TasksController {
   public async update({ params, request, response }: HttpContextContract) {
     const task = await Task.find(params.id)
     if (!task) return response.notFound()
-    task.merge(request.only(['title', 'description', 'start_at', 'end_at', 'slot_count']))
+    // allow updating of status as well (completed/cancelled)
+    const payload = request.only([
+      'title',
+      'description',
+      'start_at',
+      'end_at',
+      'slot_count',
+      'status'
+    ])
+    task.merge(payload)
     await task.save()
     return response.ok(task)
   }
