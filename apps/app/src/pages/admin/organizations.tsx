@@ -1,6 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 
 export default function AdminOrganizations() {
   const { data: orgs, isLoading } = useQuery(['organizations'], api.listOrganizations);
@@ -11,18 +12,25 @@ export default function AdminOrganizations() {
     <div>
       <h2 className="text-xl mb-4">Organizations</h2>
       <div className="bg-white rounded shadow p-4">
-        <ul className="divide-y">
-          {Array.isArray(orgs) &&
-            orgs.map((o: any) => (
-              <li key={o.id} className="py-3 flex justify-between items-center">
-                <div>
-                  <div className="font-semibold">{o.name}</div>
-                  <div className="text-sm text-slate-500">{o.description}</div>
-                </div>
-                <div className="text-sm text-slate-600">{o.isApproved ? 'Approved' : 'Pending'}</div>
-              </li>
-            ))}
-        </ul>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Description</TableHead>
+              <TableHead>Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {Array.isArray(orgs) &&
+              orgs.map((o: any) => (
+                <TableRow key={o.id}>
+                  <TableCell>{o.name}</TableCell>
+                  <TableCell>{o.description}</TableCell>
+                  <TableCell>{o.isApproved ? 'Approved' : 'Pending'}</TableCell>
+                </TableRow>
+              ))}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );
