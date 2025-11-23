@@ -61,6 +61,62 @@ const api = {
   create: async (resource: string, data: any) => axios.post(`/${resource}`, data),
   update: async (resource: string, id: number, data: any) => axios.put(`/${resource}/${id}`, data),
   delete: async (resource: string, id: number) => axios.delete(`/${resource}/${id}`),
+  
+  /* Resources endpoints */
+  listResources: async () => axios.get('/resources'),
+  createResource: async (data: any) => axios.post('/resources', data),
+  updateResource: async (id: number, data: any) => axios.put(`/resources/${id}`, data),
+  deleteResource: async (id: number) => axios.delete(`/resources/${id}`),
+
+  /* Audit Logs endpoints */
+  listAuditLogs: async () => axios.get('/audit-logs'),
+  getAuditLog: async (id: number) => axios.get(`/audit-logs/${id}`),
+
+  /* Surveys endpoints */
+  listSurveys: async () => axios.get('/surveys'),
+  createSurvey: async (data: any) => axios.post('/surveys', data),
+  getSurvey: async (id: number) => axios.get(`/surveys/${id}`),
+  updateSurvey: async (id: number, data: any) => axios.put(`/surveys/${id}`, data),
+  deleteSurvey: async (id: number) => axios.delete(`/surveys/${id}`),
+
+  /* Communications endpoints */
+  listCommunications: async () => axios.get('/communications'),
+  createCommunication: async (data: any) => axios.post('/communications', data),
+  getCommunication: async (id: number) => axios.get(`/communications/${id}`),
+  updateCommunication: async (id: number, data: any) => axios.put(`/communications/${id}`, data),
+  deleteCommunication: async (id: number) => axios.delete(`/communications/${id}`),
+
+  /* System Settings endpoints */
+  getSettings: async () => axios.get('/settings'),
+  updateSettings: async (data: any) => axios.post('/settings', data),
+
+  /* Volunteer Hours endpoints */
+  listHours: async () => axios.get('/hours'),
+  updateHour: async (id: number, data: any) => axios.put(`/hours/${id}`, data),
+  bulkUpdateHours: async (ids: number[], status: string) => 
+    axios.post('/hours/bulk', { ids, status }),
+
+  /* Courses endpoints */
+  listCourses: async () => axios.get('/courses'),
+  createCourse: async (data: any) => axios.post('/courses', data),
+  getCourse: async (id: number) => axios.get(`/courses/${id}`),
+  updateCourse: async (id: number, data: any) => axios.put(`/courses/${id}`, data),
+  deleteCourse: async (id: number) => axios.delete(`/courses/${id}`),
+
+  /* Task endpoints */
+  createTask: async (data: any) => axios.post('/tasks', data),
+  updateTask: async (id: number, data: any) => axios.put(`/tasks/${id}`, data),
+  deleteTask: async (id: number) => axios.delete(`/tasks/${id}`),
+
+  /* Assignment endpoints */
+  listAssignments: async () => axios.get('/assignments'),
+  createAssignment: async (data: any) => axios.post('/assignments', data),
+  updateAssignment: async (id: number, data: any) => axios.put(`/assignments/${id}`, data),
+  deleteAssignment: async (id: number) => axios.delete(`/assignments/${id}`),
+
+  /* Compliance list endpoint */
+  listCompliance: async () => axios.get('/compliance'),
+
   // return current authenticated user's profile (roles, flags)
   getCurrentUser: async () => axios.get('/me')
 } as const;
