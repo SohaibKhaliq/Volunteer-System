@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -19,7 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter,
+  DialogFooter
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -54,12 +54,28 @@ interface User {
 export default function AdminUsers() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [page, setPage] = useState<number>(1);
+  const [perPage, setPerPage] = useState<number>(20);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showRoleDialog, setShowRoleDialog] = useState(false);
 
-  const { data: users, isLoading } = useQuery<User[]>(['users'], api.listUsers);
+  // debounce search input
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchTerm), 300);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
+
+  const { data: usersRes, isLoading } = useQuery(['users', debouncedSearch, statusFilter, page, perPage], () =>
+    api.listUsersPaged(debouncedSearch, page, perPage, statusFilter === 'all' ? undefined : statusFilter)
+  );
+
+  const users = (usersRes as any)?.data || [];
+  const usersMeta = (usersRes as any)?.meta || {};
+
+  const { data: analytics } = useQuery(['userAnalytics'], api.getUserAnalytics);
 
   // Mutations
   const deactivateMutation = useMutation({
@@ -93,16 +109,8 @@ export default function AdminUsers() {
     }
   });
 
-  // Filter users
-  const filteredUsers = users?.filter((user) => {
-    const matchesSearch =
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const matchesStatus = statusFilter === 'all' || user.volunteerStatus === statusFilter;
-
-    return matchesSearch && matchesStatus;
-  });
+  // Server provides filtered/paginated list; use as-is
+  const filteredUsers = users || [];
 
   const getComplianceBadge = (status?: string) => {
     switch (status) {
@@ -207,21 +215,19 @@ export default function AdminUsers() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white p-6 rounded-lg shadow-sm">
           <div className="text-sm font-medium text-muted-foreground">Total Users</div>
-          <div className="text-2xl font-bold">{users?.length || 0}</div>
+          <div className="text-2xl font-bold">{analytics?.total ?? usersMeta.total ?? users?.length ?? 0}</div>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm">
           <div className="text-sm font-medium text-muted-foreground">Active</div>
-          <div className="text-2xl font-bold text-green-600">{users?.filter((u) => u.isActive).length || 0}</div>
+          <div className="text-2xl font-bold text-green-600">{analytics?.active ?? 0}</div>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm">
           <div className="text-sm font-medium text-muted-foreground">Inactive</div>
-          <div className="text-2xl font-bold text-gray-600">{users?.filter((u) => !u.isActive).length || 0}</div>
+          <div className="text-2xl font-bold text-gray-600">{analytics ? analytics.inactive : 0}</div>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm">
           <div className="text-sm font-medium text-muted-foreground">Compliance Issues</div>
-          <div className="text-2xl font-bold text-red-600">
-            {users?.filter((u) => u.complianceStatus === 'expired').length || 0}
-          </div>
+          <div className="text-2xl font-bold text-red-600">{analytics?.byRole?.length ?? 0}</div>
         </div>
       </div>
 
@@ -341,6 +347,32 @@ export default function AdminUsers() {
             )}
           </TableBody>
         </Table>
+      </div>
+      <div className="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
+        <div className="text-sm text-muted-foreground">
+          Page {usersMeta.current_page || usersMeta.currentPage || page} of{' '}
+          {usersMeta.last_page || usersMeta.lastPage || '-'}
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={(usersMeta.current_page || usersMeta.currentPage || page) <= 1}
+          >
+            Prev
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setPage((p) => p + 1)}
+            disabled={
+              usersMeta.last_page ? (usersMeta.current_page || usersMeta.currentPage) >= usersMeta.last_page : false
+            }
+          >
+            Next
+          </Button>
+        </div>
       </div>
     </div>
   );
