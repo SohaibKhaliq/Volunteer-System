@@ -1,9 +1,11 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import CreateUserDialog from '@/components/molecules/CreateUserDialog';
 
 export default function AdminUsers() {
-  const { data: users, isLoading } = useQuery(['users'], api.listUsers);
+  const { data: users, isLoading, refetch } = useQuery(['users'], api.listUsers);
 
   if (isLoading) return <div>Loading users...</div>;
 
@@ -11,29 +13,32 @@ export default function AdminUsers() {
     <div>
       <h2 className="text-xl mb-4">Users</h2>
       <div className="bg-white rounded shadow p-4">
-        <table className="w-full table-auto">
-          <thead>
-            <tr className="text-left">
-              <th className="p-2">ID</th>
-              <th className="p-2">Email</th>
-              <th className="p-2">Name</th>
-              <th className="p-2">Status</th>
-            </tr>
-          </thead>
-          <tbody>
+        <div className="mb-4 flex justify-end">
+          <CreateUserDialog onCreated={() => refetch()} />
+        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>ID</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {Array.isArray(users) &&
               users.map((u: any) => (
-                <tr key={u.id} className="border-t">
-                  <td className="p-2">{u.id}</td>
-                  <td className="p-2">{u.email}</td>
-                  <td className="p-2">
+                <TableRow key={u.id}>
+                  <TableCell>{u.id}</TableCell>
+                  <TableCell>{u.email}</TableCell>
+                  <TableCell>
                     {u.firstName} {u.lastName}
-                  </td>
-                  <td className="p-2">{u.volunteerStatus}</td>
-                </tr>
+                  </TableCell>
+                  <TableCell>{u.volunteerStatus}</TableCell>
+                </TableRow>
               ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   );
