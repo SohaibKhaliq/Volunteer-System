@@ -88,6 +88,8 @@ export default function AdminLayout() {
     { path: '/admin/tasks', icon: ClipboardCheck, label: 'Task Management' },
     { path: '/admin/compliance', icon: Shield, label: 'Compliance' },
     { path: '/admin/hours', icon: CalendarClock, label: 'Volunteer Hours' },
+    { path: '/admin/communications', icon: MessageSquare, label: 'Communications' },
+    { path: '/admin/certifications', icon: Award, label: 'Certifications' },
     { path: '/admin/reports', icon: BarChart3, label: 'Reports & Analytics' },
   ];
 
