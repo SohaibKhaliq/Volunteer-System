@@ -8,6 +8,7 @@ import HelpOfferForm from '@/pages/help-offer-form';
 import HelpRequestForm from '@/pages/help-request-form';
 import Home from '@/pages/home';
 import Login from '@/pages/login';
+import Register from '@/pages/register';
 import Map from '@/pages/map';
 import TransportOfferForm from '@/pages/transport-offer-form';
 import TransportRequestForm from '@/pages/transport-request-form';
@@ -49,6 +50,7 @@ const routes: RouteObject[] = [
     children: [
       { path: '/', element: <Home /> },
       { path: '/login', element: <Login /> },
+      { path: '/register', element: <Register /> },
       { path: '/map', element: <Map /> },
       { path: '/carpooling', element: <Carpooling /> },
       { path: '/help', element: <Help /> },
