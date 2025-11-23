@@ -234,12 +234,16 @@ export default class UsersController {
       if (payload.firstName !== undefined) updateData.first_name = payload.firstName
       if (payload.lastName !== undefined) updateData.last_name = payload.lastName
       if (payload.phone !== undefined) updateData.phone = payload.phone
-      if (payload.profileMetadata !== undefined) updateData.profile_metadata = payload.profileMetadata
+      if (payload.profileMetadata !== undefined)
+        updateData.profile_metadata = payload.profileMetadata
       if (payload.isDisabled !== undefined) updateData.is_disabled = payload.isDisabled
-      if (payload.volunteerStatus !== undefined) updateData.volunteer_status = payload.volunteerStatus
+      if (payload.volunteerStatus !== undefined)
+        updateData.volunteer_status = payload.volunteerStatus
 
       // perform direct update via query builder to avoid model save race conditions
-      const updatedCount = await User.query().where('id', params.id).update({ ...updateData, updated_at: new Date() })
+      const updatedCount = await User.query()
+        .where('id', params.id)
+        .update({ ...updateData, updated_at: new Date() })
 
       if (!updatedCount) {
         Logger.warn('No rows updated for user id %s', params.id)
@@ -256,7 +260,10 @@ export default class UsersController {
       safeUser.lastLoginAt = safeUser.lastLoginAt ?? safeUser.last_login_at
       return response.ok(safeUser)
     } catch (error) {
-      Logger.error('Failed to update user: %s', error instanceof Error ? error.message : String(error))
+      Logger.error(
+        'Failed to update user: %s',
+        error instanceof Error ? error.message : String(error)
+      )
       Logger.debug('Full error object:', error)
       return response.badRequest({ error: { message: 'Unable to update user' } })
     }
@@ -286,7 +293,10 @@ export default class UsersController {
 
       return response.ok({ message: 'Role assigned' })
     } catch (err) {
-      Logger.error('Failed to add role to user: %s', err instanceof Error ? err.message : String(err))
+      Logger.error(
+        'Failed to add role to user: %s',
+        err instanceof Error ? err.message : String(err)
+      )
       Logger.debug('Full error object:', err)
       return response.badRequest({ error: { message: 'Unable to add role' } })
     }
@@ -371,7 +381,10 @@ export default class UsersController {
 
       return response.ok({ message: 'Role assigned' })
     } catch (error) {
-      Logger.error('Failed to add role to user: %s', error instanceof Error ? error.message : String(error))
+      Logger.error(
+        'Failed to add role to user: %s',
+        error instanceof Error ? error.message : String(error)
+      )
       Logger.debug('Full error object:', error)
       return response.badRequest({ error: { message: 'Unable to add role' } })
     }
