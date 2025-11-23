@@ -1,120 +1,89 @@
 // src/pages/admin/hours.tsx
-import React from 'react';
+import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CalendarClock, CheckCircle, XCircle } from 'lucide-react';
-import { hourEntries as mockHours } from '@/lib/mock/adminMock';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import SkeletonCard from '@/components/atoms/skeleton-card';
 import exportToCsv from '@/lib/exportCsv';
 import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { Edit, Trash2, Plus } from 'lucide-react';
-import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import api from '@/lib/api';
+import { toast } from 'sonner';
 
 export default function AdminHours() {
-  // Local state mirrors the shared mock so UI updates are reactive
-  const [entries, setEntries] = useState(() => mockHours.slice());
+  const queryClient = useQueryClient();
   const [selected, setSelected] = useState<number[]>([]);
+  const [bulkMode, setBulkMode] = useState<'approve' | 'reject' | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [bulkComment, setBulkComment] = useState('');
   const [filterStatus, setFilterStatus] = useState<'All' | 'Approved' | 'Pending' | 'Rejected'>('All');
   const [search, setSearch] = useState('');
-  const [editOpen, setEditOpen] = useState(false);
-  const [editing, setEditing] = useState<any | null>(null);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [toDelete, setToDelete] = useState<number | null>(null);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['hours'],
+    queryFn: api.listHours
+  });
+
+  const hours = Array.isArray(data) ? data : [];
+
+  const bulkUpdateMutation = useMutation({
+    mutationFn: ({ ids, status }: { ids: number[]; status: string }) => api.bulkUpdateHours(ids, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['hours'] });
+      toast.success(`Hours ${bulkMode === 'approve' ? 'approved' : 'rejected'} successfully`);
+      clearSelection();
+      setBulkComment('');
+      setBulkOpen(false);
+    },
+    onError: () => toast.error('Failed to update hours')
+  });
 
   const toggleSelect = (id: number) => {
     setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
   };
 
-  const selectAll = () => setSelected(entries.map((h) => h.id));
+  const selectAll = () => setSelected(hours.map((h: any) => h.id));
   const clearSelection = () => setSelected([]);
 
-  const handleApproveSelected = () => {
-    const next = entries.map((entry) => (selected.includes(entry.id) ? { ...entry, status: 'Approved' } : entry));
-    setEntries(next);
-    // sync to mock array
-    mockHours.forEach((m) => {
-      const updated = next.find((n) => n.id === m.id);
-      if (updated) m.status = updated.status;
-    });
-    alert(`Approved ${selected.length} entries. Comment: ${bulkComment}`);
-    clearSelection();
-    setBulkComment('');
-    setBulkOpen(false);
+  const handleBulkAction = (mode: 'approve' | 'reject') => {
+    setBulkMode(mode);
+    setBulkOpen(true);
   };
 
-  const handleRejectSelected = () => {
-    const next = entries.map((entry) => (selected.includes(entry.id) ? { ...entry, status: 'Rejected' } : entry));
-    setEntries(next);
-    mockHours.forEach((m) => {
-      const updated = next.find((n) => n.id === m.id);
-      if (updated) m.status = updated.status;
-    });
-    alert(`Rejected ${selected.length} entries. Comment: ${bulkComment}`);
-    clearSelection();
-    setBulkComment('');
-    setBulkOpen(false);
+  const confirmBulkAction = () => {
+    if (bulkMode) {
+      const status = bulkMode === 'approve' ? 'Approved' : 'Rejected';
+      bulkUpdateMutation.mutate({ ids: selected, status });
+    }
   };
 
   const handleExport = () => {
     exportToCsv(
       'hours.csv',
-      entries.map(({ id, volunteer, event, date, hours, status }) => ({ id, volunteer, event, date, hours, status }))
+      hours.map((h: any) => ({
+        id: h.id,
+        volunteer: `${h.user?.firstName || ''} ${h.user?.lastName || ''}`.trim(),
+        event: h.event?.title || 'N/A',
+        date: h.date,
+        hours: h.hours,
+        status: h.status
+      }))
     );
   };
 
-  const filtered = entries.filter((e) => {
+  const filtered = hours.filter((e: any) => {
     if (filterStatus !== 'All' && e.status !== filterStatus) return false;
-    if (search && !`${e.volunteer} ${e.event}`.toLowerCase().includes(search.toLowerCase())) return false;
+    const searchText = `${e.user?.firstName || ''} ${e.user?.lastName || ''} ${e.event?.title || ''}`.toLowerCase();
+    if (search && !searchText.includes(search.toLowerCase())) return false;
     return true;
   });
 
-  const saveEntry = (payload: any) => {
-    if (payload.id) {
-      const next = entries.map((e) => (e.id === payload.id ? { ...e, ...payload } : e));
-      setEntries(next);
-      mockHours.forEach((m) => {
-        const u = next.find((n) => n.id === m.id);
-        if (u) Object.assign(m, u);
-      });
-    } else {
-      const id = Math.max(0, ...entries.map((e) => e.id)) + 1;
-      const newEntry = { ...payload, id };
-      const next = [newEntry, ...entries];
-      setEntries(next);
-      mockHours.unshift(newEntry);
-    }
-    setEditOpen(false);
-    setEditing(null);
-  };
-
-  const confirmDelete = (id: number) => {
-    setToDelete(id);
-    setDeleteOpen(true);
-  };
-
-  const doDelete = () => {
-    if (toDelete == null) return;
-    const next = entries.filter((e) => e.id !== toDelete);
-    setEntries(next);
-    const idx = mockHours.findIndex((m) => m.id === toDelete);
-    if (idx !== -1) mockHours.splice(idx, 1);
-    setToDelete(null);
-    setDeleteOpen(false);
-  };
-
-  useEffect(() => {
-    if (mockHours.length !== entries.length) setEntries(mockHours.slice());
-  }, [mockHours.length]);
-
   return (
-    <div className="space-y-6" aria-busy={false}>
-      {/* Header */}
+    <div className="space-y-6" aria-busy={isLoading}>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -141,17 +110,6 @@ export default function AdminHours() {
                 <SelectItem value="Rejected">Rejected</SelectItem>
               </SelectContent>
             </Select>
-            <div className="ml-auto">
-              <Button
-                onClick={() => {
-                  setEditing(null);
-                  setEditOpen(true);
-                }}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Entry
-              </Button>
-            </div>
           </div>
 
           <Table>
@@ -161,6 +119,7 @@ export default function AdminHours() {
                   <input
                     aria-label="Select all hours"
                     type="checkbox"
+                    checked={selected.length === filtered.length && filtered.length > 0}
                     onChange={(e) => {
                       if (e.target.checked) selectAll();
                       else clearSelection();
@@ -175,14 +134,20 @@ export default function AdminHours() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.length === 0 ? (
+              {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={7}>
+                  <TableCell colSpan={6}>
                     <SkeletonCard />
                   </TableCell>
                 </TableRow>
+              ) : filtered.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center text-muted-foreground">
+                    No hours entries found
+                  </TableCell>
+                </TableRow>
               ) : (
-                filtered.map((h) => (
+                filtered.map((h: any) => (
                   <TableRow key={h.id}>
                     <TableCell>
                       <input
@@ -192,9 +157,9 @@ export default function AdminHours() {
                         onChange={() => toggleSelect(h.id)}
                       />
                     </TableCell>
-                    <TableCell>{h.volunteer}</TableCell>
-                    <TableCell>{h.event}</TableCell>
-                    <TableCell>{h.date}</TableCell>
+                    <TableCell>{h.user?.firstName} {h.user?.lastName}</TableCell>
+                    <TableCell>{h.event?.title || 'N/A'}</TableCell>
+                    <TableCell>{new Date(h.date).toLocaleDateString()}</TableCell>
                     <TableCell>{h.hours}</TableCell>
                     <TableCell>
                       <Badge
@@ -205,23 +170,6 @@ export default function AdminHours() {
                         {h.status}
                       </Badge>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          onClick={() => {
-                            setEditing(h);
-                            setEditOpen(true);
-                          }}
-                          aria-label={`Edit ${h.id}`}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" onClick={() => confirmDelete(h.id)} aria-label={`Delete ${h.id}`}>
-                          <Trash2 className="h-4 w-4 text-red-600" />
-                        </Button>
-                      </div>
-                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -230,7 +178,7 @@ export default function AdminHours() {
         </CardContent>
       </Card>
 
-      {/* Bulk actions (mock) */}
+      {/* Bulk actions */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -241,17 +189,15 @@ export default function AdminHours() {
         <CardContent className="flex space-x-4">
           <Button
             variant="outline"
-            onClick={() => setBulkOpen(true)}
+            onClick={() => handleBulkAction('approve')}
             disabled={selected.length === 0}
-            aria-disabled={selected.length === 0}
           >
             Approve Selected ({selected.length})
           </Button>
           <Button
             variant="destructive"
-            onClick={() => setBulkOpen(true)}
+            onClick={() => handleBulkAction('reject')}
             disabled={selected.length === 0}
-            aria-disabled={selected.length === 0}
           >
             <XCircle className="h-4 w-4 mr-2" />
             Reject Selected ({selected.length})
@@ -262,10 +208,13 @@ export default function AdminHours() {
         </CardContent>
       </Card>
 
+      {/* Bulk Action Dialog */}
       <Dialog open={bulkOpen} onOpenChange={setBulkOpen}>
         <DialogContent aria-labelledby="bulk-action-title">
           <DialogHeader>
-            <DialogTitle id="bulk-action-title">Bulk Action</DialogTitle>
+            <DialogTitle id="bulk-action-title">
+              {bulkMode === 'approve' ? 'Approve' : 'Reject'} Hours
+            </DialogTitle>
           </DialogHeader>
           <div className="p-4">
             <div className="text-sm mb-2">Selected entries: {selected.length}</div>
@@ -281,117 +230,12 @@ export default function AdminHours() {
               <Button variant="outline" onClick={() => setBulkOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleApproveSelected} aria-label="Approve selected hours">
-                Approve
-              </Button>
-              <Button variant="destructive" onClick={handleRejectSelected} aria-label="Reject selected hours">
-                Reject
-              </Button>
-            </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Add / Edit Entry Dialog */}
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent aria-labelledby="edit-entry-title">
-          <DialogHeader>
-            <DialogTitle id="edit-entry-title">{editing ? 'Edit Entry' : 'Add Entry'}</DialogTitle>
-          </DialogHeader>
-          <div className="p-4 space-y-3">
-            <div>
-              <label className="text-sm block mb-1">Volunteer</label>
-              <Input
-                value={editing?.volunteer || ''}
-                onChange={(e) => setEditing((s: any) => ({ ...(s || {}), volunteer: e.target.value }))}
-              />
-            </div>
-            <div>
-              <label className="text-sm block mb-1">Event</label>
-              <Input
-                value={editing?.event || ''}
-                onChange={(e) => setEditing((s: any) => ({ ...(s || {}), event: e.target.value }))}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-sm block mb-1">Date</label>
-                <Input
-                  type="date"
-                  value={editing?.date || ''}
-                  onChange={(e) => setEditing((s: any) => ({ ...(s || {}), date: e.target.value }))}
-                />
-              </div>
-              <div>
-                <label className="text-sm block mb-1">Hours</label>
-                <Input
-                  type="number"
-                  value={editing?.hours || ''}
-                  onChange={(e) => setEditing((s: any) => ({ ...(s || {}), hours: Number(e.target.value) }))}
-                />
-              </div>
-            </div>
-            <div>
-              <label className="text-sm block mb-1">Status</label>
-              <Select
-                value={editing?.status || 'Pending'}
-                onValueChange={(v) => setEditing((s: any) => ({ ...(s || {}), status: v }))}
-              >
-                <SelectTrigger className="w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Approved">Approved</SelectItem>
-                  <SelectItem value="Pending">Pending</SelectItem>
-                  <SelectItem value="Rejected">Rejected</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <div className="flex gap-2">
               <Button
-                variant="outline"
-                onClick={() => {
-                  setEditOpen(false);
-                  setEditing(null);
-                }}
+                variant={bulkMode === 'approve' ? 'default' : 'destructive'}
+                onClick={confirmBulkAction}
+                disabled={bulkUpdateMutation.isPending}
               >
-                Cancel
-              </Button>
-              <Button
-                onClick={() => {
-                  // validate minimal
-                  if (!editing?.volunteer || !editing?.event) {
-                    alert('Volunteer and event are required');
-                    return;
-                  }
-                  saveEntry(editing || {});
-                }}
-              >
-                {editing ? 'Save' : 'Create'}
-              </Button>
-            </div>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete confirmation dialog */}
-      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <DialogContent aria-labelledby="delete-entry-title">
-          <DialogHeader>
-            <DialogTitle id="delete-entry-title">Confirm Delete</DialogTitle>
-          </DialogHeader>
-          <div className="p-4">
-            <div>Are you sure you want to delete this hours entry?</div>
-          </div>
-          <DialogFooter>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setDeleteOpen(false)}>
-                Cancel
-              </Button>
-              <Button variant="destructive" onClick={doDelete}>
-                Delete
+                {bulkUpdateMutation.isPending ? 'Processing...' : bulkMode === 'approve' ? 'Approve' : 'Reject'}
               </Button>
             </div>
           </DialogFooter>
