@@ -276,7 +276,11 @@ export default function AdminCertifications() {
                 </PopoverTrigger>
                 <PopoverContent className="w-[300px] p-0">
                   <Command>
-                    <CommandInput placeholder="Search users..." value={userQuery} onValueChange={setUserQuery} />
+                    <CommandInput
+                      placeholder="Search users..."
+                      value={userQuery}
+                      onValueChange={(v) => React.startTransition(() => setUserQuery(v))}
+                    />
                     <CommandGroup>
                       {users.map((u) => (
                         <CommandItem
