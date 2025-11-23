@@ -1,24 +1,12 @@
 // src/pages/admin/certifications.tsx
-import React from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Award, CheckCircle, Clock, XCircle } from "lucide-react";
+import React from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Award } from 'lucide-react';
+import { courses as mockCourses, certs as mockCerts } from '@/lib/mock/adminMock';
 
-// Mock data for training courses
-const mockCourses = [
-  { id: 1, name: "First Aid", participants: 45, completed: 30 },
-  { id: 2, name: "Child Safeguarding", participants: 60, completed: 55 },
-  { id: 3, name: "Volunteer Management", participants: 40, completed: 20 },
-];
-
-// Mock data for volunteer certifications
-const mockCerts = [
-  { id: 1, volunteer: "Alice", type: "WWCC", expires: "2025-12-01", status: "Valid" },
-  { id: 2, volunteer: "Bob", type: "Police Check", expires: "2025-10-15", status: "Expiring" },
-  { id: 3, volunteer: "Carol", type: "First Aid", expires: "2024-08-20", status: "Expired" },
-];
+// Using shared mock data from /src/lib/mock/adminMock.ts
 
 export default function AdminCertifications() {
   return (
@@ -83,13 +71,7 @@ export default function AdminCertifications() {
                   <TableCell>{c.expires}</TableCell>
                   <TableCell>
                     <Badge
-                      variant={
-                        c.status === "Valid"
-                          ? "default"
-                          : c.status === "Expiring"
-                          ? "secondary"
-                          : "destructive"
-                      }
+                      variant={c.status === 'Valid' ? 'default' : c.status === 'Expiring' ? 'secondary' : 'destructive'}
                     >
                       {c.status}
                     </Badge>
