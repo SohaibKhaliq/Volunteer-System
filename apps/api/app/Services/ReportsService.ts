@@ -59,6 +59,9 @@ export default class ReportsService {
   }
 
   public async eventsWithCompletion() {
-    return Event.query().preload('tasks', (q) => q.preload('assignments'))
+    const events = await Event.query().preload('tasks', (taskQuery) => {
+      taskQuery.preload('assignments')
+    })
+    return events
   }
 }
