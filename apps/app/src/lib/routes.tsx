@@ -21,6 +21,7 @@ import AdminEvents from '@/pages/admin/events';
 import AdminTasks from '@/pages/admin/tasks';
 import AdminHours from '@/pages/admin/hours'; // Added this import based on the instruction's context
 import AdminCertifications from '@/pages/admin/certifications';
+import AdminNotifications from '@/pages/admin/notifications';
 import AdminCompliance from '@/pages/admin/compliance';
 import AdminReports from '@/pages/admin/reports';
 import AdminCommunications from '@/pages/admin/communications';
@@ -64,6 +65,7 @@ const routes: RouteObject[] = [
       { path: 'hours', element: <AdminHours /> },
       { path: 'compliance', element: <AdminCompliance /> },
       { path: 'certifications', element: <AdminCertifications /> },
+      { path: 'notifications', element: <AdminNotifications /> },
       { path: 'communications', element: <AdminCommunications /> },
       { path: 'reports', element: <AdminReports /> },
       { path: 'resources', element: <AdminResources /> },
