@@ -1,13 +1,10 @@
 {
   "commands": {
-    "docs:generate": {
-      "settings": {
-        "loadApp": false,
-        "stayAlive": false
-      },
-      "commandPath": "./commands/DocsGenerate",
-      "commandName": "docs:generate",
-      "description": "",
+    "detect:inactive": {
+      "settings": {},
+      "commandPath": "./commands/DetectInactiveUsers",
+      "commandName": "detect:inactive",
+      "description": "Detect inactive volunteer users and create re-engagement campaign",
       "args": [],
       "aliases": [],
       "flags": []
