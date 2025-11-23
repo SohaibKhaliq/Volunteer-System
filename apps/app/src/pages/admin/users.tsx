@@ -195,7 +195,7 @@ export default function AdminUsers() {
           <Input
             placeholder="Search by name or email..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => React.startTransition(() => setSearchTerm(e.target.value))}
             className="pl-10"
           />
         </div>
@@ -207,10 +207,16 @@ export default function AdminUsers() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => setStatusFilter('all')}>All</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setStatusFilter('active')}>Active</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setStatusFilter('inactive')}>Inactive</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setStatusFilter('pending')}>Pending</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => React.startTransition(() => setStatusFilter('all'))}>All</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => React.startTransition(() => setStatusFilter('active'))}>
+              Active
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => React.startTransition(() => setStatusFilter('inactive'))}>
+              Inactive
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => React.startTransition(() => setStatusFilter('pending'))}>
+              Pending
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -388,7 +394,7 @@ export default function AdminUsers() {
               value={page}
               onChange={(e) => {
                 const v = Number(e.target.value) || 1;
-                setPage(Math.max(1, v));
+                React.startTransition(() => setPage(Math.max(1, v)));
               }}
               min={1}
             />
@@ -397,7 +403,7 @@ export default function AdminUsers() {
 
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">Per page</span>
-            <Select value={String(perPage)} onValueChange={(v) => setPerPage(Number(v))}>
+            <Select value={String(perPage)} onValueChange={(v) => React.startTransition(() => setPerPage(Number(v)))}>
               <SelectTrigger className="w-24">
                 <SelectValue />
               </SelectTrigger>
