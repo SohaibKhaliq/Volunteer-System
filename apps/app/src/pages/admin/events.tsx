@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -77,18 +77,29 @@ export default function AdminEvents() {
       queryClient.invalidateQueries(['events']);
       toast({ title: 'Event created successfully', variant: 'success' });
       setShowCreateDialog(false);
-    },
+    }
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<Event> }) =>
-      api.updateEvent(id, data),
+    mutationFn: ({ id, data }: { id: number; data: Partial<Event> }) => api.updateEvent(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['events']);
       toast({ title: 'Event updated', variant: 'success' });
     }
   });
 
+  const [contactQuery, setContactQuery] = useState('');
+  const [debouncedContactQuery, setDebouncedContactQuery] = useState('');
+  const [selectedContact, setSelectedContact] = useState<any | null>(null);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedContactQuery(contactQuery), 300);
+    return () => clearTimeout(t);
+  }, [contactQuery]);
+
+  const { data: contactResults = [] } = useQuery(['users', debouncedContactQuery], () =>
+    api.listUsers(debouncedContactQuery)
+  );
   const deleteMutation = useMutation({
     mutationFn: (eventId: number) => api.deleteEvent(eventId),
     onSuccess: () => {
@@ -196,6 +207,32 @@ export default function AdminEvents() {
       {/* Filters */}
       <div className="flex gap-4 items-center bg-white p-4 rounded-lg shadow-sm">
         <div className="flex-1 relative">
+          <div>
+            <label className="text-sm block mb-1">Contact Person (optional)</label>
+            <div className="flex gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start">
+                    {selectedContact
+                      ? `${selectedContact.firstName || selectedContact.name} ${selectedContact.lastName || ''}`
+                      : 'Select contact'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[300px] p-0">
+                  <Command>
+                    <CommandInput placeholder="Search users..." value={contactQuery} onValueChange={setContactQuery} />
+                    <CommandGroup>
+                      {contactResults.map((u: any) => (
+                        <CommandItem key={u.id} onSelect={() => setSelectedContact(u)}>
+                          {u.firstName || u.name} {u.lastName || ''} {u.email ? `(${u.email})` : ''}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search events..."
@@ -272,7 +309,7 @@ export default function AdminEvents() {
                     <TableCell>
                       <div>
                         <div className="font-medium">{event.title}</div>
-                        <div className="text-sm text-muted-foreground line-clamp-1">{event.description}</div> 
+                        <div className="text-sm text-muted-foreground line-clamp-1">{event.description}</div>
                       </div>
                     </TableCell>
                     <TableCell className="text-sm">{event.organizationName || 'N/A'}</TableCell>
