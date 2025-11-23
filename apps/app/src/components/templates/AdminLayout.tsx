@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useApp } from '@/providers/app-provider';
 import { cn } from '@/lib/utils';
-import { Users, Building2, Calendar, ClipboardCheck, Shield, BarChart3, Home, MessageSquare, CalendarClock, Award } from 'lucide-react';
+import { Users, Building2, Calendar, ClipboardCheck, Shield, BarChart3, Home, MessageSquare, CalendarClock, Award, Package, Clock, FileText, ListOrdered, Settings, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Providers from '@/providers';
 
