@@ -19,8 +19,11 @@ import AdminUsers from '@/pages/admin/users';
 import AdminOrganizations from '@/pages/admin/organizations';
 import AdminEvents from '@/pages/admin/events';
 import AdminTasks from '@/pages/admin/tasks';
+import AdminHours from '@/pages/admin/hours'; // Added this import based on the instruction's context
+import AdminCertifications from '@/pages/admin/certifications';
 import AdminCompliance from '@/pages/admin/compliance';
 import AdminReports from '@/pages/admin/reports';
+import AdminCommunications from '@/pages/admin/communications';
 
 export enum DetailTypes {
   Offer = 'offer',
@@ -40,8 +43,11 @@ const routes: RouteObject[] = [
       { path: '/admin/organizations', element: <AdminOrganizations /> },
       { path: '/admin/events', element: <AdminEvents /> },
       { path: '/admin/tasks', element: <AdminTasks /> },
+      { path: '/admin/hours', element: <AdminHours /> },
       { path: '/admin/compliance', element: <AdminCompliance /> },
-      { path: '/admin/reports', element: <AdminReports /> }
+      { path: '/admin/certifications', element: <AdminCertifications /> },
+      { path: '/admin/communications', element: <AdminCommunications /> },
+      { path: '/admin/reports', element: <AdminReports /> },
     ]
   },
   {
