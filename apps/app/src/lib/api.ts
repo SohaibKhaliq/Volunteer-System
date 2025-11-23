@@ -24,6 +24,7 @@ const api = {
   createOrganization: async (payload: any) => axios.post('/organizations', payload),
 
   listUsers: async () => axios.get('/users'),
+  createUser: async (payload: any) => axios.post('/users', payload),
 
   listEvents: async () => axios.get('/events'),
   listTasks: async () => axios.get('/tasks'),
@@ -32,7 +33,9 @@ const api = {
   aiForecast: async (start: string, end: string) => axios.post('/ai/forecast', { start, end }),
 
   // generic list helper for simple collections
-  list: async (resource: string) => axios.get(`/${resource}`)
+  list: async (resource: string) => axios.get(`/${resource}`),
+  // return current authenticated user's profile (roles, flags)
+  getCurrentUser: async () => axios.get('/me')
 } as const;
 
 export const useLazyQuery = (key: QueryKey, fn: QueryFunction, options = {}) => {
