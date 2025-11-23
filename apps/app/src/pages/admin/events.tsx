@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -33,8 +34,6 @@ import {
   Users,
   MapPin,
   Clock,
-  CheckCircle,
-  XCircle,
   Eye,
   Edit,
   Trash2,
@@ -69,8 +68,53 @@ export default function AdminEvents() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editEvent, setEditEvent] = useState<Event | null>(null);
+  const navigate = useNavigate();
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editStartAt, setEditStartAt] = useState<string | null>(null);
+  const [editEndAt, setEditEndAt] = useState<string | null>(null);
+  const [editLocation, setEditLocation] = useState('');
+  const [editRequiredVolunteers, setEditRequiredVolunteers] = useState<number | ''>('');
+  const [editStatus, setEditStatus] = useState<Event['status']>('draft');
+  const [editIsRecurring, setEditIsRecurring] = useState<boolean>(false);
 
-  const { data: events, isLoading } = useQuery<Event[]>(['events'], api.listEvents);
+  useEffect(() => {
+    if (editEvent) {
+      setEditTitle(editEvent.title || '');
+      setEditDescription(editEvent.description || '');
+      setEditStartAt(editEvent.startAt || null);
+      setEditEndAt(editEvent.endAt || null);
+      setEditLocation(editEvent.location || '');
+      setEditRequiredVolunteers(editEvent.requiredVolunteers || 0);
+      setEditStatus(editEvent.status || 'draft');
+      setEditIsRecurring(Boolean(editEvent.isRecurring));
+    }
+  }, [editEvent]);
+
+  const { data: events, isLoading } = useQuery<Event[]>(['events'], api.listEvents, {
+    select: (data: any) => {
+      if (!data) return [] as Event[];
+      const list: any[] = Array.isArray(data) ? data : data.data || [];
+      return list.map((e) => ({
+        id: e.id,
+        title: e.title,
+        description: e.description,
+        startAt: e.start_at ?? e.startAt ?? null,
+        endAt: e.end_at ?? e.endAt ?? null,
+        location: e.location ?? null,
+        status: e.status ?? 'draft',
+        isRecurring: e.is_recurring ?? e.isRecurring ?? false,
+        requiredVolunteers: e.required_volunteers ?? e.requiredVolunteers ?? 0,
+        assignedVolunteers: e.assigned_volunteers ?? e.assignedVolunteers ?? 0,
+        organizationId: e.organization_id ?? e.organizationId ?? undefined,
+        organizationName: e.organization_name ?? e.organizationName ?? e.organization?.name ?? undefined,
+        resourcesAllocated: e.resources_allocated ?? e.resourcesAllocated ?? undefined
+      })) as Event[];
+    }
+  });
 
   // Mutations
   const createMutation = useMutation({
@@ -145,6 +189,9 @@ export default function AdminEvents() {
     if (!event.requiredVolunteers) return 0;
     return Math.round((event.assignedVolunteers / event.requiredVolunteers) * 100);
   };
+
+  const formatDate = (iso?: string | null) => (iso ? new Date(iso).toLocaleDateString() : 'TBD');
+  const formatTime = (iso?: string | null) => (iso ? new Date(iso).toLocaleTimeString() : 'TBD');
 
   if (isLoading) {
     return (
@@ -322,11 +369,14 @@ export default function AdminEvents() {
                     <TableCell>
                       <div className="flex items-center gap-1 text-sm">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span>{new Date(event.startAt).toLocaleDateString()}</span>
+                        <span>{formatDate(event.startAt)}</span>
                       </div>
                       <div className="flex items-center gap-1 text-sm text-muted-foreground">
                         <Clock className="h-4 w-4" />
-                        <span>{new Date(event.startAt).toLocaleTimeString()}</span>
+                        <span>
+                          {formatTime(event.startAt)}
+                          {event.endAt ? ` — ${formatTime(event.endAt)}` : ''}
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -366,15 +416,29 @@ export default function AdminEvents() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setSelectedEvent(event);
+                              setShowDetailsDialog(true);
+                            }}
+                          >
                             <Eye className="h-4 w-4 mr-2" />
                             View Details
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setEditEvent(event);
+                              setShowEditDialog(true);
+                            }}
+                          >
                             <Edit className="h-4 w-4 mr-2" />
                             Edit Event
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              navigate(`/admin/assignments?eventId=${event.id}`);
+                            }}
+                          >
                             <Users className="h-4 w-4 mr-2" />
                             Manage Volunteers
                           </DropdownMenuItem>
@@ -387,34 +451,23 @@ export default function AdminEvents() {
                             AI Match Volunteers
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          {event.status === 'draft' && (
+                          <DropdownMenuLabel>Change Status</DropdownMenuLabel>
+                          {['draft', 'published', 'ongoing', 'completed', 'cancelled'].map((s) => (
                             <DropdownMenuItem
-                              onClick={() =>
-                                updateMutation.mutate({
-                                  id: event.id,
-                                  data: { status: 'published' }
-                                })
-                              }
-                              className="text-green-600"
+                              key={s}
+                              onClick={() => updateMutation.mutate({ id: event.id, data: { status: s } })}
                             >
-                              <CheckCircle className="h-4 w-4 mr-2" />
-                              Publish
+                              {s.charAt(0).toUpperCase() + s.slice(1)}
                             </DropdownMenuItem>
-                          )}
-                          {event.status !== 'cancelled' && (
-                            <DropdownMenuItem
-                              onClick={() =>
-                                updateMutation.mutate({
-                                  id: event.id,
-                                  data: { status: 'cancelled' }
-                                })
-                              }
-                              className="text-orange-600"
-                            >
-                              <XCircle className="h-4 w-4 mr-2" />
-                              Cancel Event
-                            </DropdownMenuItem>
-                          )}
+                          ))}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() =>
+                              updateMutation.mutate({ id: event.id, data: { is_recurring: !event.isRecurring } })
+                            }
+                          >
+                            {event.isRecurring ? 'Set as One-time' : 'Set as Recurring'}
+                          </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => {
                               if (
@@ -444,6 +497,145 @@ export default function AdminEvents() {
           </TableBody>
         </Table>
       </div>
+
+      <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{selectedEvent?.title}</DialogTitle>
+            <DialogDescription>{selectedEvent?.description}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <div className="text-sm font-medium text-muted-foreground">Organization</div>
+                <div className="mt-1 text-sm">{selectedEvent?.organizationName || 'N/A'}</div>
+              </div>
+              <div>
+                <div className="text-sm font-medium text-muted-foreground">Type</div>
+                <div className="mt-1">{selectedEvent?.isRecurring ? 'Recurring' : 'One-time'}</div>
+              </div>
+              <div>
+                <div className="text-sm font-medium text-muted-foreground">Date</div>
+                <div className="mt-1">{formatDate(selectedEvent?.startAt)}</div>
+              </div>
+              <div>
+                <div className="text-sm font-medium text-muted-foreground">Time</div>
+                <div className="mt-1">
+                  {selectedEvent
+                    ? `${formatTime(selectedEvent.startAt)}${selectedEvent.endAt ? ` — ${formatTime(selectedEvent.endAt)}` : ''}`
+                    : 'TBD'}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm font-medium text-muted-foreground">Location</div>
+                <div className="mt-1">{selectedEvent?.location || 'TBD'}</div>
+              </div>
+              <div>
+                <div className="text-sm font-medium text-muted-foreground">Volunteers</div>
+                <div className="mt-1">
+                  {selectedEvent ? `${selectedEvent.assignedVolunteers}/${selectedEvent.requiredVolunteers}` : '0/0'}
+                </div>
+              </div>
+              <div>
+                <div className="text-sm font-medium text-muted-foreground">Status</div>
+                <div className="mt-1">{selectedEvent ? selectedEvent.status : 'N/A'}</div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDetailsDialog(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Event</DialogTitle>
+            <DialogDescription>Modify event details</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} placeholder="Event Title" />
+            <Input
+              value={editDescription}
+              onChange={(e) => setEditDescription(e.target.value)}
+              placeholder="Description"
+            />
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                type="datetime-local"
+                value={editStartAt ?? ''}
+                onChange={(e) => setEditStartAt(e.target.value)}
+                placeholder="Start Date & Time"
+              />
+              <Input
+                type="datetime-local"
+                value={editEndAt ?? ''}
+                onChange={(e) => setEditEndAt(e.target.value)}
+                placeholder="End Date & Time"
+              />
+            </div>
+            <Input value={editLocation} onChange={(e) => setEditLocation(e.target.value)} placeholder="Location" />
+            <Input
+              type="number"
+              value={typeof editRequiredVolunteers === 'number' ? editRequiredVolunteers : ''}
+              onChange={(e) => setEditRequiredVolunteers(e.target.value === '' ? '' : Number(e.target.value))}
+              placeholder="Required Volunteers"
+            />
+            <div className="flex items-center gap-2">
+              <input
+                id="edit-recurring"
+                type="checkbox"
+                checked={editIsRecurring}
+                onChange={(e) => setEditIsRecurring(e.target.checked)}
+              />
+              <label htmlFor="edit-recurring" className="text-sm">
+                Recurring Event
+              </label>
+            </div>
+            <div>
+              <label className="text-sm block mb-1">Status</label>
+              <select
+                value={editStatus}
+                onChange={(e) => setEditStatus(e.target.value as Event['status'])}
+                className="w-full p-2 border rounded"
+              >
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+                <option value="ongoing">Ongoing</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (!editEvent) return;
+                const payload: any = {
+                  title: editTitle,
+                  description: editDescription,
+                  start_at: editStartAt,
+                  end_at: editEndAt,
+                  location: editLocation,
+                  required_volunteers: editRequiredVolunteers || 0,
+                  status: editStatus,
+                  is_recurring: editIsRecurring
+                };
+                updateMutation.mutate({ id: editEvent.id, data: payload });
+                setShowEditDialog(false);
+              }}
+            >
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
