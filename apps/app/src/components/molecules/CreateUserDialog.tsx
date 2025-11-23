@@ -17,7 +17,7 @@ export default function CreateUserDialog({ onCreated }: Props) {
     lastName: '',
     password: '',
     isAdmin: false,
-    fingerprint: ''
+
   });
 
   const mutation = useMutation((payload: any) => api.createUser(payload), {
@@ -63,11 +63,7 @@ export default function CreateUserDialog({ onCreated }: Props) {
             onChange={(e) => setForm({ ...form, password: e.target.value })}
             placeholder="Password (dev only)"
           />
-          <Input
-            value={form.fingerprint}
-            onChange={(e) => setForm({ ...form, fingerprint: e.target.value })}
-            placeholder="Fingerprint (optional)"
-          />
+
 
           <DialogFooter className="mt-2">
             <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)}>
