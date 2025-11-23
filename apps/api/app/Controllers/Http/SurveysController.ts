@@ -2,7 +2,7 @@ import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Survey from 'App/Models/Survey'
 
 export default class SurveysController {
-  public async index({ request }: HttpContextContract) {
+  public async index({}: HttpContextContract) {
     return Survey.query().preload('responses')
   }
 
