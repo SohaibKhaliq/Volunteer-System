@@ -1,6 +1,6 @@
 // src/pages/admin/certifications.tsx
 // src/pages/admin/certifications.tsx
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -52,10 +52,18 @@ export default function AdminCertifications() {
   });
 
   // load users for user lookup in the create/edit dialog
-  const { data: users = [], isLoading: usersLoading } = useQuery<User[]>({
-    queryKey: ['users'],
-    queryFn: api.listUsers
-  });
+  const [userQuery, setUserQuery] = useState('');
+  const [debouncedUserQuery, setDebouncedUserQuery] = useState('');
+
+  // debounce user query to avoid hammering the API
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedUserQuery(userQuery), 300);
+    return () => clearTimeout(t);
+  }, [userQuery]);
+
+  const { data: users = [], isLoading: usersLoading } = useQuery<User[]>(['users', debouncedUserQuery], () =>
+    api.listUsers(debouncedUserQuery)
+  );
 
   const selectedUser = useMemo(() => users.find((u) => u.id === editing?.user_id) ?? null, [users, editing?.user_id]);
 
@@ -268,7 +276,7 @@ export default function AdminCertifications() {
                 </PopoverTrigger>
                 <PopoverContent className="w-[300px] p-0">
                   <Command>
-                    <CommandInput placeholder="Search users..." />
+                    <CommandInput placeholder="Search users..." value={userQuery} onValueChange={setUserQuery} />
                     <CommandGroup>
                       {users.map((u) => (
                         <CommandItem
