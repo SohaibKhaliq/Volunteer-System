@@ -1,6 +1,7 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 
 export default function AdminTasks() {
   const { data: tasks, isLoading } = useQuery(['tasks'], api.listTasks);
@@ -11,18 +12,25 @@ export default function AdminTasks() {
     <div>
       <h2 className="text-xl mb-4">Tasks</h2>
       <div className="bg-white rounded shadow p-4">
-        <ul className="divide-y">
-          {Array.isArray(tasks) &&
-            tasks.map((t: any) => (
-              <li key={t.id} className="py-3 flex justify-between items-center">
-                <div>
-                  <div className="font-semibold">{t.title}</div>
-                  <div className="text-sm text-slate-500">{t.description}</div>
-                </div>
-                <div className="text-sm text-slate-600">Slots: {t.slotCount}</div>
-              </li>
-            ))}
-        </ul>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Title</TableHead>
+              <TableHead>Description</TableHead>
+              <TableHead>Slots</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {Array.isArray(tasks) &&
+              tasks.map((t: any) => (
+                <TableRow key={t.id}>
+                  <TableCell>{t.title}</TableCell>
+                  <TableCell>{t.description}</TableCell>
+                  <TableCell>{t.slotCount}</TableCell>
+                </TableRow>
+              ))}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );
