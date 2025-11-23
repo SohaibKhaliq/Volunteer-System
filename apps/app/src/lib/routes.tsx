@@ -24,6 +24,12 @@ import AdminCertifications from '@/pages/admin/certifications';
 import AdminCompliance from '@/pages/admin/compliance';
 import AdminReports from '@/pages/admin/reports';
 import AdminCommunications from '@/pages/admin/communications';
+import AdminResources from '@/pages/admin/resources';
+import AdminScheduling from '@/pages/admin/scheduling';
+import AdminFeedback from '@/pages/admin/feedback';
+import AdminAuditLogs from '@/pages/admin/audit-logs';
+import AdminSettings from '@/pages/admin/settings';
+import AdminVolunteerProfile from '@/pages/admin/volunteer-profile';
 
 export enum DetailTypes {
   Offer = 'offer',
@@ -48,6 +54,12 @@ const routes: RouteObject[] = [
       { path: '/admin/certifications', element: <AdminCertifications /> },
       { path: '/admin/communications', element: <AdminCommunications /> },
       { path: '/admin/reports', element: <AdminReports /> },
+      { path: '/admin/resources',   element: <AdminResources /> },
+{ path: '/admin/scheduling',  element: <AdminScheduling /> },
+{ path: '/admin/feedback',    element: <AdminFeedback /> },
+{ path: '/admin/audit-logs',  element: <AdminAuditLogs /> },
+{ path: '/admin/settings',    element: <AdminSettings /> },
+{ path: '/admin/volunteer-profile', element: <AdminVolunteerProfile /> },
     ]
   },
   {
