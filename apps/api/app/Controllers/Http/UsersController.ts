@@ -64,6 +64,12 @@ export default class UsersController {
       const sanitizedUsers = users.toJSON()
       sanitizedUsers.data = sanitizedUsers.data.map((user: any) => {
         const { password, ...safeUser } = user
+        // normalize snake_case -> camelCase for frontend convenience
+        safeUser.firstName = safeUser.firstName ?? safeUser.first_name ?? ''
+        safeUser.lastName = safeUser.lastName ?? safeUser.last_name ?? ''
+        safeUser.isDisabled = safeUser.isDisabled ?? safeUser.is_disabled
+        safeUser.volunteerStatus = safeUser.volunteerStatus ?? safeUser.volunteer_status
+        safeUser.lastLoginAt = safeUser.lastLoginAt ?? safeUser.last_login_at
         return safeUser
       })
 
@@ -114,6 +120,12 @@ export default class UsersController {
       await auth.use('api').authenticate()
       const user = await User.query().where('id', auth.user!.id).preload('roles').firstOrFail()
       const { password, ...safeUser } = user.toJSON() as any
+      // normalize camelCase fields
+      safeUser.firstName = safeUser.firstName ?? safeUser.first_name ?? ''
+      safeUser.lastName = safeUser.lastName ?? safeUser.last_name ?? ''
+      safeUser.isDisabled = safeUser.isDisabled ?? safeUser.is_disabled
+      safeUser.volunteerStatus = safeUser.volunteerStatus ?? safeUser.volunteer_status
+      safeUser.lastLoginAt = safeUser.lastLoginAt ?? safeUser.last_login_at
       return response.ok(safeUser)
     } catch (error) {
       return response.badRequest({ error: { message: 'Unable to fetch current user' } })
@@ -128,6 +140,11 @@ export default class UsersController {
       const user = await User.query().where('id', params.id).preload('roles').firstOrFail()
 
       const { password, ...safeUser } = user.toJSON() as any
+      safeUser.firstName = safeUser.firstName ?? safeUser.first_name ?? ''
+      safeUser.lastName = safeUser.lastName ?? safeUser.last_name ?? ''
+      safeUser.isDisabled = safeUser.isDisabled ?? safeUser.is_disabled
+      safeUser.volunteerStatus = safeUser.volunteerStatus ?? safeUser.volunteer_status
+      safeUser.lastLoginAt = safeUser.lastLoginAt ?? safeUser.last_login_at
       return response.ok(safeUser)
     } catch (error) {
       return response.notFound({ error: { message: 'User not found' } })
@@ -179,7 +196,15 @@ export default class UsersController {
         }
       }
 
-      return response.created(user)
+      // return sanitized created user with relations and camelCase keys
+      const createdUser = await User.query().where('id', user.id).preload('roles').firstOrFail()
+      const { password, ...safeUser } = createdUser.toJSON() as any
+      safeUser.firstName = safeUser.firstName ?? safeUser.first_name ?? ''
+      safeUser.lastName = safeUser.lastName ?? safeUser.last_name ?? ''
+      safeUser.isDisabled = safeUser.isDisabled ?? safeUser.is_disabled
+      safeUser.volunteerStatus = safeUser.volunteerStatus ?? safeUser.volunteer_status
+      safeUser.lastLoginAt = safeUser.lastLoginAt ?? safeUser.last_login_at
+      return response.created(safeUser)
     } catch (error) {
       Logger.error('Failed to create user: %o', error?.message || error)
       return response.badRequest({ error: { message: 'Unable to create user' } })
@@ -191,9 +216,7 @@ export default class UsersController {
    */
   public async update({ params, request, response }: HttpContextContract) {
     try {
-      const user = await User.findOrFail(params.id)
-
-      // Accept phone and profileMetadata keys
+      // Use a safe update that maps camelCase payload keys to DB columns
       Logger.info('Update payload', request.all())
       const payload = request.only([
         'email',
@@ -205,18 +228,35 @@ export default class UsersController {
         'volunteerStatus'
       ])
 
-      // Don't allow password updates through this endpoint
-      user.merge(payload)
-      await user.save()
+      // Map incoming fields to DB column names
+      const updateData: Record<string, any> = {}
+      if (payload.email !== undefined) updateData.email = payload.email
+      if (payload.firstName !== undefined) updateData.first_name = payload.firstName
+      if (payload.lastName !== undefined) updateData.last_name = payload.lastName
+      if (payload.phone !== undefined) updateData.phone = payload.phone
+      if (payload.profileMetadata !== undefined) updateData.profile_metadata = payload.profileMetadata
+      if (payload.isDisabled !== undefined) updateData.is_disabled = payload.isDisabled
+      if (payload.volunteerStatus !== undefined) updateData.volunteer_status = payload.volunteerStatus
 
+      // perform direct update via query builder to avoid model save race conditions
+      const updatedCount = await User.query().where('id', params.id).update({ ...updateData, updated_at: new Date() })
+
+      if (!updatedCount) {
+        Logger.warn('No rows updated for user id %s', params.id)
+        return response.notFound({ error: { message: 'User not found' } })
+      }
+
+      // Return the refreshed user with roles
+      const user = await User.query().where('id', params.id).preload('roles').firstOrFail()
       const { password, ...safeUser } = user.toJSON() as any
+      safeUser.firstName = safeUser.firstName ?? safeUser.first_name ?? ''
+      safeUser.lastName = safeUser.lastName ?? safeUser.last_name ?? ''
+      safeUser.isDisabled = safeUser.isDisabled ?? safeUser.is_disabled
+      safeUser.volunteerStatus = safeUser.volunteerStatus ?? safeUser.volunteer_status
+      safeUser.lastLoginAt = safeUser.lastLoginAt ?? safeUser.last_login_at
       return response.ok(safeUser)
     } catch (error) {
-      // Log the actual error message (instead of an empty object) and dump full error for debugging
-      Logger.error(
-        'Failed to update user: %s',
-        error instanceof Error ? error.message : String(error)
-      )
+      Logger.error('Failed to update user: %s', error instanceof Error ? error.message : String(error))
       Logger.debug('Full error object:', error)
       return response.badRequest({ error: { message: 'Unable to update user' } })
     }
@@ -230,34 +270,27 @@ export default class UsersController {
       const user = await User.findOrFail(params.id)
       const { roleId } = request.only(['roleId'])
       Logger.info('Assign role payload', { userId: params.id, roleId })
+
       const role = await Role.find(Number(roleId))
       if (!role) {
-        console.error('Role not found for id', roleId)
         return response.notFound({ error: { message: 'Role not found' } })
       }
 
       const exists = await Database.from('user_roles')
         .where({ user_id: user.id, role_id: role.id })
         .first()
+
       if (!exists) {
         await Database.table('user_roles').insert({ user_id: user.id, role_id: role.id })
       }
 
       return response.ok({ message: 'Role assigned' })
-    } catch (error) {
-      // Log the actual error message (instead of an empty object) and dump full error for debugging
-      Logger.error(
-        'Failed to add role to user: %s',
-        error instanceof Error ? error.message : String(error)
-      )
-      Logger.debug('Full error object:', error)
+    } catch (err) {
+      Logger.error('Failed to add role to user: %s', err instanceof Error ? err.message : String(err))
+      Logger.debug('Full error object:', err)
       return response.badRequest({ error: { message: 'Unable to add role' } })
     }
   }
-
-  /**
-   * Remove a role from a user
-   */
   public async removeRole({ params, response }: HttpContextContract) {
     try {
       await Database.from('user_roles')
@@ -314,54 +347,33 @@ export default class UsersController {
     }
   }
 
+
   /**
    * Send reminder email to user
    */
-  public async remind({ params, response }: HttpContextContract) {
+  public async remind({ params, request, response }: HttpContextContract) {
     try {
       const user = await User.findOrFail(params.id)
+      const { roleId } = request.only(['roleId'])
+      Logger.info('Assign role payload', { userId: params.id, roleId })
+      const role = await Role.find(Number(roleId))
+      if (!role) {
+        console.error('Role not found for id', roleId)
+        return response.notFound({ error: { message: 'Role not found' } })
+      }
 
-      // TODO: Implement actual email sending when Mail provider is configured
-      // For now, just log the action
-      Logger.info(`Reminder triggered for user ${user.id} (${user.email})`)
+      const exists = await Database.from('user_roles')
+        .where({ user_id: user.id, role_id: role.id })
+        .first()
+      if (!exists) {
+        await Database.table('user_roles').insert({ user_id: user.id, role_id: role.id })
+      }
 
-      return response.ok({ message: 'Reminder sent successfully' })
+      return response.ok({ message: 'Role assigned' })
     } catch (error) {
-      Logger.error('Failed to send reminder: %o', error)
-      return response.badRequest({ error: { message: 'Unable to send reminder' } })
-    }
-  }
-
-  /**
-   * Bulk update user statuses
-   */
-  public async bulkUpdate({ request, response }: HttpContextContract) {
-    try {
-      const { ids, action } = request.only(['ids', 'action'])
-
-      if (!ids || !Array.isArray(ids) || ids.length === 0) {
-        return response.badRequest({ error: { message: 'User IDs are required' } })
-      }
-
-      const validActions = ['activate', 'deactivate', 'delete']
-      if (!validActions.includes(action)) {
-        return response.badRequest({ error: { message: 'Invalid action' } })
-      }
-
-      if (action === 'activate') {
-        await User.query()
-          .whereIn('id', ids)
-          .update({ email_verified_at: new Date(), is_disabled: 0 })
-      } else if (action === 'deactivate') {
-        await User.query().whereIn('id', ids).update({ email_verified_at: null, is_disabled: 1 })
-      } else if (action === 'delete') {
-        await User.query().whereIn('id', ids).delete()
-      }
-
-      return response.ok({ message: `Successfully ${action}d ${ids.length} users` })
-    } catch (error) {
-      Logger.error('Failed to bulk update users: %o', error)
-      return response.badRequest({ error: { message: 'Unable to update users' } })
+      Logger.error('Failed to add role to user: %s', error instanceof Error ? error.message : String(error))
+      Logger.debug('Full error object:', error)
+      return response.badRequest({ error: { message: 'Unable to add role' } })
     }
   }
 }

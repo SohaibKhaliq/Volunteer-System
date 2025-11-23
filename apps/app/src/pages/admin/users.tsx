@@ -88,16 +88,23 @@ export default function AdminUsers() {
   const users = usersRes?.data || [];
   // map backend fields to UI-friendly fields
   const mappedUsers: User[] = (users || []).map((u: any) => ({
-    ...u,
-    // prefer explicit email_verified_at when available
+    // normalize snake_case/camelCase differences from backend
+    id: u.id,
+    email: u.email ?? u.email_address ?? '',
+    firstName: u.firstName ?? u.first_name ?? '',
+    lastName: u.lastName ?? u.last_name ?? '',
+    volunteerStatus: u.volunteerStatus ?? u.volunteer_status ?? '',
     isActive:
       u.email_verified_at !== undefined
         ? u.email_verified_at !== null
         : u.is_disabled === undefined
           ? true
           : !u.is_disabled,
-    roles: u.roles || []
-  }));
+    roles: u.roles || [],
+    lastLoginAt: u.lastLoginAt ?? u.last_login_at ?? undefined,
+    participationCount: u.participationCount ?? u.participation_count ?? 0,
+    complianceStatus: u.complianceStatus ?? u.compliance_status ?? undefined
+  })) as User[];
   const usersMeta = usersRes?.meta || {};
 
   // Analytics Query
@@ -308,15 +315,19 @@ export default function AdminUsers() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white p-6 rounded-lg shadow-sm">
           <div className="text-sm text-muted-foreground">Total Users</div>
-          <div className="text-2xl font-bold">{analytics?.total ?? usersMeta.total}</div>
+          <div className="text-2xl font-bold">{Number(analytics?.total ?? usersMeta.total ?? mappedUsers.length)}</div>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm">
           <div className="text-sm text-muted-foreground">Active</div>
-          <div className="text-2xl font-bold text-green-600">{analytics?.active}</div>
+          <div className="text-2xl font-bold text-green-600">
+            {Number(analytics?.active ?? mappedUsers.filter((u) => u.isActive).length)}
+          </div>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm">
           <div className="text-sm text-muted-foreground">Inactive</div>
-          <div className="text-2xl font-bold text-gray-600">{analytics?.inactive}</div>
+          <div className="text-2xl font-bold text-gray-600">
+            {Number(analytics?.inactive ?? mappedUsers.filter((u) => !u.isActive).length)}
+          </div>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm">
           <div className="text-sm text-muted-foreground">Compliance Issues</div>
@@ -465,11 +476,7 @@ export default function AdminUsers() {
       />
 
       {/* Profile Modal */}
-      <UserProfileModal
-        open={!!profileModalUser}
-        onClose={closeProfileModal}
-        user={profileModalUser}
-      />
+      <UserProfileModal open={!!profileModalUser} onClose={closeProfileModal} user={profileModalUser} />
 
       {/* Edit Modal */}
       <EditUserModal

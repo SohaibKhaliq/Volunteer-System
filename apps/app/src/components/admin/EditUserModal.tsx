@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/select';
 import { toast } from '@/components/atoms/use-toast';
 import api from '@/lib/api';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { User } from '@/pages/admin/users';
 
 interface Props {
@@ -39,11 +39,23 @@ export default function EditUserModal({ open, onClose, user, onSuccess }: Props)
   const [phone, setPhone] = useState(user?.phone ?? '');
   const [volunteerStatus, setVolunteerStatus] = useState(user?.volunteerStatus ?? '');
 
-  // When the modal opens for a different user, sync the fields
-  if (user && user.id && open) {
-    // This simple sync works because the component is re‑rendered each time `open` changes.
-    // If you notice stale values, you can add a useEffect to update state on `user` change.
-  }
+  // Sync incoming `user` prop into local state when modal opens or user changes
+  useEffect(() => {
+    if (open && user) {
+      setFirstName((user as any).firstName ?? (user as any).first_name ?? '');
+      setLastName((user as any).lastName ?? (user as any).last_name ?? '');
+      setEmail((user as any).email ?? '');
+      setPhone((user as any).phone ?? (user as any).phone ?? '');
+      setVolunteerStatus((user as any).volunteerStatus ?? (user as any).volunteer_status ?? '');
+    } else if (!open) {
+      // Reset fields when modal closes
+      setFirstName('');
+      setLastName('');
+      setEmail('');
+      setPhone('');
+      setVolunteerStatus('');
+    }
+  }, [open, user]);
 
   const handleSubmit = async () => {
     if (!user) return;
@@ -53,7 +65,7 @@ export default function EditUserModal({ open, onClose, user, onSuccess }: Props)
         lastName: lastName.trim(),
         email: email.trim(),
         phone: phone.trim(),
-        volunteerStatus,
+        volunteerStatus
       };
       const updated = await api.updateUser(user.id, payload);
       toast({ title: 'User updated', variant: 'success' });
@@ -72,27 +84,10 @@ export default function EditUserModal({ open, onClose, user, onSuccess }: Props)
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          <Input
-            placeholder="First name"
-            value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
-          />
-          <Input
-            placeholder="Last name"
-            value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
-          />
-          <Input
-            placeholder="Email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <Input
-            placeholder="Phone"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-          />
+          <Input placeholder="First name" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+          <Input placeholder="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+          <Input placeholder="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <Input placeholder="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
           <Select value={volunteerStatus} onValueChange={setVolunteerStatus}>
             <SelectTrigger>
               <SelectValue placeholder="Volunteer status" />
