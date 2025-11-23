@@ -31,13 +31,10 @@ export default function AdminResources() {
                   <TableCell>{r.name}</TableCell>
                   <TableCell>{r.quantity}</TableCell>
                   <TableCell>
-                    <Badge variant={
-                      r.status === "Available"
-                        ? "default"
-                        : r.status === "Low Stock"
-                        ? "secondary"
-                        : "destructive"
-                    }>
+                    <Badge
+                      variant={r.status === 'Available' ? 'default' : r.status === 'Low Stock' ? 'secondary' : 'destructive'
+                    }
+                    >
                       {r.status}
                     </Badge>
                   </TableCell>
