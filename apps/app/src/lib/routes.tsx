@@ -1,4 +1,5 @@
 import NotFound from '@/components/molecules/404';
+import ErrorBoundary from '@/components/atoms/ErrorBoundary';
 import Layout from '@/components/templates/layout';
 import Carpooling from '@/pages/carpooling';
 import Detail from '@/pages/detail';
@@ -6,6 +7,7 @@ import Help from '@/pages/help';
 import HelpOfferForm from '@/pages/help-offer-form';
 import HelpRequestForm from '@/pages/help-request-form';
 import Home from '@/pages/home';
+import Login from '@/pages/login';
 import Map from '@/pages/map';
 import TransportOfferForm from '@/pages/transport-offer-form';
 import TransportRequestForm from '@/pages/transport-request-form';
@@ -29,6 +31,7 @@ const routes: RouteObject[] = [
   {
     path: '/admin',
     element: <AdminLayout />,
+    errorElement: <ErrorBoundary />,
     children: [
       { path: '/admin', element: <AdminUsers /> },
       { path: '/admin/users', element: <AdminUsers /> },
@@ -42,8 +45,10 @@ const routes: RouteObject[] = [
   {
     path: '/',
     element: <Layout />,
+    errorElement: <ErrorBoundary />,
     children: [
       { path: '/', element: <Home /> },
+      { path: '/login', element: <Login /> },
       { path: '/map', element: <Map /> },
       { path: '/carpooling', element: <Carpooling /> },
       { path: '/help', element: <Help /> },
@@ -56,6 +61,7 @@ const routes: RouteObject[] = [
   {
     path: '/detail',
     element: <Layout />,
+    errorElement: <ErrorBoundary />,
     children: Object.values(DetailTypes).map((type) => ({
       path: `/detail/${type}/:id`,
       element: <Detail />
@@ -64,6 +70,7 @@ const routes: RouteObject[] = [
   {
     path: '*',
     element: <Layout />,
+    errorElement: <ErrorBoundary />,
     children: [{ path: '*', element: <NotFound /> }]
   }
 ];
