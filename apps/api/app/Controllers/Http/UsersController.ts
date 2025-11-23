@@ -194,16 +194,16 @@ export default class UsersController {
       const user = await User.findOrFail(params.id)
 
       // Accept phone and profileMetadata keys
-      Logger.info('Update payload', request.all());
-      const payload = request.only([    
+      Logger.info('Update payload', request.all())
+      const payload = request.only([
         'email',
         'firstName',
         'lastName',
         'phone',
         'profileMetadata',
         'isDisabled',
-        'volunteerStatus',
-      ]);
+        'volunteerStatus'
+      ])
 
       // Don't allow password updates through this endpoint
       user.merge(payload)
@@ -212,7 +212,12 @@ export default class UsersController {
       const { password, ...safeUser } = user.toJSON() as any
       return response.ok(safeUser)
     } catch (error) {
-      Logger.error('Failed to update user: %o', error)
+      // Log the actual error message (instead of an empty object) and dump full error for debugging
+      Logger.error(
+        'Failed to update user: %s',
+        error instanceof Error ? error.message : String(error)
+      )
+      Logger.debug('Full error object:', error)
       return response.badRequest({ error: { message: 'Unable to update user' } })
     }
   }
@@ -240,7 +245,12 @@ export default class UsersController {
 
       return response.ok({ message: 'Role assigned' })
     } catch (error) {
-      Logger.error('Failed to add role to user: %o', error)
+      // Log the actual error message (instead of an empty object) and dump full error for debugging
+      Logger.error(
+        'Failed to add role to user: %s',
+        error instanceof Error ? error.message : String(error)
+      )
+      Logger.debug('Full error object:', error)
       return response.badRequest({ error: { message: 'Unable to add role' } })
     }
   }
@@ -310,11 +320,11 @@ export default class UsersController {
   public async remind({ params, response }: HttpContextContract) {
     try {
       const user = await User.findOrFail(params.id)
-      
+
       // TODO: Implement actual email sending when Mail provider is configured
       // For now, just log the action
       Logger.info(`Reminder triggered for user ${user.id} (${user.email})`)
-      
+
       return response.ok({ message: 'Reminder sent successfully' })
     } catch (error) {
       Logger.error('Failed to send reminder: %o', error)
