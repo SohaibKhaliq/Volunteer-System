@@ -4,6 +4,7 @@ import api from '@/lib/api';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -67,6 +68,9 @@ export default function AdminUsers() {
     const t = setTimeout(() => setDebouncedSearch(searchTerm), 300);
     return () => clearTimeout(t);
   }, [searchTerm]);
+
+  // reset to first page when search, filter or per-page changes
+  useEffect(() => setPage(1), [debouncedSearch, statusFilter, perPage]);
 
   const { data: usersRes, isLoading } = useQuery(['users', debouncedSearch, statusFilter, page, perPage], () =>
     api.listUsersPaged(debouncedSearch, page, perPage, statusFilter === 'all' ? undefined : statusFilter)
@@ -353,25 +357,58 @@ export default function AdminUsers() {
           Page {usersMeta.current_page || usersMeta.currentPage || page} of{' '}
           {usersMeta.last_page || usersMeta.lastPage || '-'}
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={(usersMeta.current_page || usersMeta.currentPage || page) <= 1}
-          >
-            Prev
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setPage((p) => p + 1)}
-            disabled={
-              usersMeta.last_page ? (usersMeta.current_page || usersMeta.currentPage) >= usersMeta.last_page : false
-            }
-          >
-            Next
-          </Button>
+
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={(usersMeta.current_page || usersMeta.currentPage || page) <= 1}
+            >
+              Prev
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setPage((p) => p + 1)}
+              disabled={
+                usersMeta.last_page ? (usersMeta.current_page || usersMeta.currentPage) >= usersMeta.last_page : false
+              }
+            >
+              Next
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Page</span>
+            <Input
+              type="number"
+              className="w-20"
+              value={page}
+              onChange={(e) => {
+                const v = Number(e.target.value) || 1;
+                setPage(Math.max(1, v));
+              }}
+              min={1}
+            />
+            <span className="text-sm text-muted-foreground">of {usersMeta.last_page || usersMeta.lastPage || '-'}</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Per page</span>
+            <Select value={String(perPage)} onValueChange={(v) => setPerPage(Number(v))}>
+              <SelectTrigger className="w-24">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
     </div>
