@@ -3,6 +3,7 @@ import api from '@/lib/api';
 import { useStore } from '@/lib/store';
 import { useQuery } from '@tanstack/react-query';
 import { createContext, useContext, useEffect, useState } from 'react';
+import { toast } from '@/components/atoms/use-toast';
 import { useLocation } from 'react-router-dom';
 
 type AppProviderProps = {
@@ -28,7 +29,30 @@ export default function AppProvider({ children }: AppProviderProps) {
   const { fingerprint } = useFingerprint();
   const { token, setToken } = useStore();
 
-  const { data: me } = useQuery({ queryKey: ['me'], queryFn: api.getCurrentUser, enabled: !!token });
+  const { data: me } = useQuery({
+    queryKey: ['me'],
+    queryFn: api.getCurrentUser,
+    enabled: !!token,
+    retry: false,
+    suspense: false,
+    onError: (err: any) => {
+      // If the me endpoint returns 401, clear token and redirect to login
+      const status = err?.response?.status;
+      if (status === 401) {
+        setToken('');
+        try {
+          toast({ title: 'Session expired', description: 'Please sign in again.' });
+        } catch (e) {
+          console.warn('Unable to show toast', e);
+        }
+
+        if (typeof window !== 'undefined') {
+          const returnTo = encodeURIComponent(window.location.pathname + window.location.search + window.location.hash);
+          window.location.href = `/login?returnTo=${returnTo}`;
+        }
+      }
+    }
+  });
 
   const { isLoading } = useQuery({
     queryKey: ['authenticate'],
@@ -37,7 +61,14 @@ export default function AppProvider({ children }: AppProviderProps) {
       const token = data?.token.token;
       if (token) setToken(token);
     },
-    enabled: !token
+    // Only auto-attempt authentication when we actually have a stored fingerprint
+    enabled: !token && !!fingerprint,
+    retry: false,
+    suspense: false,
+    onError: (err) => {
+      // authentication failed (e.g., fingerprint null) — don't crash the app
+      console.warn('Authentication attempt failed:', err?.message || err);
+    }
   });
 
   const value = {
@@ -50,7 +81,7 @@ export default function AppProvider({ children }: AppProviderProps) {
     setShowBackButton(location.pathname !== '/');
   }, [location]);
 
-  if (isLoading) <div>Loading...</div>;
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   return <AppProviderContext.Provider value={value}>{children}</AppProviderContext.Provider>;
 }
 
