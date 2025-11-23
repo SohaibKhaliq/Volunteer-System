@@ -19,7 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter,
+  DialogFooter
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -86,7 +86,7 @@ export default function AdminEvents() {
     onSuccess: () => {
       queryClient.invalidateQueries(['events']);
       toast({ title: 'Event updated', variant: 'success' });
-    },
+    }
   });
 
   const deleteMutation = useMutation({
@@ -94,7 +94,7 @@ export default function AdminEvents() {
     onSuccess: () => {
       queryClient.invalidateQueries(['events']);
       toast({ title: 'Event deleted', variant: 'success' });
-    },
+    }
   });
 
   const aiMatchMutation = useMutation({
@@ -102,7 +102,7 @@ export default function AdminEvents() {
     onSuccess: () => {
       queryClient.invalidateQueries(['events']);
       toast({ title: 'AI matching completed', variant: 'success' });
-    },
+    }
   });
 
   // Filter events
@@ -122,7 +122,7 @@ export default function AdminEvents() {
       published: { color: 'bg-blue-500', label: 'Published' },
       ongoing: { color: 'bg-green-500', label: 'Ongoing' },
       completed: { color: 'bg-purple-500', label: 'Completed' },
-      cancelled: { color: 'bg-red-500', label: 'Cancelled' },
+      cancelled: { color: 'bg-red-500', label: 'Cancelled' }
     };
     const variant = variants[status] || variants.draft;
     return <Badge className={variant.color}>{variant.label}</Badge>;
