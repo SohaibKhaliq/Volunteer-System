@@ -1,6 +1,6 @@
 import { BaseModel, column, hasMany, HasMany } from '@ioc:Adonis/Lucid/Orm'
 import { DateTime } from 'luxon'
-import CourseEnrollment from './CourseEnrollment'
+import CourseEnrollment from 'App/Models/CourseEnrollment'
 
 export default class Course extends BaseModel {
   @column({ isPrimary: true })
