@@ -1,7 +1,9 @@
 {
   "name": "root",
   "private": true,
-  "dependencies": {},
+  "dependencies": {
+    "mysql2": "^3.3.0"
+  },
   "devDependencies": {
     "lerna": "^7.3.0"
   }

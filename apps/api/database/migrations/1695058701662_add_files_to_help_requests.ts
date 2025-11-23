@@ -5,7 +5,8 @@ export default class extends BaseSchema {
 
   public async up() {
     this.schema.alterTable(this.tableName, (table) => {
-      table.json('files').nullable().defaultTo([])
+      // MySQL JSON default should be a valid JSON string literal
+      table.json('files').nullable().defaultTo('[]')
     })
   }
 
