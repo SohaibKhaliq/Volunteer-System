@@ -30,18 +30,18 @@ const Layout = () => {
 
   document.body.dir = i18n.dir();
 
-  if (isBrowser) {
-    return (
-      <ThemeProvider>
-        <div className="flex w-screen h-screen bg-background">
-          <div className="flex m-auto flex-col">
-            <Logo />
-            <h1 className="text-center text-primary	">Coming Soon...</h1>
-          </div>
-        </div>
-      </ThemeProvider>
-    );
-  }
+  // if (isBrowser) {
+  //   return (
+  //     <ThemeProvider>
+  //       <div className="flex w-screen h-screen bg-background">
+  //         <div className="flex m-auto flex-col">
+  //           <Logo />
+  //           <h1 className="text-center text-primary	">Coming Soon...</h1>
+  //         </div>
+  //       </div>
+  //     </ThemeProvider>
+  //   );
+  // }
 
   return (
     <Suspense fallback={<LoadingSpinner />}>
