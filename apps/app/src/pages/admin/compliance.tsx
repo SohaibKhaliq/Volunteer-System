@@ -51,7 +51,15 @@ export default function AdminCompliance() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [docTypeFilter, setDocTypeFilter] = useState<string>('all');
 
-  const { data: docs, isLoading } = useQuery<ComplianceDocument[]>(['compliance'], () => api.list('compliance'));
+  const { data: docsRaw, isLoading } = useQuery(['compliance'], () => api.listCompliance());
+  const { data: usersRaw } = useQuery(['users', 'all'], () => api.listUsers());
+  const { data: checksRaw } = useQuery(['backgroundChecks'], () => api.listBackgroundChecks());
+
+  const docs = Array.isArray(docsRaw) ? docsRaw : ((docsRaw as any)?.data ?? []);
+  const users = Array.isArray(usersRaw) ? usersRaw : ((usersRaw as any)?.data ?? []);
+  const checks = Array.isArray(checksRaw) ? checksRaw : ((checksRaw as any)?.data ?? []);
+
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 
   // Mutations
   const approveMutation = useMutation({
@@ -60,7 +68,7 @@ export default function AdminCompliance() {
     onSuccess: () => {
       queryClient.invalidateQueries(['compliance']);
       toast({ title: 'Document approved', variant: 'success' });
-    },
+    }
   });
 
   const rejectMutation = useMutation({
@@ -69,21 +77,29 @@ export default function AdminCompliance() {
     onSuccess: () => {
       queryClient.invalidateQueries(['compliance']);
       toast({ title: 'Document rejected', variant: 'success' });
-    },
+    }
   });
 
   const sendReminderMutation = useMutation({
     mutationFn: (userId: number) => api.sendComplianceReminder(userId),
     onSuccess: () => {
       toast({ title: 'Reminder sent', variant: 'success' });
-    },
+    }
+  });
+
+  const createCheck = useMutation({
+    mutationFn: (payload: any) => api.createBackgroundCheck(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['backgroundChecks']);
+      toast({ title: 'Background check requested', variant: 'success' });
+    }
   });
 
   // Filter documents
-  const filteredDocs = docs?.filter((doc) => {
+  const filteredDocs = docs?.filter((doc: any) => {
     const matchesSearch =
-      doc.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doc.userEmail.toLowerCase().includes(searchTerm.toLowerCase());
+      (doc.userName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (doc.userEmail || '').toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus = statusFilter === 'all' || doc.status === statusFilter;
     const matchesDocType = docTypeFilter === 'all' || doc.docType === docTypeFilter;
@@ -96,7 +112,7 @@ export default function AdminCompliance() {
       pending: { color: 'bg-yellow-500', label: 'Pending', icon: Clock },
       approved: { color: 'bg-green-500', label: 'Approved', icon: CheckCircle },
       rejected: { color: 'bg-red-500', label: 'Rejected', icon: XCircle },
-      expired: { color: 'bg-orange-500', label: 'Expired', icon: AlertTriangle },
+      expired: { color: 'bg-orange-500', label: 'Expired', icon: AlertTriangle }
     };
     const variant = variants[status] || variants.pending;
     const Icon = variant.icon;
@@ -110,12 +126,8 @@ export default function AdminCompliance() {
 
   const getRiskBadge = (risk?: string) => {
     if (!risk) return null;
-    const colors: Record<string, string> = {
-      low: 'bg-green-500',
-      medium: 'bg-yellow-500',
-      high: 'bg-red-500'
-    };
-    return <Badge className={colors[risk]}>{risk.toUpperCase()} RISK</Badge>;
+    const colors: Record<string, string> = { low: 'bg-green-500', medium: 'bg-yellow-500', high: 'bg-red-500' };
+    return <Badge className={colors[risk]}>{risk?.toUpperCase()} RISK</Badge>;
   };
 
   const getDocTypeLabel = (type: string) => {
@@ -148,10 +160,10 @@ export default function AdminCompliance() {
     );
   }
 
-  const pendingCount = docs?.filter((d) => d.status === 'pending').length || 0;
-  const expiredCount = docs?.filter((d) => isExpired(d.expiresAt)).length || 0;
-  const expiringSoonCount = docs?.filter((d) => isExpiringSoon(d.expiresAt)).length || 0;
-  const highRiskCount = docs?.filter((d) => d.riskLevel === 'high').length || 0;
+  const pendingCount = docs?.filter((d: any) => d.status === 'pending').length || 0;
+  const expiredCount = docs?.filter((d: any) => isExpired(d.expiresAt)).length || 0;
+  const expiringSoonCount = docs?.filter((d: any) => isExpiringSoon(d.expiresAt)).length || 0;
+  const highRiskCount = docs?.filter((d: any) => d.riskLevel === 'high').length || 0;
 
   return (
     <div className="space-y-6">
@@ -265,11 +277,11 @@ export default function AdminCompliance() {
           </TableHeader>
           <TableBody>
             {filteredDocs && filteredDocs.length > 0 ? (
-              filteredDocs.map((doc) => (
+              filteredDocs.map((doc: any) => (
                 <TableRow
                   key={doc.id}
                   className={
-                    isExpired(doc.expiresAt) ? 'bg-red-50' : isExpiringSoon(doc.expiresAt) ? 'bg-yellow-50' : '' 
+                    isExpired(doc.expiresAt) ? 'bg-red-50' : isExpiringSoon(doc.expiresAt) ? 'bg-yellow-50' : ''
                   }
                 >
                   <TableCell>
@@ -287,7 +299,7 @@ export default function AdminCompliance() {
                     {doc.expiresAt ? (
                       <div className="text-sm">
                         <div>{new Date(doc.expiresAt).toLocaleDateString()}</div>
-                        {isExpired(doc.expiresAt) && (<Badge className="bg-red-500 mt-1">Expired</Badge>)}
+                        {isExpired(doc.expiresAt) && <Badge className="bg-red-500 mt-1">Expired</Badge>}
                         {isExpiringSoon(doc.expiresAt) && !isExpired(doc.expiresAt) && (
                           <Badge className="bg-orange-500 mt-1">Expiring Soon</Badge>
                         )}
@@ -325,9 +337,7 @@ export default function AdminCompliance() {
                             <DropdownMenuItem
                               onClick={() => {
                                 const notes = prompt('Rejection reason:');
-                                if (notes) {
-                                  rejectMutation.mutate({ docId: doc.id, notes });
-                                }
+                                if (notes) rejectMutation.mutate({ docId: doc.id, notes });
                               }}
                               className="text-red-600"
                             >
