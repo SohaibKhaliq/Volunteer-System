@@ -12,6 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/atoms/popover';
 import {
   Dialog,
   DialogContent,
@@ -41,6 +42,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { toast } from '@/components/atoms/use-toast';
+import { Command, CommandGroup, CommandInput, CommandItem } from '@/components/atoms/command';
 
 interface Event {
   id: number;
