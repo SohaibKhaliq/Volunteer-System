@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
-  DropdownMenuLabel,
+  DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
 import {
   Dialog,
@@ -38,7 +38,7 @@ import {
   Edit,
   Trash2,
   Repeat,
-  Sparkles,
+  Sparkles
 } from 'lucide-react';
 import { toast } from '@/components/atoms/use-toast';
 
@@ -147,9 +147,7 @@ export default function AdminEvents() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Event & Task Management</h2>
-          <p className="text-muted-foreground">
-            Create, schedule, and manage volunteer events and tasks
-          </p>
+          <p className="text-muted-foreground">Create, schedule, and manage volunteer events and tasks</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm">
@@ -166,9 +164,7 @@ export default function AdminEvents() {
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Create New Event</DialogTitle>
-                <DialogDescription>
-                  Schedule a new volunteer event or recurring task
-                </DialogDescription>
+                <DialogDescription>Schedule a new volunteer event or recurring task</DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <Input placeholder="Event Title" />
@@ -218,16 +214,10 @@ export default function AdminEvents() {
           <DropdownMenuContent>
             <DropdownMenuItem onClick={() => setStatusFilter('all')}>All</DropdownMenuItem>
             <DropdownMenuItem onClick={() => setStatusFilter('draft')}>Draft</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setStatusFilter('published')}>
-              Published
-            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setStatusFilter('published')}>Published</DropdownMenuItem>
             <DropdownMenuItem onClick={() => setStatusFilter('ongoing')}>Ongoing</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setStatusFilter('completed')}>
-              Completed
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setStatusFilter('cancelled')}>
-              Cancelled
-            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setStatusFilter('completed')}>Completed</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setStatusFilter('cancelled')}>Cancelled</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -282,9 +272,7 @@ export default function AdminEvents() {
                     <TableCell>
                       <div>
                         <div className="font-medium">{event.title}</div>
-                        <div className="text-sm text-muted-foreground line-clamp-1">
-                          {event.description}
-                        </div>
+                        <div className="text-sm text-muted-foreground line-clamp-1">{event.description}</div> 
                       </div>
                     </TableCell>
                     <TableCell className="text-sm">{event.organizationName || 'N/A'}</TableCell>
@@ -311,13 +299,7 @@ export default function AdminEvents() {
                           {event.assignedVolunteers}/{event.requiredVolunteers}
                         </span>
                         <Badge
-                          className={
-                            fillRate >= 100
-                              ? 'bg-green-500'
-                              : fillRate >= 50
-                              ? 'bg-yellow-500'
-                              : 'bg-red-500'
-                          }
+                          className={fillRate >= 100 ? 'bg-green-500' : fillRate >= 50 ? 'bg-yellow-500' : 'bg-red-500'}
                         >
                           {fillRate}%
                         </Badge>
@@ -367,7 +349,7 @@ export default function AdminEvents() {
                               onClick={() =>
                                 updateMutation.mutate({
                                   id: event.id,
-                                  data: { status: 'published' },
+                                  data: { status: 'published' }
                                 })
                               }
                               className="text-green-600"
@@ -381,7 +363,7 @@ export default function AdminEvents() {
                               onClick={() =>
                                 updateMutation.mutate({
                                   id: event.id,
-                                  data: { status: 'cancelled' },
+                                  data: { status: 'cancelled' }
                                 })
                               }
                               className="text-orange-600"
@@ -393,9 +375,7 @@ export default function AdminEvents() {
                           <DropdownMenuItem
                             onClick={() => {
                               if (
-                                confirm(
-                                  'Are you sure you want to delete this event? This action cannot be undone.'
-                                )
+                                confirm('Are you sure you want to delete this event? This action cannot be undone.')
                               ) {
                                 deleteMutation.mutate(event.id);
                               }
