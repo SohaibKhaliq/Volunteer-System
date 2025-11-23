@@ -1,6 +1,6 @@
 import { FixType } from '@/types/utils';
 import Axios, { AxiosRequestConfig } from 'axios';
-import api from './api';
+
 import { toast } from '@/components/atoms/use-toast';
 import { API_URL } from './config';
 import storage from './storage';
@@ -35,51 +35,27 @@ axios.interceptors.response.use(
         error?.response?.status === 401 &&
         originalRequest &&
         !originalRequest._retry &&
-        !requestUrl.includes('/authenticate') &&
-        !requestUrl.includes('/login')
+        !requestUrl.includes('/login') &&
+        !requestUrl.includes('/register')
       ) {
-        console.log('Refreshing token...');
-        originalRequest._retry = true;
-        // Try to authenticate using stored fingerprint
-        const response = await api.authenticate(storage.getFingerprint());
-        const access_token = response?.token?.token;
-        if (!access_token) {
-          // Couldn't refresh: clear token and redirect to login
-          storage.setToken('');
-          // Inform the user session expired
-          try {
-            toast({ title: 'Session expired', description: 'Please sign in again.' });
-          } catch (e) {
-            // fallback: console
-            console.warn('Unable to show toast', e);
-          }
-          // Best-effort: navigate user to login so they can re-authenticate
-          if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-            const returnTo = encodeURIComponent(
-              window.location.pathname + window.location.search + window.location.hash
-            );
-            window.location.href = `/login?returnTo=${returnTo}`;
-          }
-          return Promise.reject(error);
+        // Clear token and redirect to login
+        storage.setToken('');
+        try {
+          toast({ title: 'Session expired', description: 'Please sign in again.' });
+        } catch (e) {
+          console.warn('Unable to show toast', e);
         }
-
-        // Save refreshed token and retry original request
-        storage.setToken(access_token);
-        return axios(originalRequest);
+        
+        if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+          const returnTo = encodeURIComponent(
+            window.location.pathname + window.location.search + window.location.hash
+          );
+          window.location.href = `/login?returnTo=${returnTo}`;
+        }
+        return Promise.reject(error);
       }
     } catch (refreshErr) {
-      // Refresh failed — clear token and forward to login
-      storage.setToken('');
-      try {
-        toast({ title: 'Session expired', description: 'Please sign in again.' });
-      } catch (e) {
-        console.warn('Unable to show toast', e);
-      }
-      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-        const returnTo = encodeURIComponent(window.location.pathname + window.location.search + window.location.hash);
-        window.location.href = `/login?returnTo=${returnTo}`;
-      }
-      return Promise.reject(refreshErr);
+       return Promise.reject(refreshErr);
     }
 
     const message = error?.response?.data?.message || error?.message;
