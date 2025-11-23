@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
@@ -161,6 +161,33 @@ export default function AdminEvents() {
       toast({ title: 'AI matching completed', variant: 'success' });
     }
   });
+
+  // Fetch organizations to resolve names when events only contain organizationId
+  const { data: orgs = [] } = useQuery<any[]>(['organizations'], api.listOrganizations, {
+    select: (data: any) => {
+      if (!data) return [] as any[];
+      const list: any[] = Array.isArray(data) ? data : data.data || [];
+      return list.map((o) => ({
+        id: o.id,
+        name: o.name ?? o.title ?? o.organization_name ?? ''
+      }));
+    }
+  });
+
+  const orgMap = useMemo(() => {
+    const m: Record<number, string> = {};
+    (orgs || []).forEach((o: any) => {
+      if (o && o.id) m[o.id] = o.name;
+    });
+    return m;
+  }, [orgs]);
+
+  const getOrgName = (e: any) =>
+    e?.organizationName ||
+    e?.organization?.name ||
+    orgMap[e?.organizationId || e?.organization_id] ||
+    orgMap[e?.organizationId ?? e?.organization_id] ||
+    '';
 
   // Filter events
   const filteredEvents = events?.filter((event) => {
@@ -363,9 +390,10 @@ export default function AdminEvents() {
                       <div>
                         <div className="font-medium">{event.title}</div>
                         <div className="text-sm text-muted-foreground line-clamp-1">{event.description}</div>
+                        <div className="text-sm text-muted-foreground mt-1">{getOrgName(event) || ''}</div>
                       </div>
                     </TableCell>
-                    <TableCell className="text-sm">{event.organizationName || 'N/A'}</TableCell>
+                    <TableCell className="text-sm">{getOrgName(event) || 'N/A'}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1 text-sm">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -508,7 +536,7 @@ export default function AdminEvents() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <div className="text-sm font-medium text-muted-foreground">Organization</div>
-                <div className="mt-1 text-sm">{selectedEvent?.organizationName || 'N/A'}</div>
+                <div className="mt-1 text-sm">{getOrgName(selectedEvent) || 'N/A'}</div>
               </div>
               <div>
                 <div className="text-sm font-medium text-muted-foreground">Type</div>
