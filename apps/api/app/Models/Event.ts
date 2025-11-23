@@ -22,6 +22,12 @@ export default class Event extends BaseModel {
   @column()
   public location?: string
 
+  @column({ columnName: 'recurring_rule' })
+  public recurringRule?: string
+
+  @column({ columnName: 'capacity' })
+  public capacity?: number
+
   @column.dateTime()
   public startAt: DateTime
 
