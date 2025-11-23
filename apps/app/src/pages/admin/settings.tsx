@@ -24,11 +24,15 @@ export default function AdminSettings() {
           </div>
           {/* Example input */}
           <div className="flex flex-col space-y-1">
-            <label htmlFor="site-name" className="font-medium">Site Name</label>
+            <label htmlFor="site-name" className="font-medium">
+              Site Name
+            </label>
             <Input id="site-name" defaultValue="Eghata Volunteer System" />
           </div>
           {/* Save button */}
-          <Button className="mt-2" onClick={() => alert('Settings saved (mock)')}>Save Changes</Button>
+          <Button className="mt-2" onClick={() => alert('Settings saved (mock)')}>
+            Save Changes
+          </Button>
         </CardContent>
       </Card>
     </div>
