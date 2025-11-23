@@ -80,7 +80,25 @@ export default function AdminTasks() {
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
-  const { data: tasks, isLoading } = useQuery<Task[]>(['tasks'], () => api.list('tasks'));
+  const { data: tasksRaw, isLoading } = useQuery<any>(['tasks'], () => api.list('tasks'));
+  // normalize tasks from API (handle snake_case or camelCase and paginated responses)
+  const tasks: Task[] | undefined = React.useMemo(() => {
+    const list: any[] = Array.isArray(tasksRaw) ? tasksRaw : (tasksRaw?.data ?? []);
+    return list.map((item) => ({
+      id: item.id,
+      title: item.title ?? item.name ?? 'Untitled',
+      description: item.description ?? item.body ?? '',
+      eventId: item.event_id ?? item.eventId ?? item.event?.id,
+      eventTitle: item.event_title ?? item.eventTitle ?? item.event?.title,
+      status: item.status ?? 'pending',
+      priority: item.priority ?? 'medium',
+      assignedVolunteers:
+        item.assigned_volunteers ?? item.assignedVolunteers ?? (item.assignments ? item.assignments.length : 0) ?? 0,
+      requiredVolunteers: item.required_volunteers ?? item.requiredVolunteers ?? item.slot_count ?? 0,
+      dueDate: item.start_at ?? item.due_date ?? item.dueDate ?? null,
+      createdAt: item.created_at ?? item.createdAt ?? null
+    }));
+  }, [tasksRaw]);
   const { data: events = [] } = useQuery(['events'], () => api.listEvents());
 
   // Mutations
@@ -193,6 +211,21 @@ export default function AdminTasks() {
     return new Date(dueDate) < new Date();
   };
 
+  const formatDate = (d?: string | null) => {
+    if (!d) return '—';
+    const dt = new Date(d);
+    if (!isNaN(dt.getTime())) return dt.toLocaleDateString();
+    // Try a fallback by converting space to T for MySQL DATETIME strings
+    try {
+      const alt = String(d).trim().replace(' ', 'T');
+      const dt2 = new Date(alt);
+      if (!isNaN(dt2.getTime())) return dt2.toLocaleDateString();
+    } catch (e) {
+      // ignore
+    }
+    return '—';
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -234,7 +267,9 @@ export default function AdminTasks() {
                         }}
                       />
                       <div className="text-sm">
-                        {u.firstName || u.name} {u.lastName ? u.lastName : ''} {u.email ? `(${u.email})` : ''}
+                        {(u.first_name ?? u.firstName ?? u.name) || ''}
+                        {(u.last_name ?? u.lastName) ? ` ${u.last_name ?? u.lastName}` : ''}
+                        {(u.email ?? u.email_address) ? ` (${u.email ?? u.email_address})` : ''}
                       </div>
                     </label>
                   ))}
@@ -538,7 +573,7 @@ export default function AdminTasks() {
                       <div className="text-sm">
                         <div className="flex items-center gap-1">
                           <Clock className="h-4 w-4 text-muted-foreground" />
-                          <span>{new Date(task.dueDate).toLocaleDateString()}</span>
+                          <span>{formatDate(task.dueDate)}</span>
                         </div>
                         {isOverdue(task.dueDate) && task.status !== 'completed' && (
                           <Badge className="bg-red-500 mt-1">Overdue</Badge>
@@ -548,9 +583,7 @@ export default function AdminTasks() {
                       <span className="text-sm text-muted-foreground">No deadline</span>
                     )}
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {new Date(task.createdAt).toLocaleDateString()}
-                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{formatDate(task.createdAt)}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
