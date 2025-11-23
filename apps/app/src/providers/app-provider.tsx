@@ -12,6 +12,7 @@ type AppProviderProps = {
 type AppProviderState = {
   showBackButton: boolean;
   authenticated?: boolean;
+  user?: any;
 };
 
 const initialState: AppProviderState = {
@@ -27,6 +28,8 @@ export default function AppProvider({ children }: AppProviderProps) {
   const { fingerprint } = useFingerprint();
   const { token, setToken } = useStore();
 
+  const { data: me } = useQuery({ queryKey: ['me'], queryFn: api.getCurrentUser, enabled: !!token });
+
   const { isLoading } = useQuery({
     queryKey: ['authenticate'],
     queryFn: () => api.authenticate(fingerprint),
@@ -39,7 +42,8 @@ export default function AppProvider({ children }: AppProviderProps) {
 
   const value = {
     showBackButton,
-    authenticated: !!token
+    authenticated: !!token,
+    user: me
   };
 
   useEffect(() => {
