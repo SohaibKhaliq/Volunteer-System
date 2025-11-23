@@ -40,6 +40,7 @@ import {
 } from 'lucide-react';
 
 import { toast } from '@/components/atoms/use-toast';
+import ManageRolesModal from '@/components/admin/ManageRolesModal';
 
 interface User {
   id: number;
@@ -83,20 +84,32 @@ export default function AdminUsers() {
   );
 
   const users = usersRes?.data || [];
+  // map backend fields to UI-friendly fields
+  const mappedUsers: User[] = (users || []).map((u: any) => ({
+    ...u,
+    // prefer explicit email_verified_at when available
+    isActive:
+      u.email_verified_at !== undefined
+        ? u.email_verified_at !== null
+        : u.is_disabled === undefined
+          ? true
+          : !u.is_disabled,
+    roles: u.roles || []
+  }));
   const usersMeta = usersRes?.meta || {};
 
   // Analytics Query
   const { data: analytics } = useQuery(['userAnalytics'], api.getUserAnalytics);
 
   // Mutations
-  const deactivateMutation = useMutation((userId: number) => api.updateUser(userId, { isActive: false }), {
+  const deactivateMutation = useMutation((userId: number) => api.updateUser(userId, { isDisabled: true }), {
     onSuccess: () => {
       queryClient.invalidateQueries(['users']);
       toast({ title: 'User deactivated', variant: 'success' });
     }
   });
 
-  const activateMutation = useMutation((userId: number) => api.updateUser(userId, { isActive: true }), {
+  const activateMutation = useMutation((userId: number) => api.activateUser(userId), {
     onSuccess: () => {
       queryClient.invalidateQueries(['users']);
       toast({ title: 'User activated', variant: 'success' });
@@ -115,6 +128,69 @@ export default function AdminUsers() {
       toast({ title: 'Reminder sent', variant: 'success' });
     }
   });
+
+  // New mutations for role & activation endpoints
+  const addRoleMutation = useMutation(
+    ({ userId, roleId }: { userId: number; roleId: number }) => api.addUserRole(userId, roleId),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['users']);
+        toast({ title: 'Role assigned', variant: 'success' });
+      }
+    }
+  );
+
+  const removeRoleMutation = useMutation(
+    ({ userId, roleId }: { userId: number; roleId: number }) => api.removeUserRole(userId, roleId),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['users']);
+        toast({ title: 'Role removed', variant: 'success' });
+      }
+    }
+  );
+
+  const activateUserMutation = useMutation((userId: number) => api.activateUser(userId), {
+    onSuccess: () => {
+      queryClient.invalidateQueries(['users']);
+      toast({ title: 'User activated', variant: 'success' });
+    }
+  });
+
+  // Roles modal state
+  const [rolesModalUser, setRolesModalUser] = useState<User | null>(null);
+  const [availableRoles, setAvailableRoles] = useState<any[]>([]);
+  const [userRoleIds, setUserRoleIds] = useState<Set<number>>(new Set());
+
+  const openRolesModal = async (user: User) => {
+    setRolesModalUser(user);
+    // fetch available roles
+    try {
+      const res = await api.list('roles');
+      const list = Array.isArray(res) ? res : (res as any).data || [];
+      setAvailableRoles(list as any[]);
+      const ids = new Set<number>((user.roles || []).map((r) => r.id));
+      setUserRoleIds(ids);
+    } catch (err) {
+      toast({ title: 'Failed to load roles', variant: 'destructive' });
+    }
+  };
+
+  const toggleUserRole = (roleId: number) => {
+    if (!rolesModalUser) return;
+    const userId = rolesModalUser.id;
+    if (userRoleIds.has(roleId)) {
+      removeRoleMutation.mutate({ userId, roleId });
+      const next = new Set(userRoleIds);
+      next.delete(roleId);
+      setUserRoleIds(next);
+    } else {
+      addRoleMutation.mutate({ userId, roleId });
+      const next = new Set(userRoleIds);
+      next.add(roleId);
+      setUserRoleIds(next);
+    }
+  };
 
   // UI Helpers
   const getComplianceBadge = (status?: string) => {
@@ -247,8 +323,8 @@ export default function AdminUsers() {
           </TableHeader>
 
           <TableBody>
-            {users.length > 0 ? (
-              users.map((user) => (
+            {mappedUsers.length > 0 ? (
+              mappedUsers.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">
                     {user.firstName} {user.lastName}
@@ -304,7 +380,9 @@ export default function AdminUsers() {
 
                         <DropdownMenuItem>
                           <UserCog className="h-4 w-4 mr-2" />
-                          Manage Roles
+                          <button onClick={() => openRolesModal(user)} className="w-full text-left">
+                            Manage Roles
+                          </button>
                         </DropdownMenuItem>
 
                         <DropdownMenuSeparator />
@@ -359,6 +437,14 @@ export default function AdminUsers() {
       </div>
 
       {/* Pagination */}
+      <ManageRolesModal
+        open={!!rolesModalUser}
+        onClose={() => setRolesModalUser(null)}
+        user={rolesModalUser}
+        roles={availableRoles}
+        selectedRoleIds={userRoleIds}
+        onToggleRole={toggleUserRole}
+      />
       <div className="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
         <div className="text-sm text-muted-foreground">
           Page {usersMeta.current_page || page} of {usersMeta.last_page || '-'}
