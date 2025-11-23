@@ -105,3 +105,20 @@ Route.post('/logout', 'AuthController.logout').middleware('auth:api')
 
 
 Route.get('/me', 'UsersController.me').middleware(['auth'])
+
+Route.resource('resources', 'ResourcesController').middleware({ '*': ['auth'] }).apiOnly()
+Route.resource('audit-logs', 'AuditLogsController').middleware({ '*': ['auth'] }).only(['index', 'show'])
+Route.resource('surveys', 'SurveysController').middleware({ '*': ['auth'] }).apiOnly()
+Route.resource('communications', 'CommunicationsController').middleware({ '*': ['auth'] }).apiOnly()
+
+// Custom endpoints
+Route.post('/users/:id/remind', 'UsersController.remind').middleware(['auth'])
+Route.post('/events/:id/ai-match', 'EventsController.aiMatch').middleware(['auth'])
+Route.post('/compliance/remind/:userId', 'ComplianceController.remind').middleware(['auth'])
+
+Route.get('/settings', 'SystemSettingsController.index').middleware(['auth'])
+Route.post('/settings', 'SystemSettingsController.update').middleware(['auth'])
+
+Route.get('/hours', 'VolunteerHoursController.index').middleware(['auth'])
+Route.put('/hours/:id', 'VolunteerHoursController.update').middleware(['auth'])
+Route.post('/hours/bulk', 'VolunteerHoursController.bulkUpdate').middleware(['auth'])
