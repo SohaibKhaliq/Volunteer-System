@@ -1,4 +1,3 @@
-import useFingerprint from '@/hooks/useFingerprint';
 import api from '@/lib/api';
 import { useStore } from '@/lib/store';
 import { useQuery } from '@tanstack/react-query';
@@ -26,10 +25,9 @@ const AppProviderContext = createContext<AppProviderState>(initialState);
 export default function AppProvider({ children }: AppProviderProps) {
   const location = useLocation();
   const [showBackButton, setShowBackButton] = useState(location.pathname !== '/');
-  const { fingerprint } = useFingerprint();
   const { token, setToken } = useStore();
 
-  const { data: me } = useQuery({
+  const { data: me, isLoading: isLoadingMe } = useQuery({
     queryKey: ['me'],
     queryFn: api.getCurrentUser,
     enabled: !!token,
@@ -54,23 +52,6 @@ export default function AppProvider({ children }: AppProviderProps) {
     }
   });
 
-  const { isLoading } = useQuery({
-    queryKey: ['authenticate'],
-    queryFn: () => api.authenticate(fingerprint),
-    onSuccess: (data) => {
-      const token = data?.token.token;
-      if (token) setToken(token);
-    },
-    // Only auto-attempt authentication when we actually have a stored fingerprint
-    enabled: !token && !!fingerprint,
-    retry: false,
-    suspense: false,
-    onError: (err) => {
-      // authentication failed (e.g., fingerprint null) — don't crash the app
-      console.warn('Authentication attempt failed:', err?.message || err);
-    }
-  });
-
   const value = {
     showBackButton,
     authenticated: !!token,
@@ -81,7 +62,7 @@ export default function AppProvider({ children }: AppProviderProps) {
     setShowBackButton(location.pathname !== '/');
   }, [location]);
 
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  if (isLoadingMe && !!token) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   return <AppProviderContext.Provider value={value}>{children}</AppProviderContext.Provider>;
 }
 
