@@ -34,6 +34,9 @@ export default class User extends BaseModel {
   @column()
   public phone?: string
 
+  @column()
+  public profileMetadata?: string
+
   @column.dateTime()
   public lastActiveAt?: DateTime
 
