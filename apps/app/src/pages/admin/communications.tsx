@@ -7,11 +7,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Send, CalendarClock, FileText } from 'lucide-react';
+import { MessageSquare, Send, CalendarClock, FileText, Edit, Trash2, Plus } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import SkeletonCard from '@/components/atoms/skeleton-card';
-import { commTemplates as templates, commScheduled, commHistory } from '@/lib/mock/adminMock';
+import { commTemplates as templatesMock, commScheduled, commHistory } from '@/lib/mock/adminMock';
 
 // Mock data for demonstration
 const mockRecipients = [
@@ -30,6 +30,44 @@ export default function AdminCommunications() {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewTemplate, setPreviewTemplate] = useState<any | null>(null);
   const [smsNumber, setSmsNumber] = useState('');
+
+  // Templates local state for CRUD
+  const [templates, setTemplates] = useState(() => templatesMock.slice());
+  const [templateSearch, setTemplateSearch] = useState('');
+  const [templateEditOpen, setTemplateEditOpen] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState<any | null>(null);
+  const [templateDeleteOpen, setTemplateDeleteOpen] = useState(false);
+  const [templateToDelete, setTemplateToDelete] = useState<number | null>(null);
+
+  const saveTemplate = (payload: any) => {
+    if (payload.id) {
+      const next = templates.map((t) => (t.id === payload.id ? { ...t, ...payload } : t));
+      setTemplates(next);
+      const idx = templatesMock.findIndex((m) => m.id === payload.id);
+      if (idx !== -1) Object.assign(templatesMock[idx], payload);
+    } else {
+      const id = Math.max(0, ...templates.map((t) => t.id)) + 1;
+      const nt = { ...payload, id };
+      setTemplates([nt, ...templates]);
+      templatesMock.unshift(nt);
+    }
+    setEditingTemplate(null);
+    setTemplateEditOpen(false);
+  };
+
+  const confirmDeleteTemplate = (id: number) => {
+    setTemplateToDelete(id);
+    setTemplateDeleteOpen(true);
+  };
+
+  const doDeleteTemplate = () => {
+    if (templateToDelete == null) return;
+    setTemplates((t) => t.filter((x) => x.id !== templateToDelete));
+    const idx = templatesMock.findIndex((m) => m.id === templateToDelete);
+    if (idx !== -1) templatesMock.splice(idx, 1);
+    setTemplateToDelete(null);
+    setTemplateDeleteOpen(false);
+  };
 
   const generateFromTemplate = (t: any) => {
     // Create a simple generated subject/body based on template metadata
@@ -116,6 +154,93 @@ export default function AdminCommunications() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Template Edit Dialog */}
+      <Dialog open={templateEditOpen} onOpenChange={setTemplateEditOpen}>
+        <DialogContent aria-labelledby="template-edit-title">
+          <DialogHeader>
+            <DialogTitle id="template-edit-title">{editingTemplate ? 'Edit Template' : 'New Template'}</DialogTitle>
+          </DialogHeader>
+          <div className="p-4 space-y-3">
+            <div>
+              <label className="text-sm block mb-1">Name</label>
+              <Input
+                value={editingTemplate?.name || ''}
+                onChange={(e) => setEditingTemplate((s: any) => ({ ...(s || {}), name: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className="text-sm block mb-1">Type</label>
+              <Select
+                value={editingTemplate?.type || 'Reminder'}
+                onValueChange={(v) => setEditingTemplate((s: any) => ({ ...(s || {}), type: v }))}
+              >
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Welcome">Welcome</SelectItem>
+                  <SelectItem value="Reminder">Reminder</SelectItem>
+                  <SelectItem value="Thank you">Thank you</SelectItem>
+                  <SelectItem value="Follow-up">Follow-up</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-sm block mb-1">Body</label>
+              <Textarea
+                rows={6}
+                value={editingTemplate?.body || ''}
+                onChange={(e) => setEditingTemplate((s: any) => ({ ...(s || {}), body: e.target.value }))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setTemplateEditOpen(false);
+                  setEditingTemplate(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  if (!editingTemplate?.name) {
+                    alert('Template name required');
+                    return;
+                  }
+                  saveTemplate(editingTemplate || {});
+                }}
+              >
+                {editingTemplate ? 'Save' : 'Create'}
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Template Delete Confirmation */}
+      <Dialog open={templateDeleteOpen} onOpenChange={setTemplateDeleteOpen}>
+        <DialogContent aria-labelledby="template-delete-title">
+          <DialogHeader>
+            <DialogTitle id="template-delete-title">Delete Template</DialogTitle>
+          </DialogHeader>
+          <div className="p-4">Are you sure you want to delete this template?</div>
+          <DialogFooter>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setTemplateDeleteOpen(false)}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={doDeleteTemplate}>
+                Delete
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       {/* Template preview dialog */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent aria-labelledby="template-preview-title">
@@ -207,43 +332,84 @@ export default function AdminCommunications() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 gap-2">
-                {templates.length === 0 ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 mb-2">
+                  <Input
+                    placeholder="Search templates"
+                    value={templateSearch}
+                    onChange={(e) => setTemplateSearch(e.target.value)}
+                  />
+                  <div className="ml-auto">
+                    <Button
+                      onClick={() => {
+                        setEditingTemplate(null);
+                        setTemplateEditOpen(true);
+                      }}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      New Template
+                    </Button>
+                  </div>
+                </div>
+
+                {templates.filter((t) =>
+                  templateSearch ? `${t.name} ${t.type}`.toLowerCase().includes(templateSearch.toLowerCase()) : true
+                ).length === 0 ? (
                   <SkeletonCard />
                 ) : (
-                  templates.map((t) => (
-                    <div key={t.id} className="flex items-center justify-between p-2 border rounded hover:bg-gray-50">
-                      <div className="text-sm">
-                        {t.name} — {t.type}
+                  templates
+                    .filter((t) =>
+                      templateSearch ? `${t.name} ${t.type}`.toLowerCase().includes(templateSearch.toLowerCase()) : true
+                    )
+                    .map((t) => (
+                      <div key={t.id} className="flex items-center justify-between p-2 border rounded hover:bg-gray-50">
+                        <div className="text-sm">
+                          {t.name} — {t.type}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            className="text-xs text-muted-foreground hover:underline"
+                            onClick={() => {
+                              const p = generateFromTemplate(t);
+                              setPreviewTemplate(p);
+                              setPreviewOpen(true);
+                            }}
+                            aria-label={`Preview ${t.name}`}
+                          >
+                            Preview
+                          </button>
+                          <button
+                            className="text-xs text-blue-600"
+                            onClick={() => {
+                              const p = generateFromTemplate(t);
+                              setSubject(p.subject);
+                              setBody(p.body);
+                              setRecipient('All Volunteers');
+                            }}
+                            aria-label={`Use ${t.name}`}
+                          >
+                            Use
+                          </button>
+                          <Button
+                            variant="ghost"
+                            onClick={() => {
+                              setEditingTemplate(t);
+                              setTemplateEditOpen(true);
+                            }}
+                            aria-label={`Edit template ${t.id}`}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            onClick={() => confirmDeleteTemplate(t.id)}
+                            aria-label={`Delete template ${t.id}`}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-600" />
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          className="text-xs text-muted-foreground hover:underline"
-                          onClick={() => {
-                            const p = generateFromTemplate(t);
-                            setPreviewTemplate(p);
-                            setPreviewOpen(true);
-                          }}
-                          aria-label={`Preview ${t.name}`}
-                        >
-                          Preview
-                        </button>
-                        <button
-                          className="text-xs text-blue-600"
-                          onClick={() => {
-                            const p = generateFromTemplate(t);
-                            setSubject(p.subject);
-                            setBody(p.body);
-                            // Set default recipient to All Volunteers when using a template
-                            setRecipient('All Volunteers');
-                          }}
-                          aria-label={`Use ${t.name}`}
-                        >
-                          Use
-                        </button>
-                      </div>
-                    </div>
-                  ))
+                    ))
                 )}
               </div>
             </CardContent>
