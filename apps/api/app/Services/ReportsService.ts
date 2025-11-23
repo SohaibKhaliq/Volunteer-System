@@ -1,15 +1,13 @@
-import Assignment from 'App/Models/Assignment'
 import Event from 'App/Models/Event'
 import User from 'App/Models/User'
-import Organization from 'App/Models/Organization'
 import ComplianceDocument from 'App/Models/ComplianceDocument'
 import VolunteerHour from 'App/Models/VolunteerHour'
-import { DateTime } from 'luxon'
 
 export default class ReportsService {
   public async overview(range: string) {
     // Mock implementation for now, but structure is ready for real queries
     // "range" would be used to filter createdAt dates
+    console.log(range)
 
     const totalVolunteers = await User.query().count('* as total').first()
     const totalEvents = await Event.query().count('* as total').first()
