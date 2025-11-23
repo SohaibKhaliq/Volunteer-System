@@ -4,15 +4,17 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Package, Edit, Trash2, Plus } from 'lucide-react';
-import { resources as mockResources } from '@/lib/mock/adminMock';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import SkeletonCard from '@/components/atoms/skeleton-card';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import api from '@/lib/api';
+import { toast } from 'sonner';
 
 export default function AdminResources() {
-  const [resources, setResources] = useState(() => mockResources.slice());
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<'All' | 'Available' | 'Low Stock' | 'Out of Stock'>('All');
   const [editOpen, setEditOpen] = useState(false);
@@ -20,7 +22,45 @@ export default function AdminResources() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [toDelete, setToDelete] = useState<number | null>(null);
 
-  const filtered = resources.filter((r) => {
+  const { data: resources = [], isLoading } = useQuery({
+    queryKey: ['resources'],
+    queryFn: api.listResources
+  });
+
+  const createMutation = useMutation({
+    mutationFn: api.createResource,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['resources'] });
+      toast.success('Resource created successfully');
+      setEditOpen(false);
+      setEditing(null);
+    },
+    onError: () => toast.error('Failed to create resource')
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: any }) => api.updateResource(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['resources'] });
+      toast.success('Resource updated successfully');
+      setEditOpen(false);
+      setEditing(null);
+    },
+    onError: () => toast.error('Failed to update resource')
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: api.deleteResource,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['resources'] });
+      toast.success('Resource deleted successfully');
+      setDeleteOpen(false);
+      setToDelete(null);
+    },
+    onError: () => toast.error('Failed to delete resource')
+  });
+
+  const filtered = resources.filter((r: any) => {
     if (filterStatus !== 'All' && r.status !== filterStatus) return false;
     if (search && !`${r.name}`.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
@@ -28,18 +68,10 @@ export default function AdminResources() {
 
   const saveResource = (payload: any) => {
     if (payload.id) {
-      const next = resources.map((r) => (r.id === payload.id ? { ...r, ...payload } : r));
-      setResources(next);
-      const idx = mockResources.findIndex((m) => m.id === payload.id);
-      if (idx !== -1) Object.assign(mockResources[idx], payload);
+      updateMutation.mutate({ id: payload.id, data: payload });
     } else {
-      const id = Math.max(0, ...resources.map((r) => r.id)) + 1;
-      const nr = { ...payload, id };
-      setResources([nr, ...resources]);
-      mockResources.unshift(nr);
+      createMutation.mutate(payload);
     }
-    setEditOpen(false);
-    setEditing(null);
   };
 
   const confirmDelete = (id: number) => {
@@ -49,16 +81,11 @@ export default function AdminResources() {
 
   const doDelete = () => {
     if (toDelete == null) return;
-    const next = resources.filter((r) => r.id !== toDelete);
-    setResources(next);
-    const idx = mockResources.findIndex((m) => m.id === toDelete);
-    if (idx !== -1) mockResources.splice(idx, 1);
-    setToDelete(null);
-    setDeleteOpen(false);
+    deleteMutation.mutate(toDelete);
   };
 
   return (
-    <div className="space-y-6" aria-busy={false}>
+    <div className="space-y-6" aria-busy={isLoading}>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -108,14 +135,20 @@ export default function AdminResources() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.length === 0 ? (
+              {isLoading ? (
                 <TableRow>
                   <TableCell colSpan={4}>
                     <SkeletonCard />
                   </TableCell>
                 </TableRow>
+              ) : filtered.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center text-muted-foreground">
+                    No resources found
+                  </TableCell>
+                </TableRow>
               ) : (
-                filtered.map((r) => (
+                filtered.map((r: any) => (
                   <TableRow key={r.id}>
                     <TableCell>{r.name}</TableCell>
                     <TableCell>{r.quantity}</TableCell>
@@ -157,7 +190,7 @@ export default function AdminResources() {
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent aria-labelledby="resource-edit-title">
           <DialogHeader>
-            <DialogTitle id="resource-edit-title">{editing ? 'Edit Resource' : 'New Resource'}</DialogTitle>
+            <DialogTitle id="resource-edit-title">{editing?.id ? 'Edit Resource' : 'New Resource'}</DialogTitle>
           </DialogHeader>
           <div className="p-4 space-y-3">
             <div>
@@ -206,13 +239,13 @@ export default function AdminResources() {
               <Button
                 onClick={() => {
                   if (!editing?.name) {
-                    alert('Name is required');
+                    toast.error('Name is required');
                     return;
                   }
                   saveResource(editing || {});
                 }}
               >
-                {editing ? 'Save' : 'Create'}
+                {editing?.id ? 'Save' : 'Create'}
               </Button>
             </div>
           </DialogFooter>
