@@ -1,0 +1,60 @@
+{
+  "version": "0.1.0",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "engines": {
+    "node": ">=10"
+  },
+  "scripts": {
+    "start": "tsdx watch",
+    "build": "tsdx build",
+    "test": "tsdx test",
+    "lint": "tsdx lint",
+    "prepare": "tsdx build",
+    "size": "size-limit",
+    "analyze": "size-limit --why"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "tsdx lint"
+    }
+  }, 
+  "name": "shared",
+  "author": "Anas Mazouni",
+  "module": "dist/shared.esm.js",
+  "size-limit": [
+    {
+      "path": "dist/shared.cjs.production.min.js",
+      "limit": "10 KB"
+    },
+    {
+      "path": "dist/shared.esm.js",
+      "limit": "10 KB"
+    }
+  ],
+  "dependencies": {
+    "zod": "^3.22.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.6.2",
+    "@typescript-eslint/eslint-plugin": "^6.7.0",
+    "@typescript-eslint/parser": "^6.7.0",
+    "tsc-alias": "^1.8.7",
+    "prettier": "^3.0.3",
+    "tsconfig-paths": "^4.2.0",
+    "eslint": "^8.49.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "@size-limit/preset-small-lib": "^9.0.0",
+    "husky": "^8.0.3",
+    "size-limit": "^9.0.0",
+    "tsdx": "^0.14.1",
+    "tslib": "^2.6.2",
+    "typescript": "^3.9.10"
+  }
+}
