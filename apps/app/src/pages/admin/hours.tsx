@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { CalendarClock, CheckCircle, XCircle } from 'lucide-react';
 import { hourEntries as mockHours } from '@/lib/mock/adminMock';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import SkeletonCard from '@/components/atoms/skeleton-card';
 import exportToCsv from '@/lib/exportCsv';
 import { useState } from 'react';
 
@@ -26,15 +27,23 @@ export default function AdminHours() {
   const clearSelection = () => setSelected([]);
 
   const handleApproveSelected = () => {
-    // Mock action: show a message and clear selection
+    // Update in-memory mock entries
+    mockHours.forEach((entry) => {
+      if (selected.includes(entry.id)) entry.status = 'Approved';
+    });
     alert(`Approved ${selected.length} entries. Comment: ${bulkComment}`);
     clearSelection();
+    setBulkComment('');
     setBulkOpen(false);
   };
 
   const handleRejectSelected = () => {
+    mockHours.forEach((entry) => {
+      if (selected.includes(entry.id)) entry.status = 'Rejected';
+    });
     alert(`Rejected ${selected.length} entries. Comment: ${bulkComment}`);
     clearSelection();
+    setBulkComment('');
     setBulkOpen(false);
   };
 
@@ -46,7 +55,7 @@ export default function AdminHours() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" aria-busy={false}>
       {/* Header */}
       <Card>
         <CardHeader>
@@ -77,31 +86,39 @@ export default function AdminHours() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockHours.map((h) => (
-                <TableRow key={h.id}>
-                  <TableCell>
-                    <input
-                      aria-label={`Select hours ${h.id}`}
-                      type="checkbox"
-                      checked={selected.includes(h.id)}
-                      onChange={() => toggleSelect(h.id)}
-                    />
-                  </TableCell>
-                  <TableCell>{h.volunteer}</TableCell>
-                  <TableCell>{h.event}</TableCell>
-                  <TableCell>{h.date}</TableCell>
-                  <TableCell>{h.hours}</TableCell>
-                  <TableCell>
-                    <Badge
-                      variant={
-                        h.status === 'Approved' ? 'default' : h.status === 'Pending' ? 'secondary' : 'destructive'
-                      }
-                    >
-                      {h.status}
-                    </Badge>
+              {mockHours.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6}>
+                    <SkeletonCard />
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                mockHours.map((h) => (
+                  <TableRow key={h.id}>
+                    <TableCell>
+                      <input
+                        aria-label={`Select hours ${h.id}`}
+                        type="checkbox"
+                        checked={selected.includes(h.id)}
+                        onChange={() => toggleSelect(h.id)}
+                      />
+                    </TableCell>
+                    <TableCell>{h.volunteer}</TableCell>
+                    <TableCell>{h.event}</TableCell>
+                    <TableCell>{h.date}</TableCell>
+                    <TableCell>{h.hours}</TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          h.status === 'Approved' ? 'default' : h.status === 'Pending' ? 'secondary' : 'destructive'
+                        }
+                      >
+                        {h.status}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>
@@ -140,9 +157,9 @@ export default function AdminHours() {
       </Card>
 
       <Dialog open={bulkOpen} onOpenChange={setBulkOpen}>
-        <DialogContent>
+        <DialogContent aria-labelledby="bulk-action-title">
           <DialogHeader>
-            <DialogTitle>Bulk Action</DialogTitle>
+            <DialogTitle id="bulk-action-title">Bulk Action</DialogTitle>
           </DialogHeader>
           <div className="p-4">
             <div className="text-sm mb-2">Selected entries: {selected.length}</div>
@@ -158,8 +175,10 @@ export default function AdminHours() {
               <Button variant="outline" onClick={() => setBulkOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleApproveSelected}>Approve</Button>
-              <Button variant="destructive" onClick={handleRejectSelected}>
+              <Button onClick={handleApproveSelected} aria-label="Approve selected hours">
+                Approve
+              </Button>
+              <Button variant="destructive" onClick={handleRejectSelected} aria-label="Reject selected hours">
                 Reject
               </Button>
             </div>
