@@ -59,6 +59,9 @@ export default function AdminTasks() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showAssignDialog, setShowAssignDialog] = useState(false);
+  const [assignTask, setAssignTask] = useState<Task | null>(null);
+  const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
 
   const { data: tasks, isLoading } = useQuery<Task[]>(['tasks'], () => api.list('tasks'));
 
@@ -69,7 +72,7 @@ export default function AdminTasks() {
       queryClient.invalidateQueries(['tasks']);
       toast({ title: 'Task created successfully', variant: 'success' });
       setShowCreateDialog(false);
-    },
+    }
   });
 
   const updateMutation = useMutation({
@@ -85,6 +88,29 @@ export default function AdminTasks() {
     onSuccess: () => {
       queryClient.invalidateQueries(['tasks']);
       toast({ title: 'Task deleted', variant: 'success' });
+    }
+  });
+
+  // Assignment flow: list users and assignments, create/delete assignments
+  const { data: allUsers = [] } = useQuery(['users', 'all'], () => api.listUsers(), { staleTime: 60 * 1000 });
+  const { data: allAssignments = [] } = useQuery(['assignments'], () => api.listAssignments());
+
+  const createAssignmentMutation = useMutation({
+    mutationFn: (data: any) => api.createAssignment(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['tasks']);
+      queryClient.invalidateQueries(['events']);
+      queryClient.invalidateQueries(['assignments']);
+      toast({ title: 'Assignments updated', variant: 'success' });
+    }
+  });
+
+  const deleteAssignmentMutation = useMutation({
+    mutationFn: (id: number) => api.deleteAssignment(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['tasks']);
+      queryClient.invalidateQueries(['events']);
+      queryClient.invalidateQueries(['assignments']);
     }
   });
 
@@ -146,6 +172,76 @@ export default function AdminTasks() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Task Management</h2>
+
+          {/* Assign Volunteers Dialog */}
+          <Dialog open={showAssignDialog} onOpenChange={setShowAssignDialog}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Assign Volunteers</DialogTitle>
+                <DialogDescription>Assign volunteers to task: {assignTask ? assignTask.title : ''}</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="text-sm text-muted-foreground">Select volunteers to assign</div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-64 overflow-auto">
+                  {(allUsers || []).map((u: any) => (
+                    <label key={u.id} className="flex items-center gap-2 p-2 border rounded">
+                      <input
+                        type="checkbox"
+                        checked={selectedUserIds.includes(u.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) setSelectedUserIds((s) => Array.from(new Set([...s, u.id])));
+                          else setSelectedUserIds((s) => s.filter((id) => id !== u.id));
+                        }}
+                      />
+                      <div className="text-sm">
+                        {u.firstName || u.name} {u.lastName ? u.lastName : ''} {u.email ? `(${u.email})` : ''}
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowAssignDialog(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={async () => {
+                    if (!assignTask) return;
+                    // current assignments for this task
+                    const taskAssignments = (allAssignments || []).filter(
+                      (a: any) => a.task?.id === assignTask.id || a.task_id === assignTask.id
+                    );
+                    const currentUserIds = taskAssignments.map((a: any) => a.user?.id ?? a.user_id).filter(Boolean);
+                    const assignmentsByUser: Record<number, any> = {};
+                    taskAssignments.forEach((a: any) => {
+                      const uid = a.user?.id ?? a.user_id;
+                      if (uid) assignmentsByUser[uid] = a;
+                    });
+
+                    // create for newly selected
+                    const toCreate = selectedUserIds.filter((id) => !currentUserIds.includes(id));
+                    // delete for deselected
+                    const toDelete = currentUserIds.filter((id) => !selectedUserIds.includes(id));
+
+                    try {
+                      await Promise.all([
+                        ...toCreate.map((uid) =>
+                          createAssignmentMutation.mutateAsync({ task_id: assignTask.id, user_id: uid })
+                        ),
+                        ...toDelete.map((uid) => deleteAssignmentMutation.mutateAsync(assignmentsByUser[uid].id))
+                      ]);
+                      toast({ title: 'Assignments updated', variant: 'success' });
+                    } catch (err) {
+                      toast({ title: 'Failed to update assignments', variant: 'destructive' });
+                    }
+                    setShowAssignDialog(false);
+                  }}
+                >
+                  Save
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           <p className="text-muted-foreground"> Assign and track volunteer tasks across events</p>
         </div>
         <div className="flex gap-2">
@@ -324,7 +420,18 @@ export default function AdminTasks() {
                           <Edit className="h-4 w-4 mr-2" />
                           Edit Task
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setAssignTask(task);
+                            // compute selected users from assignments
+                            const taskAssignments = (allAssignments || []).filter(
+                              (a: any) => a.task?.id === task.id || a.task_id === task.id
+                            );
+                            const ids = taskAssignments.map((a: any) => a.user?.id ?? a.user_id).filter(Boolean);
+                            setSelectedUserIds(ids);
+                            setShowAssignDialog(true);
+                          }}
+                        >
                           <Users className="h-4 w-4 mr-2" />
                           Assign Volunteers
                         </DropdownMenuItem>
