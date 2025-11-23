@@ -51,6 +51,8 @@ const api = {
   /* Compliance endpoints */
   updateComplianceDoc: async (id: number, data: any) => axios.put(`/compliance/${id}`, data),
   sendComplianceReminder: async (userId: number) => axios.post(`/compliance/remind/${userId}`),
+  createCompliance: async (data: any) => axios.post('/compliance', data),
+  deleteCompliance: async (id: number) => axios.delete(`/compliance/${id}`),
 
   // reports endpoint with optional query options
   getReports: async <T = unknown>(params?: Record<string, unknown>): Promise<T> =>
