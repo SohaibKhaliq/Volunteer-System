@@ -3,9 +3,31 @@ import Event from 'App/Models/Event'
 
 export default class EventsController {
   public async index({ response }: HttpContextContract) {
-    const events = await Event.query().preload('tasks').orderBy('start_at', 'asc')
+    // preload tasks and their assignments so we can compute volunteer counts
+    const events = await Event.query()
+      .preload('tasks', (taskQuery) => {
+        taskQuery.preload('assignments')
+      })
+      .orderBy('start_at', 'asc')
 
-    return response.ok(events)
+    // enrich events with required_volunteers and assigned_volunteers for frontend convenience
+    const payload = events.map((ev) => {
+      const evJson: any = ev.toJSON()
+      const required = (ev.tasks || []).reduce((sum, t: any) => {
+        // try both slotCount and slot_count
+        const slots = (t.slotCount ?? t.slot_count ?? 0) || 0
+        return sum + Number(slots)
+      }, 0)
+      const assigned = (ev.tasks || []).reduce((sum, t: any) => {
+        const assigns = Array.isArray(t.assignments) ? t.assignments.length : 0
+        return sum + assigns
+      }, 0)
+      evJson.required_volunteers = required
+      evJson.assigned_volunteers = assigned
+      return evJson
+    })
+
+    return response.ok(payload)
   }
 
   public async store({ request, response }: HttpContextContract) {
