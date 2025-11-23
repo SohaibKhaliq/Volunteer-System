@@ -39,6 +39,10 @@ const api = {
   aiMatch: async (task_id: number) => axios.post('/ai/match', { task_id }),
   aiForecast: async (start: string, end: string) => axios.post('/ai/forecast', { start, end }),
 
+  // reports endpoint with optional query options
+  getReports: async <T = unknown>(params?: Record<string, unknown>): Promise<T> =>
+    (await axios.get('/reports', { params })) as Promise<T>,
+
   // generic list helper for simple collections
   list: async (resource: string) => axios.get(`/${resource}`),
   // return current authenticated user's profile (roles, flags)
