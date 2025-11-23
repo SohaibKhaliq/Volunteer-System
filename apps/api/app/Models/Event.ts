@@ -40,7 +40,7 @@ export default class Event extends BaseModel {
   @hasMany(() => Task)
   public tasks: HasMany<typeof Task>
 
-  @column()
+  @column({ columnName: 'is_published' })
   public isPublished?: boolean
 
   @column.dateTime({ autoCreate: true })
