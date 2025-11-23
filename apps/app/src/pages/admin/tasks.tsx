@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -59,11 +59,29 @@ export default function AdminTasks() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editTaskItem, setEditTaskItem] = useState<Task | null>(null);
+
+  // Create form state
+  const [newTitle, setNewTitle] = useState('');
+  const [newDescription, setNewDescription] = useState('');
+  const [newRequiredVolunteers, setNewRequiredVolunteers] = useState<number | ''>('');
+  const [newDueDate, setNewDueDate] = useState<string | null>(null);
+  const [newEventId, setNewEventId] = useState<number | ''>('');
+  // Edit form state
+  const [editTitle, setEditTitle] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editRequiredVolunteers, setEditRequiredVolunteers] = useState<number | ''>('');
+  const [editDueDate, setEditDueDate] = useState<string | null>(null);
+  const [editEventId, setEditEventId] = useState<number | ''>('');
   const [showAssignDialog, setShowAssignDialog] = useState(false);
   const [assignTask, setAssignTask] = useState<Task | null>(null);
   const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
   const { data: tasks, isLoading } = useQuery<Task[]>(['tasks'], () => api.list('tasks'));
+  const { data: events = [] } = useQuery(['events'], () => api.listEvents());
 
   // Mutations
   const createMutation = useMutation({
@@ -72,6 +90,12 @@ export default function AdminTasks() {
       queryClient.invalidateQueries(['tasks']);
       toast({ title: 'Task created successfully', variant: 'success' });
       setShowCreateDialog(false);
+      // reset create form
+      setNewTitle('');
+      setNewDescription('');
+      setNewRequiredVolunteers('');
+      setNewDueDate(null);
+      setNewEventId('');
     }
   });
 
@@ -82,6 +106,16 @@ export default function AdminTasks() {
       toast({ title: 'Task updated', variant: 'success' });
     }
   });
+
+  useEffect(() => {
+    if (editTaskItem) {
+      setEditTitle(editTaskItem.title || '');
+      setEditDescription(editTaskItem.description || '');
+      setEditRequiredVolunteers(editTaskItem.requiredVolunteers || 0);
+      setEditDueDate(editTaskItem.dueDate ?? null);
+      setEditEventId(editTaskItem.eventId ?? '');
+    }
+  }, [editTaskItem]);
 
   const deleteMutation = useMutation({
     mutationFn: (taskId: number) => api.delete('tasks', taskId),
@@ -94,6 +128,12 @@ export default function AdminTasks() {
   // Assignment flow: list users and assignments, create/delete assignments
   const { data: allUsers = [] } = useQuery(['users', 'all'], () => api.listUsers(), { staleTime: 60 * 1000 });
   const { data: allAssignments = [] } = useQuery(['assignments'], () => api.listAssignments());
+
+  // Normalize API responses which may be AxiosResponse or raw arrays
+  const usersList: any[] = Array.isArray(allUsers) ? (allUsers as any) : ((allUsers as any)?.data ?? []);
+  const assignmentsList: any[] = Array.isArray(allAssignments)
+    ? (allAssignments as any)
+    : ((allAssignments as any)?.data ?? []);
 
   const createAssignmentMutation = useMutation({
     mutationFn: (data: any) => api.createAssignment(data),
@@ -183,7 +223,7 @@ export default function AdminTasks() {
               <div className="space-y-4 py-4">
                 <div className="text-sm text-muted-foreground">Select volunteers to assign</div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-64 overflow-auto">
-                  {(allUsers || []).map((u: any) => (
+                  {usersList.map((u: any) => (
                     <label key={u.id} className="flex items-center gap-2 p-2 border rounded">
                       <input
                         type="checkbox"
@@ -208,7 +248,7 @@ export default function AdminTasks() {
                   onClick={async () => {
                     if (!assignTask) return;
                     // current assignments for this task
-                    const taskAssignments = (allAssignments || []).filter(
+                    const taskAssignments = assignmentsList.filter(
                       (a: any) => a.task?.id === assignTask.id || a.task_id === assignTask.id
                     );
                     const currentUserIds = taskAssignments.map((a: any) => a.user?.id ?? a.user_id).filter(Boolean);
@@ -242,6 +282,72 @@ export default function AdminTasks() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Edit Task</DialogTitle>
+                <DialogDescription>Modify task details</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 py-4">
+                <Input placeholder="Task Title" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} />
+                <Input
+                  placeholder="Description"
+                  value={editDescription}
+                  onChange={(e) => setEditDescription(e.target.value)}
+                />
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    type="number"
+                    placeholder="Required Volunteers"
+                    value={typeof editRequiredVolunteers === 'number' ? editRequiredVolunteers : ''}
+                    onChange={(e) => setEditRequiredVolunteers(e.target.value === '' ? '' : Number(e.target.value))}
+                  />
+                  <Input
+                    type="date"
+                    placeholder="Due Date"
+                    value={editDueDate ?? ''}
+                    onChange={(e) => setEditDueDate(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm block mb-1">Event</label>
+                  <select
+                    value={editEventId}
+                    onChange={(e) => setEditEventId(e.target.value === '' ? '' : Number(e.target.value))}
+                    className="p-2 border rounded w-full"
+                  >
+                    <option value="">Select event</option>
+                    {(events || []).map((ev: any) => (
+                      <option key={ev.id} value={ev.id}>
+                        {ev.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => {
+                    if (!editTaskItem) return;
+                    const payload: any = {
+                      title: editTitle,
+                      description: editDescription,
+                      slot_count: typeof editRequiredVolunteers === 'number' ? editRequiredVolunteers : 0,
+                      start_at: editDueDate || null
+                    };
+                    if (editEventId) payload.event_id = editEventId;
+                    updateMutation.mutate({ id: editTaskItem.id, data: payload });
+                    setShowEditDialog(false);
+                  }}
+                >
+                  Save
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
           <p className="text-muted-foreground"> Assign and track volunteer tasks across events</p>
         </div>
         <div className="flex gap-2">
@@ -262,18 +368,60 @@ export default function AdminTasks() {
                 <DialogDescription>Assign a new task to volunteers</DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
-                <Input placeholder="Task Title" />
-                <Input placeholder="Description" />
+                <Input placeholder="Task Title" value={newTitle} onChange={(e) => setNewTitle(e.target.value)} />
+                <Input
+                  placeholder="Description"
+                  value={newDescription}
+                  onChange={(e) => setNewDescription(e.target.value)}
+                />
                 <div className="grid grid-cols-2 gap-4">
-                  <Input type="number" placeholder="Required Volunteers" />
-                  <Input type="date" placeholder="Due Date" />
+                  <Input
+                    type="number"
+                    placeholder="Required Volunteers"
+                    value={typeof newRequiredVolunteers === 'number' ? newRequiredVolunteers : ''}
+                    onChange={(e) => setNewRequiredVolunteers(e.target.value === '' ? '' : Number(e.target.value))}
+                  />
+                  <Input
+                    type="date"
+                    placeholder="Due Date"
+                    value={newDueDate ?? ''}
+                    onChange={(e) => setNewDueDate(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm block mb-1">Event</label>
+                  <select
+                    value={newEventId}
+                    onChange={(e) => setNewEventId(e.target.value === '' ? '' : Number(e.target.value))}
+                    className="p-2 border rounded w-full"
+                  >
+                    <option value="">Select event</option>
+                    {(events || []).map((ev: any) => (
+                      <option key={ev.id} value={ev.id}>
+                        {ev.title}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
                   Cancel
                 </Button>
-                <Button>Create Task</Button>
+                <Button
+                  onClick={() => {
+                    const payload: any = {
+                      title: newTitle,
+                      description: newDescription,
+                      slot_count: typeof newRequiredVolunteers === 'number' ? newRequiredVolunteers : 0,
+                      start_at: newDueDate || null
+                    };
+                    if (newEventId) payload.event_id = newEventId;
+                    createMutation.mutate(payload);
+                  }}
+                >
+                  Create Task
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -412,11 +560,21 @@ export default function AdminTasks() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setSelectedTask(task);
+                            setShowDetailsDialog(true);
+                          }}
+                        >
                           <Eye className="h-4 w-4 mr-2" />
                           View Details
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setEditTaskItem(task);
+                            setShowEditDialog(true);
+                          }}
+                        >
                           <Edit className="h-4 w-4 mr-2" />
                           Edit Task
                         </DropdownMenuItem>
@@ -424,7 +582,7 @@ export default function AdminTasks() {
                           onClick={() => {
                             setAssignTask(task);
                             // compute selected users from assignments
-                            const taskAssignments = (allAssignments || []).filter(
+                            const taskAssignments = assignmentsList.filter(
                               (a: any) => a.task?.id === task.id || a.task_id === task.id
                             );
                             const ids = taskAssignments.map((a: any) => a.user?.id ?? a.user_id).filter(Boolean);
@@ -490,6 +648,40 @@ export default function AdminTasks() {
           </TableBody>
         </Table>
       </div>
+
+      <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{selectedTask?.title}</DialogTitle>
+            <DialogDescription>{selectedTask?.description}</DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div>
+              <div className="text-sm font-medium text-muted-foreground">Event</div>
+              <div className="mt-1">{selectedTask?.eventTitle || 'N/A'}</div>
+            </div>
+            <div>
+              <div className="text-sm font-medium text-muted-foreground">Volunteers</div>
+              <div className="mt-1">
+                <ul className="list-disc pl-5">
+                  {assignmentsList
+                    .filter((a: any) => a.task?.id === selectedTask?.id || a.task_id === selectedTask?.id)
+                    .map((a: any) => (
+                      <li key={a.id}>
+                        {a.user?.firstName ?? a.user?.name ?? a.user_email ?? `User ${a.user_id ?? ''}`}
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDetailsDialog(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
