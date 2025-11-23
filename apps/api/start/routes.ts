@@ -92,6 +92,10 @@ Route.resource('compliance', 'ComplianceController')
   .middleware({ '*': ['auth'] })
   .apiOnly()
 
+Route.resource('background-checks', 'BackgroundChecksController')
+  .middleware({ '*': ['auth'] })
+  .apiOnly()
+
 // AI-driven helpers
 Route.post('/ai/match', 'AiController.match') // returns suggested volunteers for a task
 Route.post('/ai/forecast', 'AiController.forecast') // returns demand forecast for a date range
