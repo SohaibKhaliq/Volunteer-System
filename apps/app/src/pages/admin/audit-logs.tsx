@@ -1,15 +1,15 @@
 // src/pages/admin/audit-logs.tsx
 import React from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { ListOrdered } from "lucide-react";
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { ListOrdered } from 'lucide-react';
 
 // Mock audit log entries
 const mockLogs = [
-  { id: 1, action: "User Created", user: "admin", date: "2025-11-01 09:12" },
-  { id: 2, action: "Event Updated", user: "alice", date: "2025-11-03 14:45" },
-  { id: 3, action: "Volunteer Deleted", user: "bob", date: "2025-11-05 11:20" },
+  { id: 1, action: 'User Created', user: 'admin', date: '2025-11-01 09:12' },
+  { id: 2, action: 'Event Updated', user: 'alice', date: '2025-11-03 14:45' },
+  { id: 3, action: 'Volunteer Deleted', user: 'bob', date: '2025-11-05 11:20'}
 ];
 
 export default function AdminAuditLogs() {
