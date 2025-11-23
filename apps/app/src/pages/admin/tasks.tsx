@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
-  DropdownMenuLabel,
+  DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
 import {
   Dialog,
@@ -19,7 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter,
+  DialogFooter
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -35,7 +35,7 @@ import {
   Trash2,
   Users,
   Clock,
-  AlertCircle,
+  AlertCircle
 } from 'lucide-react';
 import { toast } from '@/components/atoms/use-toast';
 
@@ -73,12 +73,11 @@ export default function AdminTasks() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<Task> }) =>
-      api.update('tasks', id, data),
+    mutationFn: ({ id, data }: { id: number; data: Partial<Task> }) => api.update('tasks', id, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['tasks']);
       toast({ title: 'Task updated', variant: 'success' });
-    },
+    }
   });
 
   const deleteMutation = useMutation({
@@ -86,7 +85,7 @@ export default function AdminTasks() {
     onSuccess: () => {
       queryClient.invalidateQueries(['tasks']);
       toast({ title: 'Task deleted', variant: 'success' });
-    },
+    }
   });
 
   // Filter tasks
@@ -106,7 +105,7 @@ export default function AdminTasks() {
       pending: { color: 'bg-yellow-500', label: 'Pending' },
       in_progress: { color: 'bg-blue-500', label: 'In Progress' },
       completed: { color: 'bg-green-500', label: 'Completed' },
-      cancelled: { color: 'bg-red-500', label: 'Cancelled' },
+      cancelled: { color: 'bg-red-500', label: 'Cancelled' }
     };
     const variant = variants[status] || variants.pending;
     return <Badge className={variant.color}>{variant.label}</Badge>;
@@ -117,7 +116,7 @@ export default function AdminTasks() {
       low: { color: 'bg-gray-500', label: 'Low' },
       medium: { color: 'bg-blue-500', label: 'Medium' },
       high: { color: 'bg-orange-500', label: 'High' },
-      urgent: { color: 'bg-red-500', label: 'Urgent' },
+      urgent: { color: 'bg-red-500', label: 'Urgent' }
     };
     const variant = variants[priority] || variants.low;
     return <Badge className={variant.color}>{variant.label}</Badge>;
@@ -147,9 +146,7 @@ export default function AdminTasks() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Task Management</h2>
-          <p className="text-muted-foreground">
-            Assign and track volunteer tasks across events
-          </p>
+          <p className="text-muted-foreground"> Assign and track volunteer tasks across events</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm">
@@ -166,9 +163,7 @@ export default function AdminTasks() {
             <DialogContent className="max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Create New Task</DialogTitle>
-                <DialogDescription>
-                  Assign a new task to volunteers
-                </DialogDescription>
+                <DialogDescription>Assign a new task to volunteers</DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <Input placeholder="Task Title" />
@@ -210,15 +205,9 @@ export default function AdminTasks() {
           <DropdownMenuContent>
             <DropdownMenuItem onClick={() => setStatusFilter('all')}>All</DropdownMenuItem>
             <DropdownMenuItem onClick={() => setStatusFilter('pending')}>Pending</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setStatusFilter('in_progress')}>
-              In Progress
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setStatusFilter('completed')}>
-              Completed
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setStatusFilter('cancelled')}>
-              Cancelled
-            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setStatusFilter('in_progress')}>In Progress</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setStatusFilter('completed')}>Completed</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setStatusFilter('cancelled')}>Cancelled</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
         <DropdownMenu>
@@ -286,9 +275,7 @@ export default function AdminTasks() {
                   <TableCell>
                     <div>
                       <div className="font-medium">{task.title}</div>
-                      <div className="text-sm text-muted-foreground line-clamp-1">
-                        {task.description}
-                      </div>
+                      <div className="text-sm text-muted-foreground line-clamp-1">{task.description}</div>
                     </div>
                   </TableCell>
                   <TableCell className="text-sm">{task.eventTitle || 'N/A'}</TableCell>
@@ -347,7 +334,7 @@ export default function AdminTasks() {
                             onClick={() =>
                               updateMutation.mutate({
                                 id: task.id,
-                                data: { status: 'completed' },
+                                data: { status: 'completed' }
                               })
                             }
                             className="text-green-600"
@@ -361,7 +348,7 @@ export default function AdminTasks() {
                             onClick={() =>
                               updateMutation.mutate({
                                 id: task.id,
-                                data: { status: 'cancelled' },
+                                data: { status: 'cancelled' }
                               })
                             }
                             className="text-orange-600"
@@ -372,11 +359,7 @@ export default function AdminTasks() {
                         )}
                         <DropdownMenuItem
                           onClick={() => {
-                            if (
-                              confirm(
-                                'Are you sure you want to delete this task? This action cannot be undone.'
-                              )
-                            ) {
+                            if (confirm('Are you sure you want to delete this task? This action cannot be undone.')) {
                               deleteMutation.mutate(task.id);
                             }
                           }}
