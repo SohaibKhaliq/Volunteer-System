@@ -18,7 +18,8 @@ export default class TasksController {
         assigned_volunteers: assigned,
         requiredVolunteers: required,
         assignedVolunteers: assigned,
-        eventTitle: tj.event?.title ?? tj.event_title ?? undefined
+        eventTitle: tj.event?.title ?? tj.event_title ?? undefined,
+        priority: tj.priority ?? 'medium'
       }
     })
 
@@ -33,7 +34,8 @@ export default class TasksController {
       'start_at',
       'end_at',
       'slot_count',
-      'required_skills'
+      'required_skills',
+      'priority'
     ])
     const task = await Task.create(payload)
     return response.created(task)
@@ -56,7 +58,8 @@ export default class TasksController {
       'start_at',
       'end_at',
       'slot_count',
-      'status'
+      'status',
+      'priority'
     ])
     task.merge(payload)
     await task.save()
