@@ -37,6 +37,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { toast } from '@/components/atoms/use-toast';
+import OrganizationModal from '@/components/admin/OrganizationModal';
 
 interface Organization {
   id: number;
@@ -57,12 +58,32 @@ export default function AdminOrganizations() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [showOrgModal, setShowOrgModal] = useState(false);
+  const [editOrg, setEditOrg] = useState<Organization | null>(null);
 
-  const { data: orgs, isLoading } = useQuery<Organization[]>(['organizations'], api.listOrganizations);
+  const { data: orgs, isLoading } = useQuery<Organization[]>(['organizations'], api.listOrganizations, {
+    select: (data: any) => {
+      // Normalize backend snake_case to camelCase for the UI
+      if (!data) return [] as Organization[];
+      const list: any[] = Array.isArray(data) ? data : data.data || [];
+      return list.map((o) => ({
+        id: o.id,
+        name: o.name,
+        description: o.description,
+        isApproved: o.is_approved ?? o.isApproved ?? false,
+        isActive: o.is_active ?? o.isActive ?? true,
+        createdAt: o.created_at ?? o.createdAt ?? new Date().toISOString(),
+        volunteerCount: o.volunteer_count ?? o.volunteerCount ?? 0,
+        eventCount: o.event_count ?? o.eventCount ?? 0,
+        complianceScore: o.compliance_score ?? o.complianceScore ?? 100,
+        performanceScore: o.performance_score ?? o.performanceScore ?? undefined
+      })) as Organization[];
+    }
+  });
 
   // Mutations
   const approveMutation = useMutation({
-    mutationFn: (orgId: number) => api.updateOrganization(orgId, { isApproved: true }),
+    mutationFn: (orgId: number) => api.updateOrganization(orgId, { is_approved: true }),
     onSuccess: () => {
       queryClient.invalidateQueries(['organizations']);
       toast({ title: 'Organization approved', variant: 'success' });
@@ -70,7 +91,7 @@ export default function AdminOrganizations() {
   });
 
   const rejectMutation = useMutation({
-    mutationFn: (orgId: number) => api.updateOrganization(orgId, { isApproved: false }),
+    mutationFn: (orgId: number) => api.updateOrganization(orgId, { is_approved: false }),
     onSuccess: () => {
       queryClient.invalidateQueries(['organizations']);
       toast({ title: 'Organization rejected', variant: 'success' });
@@ -78,7 +99,7 @@ export default function AdminOrganizations() {
   });
 
   const deactivateMutation = useMutation({
-    mutationFn: (orgId: number) => api.updateOrganization(orgId, { isActive: false }),
+    mutationFn: (orgId: number) => api.updateOrganization(orgId, { is_active: false }),
     onSuccess: () => {
       queryClient.invalidateQueries(['organizations']);
       toast({ title: 'Organization deactivated', variant: 'success' });
@@ -137,6 +158,11 @@ export default function AdminOrganizations() {
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
+
+          <Button size="sm" onClick={() => setShowOrgModal(true)}>
+            <Edit className="h-4 w-4 mr-2" />
+            Add Organization
+          </Button>
         </div>
       </div>
 
@@ -163,7 +189,7 @@ export default function AdminOrganizations() {
             <DropdownMenuItem onClick={() => setStatusFilter('approved')}> Approved </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setStatusFilter('pending')}>Pending Approval</DropdownMenuItem>
             <DropdownMenuItem onClick={() => setStatusFilter('active')}>Active</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setStatusFilter('inactive')}>Inactive</DropdownMenuItem> 
+            <DropdownMenuItem onClick={() => setStatusFilter('inactive')}>Inactive</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -275,7 +301,12 @@ export default function AdminOrganizations() {
                           <Eye className="h-4 w-4 mr-2" />
                           View Details
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setEditOrg(org);
+                            setShowOrgModal(true);
+                          }}
+                        >
                           <Edit className="h-4 w-4 mr-2" />
                           Edit Organization
                         </DropdownMenuItem>
@@ -389,6 +420,19 @@ export default function AdminOrganizations() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <OrganizationModal
+        open={showOrgModal}
+        onClose={() => {
+          setShowOrgModal(false);
+          setEditOrg(null);
+        }}
+        organization={editOrg}
+        onSuccess={() => {
+          queryClient.invalidateQueries(['organizations']);
+          setShowOrgModal(false);
+          setEditOrg(null);
+        }}
+      />
     </div>
   );
 }
