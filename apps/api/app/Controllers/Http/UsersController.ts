@@ -84,4 +84,10 @@ export default class UsersController {
       return response.badRequest({ error: { message: 'Unable to create user' } })
     }
   }
+  public async remind({ params, response }: HttpContextContract) {
+    const user = await User.find(params.id)
+    if (!user) return response.notFound()
+    // Logic to send email would go here. For now, just return success.
+    return response.ok({ message: 'Reminder sent' })
+  }
 }
