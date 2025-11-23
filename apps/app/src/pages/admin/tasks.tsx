@@ -226,6 +226,27 @@ export default function AdminTasks() {
     return '—';
   };
 
+  // Safely resolve a display string from a value that may be a string, number, or nested object
+  const resolveDisplayString = (val: any): string | undefined => {
+    if (val === null || val === undefined) return undefined;
+    if (typeof val === 'string') return val.trim() || undefined;
+    if (typeof val === 'number') return String(val);
+    if (typeof val === 'object') {
+      // try common name keys
+      const keys = ['full_name', 'fullName', 'name', 'displayName', 'firstName', 'first_name'];
+      for (const k of keys) {
+        if (typeof val[k] === 'string' && val[k].trim()) return val[k].trim();
+      }
+      // fallback: find first string property value
+      for (const k of Object.keys(val)) {
+        const v = val[k];
+        if (typeof v === 'string' && v.trim()) return v.trim();
+      }
+      return undefined;
+    }
+    return undefined;
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -260,11 +281,9 @@ export default function AdminTasks() {
                     // support multiple shapes: object with camelCase/snake_case, primitive id or string
                     const id = u?.id ?? u?.user_id ?? (typeof u === 'number' ? u : undefined);
                     const rawName = u?.first_name ?? u?.firstName ?? u?.name ?? (typeof u === 'string' ? u : undefined);
-                    const fname = typeof rawName === 'string' && rawName.trim() ? rawName.trim() : undefined;
-                    const lnameRaw = u?.last_name ?? u?.lastName;
-                    const lname = typeof lnameRaw === 'string' && lnameRaw.trim() ? lnameRaw.trim() : undefined;
-                    const mailRaw = u?.email ?? u?.email_address ?? u?.user_email;
-                    const mail = typeof mailRaw === 'string' && mailRaw.trim() ? mailRaw.trim() : undefined;
+                    const fname = resolveDisplayString(rawName);
+                    const lname = resolveDisplayString(u?.last_name ?? u?.lastName);
+                    const mail = resolveDisplayString(u?.email ?? u?.email_address ?? u?.user_email);
                     const display = fname ?? mail ?? (id ? `User ${id}` : 'Unknown');
                     const checked = Boolean(id ? selectedUserIds.includes(id) : selectedUserIds.includes(u));
                     const uid = id ?? (typeof u === 'string' ? u : String(u?.id ?? ''));
