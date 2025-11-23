@@ -65,6 +65,12 @@ const api = {
   createCompliance: async (data: any) => axios.post('/compliance', data),
   deleteCompliance: async (id: number) => axios.delete(`/compliance/${id}`),
 
+  /* Background checks endpoints */
+  listBackgroundChecks: async () => axios.get('/background-checks'),
+  createBackgroundCheck: async (data: any) => axios.post('/background-checks', data),
+  updateBackgroundCheck: async (id: number, data: any) => axios.put(`/background-checks/${id}`, data),
+  deleteBackgroundCheck: async (id: number) => axios.delete(`/background-checks/${id}`),
+
   // reports endpoint with optional query options
   getReports: async <T = unknown>(params?: Record<string, unknown>): Promise<T> =>
     (await axios.get('/reports', { params })) as Promise<T>,
