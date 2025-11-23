@@ -55,4 +55,10 @@ export default class EventsController {
     await event.delete()
     return response.noContent()
   }
+  public async aiMatch({ params, response }: HttpContextContract) {
+    const event = await Event.find(params.id)
+    if (!event) return response.notFound()
+    // AI matching logic stub
+    return response.ok({ message: 'AI matching initiated', matches: [] })
+  }
 }
