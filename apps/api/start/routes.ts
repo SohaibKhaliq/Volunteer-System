@@ -92,8 +92,6 @@ Route.resource('compliance', 'ComplianceController')
   .middleware({ '*': ['auth'] })
   .apiOnly()
 
-Route.get('/reports', 'ReportsController.index').middleware(['auth'])
-
 // AI-driven helpers
 Route.post('/ai/match', 'AiController.match') // returns suggested volunteers for a task
 Route.post('/ai/forecast', 'AiController.forecast') // returns demand forecast for a date range
@@ -117,8 +115,20 @@ Route.put('/notifications/:id/read', 'NotificationsController.markRead').middlew
 
 // Custom endpoints
 Route.post('/users/:id/remind', 'UsersController.remind').middleware(['auth'])
+Route.post('/users/bulk', 'UsersController.bulkUpdate').middleware(['auth'])
+Route.get('/users/analytics', 'UsersController.analytics').middleware(['auth'])
+
 Route.post('/events/:id/ai-match', 'EventsController.aiMatch').middleware(['auth'])
 Route.post('/compliance/remind/:userId', 'ComplianceController.remind').middleware(['auth'])
+
+// Analytics & Reports
+Route.get('/reports', 'ReportsController.index').middleware(['auth'])
+Route.get('/reports/volunteers', 'ReportsController.volunteerStats').middleware(['auth'])
+Route.get('/reports/events', 'ReportsController.eventStats').middleware(['auth'])
+Route.get('/reports/hours', 'ReportsController.hoursStats').middleware(['auth'])
+Route.get('/reports/organizations', 'ReportsController.organizationStats').middleware(['auth'])
+Route.get('/reports/compliance', 'ReportsController.complianceStats').middleware(['auth'])
+Route.get('/reports/export', 'ReportsController.export').middleware(['auth'])
 
 Route.get('/settings', 'SystemSettingsController.index').middleware(['auth'])
 Route.post('/settings', 'SystemSettingsController.update').middleware(['auth'])
