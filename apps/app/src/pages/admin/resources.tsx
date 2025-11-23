@@ -1,16 +1,10 @@
 // src/pages/admin/resources.tsx
 import React from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Package } from "lucide-react";
-
-// Mock inventory data
-const mockResources = [
-  { id: 1, name: "First Aid Kits", quantity: 12, status: "Available" },
-  { id: 2, name: "Water Bottles", quantity: 30, status: "Low Stock" },
-  { id: 3, name: "Tents", quantity: 5, status: "Out of Stock" },
-];
+import { Badge } from '@/components/ui/badge';
+import { Package } from 'lucide-react';
+import { resources as mockResources } from '@/lib/mock/adminMock';
 
 export default function AdminResources() {
   return (
