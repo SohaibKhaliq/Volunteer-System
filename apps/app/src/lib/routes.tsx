@@ -28,7 +28,7 @@ export enum DetailTypes {
 const routes: RouteObject[] = [
   {
     path: '/admin',
-    element: <AdminLayout />, 
+    element: <AdminLayout />,
     children: [
       { path: '/admin', element: <AdminUsers /> },
       { path: '/admin/users', element: <AdminUsers /> },
@@ -36,9 +36,10 @@ const routes: RouteObject[] = [
       { path: '/admin/events', element: <AdminEvents /> },
       { path: '/admin/tasks', element: <AdminTasks /> },
       { path: '/admin/compliance', element: <AdminCompliance /> },
-      { path: '/admin/reports', element: <AdminReports /> },
+      { path: '/admin/reports', element: <AdminReports /> }
     ]
   },
+  {
     path: '/',
     element: <Layout />,
     children: [
