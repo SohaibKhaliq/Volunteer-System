@@ -33,7 +33,7 @@ export default class ComplianceController {
     await doc.delete()
     return response.noContent()
   }
-  public async remind({ params, response }: HttpContextContract) {
+  public async remind({ response }: HttpContextContract) {
     // Logic to send compliance reminder
     return response.ok({ message: 'Compliance reminder sent' })
   }
