@@ -98,7 +98,11 @@ export default function AdminEvents() {
       setEditEndAt(editEvent.endAt || null);
       setEditLocation(editEvent.location || '');
       setEditRequiredVolunteers(editEvent.requiredVolunteers || 0);
-      setEditStatus((editEvent.status === 'published' ? 'published' : 'draft') as 'draft' | 'published');
+      setEditStatus(
+        (editEvent.status === 'published' || (editEvent as any).isPublished || (editEvent as any).is_published
+          ? 'published'
+          : 'draft') as 'draft' | 'published'
+      );
       setEditIsRecurring(Boolean(editEvent.isRecurring));
       setEditOrganizationId((editEvent as any).organizationId ?? '');
     }
@@ -115,7 +119,8 @@ export default function AdminEvents() {
         startAt: e.start_at ?? e.startAt ?? null,
         endAt: e.end_at ?? e.endAt ?? null,
         location: e.location ?? null,
-        status: e.status ?? 'draft',
+        // derive status from publish flag if server doesn't provide a status string
+        status: e.status ?? ((e.is_published ?? e.isPublished) ? 'published' : 'draft'),
         isRecurring: e.is_recurring ?? e.isRecurring ?? false,
         requiredVolunteers: e.required_volunteers ?? e.requiredVolunteers ?? 0,
         assignedVolunteers: e.assigned_volunteers ?? e.assignedVolunteers ?? 0,
