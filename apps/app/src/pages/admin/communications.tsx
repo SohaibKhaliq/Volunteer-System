@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { MessageSquare, Send, CalendarClock, FileText } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import SkeletonCard from '@/components/atoms/skeleton-card';
 import { commTemplates as templates, commScheduled, commHistory } from '@/lib/mock/adminMock';
 
 // Mock data for demonstration
@@ -25,8 +26,17 @@ export default function AdminCommunications() {
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
   const [recipient, setRecipient] = useState<string>('');
+  const [channels, setChannels] = useState({ email: true, sms: false });
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewTemplate, setPreviewTemplate] = useState<any | null>(null);
+  const [smsNumber, setSmsNumber] = useState('');
+
+  const generateFromTemplate = (t: any) => {
+    // Create a simple generated subject/body based on template metadata
+    const generatedSubject = `${t.type} — ${t.name}`;
+    const generatedBody = `Hello {{first_name}},\n\nThis is a ${t.type.toLowerCase()} message: ${t.name}.\n\nThanks,\nYour Team`;
+    return { ...t, subject: generatedSubject, body: generatedBody };
+  };
 
   const handleSend = () => {
     // In a real app this would call an API – here we just log to console
@@ -38,7 +48,7 @@ export default function AdminCommunications() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" aria-busy={false}>
       {/* Composer */}
       <Card>
         <CardHeader>
@@ -61,25 +71,65 @@ export default function AdminCommunications() {
               ))}
             </SelectContent>
           </Select>
+          <div className="flex items-center gap-4">
+            <label className="inline-flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={channels.email}
+                onChange={() => setChannels((c) => ({ ...c, email: !c.email }))}
+                aria-label="Send via Email"
+              />
+              <span>Email</span>
+            </label>
+            <label className="inline-flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={channels.sms}
+                onChange={() => setChannels((c) => ({ ...c, sms: !c.sms }))}
+                aria-label="Send via SMS"
+              />
+              <span>SMS</span>
+            </label>
+            {channels.sms && (
+              <Input
+                placeholder="Test phone number (optional)"
+                value={smsNumber}
+                onChange={(e) => setSmsNumber(e.target.value)}
+                className="w-56"
+                aria-label="SMS test number"
+              />
+            )}
+          </div>
+
           <Textarea placeholder="Message body…" rows={6} value={body} onChange={(e) => setBody(e.target.value)} />
-          <div className="flex justify-end">
-            <Button onClick={handleSend} disabled={!subject || !body || !recipient}>
-              <Send className="h-4 w-4 mr-2" />
-              Send
-            </Button>
+          <div className="flex justify-between items-center">
+            <div className="text-sm text-muted-foreground">
+              Channels: {channels.email ? 'Email' : ''}
+              {channels.sms ? (channels.email ? ', SMS' : 'SMS') : ''}
+            </div>
+            <div className="flex justify-end">
+              <Button onClick={handleSend} disabled={!subject || !body || !recipient}>
+                <Send className="h-4 w-4 mr-2" />
+                Send
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
       {/* Template preview dialog */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent>
+        <DialogContent aria-labelledby="template-preview-title">
           <DialogHeader>
-            <DialogTitle>{previewTemplate?.name || 'Template Preview'}</DialogTitle>
+            <DialogTitle id="template-preview-title">
+              {previewTemplate?.subject || previewTemplate?.name || 'Template Preview'}
+            </DialogTitle>
           </DialogHeader>
           <div className="p-4">
             <div className="text-sm text-muted-foreground mb-2">Type: {previewTemplate?.type}</div>
-            <div className="bg-gray-50 p-4 rounded text-sm">
-              This is a mock preview of the template content for <strong>{previewTemplate?.name}</strong>.
+            <div className="bg-gray-50 p-4 rounded text-sm whitespace-pre-wrap">
+              {previewTemplate?.body
+                ? (previewTemplate.body as string).replace(/{{\s*first_name\s*}}/gi, 'Alex')
+                : `This is a mock preview of the template content for ${previewTemplate?.name}.`}
             </div>
           </div>
           <DialogFooter>
@@ -89,8 +139,12 @@ export default function AdminCommunications() {
               </Button>
               <Button
                 onClick={() => {
+                  if (previewTemplate) {
+                    setSubject(previewTemplate.subject || '');
+                    setBody(previewTemplate.body || '');
+                    setRecipient('All Volunteers');
+                  }
                   setPreviewOpen(false);
-                  alert('Inserted template (mock)');
                 }}
               >
                 Insert
@@ -154,25 +208,43 @@ export default function AdminCommunications() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 gap-2">
-                {templates.map((t) => (
-                  <div key={t.id} className="flex items-center justify-between p-2 border rounded hover:bg-gray-50">
-                    <div className="text-sm">
-                      {t.name} — {t.type}
+                {templates.length === 0 ? (
+                  <SkeletonCard />
+                ) : (
+                  templates.map((t) => (
+                    <div key={t.id} className="flex items-center justify-between p-2 border rounded hover:bg-gray-50">
+                      <div className="text-sm">
+                        {t.name} — {t.type}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          className="text-xs text-muted-foreground hover:underline"
+                          onClick={() => {
+                            const p = generateFromTemplate(t);
+                            setPreviewTemplate(p);
+                            setPreviewOpen(true);
+                          }}
+                          aria-label={`Preview ${t.name}`}
+                        >
+                          Preview
+                        </button>
+                        <button
+                          className="text-xs text-blue-600"
+                          onClick={() => {
+                            const p = generateFromTemplate(t);
+                            setSubject(p.subject);
+                            setBody(p.body);
+                            // Set default recipient to All Volunteers when using a template
+                            setRecipient('All Volunteers');
+                          }}
+                          aria-label={`Use ${t.name}`}
+                        >
+                          Use
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        className="text-xs text-muted-foreground hover:underline"
-                        onClick={() => {
-                          setPreviewTemplate(t);
-                          setPreviewOpen(true);
-                        }}
-                      >
-                        Preview
-                      </button>
-                      <button className="text-xs text-blue-600">Use</button>
-                    </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
