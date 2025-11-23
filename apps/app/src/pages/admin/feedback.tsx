@@ -4,14 +4,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileText } from "lucide-react";
-
-// Mock survey data
-const mockSurveys = [
-  { id: 1, title: "Volunteer Satisfaction", responses: 120, status: "Closed" },
-  { id: 2, title: "Event Feedback", responses: 45, status: "Open" },
-  { id: 3, title: "Training Needs", responses: 30, status: "Closed" },
-];
+import { FileText } from 'lucide-react';
+import { surveys as mockSurveys } from '@/lib/mock/adminMock';
 
 export default function AdminFeedback() {
   return (
