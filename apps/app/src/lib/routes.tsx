@@ -14,6 +14,7 @@ import TransportOfferForm from '@/pages/transport-offer-form';
 import TransportRequestForm from '@/pages/transport-request-form';
 import { RouteObject } from 'react-router-dom';
 import AdminLayout from '@/components/templates/AdminLayout';
+import AppProvider from '@/providers/app-provider';
 import AdminDashboard from '@/pages/admin/dashboard';
 import AdminUsers from '@/pages/admin/users';
 import AdminOrganizations from '@/pages/admin/organizations';
@@ -52,7 +53,9 @@ const routes: RouteObject[] = [
     path: 'admin',
     element: (
       <AdminScrollWrapper>
-        <AdminLayout />
+        <AppProvider>
+          <AdminLayout />
+        </AppProvider>
       </AdminScrollWrapper>
     ),
     errorElement: <ErrorBoundary />,
@@ -80,7 +83,9 @@ const routes: RouteObject[] = [
     path: '/',
     element: (
       <ScrollWrapper>
-        <Layout />
+        <AppProvider>
+          <Layout />
+        </AppProvider>
       </ScrollWrapper>
     ),
     errorElement: <ErrorBoundary />,
