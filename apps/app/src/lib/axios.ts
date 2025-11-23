@@ -2,6 +2,7 @@ import { FixType } from '@/types/utils';
 import Axios, { AxiosRequestConfig } from 'axios';
 
 import { toast } from '@/components/atoms/use-toast';
+import { showApiError } from './error-to-toast';
 import { API_URL } from './config';
 import storage from './storage';
 
@@ -45,22 +46,25 @@ axios.interceptors.response.use(
         } catch (e) {
           console.warn('Unable to show toast', e);
         }
-        
+
         if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
-          const returnTo = encodeURIComponent(
-            window.location.pathname + window.location.search + window.location.hash
-          );
+          const returnTo = encodeURIComponent(window.location.pathname + window.location.search + window.location.hash);
           window.location.href = `/login?returnTo=${returnTo}`;
         }
         return Promise.reject(error);
       }
     } catch (refreshErr) {
-       return Promise.reject(refreshErr);
+      return Promise.reject(refreshErr);
     }
 
     const message = error?.response?.data?.message || error?.message;
-    // TODO: display toast
-    console.error(message);
+    // Map API errors to toast UI as a best-effort
+    try {
+      showApiError(error, 'Request failed');
+    } catch (e) {
+      // fallback to console
+      console.error(message);
+    }
     return Promise.reject(error);
   }
 );
