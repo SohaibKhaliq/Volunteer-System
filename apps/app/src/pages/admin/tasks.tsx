@@ -116,6 +116,7 @@ export default function AdminTasks() {
       setNewRequiredVolunteers('');
       setNewDueDate(null);
       setNewEventId('');
+      setNewPriority('medium');
     }
   });
 
