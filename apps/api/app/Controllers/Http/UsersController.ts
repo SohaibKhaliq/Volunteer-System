@@ -1,6 +1,6 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Logger from '@ioc:Adonis/Core/Logger'
-import Hash from '@ioc:Adonis/Core/Hash'
+
 import Database from '@ioc:Adonis/Lucid/Database'
 import Role from 'App/Models/Role'
 import User from 'App/Models/User'
@@ -61,13 +61,12 @@ export default class UsersController {
         'firstName',
         'lastName',
         'password',
-        'fingerprint',
         'isAdmin'
       ])
       // ensure a password exists for the user (default to "password" for dev seeding)
-      payload.password = payload.password
-        ? await Hash.make(payload.password)
-        : await Hash.make('password')
+      if (!payload.password) {
+        payload.password = 'password'
+      }
 
       const user = await User.create(payload)
 
