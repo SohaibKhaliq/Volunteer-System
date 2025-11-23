@@ -129,7 +129,7 @@ export default function AdminHours() {
                   <CommandInput
                     placeholder="Search volunteers..."
                     value={volunteerQuery}
-                    onValueChange={setVolunteerQuery}
+                    onValueChange={(v) => React.startTransition(() => setVolunteerQuery(v))}
                   />
                   <CommandGroup>
                     {volunteerResults.map((u: any) => (
