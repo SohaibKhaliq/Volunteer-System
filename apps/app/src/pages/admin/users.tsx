@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
-  DropdownMenuLabel,
+  DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
 import {
   Dialog,
@@ -21,18 +21,16 @@ import {
   DialogTrigger,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Select } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { 
-  MoreVertical, 
-  UserPlus, 
-  Search, 
+import {
+  MoreVertical,
+  UserPlus,
+  Search,
   Filter,
   Download,
   Mail,
   Ban,
   CheckCircle,
-  XCircle,
   Eye,
   Edit,
   Trash2,
@@ -69,7 +67,7 @@ export default function AdminUsers() {
     onSuccess: () => {
       queryClient.invalidateQueries(['users']);
       toast({ title: 'User deactivated', variant: 'success' });
-    },
+    }
   });
 
   const activateMutation = useMutation({
@@ -77,7 +75,7 @@ export default function AdminUsers() {
     onSuccess: () => {
       queryClient.invalidateQueries(['users']);
       toast({ title: 'User activated', variant: 'success' });
-    },
+    }
   });
 
   const deleteMutation = useMutation({
@@ -85,14 +83,14 @@ export default function AdminUsers() {
     onSuccess: () => {
       queryClient.invalidateQueries(['users']);
       toast({ title: 'User deleted', variant: 'success' });
-    },
+    }
   });
 
   const sendReminderMutation = useMutation({
     mutationFn: (userId: number) => api.sendReengagementEmail(userId),
     onSuccess: () => {
       toast({ title: 'Reminder sent', variant: 'success' });
-    },
+    }
   });
 
   // Filter users
@@ -100,9 +98,9 @@ export default function AdminUsers() {
     const matchesSearch =
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     const matchesStatus = statusFilter === 'all' || user.volunteerStatus === statusFilter;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -124,7 +122,7 @@ export default function AdminUsers() {
       active: 'bg-green-500',
       inactive: 'bg-gray-500',
       pending: 'bg-yellow-500',
-      suspended: 'bg-red-500',
+      suspended: 'bg-red-500'
     };
     return <Badge className={colors[status] || 'bg-gray-500'}>{status}</Badge>;
   };
@@ -143,9 +141,7 @@ export default function AdminUsers() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">User Management</h2>
-          <p className="text-muted-foreground">
-            Manage volunteers, organizations, and their roles
-          </p>
+          <p className="text-muted-foreground">Manage volunteers, organizations, and their roles</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm">
@@ -162,9 +158,7 @@ export default function AdminUsers() {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Create New User</DialogTitle>
-                <DialogDescription>
-                  Add a new volunteer or organization to the system
-                </DialogDescription>
+                <DialogDescription>Add a new volunteer or organization to the system</DialogDescription>
               </DialogHeader>
               {/* Add user form here */}
               <div className="space-y-4 py-4">
@@ -201,18 +195,10 @@ export default function AdminUsers() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => setStatusFilter('all')}>
-              All
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setStatusFilter('active')}>
-              Active
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setStatusFilter('inactive')}>
-              Inactive
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setStatusFilter('pending')}>
-              Pending
-            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setStatusFilter('all')}>All</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setStatusFilter('active')}>Active</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setStatusFilter('inactive')}>Inactive</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setStatusFilter('pending')}>Pending</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -225,15 +211,11 @@ export default function AdminUsers() {
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm">
           <div className="text-sm font-medium text-muted-foreground">Active</div>
-          <div className="text-2xl font-bold text-green-600">
-            {users?.filter((u) => u.isActive).length || 0}
-          </div>
+          <div className="text-2xl font-bold text-green-600">{users?.filter((u) => u.isActive).length || 0}</div>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm">
           <div className="text-sm font-medium text-muted-foreground">Inactive</div>
-          <div className="text-2xl font-bold text-gray-600">
-            {users?.filter((u) => !u.isActive).length || 0}
-          </div>
+          <div className="text-2xl font-bold text-gray-600">{users?.filter((u) => !u.isActive).length || 0}</div>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm">
           <div className="text-sm font-medium text-muted-foreground">Compliance Issues</div>
@@ -291,9 +273,7 @@ export default function AdminUsers() {
                   </TableCell>
                   <TableCell>{getComplianceBadge(user.complianceStatus)}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {user.lastLoginAt
-                      ? new Date(user.lastLoginAt).toLocaleDateString()
-                      : 'Never'}
+                    {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : 'Never'}
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
@@ -317,9 +297,7 @@ export default function AdminUsers() {
                           Manage Roles
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => sendReminderMutation.mutate(user.id)}
-                        >
+                        <DropdownMenuItem onClick={() => sendReminderMutation.mutate(user.id)}>
                           <Mail className="h-4 w-4 mr-2" />
                           Send Re-engagement Email
                         </DropdownMenuItem>
@@ -333,10 +311,7 @@ export default function AdminUsers() {
                             Deactivate
                           </DropdownMenuItem>
                         ) : (
-                          <DropdownMenuItem
-                            onClick={() => activateMutation.mutate(user.id)}
-                            className="text-green-600"
-                          >
+                          <DropdownMenuItem onClick={() => activateMutation.mutate(user.id)} className="text-green-600">
                             <CheckCircle className="h-4 w-4 mr-2" />
                             Activate
                           </DropdownMenuItem>
