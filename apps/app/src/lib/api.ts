@@ -4,8 +4,15 @@ import { axios } from './axios';
 
 const api = {
   /* User endpoints */
-  authenticate: async (fingerprint: string | null): Promise<LoginDTO | null> => {
-    return axios.post('/authenticate', { fingerprint });
+  /* User endpoints */
+  login: async (credentials: any): Promise<LoginDTO | null> => {
+    return axios.post('/login', credentials);
+  },
+  register: async (data: any): Promise<LoginDTO | null> => {
+    return axios.post('/register', data);
+  },
+  logout: async () => {
+    return axios.post('/logout');
   },
 
   /* Help Request endpoints */
