@@ -1,7 +1,33 @@
 import React from 'react';
-import { Outlet, Link } from 'react-router-dom';
+import { Outlet, Link, useNavigate } from 'react-router-dom';
+import { useApp } from '@/providers/app-provider';
 
 export default function AdminLayout() {
+  const { user, authenticated } = useApp();
+  const navigate = useNavigate();
+
+  const isAdmin = !!(user?.isAdmin || (user?.roles && user.roles.some((r: any) => r.name === 'admin')));
+
+  // If user is not authed, redirect to root
+  if (!authenticated) {
+    navigate('/');
+    return null;
+  }
+
+  // If authenticated but not admin, show forbidden
+  if (authenticated && !isAdmin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="bg-white rounded shadow p-6 text-center">
+          <h2 className="text-lg font-semibold mb-2">Access denied</h2>
+          <p className="text-sm text-slate-600 mb-4">You don't have permission to view the admin panel.</p>
+          <Link to="/" className="text-sm text-primary underline">
+            Go home
+          </Link>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
       <div className="flex">
