@@ -7,18 +7,15 @@ import { Button } from '../ui/button';
 import api from '@/lib/api';
 import { useMutation } from '@tanstack/react-query';
 import { useStore } from '@/lib/store';
+import { showApiError } from '@/lib/error-to-toast';
+import { toast } from '@/components/atoms/use-toast';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { ReactComponent as CarIcon } from '@/assets/icons/car.svg';
 import { ReactComponent as HandIcon } from '@/assets/icons/hand.svg';
 import { ReactComponent as HomeIcon } from '@/assets/icons/home.svg';
 import { ReactComponent as MapIcon } from '@/assets/icons/map.svg';
 import { Plus } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "../ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { useTranslation } from 'react-i18next';
 
 const Header = () => {
@@ -32,7 +29,13 @@ const Header = () => {
   const logoutMutation = useMutation(api.logout, {
     onSuccess: () => {
       setToken('');
+      try {
+        toast({ title: 'Signed out', description: 'You have been logged out.' });
+      } catch (e) {}
       navigate('/login');
+    },
+    onError: (err: any) => {
+      showApiError(err, 'Logout failed');
     }
   });
 
@@ -40,7 +43,7 @@ const Header = () => {
     { path: '/', icon: HomeIcon, label: 'Home' },
     { path: '/carpooling', icon: CarIcon, label: 'Carpooling' },
     { path: '/help', icon: HandIcon, label: 'Help' },
-    { path: '/map', icon: MapIcon, label: 'Map' },
+    { path: '/map', icon: MapIcon, label: 'Map' }
   ];
 
   return (
@@ -50,21 +53,21 @@ const Header = () => {
           <BackButton
             className={cn({
               'opacity-0': !showBackButton,
-              'hidden': !showBackButton 
+              hidden: !showBackButton
             })}
           />
           <Link to="/" className="flex items-center gap-2">
             <img src={theme === 'dark' ? '/logo-light.svg' : '/logo.svg'} alt="logo" className="h-8 w-auto" />
           </Link>
-          
+
           <nav className="hidden md:flex items-center gap-6 ml-6">
             {navItems.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
                 className={cn(
-                  "flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary",
-                  location.pathname === item.path ? "text-primary" : "text-muted-foreground"
+                  'flex items-center gap-2 text-sm font-medium transition-colors hover:text-primary',
+                  location.pathname === item.path ? 'text-primary' : 'text-muted-foreground'
                 )}
               >
                 <item.icon className="h-4 w-4" />
@@ -83,15 +86,9 @@ const Header = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => navigate('/help-request')}>
-                {t('Request Help')}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate('/help-offer')}>
-                {t('Offer Help')}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate('/transport-offer')}>
-                {t('Offer Transport')}
-              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/help-request')}>{t('Request Help')}</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/help-offer')}>{t('Offer Help')}</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/transport-offer')}>{t('Offer Transport')}</DropdownMenuItem>
               <DropdownMenuItem onClick={() => navigate('/transport-request')}>
                 {t('Request Transport')}
               </DropdownMenuItem>
@@ -99,7 +96,7 @@ const Header = () => {
           </DropdownMenu>
 
           <Language />
-          
+
           {authenticated && (
             <Button variant="ghost" size="sm" onClick={() => logoutMutation.mutate()}>
               Logout
@@ -107,22 +104,22 @@ const Header = () => {
           )}
         </div>
       </div>
-      
+
       {/* Mobile Navigation Bar */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 border-t bg-background p-2 flex justify-around z-50">
-         {navItems.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={cn(
-                "flex flex-col items-center gap-1 p-2 rounded-md transition-colors",
-                location.pathname === item.path ? "text-primary" : "text-muted-foreground"
-              )}
-            >
-              <item.icon className="h-6 w-6" />
-              <span className="text-[10px]">{t(item.label)}</span>
-            </Link>
-          ))}
+        {navItems.map((item) => (
+          <Link
+            key={item.path}
+            to={item.path}
+            className={cn(
+              'flex flex-col items-center gap-1 p-2 rounded-md transition-colors',
+              location.pathname === item.path ? 'text-primary' : 'text-muted-foreground'
+            )}
+          >
+            <item.icon className="h-6 w-6" />
+            <span className="text-[10px]">{t(item.label)}</span>
+          </Link>
+        ))}
       </nav>
     </header>
   );
