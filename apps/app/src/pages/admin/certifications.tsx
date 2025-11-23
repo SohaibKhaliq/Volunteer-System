@@ -1,6 +1,6 @@
 // src/pages/admin/certifications.tsx
 // src/pages/admin/certifications.tsx
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -8,28 +8,59 @@ import { Award, Edit, Trash2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/atoms/popover';
+import { Command, CommandGroup, CommandInput, CommandItem } from '@/components/atoms/command';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import SkeletonCard from '@/components/atoms/skeleton-card';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 
+interface User {
+  id: number;
+  firstName?: string;
+  lastName?: string;
+  name?: string;
+  email?: string;
+}
+
+interface ComplianceDoc {
+  id: number;
+  user_id?: number;
+  user?: User | null;
+  doc_type?: string;
+  type?: string;
+  issued_at?: string;
+  expires_at?: string;
+  expires?: string;
+  status?: 'Valid' | 'Expiring' | 'Expired' | string;
+  [key: string]: unknown;
+}
+
 export default function AdminCertifications() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<'All' | 'Valid' | 'Expiring' | 'Expired'>('All');
   const [editOpen, setEditOpen] = useState(false);
-  const [editing, setEditing] = useState<any | null>(null);
+  const [editing, setEditing] = useState<Partial<ComplianceDoc> | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [toDelete, setToDelete] = useState<number | null>(null);
 
-  const { data: items = [], isLoading } = useQuery({ queryKey: ['compliance'], queryFn: api.listCompliance });
+  const { data: items = [], isLoading } = useQuery<ComplianceDoc[]>({
+    queryKey: ['compliance'],
+    queryFn: api.listCompliance
+  });
 
   // load users for user lookup in the create/edit dialog
-  const { data: users = [], isLoading: usersLoading } = useQuery({ queryKey: ['users'], queryFn: api.listUsers });
+  const { data: users = [], isLoading: usersLoading } = useQuery<User[]>({
+    queryKey: ['users'],
+    queryFn: api.listUsers
+  });
+
+  const selectedUser = useMemo(() => users.find((u) => u.id === editing?.user_id) ?? null, [users, editing?.user_id]);
 
   const createMutation = useMutation({
-    mutationFn: (data: any) => api.createCompliance(data),
+    mutationFn: (data: Partial<ComplianceDoc>) => api.createCompliance(data),
     onSuccess: () => {
       queryClient.invalidateQueries(['compliance']);
       toast.success('Certification created');
@@ -40,7 +71,7 @@ export default function AdminCertifications() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) => api.updateComplianceDoc(id, data),
+    mutationFn: ({ id, data }: { id: number; data: Partial<ComplianceDoc> }) => api.updateComplianceDoc(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['compliance']);
       toast.success('Certification updated');
@@ -61,7 +92,7 @@ export default function AdminCertifications() {
     onError: () => toast.error('Failed to delete certification')
   });
 
-  const filtered = (items as any[]).filter((r: any) => {
+  const filtered = items.filter((r: ComplianceDoc) => {
     if (filterStatus !== 'All' && r.status !== filterStatus) return false;
     if (
       search &&
@@ -71,7 +102,7 @@ export default function AdminCertifications() {
     return true;
   });
 
-  const saveCert = (payload: any) => {
+  const saveCert = (payload: Partial<ComplianceDoc>) => {
     if (payload.id) {
       updateMutation.mutate({ id: payload.id, data: payload });
     } else {
@@ -121,7 +152,10 @@ export default function AdminCertifications() {
               onChange={(e) => setSearch(e.target.value)}
               className="w-64"
             />
-            <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as any)}>
+            <Select
+              value={filterStatus}
+              onValueChange={(v) => setFilterStatus(v as 'All' | 'Valid' | 'Expiring' | 'Expired')}
+            >
               <SelectTrigger className="w-40">
                 <SelectValue />
               </SelectTrigger>
@@ -169,7 +203,7 @@ export default function AdminCertifications() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filtered.map((c: any) => (
+                filtered.map((c: ComplianceDoc) => (
                   <TableRow key={c.id}>
                     <TableCell>
                       {c.user?.firstName ? `${c.user.firstName} ${c.user.lastName || ''}` : c.user?.name || c.user_id}
@@ -222,27 +256,38 @@ export default function AdminCertifications() {
           <div className="p-4 space-y-3">
             <div>
               <label className="text-sm block mb-1">Volunteer</label>
-              <Select
-                value={(editing?.user_id || editing?.user?.id || '') + ''}
-                onValueChange={(v) => setEditing((s: any) => ({ ...(s || {}), user_id: Number(v) }))}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder={usersLoading ? 'Loading users...' : 'Select volunteer'} />
-                </SelectTrigger>
-                <SelectContent>
-                  {((users as any[]) || []).map((u: any) => (
-                    <SelectItem key={u.id} value={String(u.id)}>
-                      {u.firstName || u.name} {u.lastName || ''} {u.email ? `(${u.email})` : ''}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start">
+                    {editing?.user_id
+                      ? `${selectedUser?.firstName || selectedUser?.name || ''} ${selectedUser?.lastName || ''}`
+                      : usersLoading
+                        ? 'Loading users...'
+                        : 'Select volunteer'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[300px] p-0">
+                  <Command>
+                    <CommandInput placeholder="Search users..." />
+                    <CommandGroup>
+                      {users.map((u) => (
+                        <CommandItem
+                          key={u.id}
+                          onSelect={() => setEditing((s) => ({ ...(s || {}), user_id: u.id, user: u }))}
+                        >
+                          {u.firstName || u.name} {u.lastName || ''} {u.email ? `(${u.email})` : ''}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
             <div>
               <label className="text-sm block mb-1">Type</label>
               <Input
                 value={editing?.doc_type || editing?.type || ''}
-                onChange={(e) => setEditing((s: any) => ({ ...(s || {}), doc_type: e.target.value }))}
+                onChange={(e) => setEditing((s) => ({ ...(s || {}), doc_type: e.target.value }))}
               />
             </div>
             <div>
@@ -250,7 +295,7 @@ export default function AdminCertifications() {
               <Input
                 type="date"
                 value={editing?.issued_at ? editing.issued_at.split('T')[0] : ''}
-                onChange={(e) => setEditing((s: any) => ({ ...(s || {}), issued_at: e.target.value }))}
+                onChange={(e) => setEditing((s) => ({ ...(s || {}), issued_at: e.target.value }))}
               />
             </div>
             <div>
@@ -258,14 +303,14 @@ export default function AdminCertifications() {
               <Input
                 type="date"
                 value={editing?.expires_at ? editing.expires_at.split('T')[0] : editing?.expires || ''}
-                onChange={(e) => setEditing((s: any) => ({ ...(s || {}), expires_at: e.target.value }))}
+                onChange={(e) => setEditing((s) => ({ ...(s || {}), expires_at: e.target.value }))}
               />
             </div>
             <div>
               <label className="text-sm block mb-1">Status</label>
               <Select
                 value={editing?.status || 'Valid'}
-                onValueChange={(v) => setEditing((s: any) => ({ ...(s || {}), status: v }))}
+                onValueChange={(v) => setEditing((s) => ({ ...(s || {}), status: v }))}
               >
                 <SelectTrigger className="w-40">
                   <SelectValue />
