@@ -78,8 +78,17 @@ export default function AdminEvents() {
   const [editEndAt, setEditEndAt] = useState<string | null>(null);
   const [editLocation, setEditLocation] = useState('');
   const [editRequiredVolunteers, setEditRequiredVolunteers] = useState<number | ''>('');
-  const [editStatus, setEditStatus] = useState<Event['status']>('draft');
+  const [editStatus, setEditStatus] = useState<'draft' | 'published'>('draft');
   const [editIsRecurring, setEditIsRecurring] = useState<boolean>(false);
+  const [editOrganizationId, setEditOrganizationId] = useState<number | ''>('');
+  // Create form state
+  const [createTitle, setCreateTitle] = useState('');
+  const [createDescription, setCreateDescription] = useState('');
+  const [createStartAt, setCreateStartAt] = useState<string | null>(null);
+  const [createEndAt, setCreateEndAt] = useState<string | null>(null);
+  const [createLocation, setCreateLocation] = useState('');
+  const [createCapacity, setCreateCapacity] = useState<number | ''>('');
+  const [createOrganizationId, setCreateOrganizationId] = useState<number | ''>('');
 
   useEffect(() => {
     if (editEvent) {
@@ -89,8 +98,9 @@ export default function AdminEvents() {
       setEditEndAt(editEvent.endAt || null);
       setEditLocation(editEvent.location || '');
       setEditRequiredVolunteers(editEvent.requiredVolunteers || 0);
-      setEditStatus(editEvent.status || 'draft');
+      setEditStatus((editEvent.status === 'published' ? 'published' : 'draft') as 'draft' | 'published');
       setEditIsRecurring(Boolean(editEvent.isRecurring));
+      setEditOrganizationId((editEvent as any).organizationId ?? '');
     }
   }, [editEvent]);
 
@@ -123,6 +133,14 @@ export default function AdminEvents() {
       queryClient.invalidateQueries(['events']);
       toast({ title: 'Event created successfully', variant: 'success' });
       setShowCreateDialog(false);
+      // reset create form
+      setCreateTitle('');
+      setCreateDescription('');
+      setCreateStartAt(null);
+      setCreateEndAt(null);
+      setCreateLocation('');
+      setCreateCapacity('');
+      setCreateOrganizationId('');
     }
   });
 
@@ -220,6 +238,16 @@ export default function AdminEvents() {
   const formatDate = (iso?: string | null) => (iso ? new Date(iso).toLocaleDateString() : 'TBD');
   const formatTime = (iso?: string | null) => (iso ? new Date(iso).toLocaleTimeString() : 'TBD');
 
+  const toSQLDatetime = (input?: string | null) => {
+    if (!input) return null;
+    const d = new Date(input);
+    if (Number.isNaN(d.getTime())) return null;
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(
+      d.getHours()
+    )}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -254,17 +282,54 @@ export default function AdminEvents() {
                 <DialogDescription>Schedule a new volunteer event or recurring task</DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
-                <Input placeholder="Event Title" />
-                <Input placeholder="Description" />
+                <Input value={createTitle} onChange={(e) => setCreateTitle(e.target.value)} placeholder="Event Title" />
+                <Input
+                  value={createDescription}
+                  onChange={(e) => setCreateDescription(e.target.value)}
+                  placeholder="Description"
+                />
                 <div className="grid grid-cols-2 gap-4">
-                  <Input type="datetime-local" placeholder="Start Date & Time" />
-                  <Input type="datetime-local" placeholder="End Date & Time" />
+                  <Input
+                    type="datetime-local"
+                    value={createStartAt ?? ''}
+                    onChange={(e) => setCreateStartAt(e.target.value)}
+                    placeholder="Start Date & Time"
+                  />
+                  <Input
+                    type="datetime-local"
+                    value={createEndAt ?? ''}
+                    onChange={(e) => setCreateEndAt(e.target.value)}
+                    placeholder="End Date & Time"
+                  />
                 </div>
-                <Input placeholder="Location" />
-                <Input type="number" placeholder="Required Volunteers" />
+                <Input
+                  value={createLocation}
+                  onChange={(e) => setCreateLocation(e.target.value)}
+                  placeholder="Location"
+                />
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    type="number"
+                    value={typeof createCapacity === 'number' ? createCapacity : ''}
+                    onChange={(e) => setCreateCapacity(e.target.value === '' ? '' : Number(e.target.value))}
+                    placeholder="Capacity"
+                  />
+                  <select
+                    value={createOrganizationId}
+                    onChange={(e) => setCreateOrganizationId(e.target.value === '' ? '' : Number(e.target.value))}
+                    className="p-2 border rounded"
+                  >
+                    <option value="">No organization</option>
+                    {(orgs || []).map((o: any) => (
+                      <option key={o.id} value={o.id}>
+                        {o.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <div className="flex items-center gap-2">
-                  <input type="checkbox" id="recurring" />
-                  <label htmlFor="recurring" className="text-sm">
+                  <input id="create-recurring" type="checkbox" checked={false} onChange={() => {}} />
+                  <label htmlFor="create-recurring" className="text-sm">
                     Recurring Event
                   </label>
                 </div>
@@ -273,7 +338,22 @@ export default function AdminEvents() {
                 <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
                   Cancel
                 </Button>
-                <Button>Create Event</Button>
+                <Button
+                  onClick={() => {
+                    const payload: any = {
+                      title: createTitle,
+                      description: createDescription,
+                      start_at: toSQLDatetime(createStartAt),
+                      end_at: toSQLDatetime(createEndAt),
+                      location: createLocation,
+                      capacity: createCapacity || 0
+                    };
+                    if (createOrganizationId) payload.organization_id = createOrganizationId;
+                    createMutation.mutate(payload);
+                  }}
+                >
+                  Create Event
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -333,9 +413,6 @@ export default function AdminEvents() {
             <DropdownMenuItem onClick={() => setStatusFilter('all')}>All</DropdownMenuItem>
             <DropdownMenuItem onClick={() => setStatusFilter('draft')}>Draft</DropdownMenuItem>
             <DropdownMenuItem onClick={() => setStatusFilter('published')}>Published</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setStatusFilter('ongoing')}>Ongoing</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setStatusFilter('completed')}>Completed</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setStatusFilter('cancelled')}>Cancelled</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -481,24 +558,14 @@ export default function AdminEvents() {
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuLabel>Change Status</DropdownMenuLabel>
-                          {['draft', 'published', 'ongoing', 'completed', 'cancelled'].map((s) => (
+                          {['draft', 'published'].map((s) => (
                             <DropdownMenuItem
                               key={s}
                               onClick={() => {
-                                // Backend supports is_published boolean; map published/draft accordingly.
                                 if (s === 'published') {
                                   updateMutation.mutate({ id: event.id, data: { is_published: true } as any });
-                                } else if (s === 'draft') {
-                                  updateMutation.mutate({ id: event.id, data: { is_published: false } as any });
                                 } else {
-                                  // Other statuses are not directly supported by the backend Event model.
-                                  // Send the 'status' key anyway (backend may ignore it) and show a toast.
-                                  updateMutation.mutate({ id: event.id, data: { status: s } as any });
-                                  toast({
-                                    title: `Requested status: ${s}`,
-                                    description: 'Backend may not persist this value',
-                                    variant: 'warning'
-                                  });
+                                  updateMutation.mutate({ id: event.id, data: { is_published: false } as any });
                                 }
                               }}
                             >
@@ -629,6 +696,21 @@ export default function AdminEvents() {
               onChange={(e) => setEditRequiredVolunteers(e.target.value === '' ? '' : Number(e.target.value))}
               placeholder="Required Volunteers"
             />
+            <div className="grid grid-cols-2 gap-4">
+              <select
+                value={editOrganizationId}
+                onChange={(e) => setEditOrganizationId(e.target.value === '' ? '' : Number(e.target.value))}
+                className="p-2 border rounded"
+              >
+                <option value="">No organization</option>
+                {(orgs || []).map((o: any) => (
+                  <option key={o.id} value={o.id}>
+                    {o.name}
+                  </option>
+                ))}
+              </select>
+              <div />
+            </div>
             <div className="flex items-center gap-2">
               <input
                 id="edit-recurring"
@@ -644,14 +726,11 @@ export default function AdminEvents() {
               <label className="text-sm block mb-1">Status</label>
               <select
                 value={editStatus}
-                onChange={(e) => setEditStatus(e.target.value as Event['status'])}
+                onChange={(e) => setEditStatus(e.target.value as 'draft' | 'published')}
                 className="w-full p-2 border rounded"
               >
                 <option value="draft">Draft</option>
                 <option value="published">Published</option>
-                <option value="ongoing">Ongoing</option>
-                <option value="completed">Completed</option>
-                <option value="cancelled">Cancelled</option>
               </select>
             </div>
           </div>
@@ -665,13 +744,15 @@ export default function AdminEvents() {
                 const payload: any = {
                   title: editTitle,
                   description: editDescription,
-                  start_at: editStartAt,
-                  end_at: editEndAt,
+                  start_at: toSQLDatetime(editStartAt),
+                  end_at: toSQLDatetime(editEndAt),
                   location: editLocation,
-                  required_volunteers: editRequiredVolunteers || 0,
-                  status: editStatus,
-                  is_recurring: editIsRecurring
+                  capacity: typeof editRequiredVolunteers === 'number' ? editRequiredVolunteers : 0,
+                  is_published: editStatus === 'published'
                 };
+                // include organization_id if selected
+                if (editOrganizationId) payload.organization_id = editOrganizationId;
+                else if ((editEvent as any).organizationId) payload.organization_id = (editEvent as any).organizationId;
                 updateMutation.mutate({ id: editEvent.id, data: payload });
                 setShowEditDialog(false);
               }}
