@@ -16,6 +16,7 @@ export default class EventsController {
       'start_at',
       'end_at',
       'recurring_rule',
+      'is_recurring',
       'capacity',
       'organization_id'
     ])
@@ -40,6 +41,7 @@ export default class EventsController {
         'start_at',
         'end_at',
         'recurring_rule',
+        'is_recurring',
         'capacity',
         'is_published'
       ])
