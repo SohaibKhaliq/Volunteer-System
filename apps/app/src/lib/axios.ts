@@ -1,6 +1,7 @@
 import { FixType } from '@/types/utils';
 import Axios, { AxiosRequestConfig } from 'axios';
 import api from './api';
+import { toast } from '@/components/atoms/use-toast';
 import { API_URL } from './config';
 import storage from './storage';
 
@@ -8,7 +9,8 @@ const authRequestInterceptor = (config: AxiosRequestConfig) => {
   const token = storage.getToken();
   console.log('AuthRequestInterceptor: token', token);
   if (config.headers) {
-    if (token) config.headers.authentication = `Bearer ${token}`;
+    // use standard Authorization header so backend auth middleware recognizes it
+    if (token) config.headers.Authorization = `Bearer ${token}`;
     config.headers.Accept = 'application/json';
   }
   return config;
@@ -24,18 +26,63 @@ axios.interceptors.response.use(
     return response.data;
   },
   async (error) => {
-    const originalRequest = error.config;
-    if (error.response.status === 401 && !originalRequest._retry) {
-      console.log('Refreshing token...');
-      originalRequest._retry = true;
-      const response = await api.authenticate(storage.getFingerprint());
-      const access_token = response?.token?.token;
-      if (!access_token) return Promise.reject(error);
-      storage.setToken(access_token);
-      return axios(originalRequest);
+    const originalRequest = error?.config;
+    // If unauthorized and we haven't retried yet, attempt a lightweight authenticate
+    try {
+      // never try to refresh if the failing request was already the authenticate endpoint
+      const requestUrl = originalRequest?.url || '';
+      if (
+        error?.response?.status === 401 &&
+        originalRequest &&
+        !originalRequest._retry &&
+        !requestUrl.includes('/authenticate') &&
+        !requestUrl.includes('/login')
+      ) {
+        console.log('Refreshing token...');
+        originalRequest._retry = true;
+        // Try to authenticate using stored fingerprint
+        const response = await api.authenticate(storage.getFingerprint());
+        const access_token = response?.token?.token;
+        if (!access_token) {
+          // Couldn't refresh: clear token and redirect to login
+          storage.setToken('');
+          // Inform the user session expired
+          try {
+            toast({ title: 'Session expired', description: 'Please sign in again.' });
+          } catch (e) {
+            // fallback: console
+            console.warn('Unable to show toast', e);
+          }
+          // Best-effort: navigate user to login so they can re-authenticate
+          if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+            const returnTo = encodeURIComponent(
+              window.location.pathname + window.location.search + window.location.hash
+            );
+            window.location.href = `/login?returnTo=${returnTo}`;
+          }
+          return Promise.reject(error);
+        }
+
+        // Save refreshed token and retry original request
+        storage.setToken(access_token);
+        return axios(originalRequest);
+      }
+    } catch (refreshErr) {
+      // Refresh failed — clear token and forward to login
+      storage.setToken('');
+      try {
+        toast({ title: 'Session expired', description: 'Please sign in again.' });
+      } catch (e) {
+        console.warn('Unable to show toast', e);
+      }
+      if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+        const returnTo = encodeURIComponent(window.location.pathname + window.location.search + window.location.hash);
+        window.location.href = `/login?returnTo=${returnTo}`;
+      }
+      return Promise.reject(refreshErr);
     }
 
-    const message = error.response?.data?.message || error.message;
+    const message = error?.response?.data?.message || error?.message;
     // TODO: display toast
     console.error(message);
     return Promise.reject(error);
