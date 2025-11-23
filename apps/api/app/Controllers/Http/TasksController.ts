@@ -3,8 +3,26 @@ import Task from 'App/Models/Task'
 
 export default class TasksController {
   public async index({ response }: HttpContextContract) {
-    const tasks = await Task.query().orderBy('start_at', 'asc')
-    return response.ok(tasks)
+    const tasks = await Task.query()
+      .preload('assignments')
+      .preload('event')
+      .orderBy('start_at', 'asc')
+
+    const payload = tasks.map((t) => {
+      const tj: any = t.toJSON()
+      const required = Number(tj.slot_count ?? tj.slotCount ?? 0) || 0
+      const assigned = Array.isArray(tj.assignments) ? tj.assignments.length : 0
+      return {
+        ...tj,
+        required_volunteers: required,
+        assigned_volunteers: assigned,
+        requiredVolunteers: required,
+        assignedVolunteers: assigned,
+        eventTitle: tj.event?.title ?? tj.event_title ?? undefined
+      }
+    })
+
+    return response.ok(payload)
   }
 
   public async store({ request, response }: HttpContextContract) {
