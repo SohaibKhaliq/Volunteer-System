@@ -1,5 +1,4 @@
 // src/pages/admin/audit-logs.tsx
-import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { ListOrdered } from 'lucide-react';
