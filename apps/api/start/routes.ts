@@ -111,6 +111,10 @@ Route.resource('audit-logs', 'AuditLogsController').middleware({ '*': ['auth'] }
 Route.resource('surveys', 'SurveysController').middleware({ '*': ['auth'] }).apiOnly()
 Route.resource('communications', 'CommunicationsController').middleware({ '*': ['auth'] }).apiOnly()
 
+// Notifications (admin) - expose recent notifications for UI
+Route.get('/notifications', 'NotificationsController.index').middleware(['auth'])
+Route.put('/notifications/:id/read', 'NotificationsController.markRead').middleware(['auth'])
+
 // Custom endpoints
 Route.post('/users/:id/remind', 'UsersController.remind').middleware(['auth'])
 Route.post('/events/:id/ai-match', 'EventsController.aiMatch').middleware(['auth'])
