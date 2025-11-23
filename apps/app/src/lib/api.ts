@@ -45,6 +45,9 @@ const api = {
   updateUser: async (id: number, data: any) => axios.put(`/users/${id}`, data),
   deleteUser: async (id: number) => axios.delete(`/users/${id}`),
   sendReengagementEmail: async (id: number) => axios.post(`/users/${id}/remind`),
+  addUserRole: async (userId: number, roleId: number) => axios.post(`/users/${userId}/roles`, { roleId }),
+  removeUserRole: async (userId: number, roleId: number) => axios.delete(`/users/${userId}/roles/${roleId}`),
+  activateUser: async (id: number) => axios.post(`/users/${id}/activate`),
 
   listEvents: async () => axios.get('/events'),
   createEvent: async (data: any) => axios.post('/events', data),
