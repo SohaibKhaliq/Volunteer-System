@@ -1,5 +1,5 @@
 // src/pages/admin/resources.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +7,8 @@ import { Package, Edit, Trash2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/atoms/popover';
+import { Command, CommandGroup, CommandInput, CommandItem } from '@/components/atoms/command';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import SkeletonCard from '@/components/atoms/skeleton-card';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -21,6 +23,17 @@ export default function AdminResources() {
   const [editing, setEditing] = useState<any | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [toDelete, setToDelete] = useState<number | null>(null);
+  const [userQuery, setUserQuery] = useState('');
+  const [debouncedUserQuery, setDebouncedUserQuery] = useState('');
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedUserQuery(userQuery), 300);
+    return () => clearTimeout(t);
+  }, [userQuery]);
+
+  const { data: possibleOwners = [] } = useQuery(['users', debouncedUserQuery], () =>
+    api.listUsers(debouncedUserQuery)
+  );
 
   const { data: resources = [], isLoading } = useQuery({
     queryKey: ['resources'],
@@ -199,6 +212,33 @@ export default function AdminResources() {
                 value={editing?.name || ''}
                 onChange={(e) => setEditing((s: any) => ({ ...(s || {}), name: e.target.value }))}
               />
+            </div>
+            <div>
+              <label className="text-sm block mb-1">Owner (optional)</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start">
+                    {editing?.owner
+                      ? `${editing.owner.firstName || editing.owner.name} ${editing.owner.lastName || ''}`
+                      : 'Select owner'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[300px] p-0">
+                  <Command>
+                    <CommandInput placeholder="Search users..." value={userQuery} onValueChange={setUserQuery} />
+                    <CommandGroup>
+                      {possibleOwners.map((u: any) => (
+                        <CommandItem
+                          key={u.id}
+                          onSelect={() => setEditing((s: any) => ({ ...(s || {}), owner_id: u.id, owner: u }))}
+                        >
+                          {u.firstName || u.name} {u.lastName || ''} {u.email ? `(${u.email})` : ''}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
             <div>
               <label className="text-sm block mb-1">Quantity</label>
