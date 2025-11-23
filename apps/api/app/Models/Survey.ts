@@ -1,6 +1,6 @@
 import { BaseModel, column, hasMany, HasMany } from '@ioc:Adonis/Lucid/Orm'
 import { DateTime } from 'luxon'
-import SurveyResponse from './SurveyResponse'
+import SurveyResponse from 'App/Models/SurveyResponse'
 
 export default class Survey extends BaseModel {
   @column({ isPrimary: true })
