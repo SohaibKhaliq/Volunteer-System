@@ -23,6 +23,7 @@ import {
   DialogFooter
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+
 import {
   MoreVertical,
   UserPlus,
@@ -37,6 +38,7 @@ import {
   Trash2,
   UserCog
 } from 'lucide-react';
+
 import { toast } from '@/components/atoms/use-toast';
 
 interface User {
@@ -54,68 +56,67 @@ interface User {
 
 export default function AdminUsers() {
   const queryClient = useQueryClient();
+
+  // State
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [page, setPage] = useState<number>(1);
   const [perPage, setPerPage] = useState<number>(20);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [showEditDialog, setShowEditDialog] = useState(false);
-  const [showRoleDialog, setShowRoleDialog] = useState(false);
 
-  // debounce search input
+  // Debounce search input
   useEffect(() => {
     const t = setTimeout(() => setDebouncedSearch(searchTerm), 300);
     return () => clearTimeout(t);
   }, [searchTerm]);
 
-  // reset to first page when search, filter or per-page changes
-  useEffect(() => setPage(1), [debouncedSearch, statusFilter, perPage]);
+  // Reset pagination when search/filter changes
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, statusFilter, perPage]);
 
-  const { data: usersRes, isLoading } = useQuery(['users', debouncedSearch, statusFilter, page, perPage], () =>
-    api.listUsersPaged(debouncedSearch, page, perPage, statusFilter === 'all' ? undefined : statusFilter)
+  // Users Query (React Query v4 Syntax)
+  const { data: usersRes, isLoading } = useQuery(
+    ['users', debouncedSearch, statusFilter, page, perPage],
+    () => api.listUsersPaged(debouncedSearch, page, perPage, statusFilter === 'all' ? undefined : statusFilter),
+    { keepPreviousData: true }
   );
 
-  const users = (usersRes as any)?.data || [];
-  const usersMeta = (usersRes as any)?.meta || {};
+  const users = usersRes?.data || [];
+  const usersMeta = usersRes?.meta || {};
 
+  // Analytics Query
   const { data: analytics } = useQuery(['userAnalytics'], api.getUserAnalytics);
 
   // Mutations
-  const deactivateMutation = useMutation({
-    mutationFn: (userId: number) => api.updateUser(userId, { isActive: false }),
+  const deactivateMutation = useMutation((userId: number) => api.updateUser(userId, { isActive: false }), {
     onSuccess: () => {
       queryClient.invalidateQueries(['users']);
       toast({ title: 'User deactivated', variant: 'success' });
     }
   });
 
-  const activateMutation = useMutation({
-    mutationFn: (userId: number) => api.updateUser(userId, { isActive: true }),
+  const activateMutation = useMutation((userId: number) => api.updateUser(userId, { isActive: true }), {
     onSuccess: () => {
       queryClient.invalidateQueries(['users']);
       toast({ title: 'User activated', variant: 'success' });
     }
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: (userId: number) => api.deleteUser(userId),
+  const deleteMutation = useMutation((userId: number) => api.deleteUser(userId), {
     onSuccess: () => {
       queryClient.invalidateQueries(['users']);
       toast({ title: 'User deleted', variant: 'success' });
     }
   });
 
-  const sendReminderMutation = useMutation({
-    mutationFn: (userId: number) => api.sendReengagementEmail(userId),
+  const sendReminderMutation = useMutation((userId: number) => api.sendReengagementEmail(userId), {
     onSuccess: () => {
       toast({ title: 'Reminder sent', variant: 'success' });
     }
   });
 
-  // Server provides filtered/paginated list; use as-is
-  const filteredUsers = users || [];
-
+  // UI Helpers
   const getComplianceBadge = (status?: string) => {
     switch (status) {
       case 'compliant':
@@ -129,19 +130,9 @@ export default function AdminUsers() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const colors: Record<string, string> = {
-      active: 'bg-green-500',
-      inactive: 'bg-gray-500',
-      pending: 'bg-yellow-500',
-      suspended: 'bg-red-500'
-    };
-    return <Badge className={colors[status] || 'bg-gray-500'}>{status}</Badge>;
-  };
-
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
+      <div className="flex justify-center items-center h-64">
         <div className="text-lg">Loading users...</div>
       </div>
     );
@@ -152,14 +143,16 @@ export default function AdminUsers() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">User Management</h2>
+          <h2 className="text-3xl font-bold">User Management</h2>
           <p className="text-muted-foreground">Manage volunteers, organizations, and their roles</p>
         </div>
+
         <div className="flex gap-2">
           <Button variant="outline" size="sm">
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
+
           <Dialog>
             <DialogTrigger asChild>
               <Button size="sm">
@@ -170,15 +163,16 @@ export default function AdminUsers() {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Create New User</DialogTitle>
-                <DialogDescription>Add a new volunteer or organization to the system</DialogDescription>
+                <DialogDescription>Add a new volunteer or organization</DialogDescription>
               </DialogHeader>
-              {/* Add user form here */}
+
               <div className="space-y-4 py-4">
-                <Input placeholder="Email" type="email" />
+                <Input placeholder="Email" />
                 <Input placeholder="First Name" />
                 <Input placeholder="Last Name" />
-                <Input placeholder="Phone" type="tel" />
+                <Input placeholder="Phone" />
               </div>
+
               <DialogFooter>
                 <Button variant="outline">Cancel</Button>
                 <Button>Create User</Button>
@@ -191,14 +185,15 @@ export default function AdminUsers() {
       {/* Filters */}
       <div className="flex gap-4 items-center bg-white p-4 rounded-lg shadow-sm">
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search by name or email..."
             value={searchTerm}
-            onChange={(e) => React.startTransition(() => setSearchTerm(e.target.value))}
+            onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
           />
         </div>
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm">
@@ -207,41 +202,35 @@ export default function AdminUsers() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => React.startTransition(() => setStatusFilter('all'))}>All</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => React.startTransition(() => setStatusFilter('active'))}>
-              Active
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => React.startTransition(() => setStatusFilter('inactive'))}>
-              Inactive
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => React.startTransition(() => setStatusFilter('pending'))}>
-              Pending
-            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setStatusFilter('all')}>All</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setStatusFilter('active')}>Active</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setStatusFilter('inactive')}>Inactive</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setStatusFilter('pending')}>Pending</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white p-6 rounded-lg shadow-sm">
-          <div className="text-sm font-medium text-muted-foreground">Total Users</div>
-          <div className="text-2xl font-bold">{analytics?.total ?? usersMeta.total ?? users?.length ?? 0}</div>
+          <div className="text-sm text-muted-foreground">Total Users</div>
+          <div className="text-2xl font-bold">{analytics?.total ?? usersMeta.total}</div>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm">
-          <div className="text-sm font-medium text-muted-foreground">Active</div>
-          <div className="text-2xl font-bold text-green-600">{analytics?.active ?? 0}</div>
+          <div className="text-sm text-muted-foreground">Active</div>
+          <div className="text-2xl font-bold text-green-600">{analytics?.active}</div>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm">
-          <div className="text-sm font-medium text-muted-foreground">Inactive</div>
-          <div className="text-2xl font-bold text-gray-600">{analytics ? analytics.inactive : 0}</div>
+          <div className="text-sm text-muted-foreground">Inactive</div>
+          <div className="text-2xl font-bold text-gray-600">{analytics?.inactive}</div>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm">
-          <div className="text-sm font-medium text-muted-foreground">Compliance Issues</div>
+          <div className="text-sm text-muted-foreground">Compliance Issues</div>
           <div className="text-2xl font-bold text-red-600">{analytics?.byRole?.length ?? 0}</div>
         </div>
       </div>
 
-      {/* Users Table */}
+      {/* Table */}
       <div className="bg-white rounded-lg shadow-sm">
         <Table>
           <TableHeader>
@@ -256,14 +245,17 @@ export default function AdminUsers() {
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
+
           <TableBody>
-            {filteredUsers && filteredUsers.length > 0 ? (
-              filteredUsers.map((user) => (
+            {users.length > 0 ? (
+              users.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">
                     {user.firstName} {user.lastName}
                   </TableCell>
+
                   <TableCell>{user.email}</TableCell>
+
                   <TableCell>
                     {user.isActive ? (
                       <Badge className="bg-green-500">Active</Badge>
@@ -271,26 +263,25 @@ export default function AdminUsers() {
                       <Badge variant="secondary">Inactive</Badge>
                     )}
                   </TableCell>
+
                   <TableCell>
-                    <div className="flex gap-1 flex-wrap">
-                      {user.roles && user.roles.length > 0 ? (
-                        user.roles.map((role) => (
-                          <Badge key={role.id} variant="outline">
-                            {role.name}
-                          </Badge>
-                        ))
-                      ) : (
-                        <span className="text-sm text-muted-foreground">No roles</span>
-                      )}
+                    <div className="flex flex-wrap gap-1">
+                      {user.roles?.length
+                        ? user.roles.map((role) => (
+                            <Badge key={role.id} variant="outline">
+                              {role.name}
+                            </Badge>
+                          ))
+                        : 'No roles'}
                     </div>
                   </TableCell>
-                  <TableCell>
-                    <span className="text-sm">{user.participationCount || 0} events</span>
-                  </TableCell>
+
+                  <TableCell>{user.participationCount || 0} events</TableCell>
+
                   <TableCell>{getComplianceBadge(user.complianceStatus)}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">
-                    {user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : 'Never'}
-                  </TableCell>
+
+                  <TableCell>{user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : 'Never'}</TableCell>
+
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -300,45 +291,53 @@ export default function AdminUsers() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
+
                         <DropdownMenuItem>
                           <Eye className="h-4 w-4 mr-2" />
                           View Profile
                         </DropdownMenuItem>
+
                         <DropdownMenuItem>
                           <Edit className="h-4 w-4 mr-2" />
                           Edit User
                         </DropdownMenuItem>
+
                         <DropdownMenuItem>
                           <UserCog className="h-4 w-4 mr-2" />
                           Manage Roles
                         </DropdownMenuItem>
+
                         <DropdownMenuSeparator />
+
                         <DropdownMenuItem onClick={() => sendReminderMutation.mutate(user.id)}>
                           <Mail className="h-4 w-4 mr-2" />
-                          Send Re-engagement Email
+                          Send Reminder
                         </DropdownMenuItem>
+
                         <DropdownMenuSeparator />
+
                         {user.isActive ? (
                           <DropdownMenuItem
-                            onClick={() => deactivateMutation.mutate(user.id)}
                             className="text-orange-600"
+                            onClick={() => deactivateMutation.mutate(user.id)}
                           >
                             <Ban className="h-4 w-4 mr-2" />
                             Deactivate
                           </DropdownMenuItem>
                         ) : (
-                          <DropdownMenuItem onClick={() => activateMutation.mutate(user.id)} className="text-green-600">
+                          <DropdownMenuItem className="text-green-600" onClick={() => activateMutation.mutate(user.id)}>
                             <CheckCircle className="h-4 w-4 mr-2" />
                             Activate
                           </DropdownMenuItem>
                         )}
+
                         <DropdownMenuItem
+                          className="text-red-600"
                           onClick={() => {
-                            if (confirm('Are you sure you want to delete this user?')) {
+                            if (confirm('Delete this user?')) {
                               deleteMutation.mutate(user.id);
                             }
                           }}
-                          className="text-red-600"
                         >
                           <Trash2 className="h-4 w-4 mr-2" />
                           Delete
@@ -358,55 +357,53 @@ export default function AdminUsers() {
           </TableBody>
         </Table>
       </div>
+
+      {/* Pagination */}
       <div className="flex items-center justify-between p-4 bg-white rounded-lg shadow-sm">
         <div className="text-sm text-muted-foreground">
-          Page {usersMeta.current_page || usersMeta.currentPage || page} of{' '}
-          {usersMeta.last_page || usersMeta.lastPage || '-'}
+          Page {usersMeta.current_page || page} of {usersMeta.last_page || '-'}
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={(usersMeta.current_page || usersMeta.currentPage || page) <= 1}
-            >
-              Prev
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setPage((p) => p + 1)}
-              disabled={
-                usersMeta.last_page ? (usersMeta.current_page || usersMeta.currentPage) >= usersMeta.last_page : false
-              }
-            >
-              Next
-            </Button>
-          </div>
+        <div className="flex items-center gap-3">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={(usersMeta.current_page || page) <= 1}
+          >
+            Prev
+          </Button>
+
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setPage((p) => p + 1)}
+            disabled={usersMeta.current_page >= usersMeta.last_page}
+          >
+            Next
+          </Button>
 
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Page</span>
+            <span className="text-sm">Page</span>
+
             <Input
               type="number"
               className="w-20"
               value={page}
-              onChange={(e) => {
-                const v = Number(e.target.value) || 1;
-                React.startTransition(() => setPage(Math.max(1, v)));
-              }}
-              min={1}
+              onChange={(e) => setPage(Math.max(1, Number(e.target.value)))}
             />
-            <span className="text-sm text-muted-foreground">of {usersMeta.last_page || usersMeta.lastPage || '-'}</span>
+
+            <span className="text-sm">of {usersMeta.last_page || '-'}</span>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Per page</span>
-            <Select value={String(perPage)} onValueChange={(v) => React.startTransition(() => setPerPage(Number(v)))}>
+            <span className="text-sm">Per page</span>
+
+            <Select value={String(perPage)} onValueChange={(v) => setPerPage(Number(v))}>
               <SelectTrigger className="w-24">
                 <SelectValue />
               </SelectTrigger>
+
               <SelectContent>
                 <SelectItem value="10">10</SelectItem>
                 <SelectItem value="20">20</SelectItem>
