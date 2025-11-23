@@ -10,6 +10,13 @@ import Map from '@/pages/map';
 import TransportOfferForm from '@/pages/transport-offer-form';
 import TransportRequestForm from '@/pages/transport-request-form';
 import { RouteObject } from 'react-router-dom';
+import AdminLayout from '@/components/templates/AdminLayout';
+import AdminUsers from '@/pages/admin/users';
+import AdminOrganizations from '@/pages/admin/organizations';
+import AdminEvents from '@/pages/admin/events';
+import AdminTasks from '@/pages/admin/tasks';
+import AdminCompliance from '@/pages/admin/compliance';
+import AdminReports from '@/pages/admin/reports';
 
 export enum DetailTypes {
   Offer = 'offer',
@@ -20,6 +27,18 @@ export enum DetailTypes {
 
 const routes: RouteObject[] = [
   {
+    path: '/admin',
+    element: <AdminLayout />, 
+    children: [
+      { path: '/admin', element: <AdminUsers /> },
+      { path: '/admin/users', element: <AdminUsers /> },
+      { path: '/admin/organizations', element: <AdminOrganizations /> },
+      { path: '/admin/events', element: <AdminEvents /> },
+      { path: '/admin/tasks', element: <AdminTasks /> },
+      { path: '/admin/compliance', element: <AdminCompliance /> },
+      { path: '/admin/reports', element: <AdminReports /> },
+    ]
+  },
     path: '/',
     element: <Layout />,
     children: [
