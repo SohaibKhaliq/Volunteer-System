@@ -1,4 +1,5 @@
 // src/pages/admin/certifications.tsx
+// src/pages/admin/certifications.tsx
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
@@ -9,45 +10,71 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import SkeletonCard from '@/components/atoms/skeleton-card';
-import { certs as mockCerts, courses as mockCourses } from '@/lib/mock/adminMock';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import api from '@/lib/api';
 import { toast } from 'sonner';
 
 export default function AdminCertifications() {
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<'All' | 'Valid' | 'Expiring' | 'Expired'>('All');
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<any | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [toDelete, setToDelete] = useState<number | null>(null);
-  const [items, setItems] = useState(() => mockCerts.slice());
-  const [loading] = useState(false);
 
-  const filtered = items.filter((r: any) => {
+  const { data: items = [], isLoading } = useQuery({ queryKey: ['compliance'], queryFn: api.listCompliance });
+
+  const createMutation = useMutation({
+    mutationFn: (data: any) => api.createCompliance(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['compliance']);
+      toast.success('Certification created');
+      setEditOpen(false);
+      setEditing(null);
+    },
+    onError: () => toast.error('Failed to create certification')
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: any }) => api.updateComplianceDoc(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['compliance']);
+      toast.success('Certification updated');
+      setEditOpen(false);
+      setEditing(null);
+    },
+    onError: () => toast.error('Failed to update certification')
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => api.deleteCompliance(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['compliance']);
+      toast.success('Certification deleted');
+      setDeleteOpen(false);
+      setToDelete(null);
+    },
+    onError: () => toast.error('Failed to delete certification')
+  });
+
+  const filtered = (items as any[]).filter((r: any) => {
     if (filterStatus !== 'All' && r.status !== filterStatus) return false;
-    if (search && !`${r.volunteer}`.toLowerCase().includes(search.toLowerCase())) return false;
+    if (
+      search &&
+      !`${r.user?.firstName || r.user?.name || r.user_id || ''}`.toLowerCase().includes(search.toLowerCase())
+    )
+      return false;
     return true;
   });
 
   const saveCert = (payload: any) => {
     if (payload.id) {
-      const idx = items.findIndex((i) => i.id === payload.id);
-      if (idx >= 0) {
-        const next = items.slice();
-        next[idx] = { ...next[idx], ...payload };
-        setItems(next);
-        // sync to shared mock
-        (mockCerts as any[])[idx] = next[idx];
-        toast.success('Certification updated');
-      }
+      updateMutation.mutate({ id: payload.id, data: payload });
     } else {
-      const id = Math.max(0, ...items.map((i) => i.id)) + 1;
-      const nr = { id, ...payload };
-      setItems([nr, ...items]);
-      (mockCerts as any[]).unshift(nr);
-      toast.success('Certification created');
+      // create expects user_id, doc_type, issued_at, expires_at
+      createMutation.mutate(payload);
     }
-    setEditOpen(false);
-    setEditing(null);
   };
 
   const confirmDelete = (id: number) => {
@@ -57,17 +84,11 @@ export default function AdminCertifications() {
 
   const doDelete = () => {
     if (toDelete == null) return;
-    const next = items.filter((i) => i.id !== toDelete);
-    setItems(next);
-    const idx = (mockCerts as any[]).findIndex((i) => i.id === toDelete);
-    if (idx >= 0) (mockCerts as any[]).splice(idx, 1);
-    setDeleteOpen(false);
-    setToDelete(null);
-    toast.success('Certification deleted');
+    deleteMutation.mutate(toDelete);
   };
 
   return (
-    <div className="space-y-6" aria-busy={loading}>
+    <div className="space-y-6" aria-busy={isLoading}>
       {/* Courses summary (read-only) */}
       <Card>
         <CardHeader>
@@ -77,32 +98,11 @@ export default function AdminCertifications() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Course</TableHead>
-                <TableHead>Participants</TableHead>
-                <TableHead>Completed</TableHead>
-                <TableHead>Progress</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {mockCourses.map((c) => (
-                <TableRow key={c.id}>
-                  <TableCell>{c.name}</TableCell>
-                  <TableCell>{c.participants}</TableCell>
-                  <TableCell>{c.completed}</TableCell>
-                  <TableCell>
-                    <Badge variant="default">{Math.round((c.completed / c.participants) * 100)}%</Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <SkeletonCard />
         </CardContent>
       </Card>
 
-      {/* Certifications with CRUD */}
+      {/* Certifications with CRUD (backed by API) */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -112,7 +112,12 @@ export default function AdminCertifications() {
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-3 mb-4">
-            <Input placeholder="Search volunteer" value={search} onChange={(e) => setSearch(e.target.value)} className="w-64" />
+            <Input
+              placeholder="Search volunteer"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-64"
+            />
             <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as any)}>
               <SelectTrigger className="w-40">
                 <SelectValue />
@@ -142,33 +147,43 @@ export default function AdminCertifications() {
               <TableRow>
                 <TableHead>Volunteer</TableHead>
                 <TableHead>Type</TableHead>
+                <TableHead>Issued</TableHead>
                 <TableHead>Expires</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {loading ? (
+              {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={5}>
+                  <TableCell colSpan={6}>
                     <SkeletonCard />
                   </TableCell>
                 </TableRow>
               ) : filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center text-muted-foreground">
                     No certifications found
                   </TableCell>
                 </TableRow>
               ) : (
                 filtered.map((c: any) => (
                   <TableRow key={c.id}>
-                    <TableCell>{c.volunteer}</TableCell>
-                    <TableCell>{c.type}</TableCell>
-                    <TableCell>{c.expires}</TableCell>
                     <TableCell>
-                      <Badge variant={c.status === 'Valid' ? 'default' : c.status === 'Expiring' ? 'secondary' : 'destructive'}>
-                        {c.status}
+                      {c.user?.firstName ? `${c.user.firstName} ${c.user.lastName || ''}` : c.user?.name || c.user_id}
+                    </TableCell>
+                    <TableCell>{c.doc_type || c.type}</TableCell>
+                    <TableCell>{c.issued_at ? new Date(c.issued_at).toLocaleDateString() : '-'}</TableCell>
+                    <TableCell>
+                      {c.expires_at ? new Date(c.expires_at).toLocaleDateString() : c.expires || '-'}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          c.status === 'Valid' ? 'default' : c.status === 'Expiring' ? 'secondary' : 'destructive'
+                        }
+                      >
+                        {c.status || 'Unknown'}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -204,20 +219,41 @@ export default function AdminCertifications() {
           </DialogHeader>
           <div className="p-4 space-y-3">
             <div>
-              <label className="text-sm block mb-1">Volunteer</label>
-              <Input value={editing?.volunteer || ''} onChange={(e) => setEditing((s: any) => ({ ...(s || {}), volunteer: e.target.value }))} />
+              <label className="text-sm block mb-1">Volunteer (user id)</label>
+              <Input
+                value={editing?.user_id || editing?.user?.id || ''}
+                onChange={(e) => setEditing((s: any) => ({ ...(s || {}), user_id: Number(e.target.value) }))}
+              />
             </div>
             <div>
               <label className="text-sm block mb-1">Type</label>
-              <Input value={editing?.type || ''} onChange={(e) => setEditing((s: any) => ({ ...(s || {}), type: e.target.value }))} />
+              <Input
+                value={editing?.doc_type || editing?.type || ''}
+                onChange={(e) => setEditing((s: any) => ({ ...(s || {}), doc_type: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className="text-sm block mb-1">Issued</label>
+              <Input
+                type="date"
+                value={editing?.issued_at ? editing.issued_at.split('T')[0] : ''}
+                onChange={(e) => setEditing((s: any) => ({ ...(s || {}), issued_at: e.target.value }))}
+              />
             </div>
             <div>
               <label className="text-sm block mb-1">Expires</label>
-              <Input type="date" value={editing?.expires || ''} onChange={(e) => setEditing((s: any) => ({ ...(s || {}), expires: e.target.value }))} />
+              <Input
+                type="date"
+                value={editing?.expires_at ? editing.expires_at.split('T')[0] : editing?.expires || ''}
+                onChange={(e) => setEditing((s: any) => ({ ...(s || {}), expires_at: e.target.value }))}
+              />
             </div>
             <div>
               <label className="text-sm block mb-1">Status</label>
-              <Select value={editing?.status || 'Valid'} onValueChange={(v) => setEditing((s: any) => ({ ...(s || {}), status: v }))}>
+              <Select
+                value={editing?.status || 'Valid'}
+                onValueChange={(v) => setEditing((s: any) => ({ ...(s || {}), status: v }))}
+              >
                 <SelectTrigger className="w-40">
                   <SelectValue />
                 </SelectTrigger>
@@ -231,13 +267,24 @@ export default function AdminCertifications() {
           </div>
           <DialogFooter>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => { setEditOpen(false); setEditing(null); }}>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setEditOpen(false);
+                  setEditing(null);
+                }}
+              >
                 Cancel
               </Button>
-              <Button onClick={() => {
-                if (!editing?.volunteer) { toast.error('Volunteer is required'); return; }
-                saveCert(editing || {});
-              }}>
+              <Button
+                onClick={() => {
+                  if (!editing?.user_id) {
+                    toast.error('User id is required');
+                    return;
+                  }
+                  saveCert(editing || {});
+                }}
+              >
                 {editing?.id ? 'Save' : 'Create'}
               </Button>
             </div>
@@ -254,8 +301,12 @@ export default function AdminCertifications() {
           <div className="p-4">Are you sure you want to delete this certification?</div>
           <DialogFooter>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setDeleteOpen(false)}>Cancel</Button>
-              <Button variant="destructive" onClick={doDelete}>Delete</Button>
+              <Button variant="outline" onClick={() => setDeleteOpen(false)}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={doDelete}>
+                Delete
+              </Button>
             </div>
           </DialogFooter>
         </DialogContent>
