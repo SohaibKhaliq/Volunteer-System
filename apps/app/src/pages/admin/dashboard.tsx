@@ -1,35 +1,34 @@
 // src/pages/admin/dashboard.tsx
-import React from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import {BarChart3,
-  Users,
-  Calendar,
-  AlertTriangle,
-  TrendingUp,
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import React from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Users, Calendar, AlertTriangle, TrendingUp } from 'lucide-react';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  Legend,
+  CartesianGrid
+} from 'recharts';
+import { Badge } from '@/components/ui/badge';
+import {
+  dashboardStats as stats,
+  activityFeed as activity,
+  topVolunteers,
+  chartData,
+  eventDistribution,
+  chartColors
+} from '@/lib/mock/adminMock';
 
 export default function AdminDashboard() {
-  // Mock data for demonstration
-  const stats = {
-    volunteers: 1247,
-    events: 42,
-    pendingTasks: 156,
-    compliance: 94,
-  };
-
-  const activity = [
-    { time: "2 min ago", desc: "New volunteer John Doe registered" },
-    { time: "15 min ago", desc: "Event Community Clean‑up created" },
-    { time: "1 h ago", desc: "Task Distribute flyers marked completed" },
-    { time: "3 h ago", desc: "Compliance document WWCC expired for Jane" },
-  ];
-
-  const topVolunteers = [
-    { name: "Alice", hours: 120 },
-    { name: "Bob", hours: 98 },
-    { name: "Carol", hours: 85 },
-  ];
+  // Using shared mock data from /src/lib/mock/adminMock.ts
 
   return (
     <div className="space-y-6">
@@ -71,6 +70,65 @@ export default function AdminDashboard() {
             <Badge variant="outline">Compliance</Badge>
           </CardHeader>
           <CardContent className="text-3xl font-bold">{stats.compliance}%</CardContent>
+        </Card>
+      </div>
+
+      {/* Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Volunteer Growth (Line) */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Volunteer Growth (6 months)</CardTitle>
+          </CardHeader>
+          <CardContent className="h-48">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Line type="monotone" dataKey="volunteers" stroke="#4f46e5" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Event Distribution (Pie) */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Event Distribution</CardTitle>
+          </CardHeader>
+          <CardContent className="h-48 flex items-center justify-center">
+            <ResponsiveContainer width="80%" height={150}>
+              <PieChart>
+                <Pie data={eventDistribution} dataKey="value" nameKey="name" outerRadius={60} fill="#8884d8">
+                  {eventDistribution.map((_, idx) => (
+                    <Cell key={`cell-${idx}`} fill={chartColors[idx % chartColors.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Hour Trends (Bar) */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Last 6 Months - Hours Trend</CardTitle>
+          </CardHeader>
+          <CardContent className="h-48">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="hours" fill="#0ea5e9" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
         </Card>
       </div>
 
