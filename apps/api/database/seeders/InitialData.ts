@@ -1,7 +1,7 @@
 import BaseSeeder from '@ioc:Adonis/Lucid/Seeder'
 import Role from 'App/Models/Role'
 import User from 'App/Models/User'
-import Hash from '@ioc:Adonis/Core/Hash'
+
 import Permission from 'App/Models/Permission'
 import Organization from 'App/Models/Organization'
 import Event from 'App/Models/Event'
@@ -76,12 +76,11 @@ export default class InitialDataSeeder extends BaseSeeder {
     })
 
     // Create admin user if not exists
-    const existing = await User.findBy('email', 'admin@local.test')
+    const existing = await User.findBy('email', 'admin@gmail.com')
     if (!existing) {
       const adminUser = await User.create({
         email: 'admin@gmail.com',
-        fingerprint: 'admin-local-fingerprint',
-        password: await Hash.make('12345678'),
+        password: 'password',
         isAdmin: true,
         firstName: 'Dev',
         lastName: 'Admin'
