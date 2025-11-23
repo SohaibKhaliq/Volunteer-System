@@ -68,12 +68,14 @@ export default function AdminTasks() {
   const [newRequiredVolunteers, setNewRequiredVolunteers] = useState<number | ''>('');
   const [newDueDate, setNewDueDate] = useState<string | null>(null);
   const [newEventId, setNewEventId] = useState<number | ''>('');
+  const [newPriority, setNewPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium');
   // Edit form state
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editRequiredVolunteers, setEditRequiredVolunteers] = useState<number | ''>('');
   const [editDueDate, setEditDueDate] = useState<string | null>(null);
   const [editEventId, setEditEventId] = useState<number | ''>('');
+  const [editPriority, setEditPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium');
   const [showAssignDialog, setShowAssignDialog] = useState(false);
   const [assignTask, setAssignTask] = useState<Task | null>(null);
   const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
@@ -132,6 +134,7 @@ export default function AdminTasks() {
       setEditRequiredVolunteers(editTaskItem.requiredVolunteers || 0);
       setEditDueDate(editTaskItem.dueDate ?? null);
       setEditEventId(editTaskItem.eventId ?? '');
+      setEditPriority(editTaskItem.priority ?? 'medium');
     }
   }, [editTaskItem]);
 
@@ -397,6 +400,19 @@ export default function AdminTasks() {
                     ))}
                   </select>
                 </div>
+                <div>
+                  <label className="text-sm block mb-1">Priority</label>
+                  <select
+                    value={editPriority}
+                    onChange={(e) => setEditPriority(e.target.value as 'low' | 'medium' | 'high' | 'urgent')}
+                    className="p-2 border rounded w-full"
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="urgent">Urgent</option>
+                  </select>
+                </div>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setShowEditDialog(false)}>
@@ -405,13 +421,14 @@ export default function AdminTasks() {
                 <Button
                   onClick={() => {
                     if (!editTaskItem) return;
-                    const payload: any = {
+                    const payload = {
                       title: editTitle,
                       description: editDescription,
                       slot_count: typeof editRequiredVolunteers === 'number' ? editRequiredVolunteers : 0,
                       start_at: editDueDate || null
                     };
                     if (editEventId) payload.event_id = editEventId;
+                    payload.priority = editPriority;
                     updateMutation.mutate({ id: editTaskItem.id, data: payload });
                     setShowEditDialog(false);
                   }}
@@ -476,6 +493,19 @@ export default function AdminTasks() {
                     ))}
                   </select>
                 </div>
+                <div>
+                  <label className="text-sm block mb-1">Priority</label>
+                  <select
+                    value={newPriority}
+                    onChange={(e) => setNewPriority(e.target.value as 'low' | 'medium' | 'high' | 'urgent')}
+                    className="p-2 border rounded w-full"
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="urgent">Urgent</option>
+                  </select>
+                </div>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
@@ -483,14 +513,15 @@ export default function AdminTasks() {
                 </Button>
                 <Button
                   onClick={() => {
-                    const payload: any = {
+                    const payload = {
                       title: newTitle,
                       description: newDescription,
                       slot_count: typeof newRequiredVolunteers === 'number' ? newRequiredVolunteers : 0,
-                      start_at: newDueDate || null
-                    };
-                    if (newEventId) payload.event_id = newEventId;
-                    createMutation.mutate(payload);
+                      start_at: newDueDate || null,
+                      priority: newPriority
+                    } as const;
+                    if (newEventId) (payload as any).event_id = newEventId;
+                    createMutation.mutate(payload as any);
                   }}
                 >
                   Create Task
