@@ -122,3 +122,5 @@ Route.post('/settings', 'SystemSettingsController.update').middleware(['auth'])
 Route.get('/hours', 'VolunteerHoursController.index').middleware(['auth'])
 Route.put('/hours/:id', 'VolunteerHoursController.update').middleware(['auth'])
 Route.post('/hours/bulk', 'VolunteerHoursController.bulkUpdate').middleware(['auth'])
+
+Route.resource('courses', 'CoursesController').middleware({ '*': ['auth'] }).apiOnly()
