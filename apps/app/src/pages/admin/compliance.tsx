@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
+  DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -26,7 +26,7 @@ import {
   Mail,
   Clock,
   Shield,
-  AlertCircle,
+  AlertCircle
 } from 'lucide-react';
 import { toast } from '@/components/atoms/use-toast';
 
