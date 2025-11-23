@@ -1,23 +1,13 @@
 import React, { useEffect } from 'react';
-import { Outlet, Link, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useApp } from '@/providers/app-provider';
 import { cn } from '@/lib/utils';
-import {
-  Users,
-  Building2,
-  Calendar,
-  ClipboardCheck,
-  Shield,
-  BarChart3,
-  Home,
-  LogOut,
-} from 'lucide-react';
+import { Users, Building2, Calendar, ClipboardCheck, Shield, BarChart3, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Providers from '@/providers';
 
 export default function AdminLayout() {
   const { user, authenticated } = useApp();
-  const navigate = useNavigate();
   const location = useLocation();
 
   // Check if user has admin privileges
@@ -91,6 +81,7 @@ export default function AdminLayout() {
   // }
 
   const navItems = [
+    { path: '/admin', icon: Home, label: 'Dashboard' },
     { path: '/admin/users', icon: Users, label: 'Users & Roles' },
     { path: '/admin/organizations', icon: Building2, label: 'Organizations' },
     { path: '/admin/events', icon: Calendar, label: 'Events & Tasks' },
