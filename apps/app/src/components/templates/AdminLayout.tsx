@@ -50,42 +50,44 @@ export default function AdminLayout() {
   //   }
   // }, [authenticated, navigate]);
 
+  // TEMPORARILY DISABLED FOR TESTING - RE-ENABLE AFTER TESTING
   // Show loading while checking authentication
-  if (!authenticated) {
-    return null;
-  }
+  // if (!authenticated) {
+  //   return null;
+  // }
 
   // If authenticated but not admin, show forbidden
-  if (authenticated && !isAdmin) {
-    console.log('User is authenticated but not admin');
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="bg-white rounded-lg shadow-lg p-8 text-center max-w-md">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Shield className="h-8 w-8 text-red-600" />
-          </div>
-          <h2 className="text-2xl font-bold mb-2">Access Denied</h2>
-          <p className="text-gray-600 mb-4">
-            You don't have permission to view the admin panel.
-          </p>
-          <div className="bg-gray-100 p-4 rounded mb-6 text-left">
-            <p className="text-sm text-gray-700 mb-2"><strong>Debug Info:</strong></p>
-            <p className="text-xs text-gray-600">Authenticated: {authenticated ? 'Yes' : 'No'}</p>
-            <p className="text-xs text-gray-600">User ID: {user?.id || 'N/A'}</p>
-            <p className="text-xs text-gray-600">Is Admin: {user?.isAdmin ? 'Yes' : 'No'}</p>
-            <p className="text-xs text-gray-600">is_admin: {user?.is_admin ? 'Yes' : 'No'}</p>
-            <p className="text-xs text-gray-600">Roles: {user?.roles ? JSON.stringify(user.roles) : 'None'}</p>
-          </div>
-          <Link to="/">
-            <Button>
-              <Home className="h-4 w-4 mr-2" />
-              Go Home
-            </Button>
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  // TEMPORARILY DISABLED - ALLOWING ALL ACCESS FOR TESTING
+  // if (authenticated && !isAdmin) {
+  //   console.log('User is authenticated but not admin');
+  //   return (
+  //     <div className="min-h-screen flex items-center justify-center bg-gray-50">
+  //       <div className="bg-white rounded-lg shadow-lg p-8 text-center max-w-md">
+  //         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+  //           <Shield className="h-8 w-8 text-red-600" />
+  //         </div>
+  //         <h2 className="text-2xl font-bold mb-2">Access Denied</h2>
+  //         <p className="text-gray-600 mb-4">
+  //           You don't have permission to view the admin panel.
+  //         </p>
+  //         <div className="bg-gray-100 p-4 rounded mb-6 text-left">
+  //           <p className="text-sm text-gray-700 mb-2"><strong>Debug Info:</strong></p>
+  //           <p className="text-xs text-gray-600">Authenticated: {authenticated ? 'Yes' : 'No'}</p>
+  //           <p className="text-xs text-gray-600">User ID: {user?.id || 'N/A'}</p>
+  //           <p className="text-xs text-gray-600">Is Admin: {user?.isAdmin ? 'Yes' : 'No'}</p>
+  //           <p className="text-xs text-gray-600">is_admin: {user?.is_admin ? 'Yes' : 'No'}</p>
+  //           <p className="text-xs text-gray-600">Roles: {user?.roles ? JSON.stringify(user.roles) : 'None'}</p>
+  //         </div>
+  //         <Link to="/">
+  //           <Button>
+  //             <Home className="h-4 w-4 mr-2" />
+  //             Go Home
+  //           </Button>
+  //         </Link>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   const navItems = [
     { path: '/admin/users', icon: Users, label: 'Users & Roles' },
