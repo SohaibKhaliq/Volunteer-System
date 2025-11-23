@@ -159,13 +159,6 @@ export default function AdminUsers() {
     }
   );
 
-  const activateUserMutation = useMutation((userId: number) => api.activateUser(userId), {
-    onSuccess: () => {
-      queryClient.invalidateQueries(['users']);
-      toast({ title: 'User activated', variant: 'success' });
-    }
-  });
-
   // Roles modal state
   const [rolesModalUser, setRolesModalUser] = useState<User | null>(null);
   const [availableRoles, setAvailableRoles] = useState<any[]>([]);
@@ -181,7 +174,7 @@ export default function AdminUsers() {
   const openEditModal = (user: User) => setEditModalUser(user);
   const closeEditModal = () => setEditModalUser(null);
 
-  const handleUserUpdated = (updated: User) => {
+  const handleUserUpdated = () => {
     queryClient.invalidateQueries(['users']);
     toast({ title: 'User updated', variant: 'success' });
     closeEditModal();
@@ -315,23 +308,25 @@ export default function AdminUsers() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white p-6 rounded-lg shadow-sm">
           <div className="text-sm text-muted-foreground">Total Users</div>
-          <div className="text-2xl font-bold">{Number(analytics?.total ?? usersMeta.total ?? mappedUsers.length)}</div>
+          <div className="text-2xl font-bold">
+            {Number((analytics as any)?.total ?? usersMeta.total ?? mappedUsers.length)}
+          </div>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm">
           <div className="text-sm text-muted-foreground">Active</div>
           <div className="text-2xl font-bold text-green-600">
-            {Number(analytics?.active ?? mappedUsers.filter((u) => u.isActive).length)}
+            {Number((analytics as any)?.active ?? mappedUsers.filter((u) => u.isActive).length)}
           </div>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm">
           <div className="text-sm text-muted-foreground">Inactive</div>
           <div className="text-2xl font-bold text-gray-600">
-            {Number(analytics?.inactive ?? mappedUsers.filter((u) => !u.isActive).length)}
+            {Number((analytics as any)?.inactive ?? mappedUsers.filter((u) => !u.isActive).length)}
           </div>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm">
           <div className="text-sm text-muted-foreground">Compliance Issues</div>
-          <div className="text-2xl font-bold text-red-600">{analytics?.byRole?.length ?? 0}</div>
+          <div className="text-2xl font-bold text-red-600">{(analytics as any)?.byRole?.length ?? 0}</div>
         </div>
       </div>
 
@@ -356,10 +351,13 @@ export default function AdminUsers() {
               mappedUsers.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">
-                    {user.firstName} {user.lastName}
+                    <div>{`${user.firstName ?? ''} ${user.lastName ?? ''}`.trim() || '—'}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {(user.email ?? (user as any).email_address) || '—'}
+                    </div>
                   </TableCell>
 
-                  <TableCell>{user.email}</TableCell>
+                  <TableCell>{user.email ?? (user as any).email_address ?? '—'}</TableCell>
 
                   <TableCell>
                     {user.isActive ? (
