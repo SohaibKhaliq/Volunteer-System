@@ -282,44 +282,45 @@ export default function AdminEvents() {
 
       {/* Filters */}
       <div className="flex gap-4 items-center bg-white p-4 rounded-lg shadow-sm">
-        <div className="flex-1 relative">
-          <div>
-            <label className="text-sm block mb-1">Contact Person (optional)</label>
-            <div className="flex gap-2">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start">
-                    {selectedContact
-                      ? `${selectedContact.firstName || selectedContact.name} ${selectedContact.lastName || ''}`
-                      : 'Select contact'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[300px] p-0">
-                  <Command>
-                    <CommandInput
-                      placeholder="Search users..."
-                      value={contactQuery}
-                      onValueChange={(v) => React.startTransition(() => setContactQuery(v))}
-                    />
-                    <CommandGroup>
-                      {contactResults.map((u: any) => (
-                        <CommandItem key={u.id} onSelect={() => setSelectedContact(u)}>
-                          {u.firstName || u.name} {u.lastName || ''} {u.email ? `(${u.email})` : ''}
-                        </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </Command>
-                </PopoverContent>
-              </Popover>
+        <div className="flex-1">
+          <label className="text-sm block mb-1">Contact Person (optional)</label>
+          <div className="flex gap-2 items-start">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-48 justify-start">
+                  {selectedContact
+                    ? `${selectedContact.firstName || selectedContact.name} ${selectedContact.lastName || ''}`
+                    : 'Select contact'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[300px] p-0">
+                <Command>
+                  <CommandInput
+                    placeholder="Search users..."
+                    value={contactQuery}
+                    onValueChange={(v) => React.startTransition(() => setContactQuery(v))}
+                  />
+                  <CommandGroup>
+                    {contactResults.map((u: any) => (
+                      <CommandItem key={u.id} onSelect={() => setSelectedContact(u)}>
+                        {u.firstName || u.name} {u.lastName || ''} {u.email ? `(${u.email})` : ''}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </Command>
+              </PopoverContent>
+            </Popover>
+
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search events..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
             </div>
           </div>
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search events..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -483,7 +484,23 @@ export default function AdminEvents() {
                           {['draft', 'published', 'ongoing', 'completed', 'cancelled'].map((s) => (
                             <DropdownMenuItem
                               key={s}
-                              onClick={() => updateMutation.mutate({ id: event.id, data: { status: s } })}
+                              onClick={() => {
+                                // Backend supports is_published boolean; map published/draft accordingly.
+                                if (s === 'published') {
+                                  updateMutation.mutate({ id: event.id, data: { is_published: true } as any });
+                                } else if (s === 'draft') {
+                                  updateMutation.mutate({ id: event.id, data: { is_published: false } as any });
+                                } else {
+                                  // Other statuses are not directly supported by the backend Event model.
+                                  // Send the 'status' key anyway (backend may ignore it) and show a toast.
+                                  updateMutation.mutate({ id: event.id, data: { status: s } as any });
+                                  toast({
+                                    title: `Requested status: ${s}`,
+                                    description: 'Backend may not persist this value',
+                                    variant: 'warning'
+                                  });
+                                }
+                              }}
                             >
                               {s.charAt(0).toUpperCase() + s.slice(1)}
                             </DropdownMenuItem>
