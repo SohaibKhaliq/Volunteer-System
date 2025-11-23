@@ -61,7 +61,7 @@ const api = {
   create: async (resource: string, data: any) => axios.post(`/${resource}`, data),
   update: async (resource: string, id: number, data: any) => axios.put(`/${resource}/${id}`, data),
   delete: async (resource: string, id: number) => axios.delete(`/${resource}/${id}`),
-  
+
   /* Resources endpoints */
   listResources: async () => axios.get('/resources'),
   createResource: async (data: any) => axios.post('/resources', data),
@@ -90,11 +90,14 @@ const api = {
   getSettings: async () => axios.get('/settings'),
   updateSettings: async (data: any) => axios.post('/settings', data),
 
+  /* Notifications */
+  listNotifications: async () => axios.get('/notifications'),
+  markNotificationRead: async (id: number) => axios.put(`/notifications/${id}/read`),
+
   /* Volunteer Hours endpoints */
   listHours: async () => axios.get('/hours'),
   updateHour: async (id: number, data: any) => axios.put(`/hours/${id}`, data),
-  bulkUpdateHours: async (ids: number[], status: string) => 
-    axios.post('/hours/bulk', { ids, status }),
+  bulkUpdateHours: async (ids: number[], status: string) => axios.post('/hours/bulk', { ids, status }),
 
   /* Courses endpoints */
   listCourses: async () => axios.get('/courses'),
