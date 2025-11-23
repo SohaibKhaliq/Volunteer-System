@@ -34,8 +34,11 @@ export default class Task extends BaseModel {
   @column({ columnName: 'slot_count' })
   public slotCount?: number
 
-  @column({columnName: 'status' })
+  @column({ columnName: 'status' })
   public status?: string
+
+  @column()
+  public priority?: string
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
