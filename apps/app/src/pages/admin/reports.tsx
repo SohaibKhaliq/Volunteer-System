@@ -1,27 +1,11 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { toast } from '@/components/atoms/use-toast';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Download,
-  TrendingUp,
-  Users,
-  Calendar,
-  Clock,
-  Award,
-  AlertTriangle,
-  BarChart3,
-  PieChart,
-  FileText,
-} from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Download, TrendingUp, Users, Calendar, Clock, Award, BarChart3, PieChart, FileText } from 'lucide-react';
 
 interface ReportData {
   volunteerParticipation: {
@@ -70,17 +54,23 @@ export default function AdminReports() {
 
   const { data: reportData, isLoading } = useQuery<ReportData>(
     ['reports', reportType, timeRange],
-    () => api.getReports({ type: reportType, range: timeRange })
+    () => api.getReports<ReportData>({ type: reportType, range: timeRange }),
+    {
+      suspense: false,
+      retry: false,
+      onError: (err: any) => {
+        try {
+          toast({ title: 'Unable to load reports', description: err?.message || 'Please try again' });
+        } catch (e) {
+          // ignore
+        }
+      }
+    }
   );
 
   const handleExport = () => {
     // Export logic here
-    const formats: Record<string, string> = {
-      pdf: 'application/pdf',
-      csv: 'text/csv',
-      excel: 'application/vnd.ms-excel',
-    };
-    
+    // TODO: wire up actual export endpoint or client-side generation
     // Trigger download
     console.log(`Exporting as ${exportFormat}`);
   };
@@ -99,9 +89,7 @@ export default function AdminReports() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Reports & Analytics</h2>
-          <p className="text-muted-foreground">
-            Comprehensive insights and data-driven analytics
-          </p>
+          <p className="text-muted-foreground">Comprehensive insights and data-driven analytics</p>
         </div>
         <div className="flex gap-2">
           <Select value={exportFormat} onValueChange={setExportFormat}>
@@ -164,10 +152,10 @@ export default function AdminReports() {
             <div className="text-sm font-medium opacity-90">Total Volunteers</div>
             <Users className="h-5 w-5 opacity-75" />
           </div>
-          <div className="text-3xl font-bold">{reportData?.volunteerParticipation.total || 0}</div>
+          <div className="text-3xl font-bold">{reportData?.volunteerParticipation?.total || 0}</div>
           <div className="flex items-center gap-1 mt-2 text-sm">
             <TrendingUp className="h-4 w-4" />
-            <span>+{reportData?.volunteerParticipation.trend || 0}% this month</span>
+            <span>+{reportData?.volunteerParticipation?.trend || 0}% this month</span>
           </div>
         </div>
 
@@ -176,12 +164,9 @@ export default function AdminReports() {
             <div className="text-sm font-medium opacity-90">Event Completion</div>
             <Calendar className="h-5 w-5 opacity-75" />
           </div>
-          <div className="text-3xl font-bold">
-            {reportData?.eventCompletion.completionRate || 0}%
-          </div>
+          <div className="text-3xl font-bold">{reportData?.eventCompletion?.completionRate || 0}%</div>
           <div className="text-sm mt-2 opacity-90">
-            {reportData?.eventCompletion.completed || 0} of{' '}
-            {reportData?.eventCompletion.total || 0} events
+            {reportData?.eventCompletion?.completed || 0} of {reportData?.eventCompletion?.total || 0} events
           </div>
         </div>
 
@@ -190,12 +175,10 @@ export default function AdminReports() {
             <div className="text-sm font-medium opacity-90">Volunteer Hours</div>
             <Clock className="h-5 w-5 opacity-75" />
           </div>
-          <div className="text-3xl font-bold">
-            {reportData?.volunteerHours.total?.toLocaleString() || 0}
-          </div>
+          <div className="text-3xl font-bold">{reportData?.volunteerHours?.total?.toLocaleString() || 0}</div>
           <div className="flex items-center gap-1 mt-2 text-sm">
             <TrendingUp className="h-4 w-4" />
-            <span>+{reportData?.volunteerHours.trend || 0}% vs last month</span>
+            <span>+{reportData?.volunteerHours?.trend || 0}% vs last month</span>
           </div>
         </div>
 
@@ -204,11 +187,9 @@ export default function AdminReports() {
             <div className="text-sm font-medium opacity-90">Compliance Rate</div>
             <Award className="h-5 w-5 opacity-75" />
           </div>
-          <div className="text-3xl font-bold">
-            {reportData?.complianceAdherence.adherenceRate || 0}%
-          </div>
+          <div className="text-3xl font-bold">{reportData?.complianceAdherence?.adherenceRate || 0}%</div>
           <div className="text-sm mt-2 opacity-90">
-            {reportData?.complianceAdherence.expired || 0} expired documents
+            {reportData?.complianceAdherence?.expired || 0} expired documents
           </div>
         </div>
       </div>
@@ -225,19 +206,17 @@ export default function AdminReports() {
             <div>
               <div className="flex justify-between text-sm mb-1">
                 <span>Active Volunteers</span>
-                <span className="font-medium">
-                  {reportData?.volunteerParticipation.active || 0}
-                </span>
+                <span className="font-medium">{reportData?.volunteerParticipation?.active || 0}</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
                   className="bg-green-500 h-2 rounded-full"
                   style={{
                     width: `${
-                      ((reportData?.volunteerParticipation.active || 0) /
-                        (reportData?.volunteerParticipation.total || 1)) *
+                      ((reportData?.volunteerParticipation?.active || 0) /
+                        (reportData?.volunteerParticipation?.total || 1)) *
                       100
-                    }%`,
+                    }%`
                   }}
                 />
               </div>
@@ -245,19 +224,17 @@ export default function AdminReports() {
             <div>
               <div className="flex justify-between text-sm mb-1">
                 <span>Inactive Volunteers</span>
-                <span className="font-medium">
-                  {reportData?.volunteerParticipation.inactive || 0}
-                </span>
+                <span className="font-medium">{reportData?.volunteerParticipation?.inactive || 0}</span>
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2">
                 <div
                   className="bg-gray-500 h-2 rounded-full"
                   style={{
                     width: `${
-                      ((reportData?.volunteerParticipation.inactive || 0) /
-                        (reportData?.volunteerParticipation.total || 1)) *
+                      ((reportData?.volunteerParticipation?.inactive || 0) /
+                        (reportData?.volunteerParticipation?.total || 1)) *
                       100
-                    }%`,
+                    }%`
                   }}
                 />
               </div>
@@ -277,21 +254,21 @@ export default function AdminReports() {
                 <div className="w-3 h-3 rounded-full bg-green-500" />
                 <span className="text-sm">Completed</span>
               </div>
-              <span className="font-medium">{reportData?.eventCompletion.completed || 0}</span>
+              <span className="font-medium">{reportData?.eventCompletion?.completed || 0}</span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-blue-500" />
                 <span className="text-sm">Ongoing</span>
               </div>
-              <span className="font-medium">{reportData?.eventCompletion.ongoing || 0}</span>
+              <span className="font-medium">{reportData?.eventCompletion?.ongoing || 0}</span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-red-500" />
                 <span className="text-sm">Cancelled</span>
               </div>
-              <span className="font-medium">{reportData?.eventCompletion.cancelled || 0}</span>
+              <span className="font-medium">{reportData?.eventCompletion?.cancelled || 0}</span>
             </div>
           </div>
         </div>
@@ -301,7 +278,7 @@ export default function AdminReports() {
       <div className="bg-white p-6 rounded-lg shadow-sm">
         <h3 className="text-lg font-semibold mb-4">Top Performing Organizations</h3>
         <div className="space-y-3">
-          {reportData?.organizationPerformance.topPerformers?.map((org, index) => (
+          {reportData?.organizationPerformance?.topPerformers?.map((org, index) => (
             <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded">
               <div className="flex items-center gap-3">
                 <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-500 text-white font-bold">
@@ -314,11 +291,7 @@ export default function AdminReports() {
               </div>
               <Badge className="bg-green-500">Score: {org.score}</Badge>
             </div>
-          )) || (
-            <div className="text-center py-8 text-muted-foreground">
-              No organization data available
-            </div>
-          )}
+          )) || <div className="text-center py-8 text-muted-foreground">No organization data available</div>}
         </div>
       </div>
 
@@ -332,24 +305,20 @@ export default function AdminReports() {
           <div className="bg-white p-4 rounded-lg shadow-sm">
             <div className="text-sm text-muted-foreground mb-1">Predicted Volunteer Demand</div>
             <div className="text-2xl font-bold text-purple-600">
-              {reportData?.predictions.volunteerDemand.nextMonth || 0}
+              {reportData?.predictions?.volunteerDemand?.nextMonth || 0}
             </div>
             <div className="text-xs text-muted-foreground mt-1">
-              Confidence: {reportData?.predictions.volunteerDemand.confidence || 0}%
+              Confidence: {reportData?.predictions?.volunteerDemand?.confidence || 0}%
             </div>
           </div>
           <div className="bg-white p-4 rounded-lg shadow-sm">
             <div className="text-sm text-muted-foreground mb-1">Expected No-Show Rate</div>
-            <div className="text-2xl font-bold text-orange-600">
-              {reportData?.predictions.noShowRate || 0}%
-            </div>
+            <div className="text-2xl font-bold text-orange-600">{reportData?.predictions?.noShowRate || 0}%</div>
             <div className="text-xs text-muted-foreground mt-1">Based on historical data</div>
           </div>
           <div className="bg-white p-4 rounded-lg shadow-sm">
             <div className="text-sm text-muted-foreground mb-1">Event Success Rate</div>
-            <div className="text-2xl font-bold text-green-600">
-              {reportData?.predictions.eventSuccessRate || 0}%
-            </div>
+            <div className="text-2xl font-bold text-green-600">{reportData?.predictions?.eventSuccessRate || 0}%</div>
             <div className="text-xs text-muted-foreground mt-1">Predicted for next month</div>
           </div>
         </div>
