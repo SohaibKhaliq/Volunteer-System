@@ -32,7 +32,13 @@ const api = {
   updateOrganization: async (id: number, data: any) => axios.put(`/organizations/${id}`, data),
   deleteOrganization: async (id: number) => axios.delete(`/organizations/${id}`),
 
-  listUsers: async () => axios.get('/users'),
+  listUsers: async (q?: string) => {
+    const res = await axios.get('/users', { params: q ? { search: q } : undefined });
+    // backend may return a paginated object { data: [...] } or a plain array
+    if (Array.isArray(res)) return res;
+    if (res && Array.isArray((res as any).data)) return (res as any).data;
+    return [] as const;
+  },
   createUser: async (payload: any) => axios.post('/users', payload),
   updateUser: async (id: number, data: any) => axios.put(`/users/${id}`, data),
   deleteUser: async (id: number) => axios.delete(`/users/${id}`),
@@ -63,6 +69,19 @@ const api = {
   create: async (resource: string, data: any) => axios.post(`/${resource}`, data),
   update: async (resource: string, id: number, data: any) => axios.put(`/${resource}/${id}`, data),
   delete: async (resource: string, id: number) => axios.delete(`/${resource}/${id}`),
+
+  /* Analytics & Reports */
+  getUserAnalytics: async () => axios.get('/users/analytics'),
+  bulkUpdateUsers: async (ids: number[], action: string) => axios.post('/users/bulk', { ids, action }),
+
+  getReportsOverview: async (params?: Record<string, unknown>) => axios.get('/reports', { params }),
+  getVolunteerStats: async (params?: Record<string, unknown>) => axios.get('/reports/volunteers', { params }),
+  getEventStats: async (params?: Record<string, unknown>) => axios.get('/reports/events', { params }),
+  getHoursStats: async (params?: Record<string, unknown>) => axios.get('/reports/hours', { params }),
+  getOrganizationStats: async () => axios.get('/reports/organizations'),
+  getComplianceStats: async () => axios.get('/reports/compliance'),
+  exportReport: async (type: string, reportType: string) =>
+    axios.get('/reports/export', { params: { type, reportType } }),
 
   /* Resources endpoints */
   listResources: async () => axios.get('/resources'),
