@@ -90,6 +90,12 @@ export default function AdminLayout() {
     { path: '/admin/hours', icon: CalendarClock, label: 'Volunteer Hours' },
     { path: '/admin/communications', icon: MessageSquare, label: 'Communications' },
     { path: '/admin/certifications', icon: Award, label: 'Certifications' },
+    { path: '/admin/resources', icon: Package, label: 'Resources' },
+    { path: '/admin/scheduling', icon: Clock, label: 'Scheduling' },
+    { path: '/admin/feedback', icon: FileText, label: 'Feedback' },
+    { path: '/admin/audit-logs', icon: ListOrdered, label: 'Audit Logs' },
+    { path: '/admin/settings', icon: Settings, label: 'Settings' },
+    { path: '/admin/volunteer-profile', icon: User, label: 'Volunteer Profile' },
     { path: '/admin/reports', icon: BarChart3, label: 'Reports & Analytics' },
   ];
 
