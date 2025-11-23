@@ -1,7 +1,6 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Assignment from 'App/Models/Assignment'
-import Event from 'App/Models/Event'
-import User from 'App/Models/User'
+// Event and User models not needed here when using ReportsService for overview / events
 import ReportsService from 'App/Services/ReportsService'
 
 export default class ReportsController {
