@@ -10,6 +10,9 @@ import SkeletonCard from '@/components/atoms/skeleton-card';
 import exportToCsv from '@/lib/exportCsv';
 import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/atoms/popover';
+import { Command, CommandGroup, CommandInput, CommandItem } from '@/components/atoms/command';
+import React, { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { toast } from 'sonner';
@@ -22,6 +25,19 @@ export default function AdminHours() {
   const [bulkComment, setBulkComment] = useState('');
   const [filterStatus, setFilterStatus] = useState<'All' | 'Approved' | 'Pending' | 'Rejected'>('All');
   const [search, setSearch] = useState('');
+  const [volunteerQuery, setVolunteerQuery] = useState('');
+  const [debouncedVolunteerQuery, setDebouncedVolunteerQuery] = useState('');
+  const [selectedVolunteer, setSelectedVolunteer] = useState<any | null>(null);
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedVolunteerQuery(volunteerQuery), 300);
+    return () => clearTimeout(t);
+  }, [volunteerQuery]);
+
+  const { data: volunteerResults = [], isLoading: volunteersLoading } = useQuery(
+    ['users', debouncedVolunteerQuery],
+    () => api.listUsers(debouncedVolunteerQuery)
+  );
 
   const { data, isLoading } = useQuery({
     queryKey: ['hours'],
@@ -77,6 +93,7 @@ export default function AdminHours() {
 
   const filtered = hours.filter((e: any) => {
     if (filterStatus !== 'All' && e.status !== filterStatus) return false;
+    if (selectedVolunteer && e.user?.id !== selectedVolunteer.id) return false;
     const searchText = `${e.user?.firstName || ''} ${e.user?.lastName || ''} ${e.event?.title || ''}`.toLowerCase();
     if (search && !searchText.includes(search.toLowerCase())) return false;
     return true;
@@ -99,6 +116,31 @@ export default function AdminHours() {
               onChange={(e) => setSearch(e.target.value)}
               className="w-64"
             />
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-56 justify-start">
+                  {selectedVolunteer
+                    ? `${selectedVolunteer.firstName || selectedVolunteer.name} ${selectedVolunteer.lastName || ''}`
+                    : 'Filter by volunteer'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[300px] p-0">
+                <Command>
+                  <CommandInput
+                    placeholder="Search volunteers..."
+                    value={volunteerQuery}
+                    onValueChange={setVolunteerQuery}
+                  />
+                  <CommandGroup>
+                    {volunteerResults.map((u: any) => (
+                      <CommandItem key={u.id} onSelect={() => setSelectedVolunteer(u)}>
+                        {u.firstName || u.name} {u.lastName || ''} {u.email ? `(${u.email})` : ''}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </Command>
+              </PopoverContent>
+            </Popover>
             <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as any)}>
               <SelectTrigger className="w-40">
                 <SelectValue />
@@ -157,7 +199,9 @@ export default function AdminHours() {
                         onChange={() => toggleSelect(h.id)}
                       />
                     </TableCell>
-                    <TableCell>{h.user?.firstName} {h.user?.lastName}</TableCell>
+                    <TableCell>
+                      {h.user?.firstName} {h.user?.lastName}
+                    </TableCell>
                     <TableCell>{h.event?.title || 'N/A'}</TableCell>
                     <TableCell>{new Date(h.date).toLocaleDateString()}</TableCell>
                     <TableCell>{h.hours}</TableCell>
@@ -187,18 +231,10 @@ export default function AdminHours() {
           </CardTitle>
         </CardHeader>
         <CardContent className="flex space-x-4">
-          <Button
-            variant="outline"
-            onClick={() => handleBulkAction('approve')}
-            disabled={selected.length === 0}
-          >
+          <Button variant="outline" onClick={() => handleBulkAction('approve')} disabled={selected.length === 0}>
             Approve Selected ({selected.length})
           </Button>
-          <Button
-            variant="destructive"
-            onClick={() => handleBulkAction('reject')}
-            disabled={selected.length === 0}
-          >
+          <Button variant="destructive" onClick={() => handleBulkAction('reject')} disabled={selected.length === 0}>
             <XCircle className="h-4 w-4 mr-2" />
             Reject Selected ({selected.length})
           </Button>
@@ -212,9 +248,7 @@ export default function AdminHours() {
       <Dialog open={bulkOpen} onOpenChange={setBulkOpen}>
         <DialogContent aria-labelledby="bulk-action-title">
           <DialogHeader>
-            <DialogTitle id="bulk-action-title">
-              {bulkMode === 'approve' ? 'Approve' : 'Reject'} Hours
-            </DialogTitle>
+            <DialogTitle id="bulk-action-title">{bulkMode === 'approve' ? 'Approve' : 'Reject'} Hours</DialogTitle>
           </DialogHeader>
           <div className="p-4">
             <div className="text-sm mb-2">Selected entries: {selected.length}</div>
