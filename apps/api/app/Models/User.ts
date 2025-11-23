@@ -38,7 +38,7 @@ export default class User extends BaseModel {
   public profileMetadata?: string
 
   @column.dateTime({ columnName: 'last_active_at' })
-  public lastActiveAt?: DateTime
+  public lastLoginAt?: DateTime
 
   @column({ columnName: 'volunteer_status' })
   public volunteerStatus?: string
