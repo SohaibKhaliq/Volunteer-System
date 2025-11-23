@@ -31,6 +31,14 @@ import AdminAuditLogs from '@/pages/admin/audit-logs';
 import AdminSettings from '@/pages/admin/settings';
 import AdminVolunteerProfile from '@/pages/admin/volunteer-profile';
 
+// Simple wrappers to ensure pages are vertically scrollable
+const ScrollWrapper = ({ children }: any) => (
+  <div style={{ height: '100vh', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>{children}</div>
+);
+
+const AdminScrollWrapper = ({ children }: any) => (
+  <div style={{ height: '100vh', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>{children}</div>
+);
 export enum DetailTypes {
   Offer = 'offer',
   Request = 'request',
@@ -40,57 +48,73 @@ export enum DetailTypes {
 
 const routes: RouteObject[] = [
   {
-    path: '/admin',
-    element: <AdminLayout />,
+    path: 'admin',
+    element: (
+      <AdminScrollWrapper>
+        <AdminLayout />
+      </AdminScrollWrapper>
+    ),
     errorElement: <ErrorBoundary />,
     children: [
-      { path: '/admin', element: <AdminDashboard /> },
-      { path: '/admin/users', element: <AdminUsers /> },
-      { path: '/admin/organizations', element: <AdminOrganizations /> },
-      { path: '/admin/events', element: <AdminEvents /> },
-      { path: '/admin/tasks', element: <AdminTasks /> },
-      { path: '/admin/hours', element: <AdminHours /> },
-      { path: '/admin/compliance', element: <AdminCompliance /> },
-      { path: '/admin/certifications', element: <AdminCertifications /> },
-      { path: '/admin/communications', element: <AdminCommunications /> },
-      { path: '/admin/reports', element: <AdminReports /> },
-      { path: '/admin/resources', element: <AdminResources /> },
-      { path: '/admin/scheduling', element: <AdminScheduling /> },
-      { path: '/admin/feedback', element: <AdminFeedback /> },
-      { path: '/admin/audit-logs', element: <AdminAuditLogs /> },
-      { path: '/admin/settings', element: <AdminSettings /> },
-      { path: '/admin/volunteer-profile', element: <AdminVolunteerProfile /> },
+      { index: true, element: <AdminDashboard /> },
+      { path: 'users', element: <AdminUsers /> },
+      { path: 'organizations', element: <AdminOrganizations /> },
+      { path: 'events', element: <AdminEvents /> },
+      { path: 'tasks', element: <AdminTasks /> },
+      { path: 'hours', element: <AdminHours /> },
+      { path: 'compliance', element: <AdminCompliance /> },
+      { path: 'certifications', element: <AdminCertifications /> },
+      { path: 'communications', element: <AdminCommunications /> },
+      { path: 'reports', element: <AdminReports /> },
+      { path: 'resources', element: <AdminResources /> },
+      { path: 'scheduling', element: <AdminScheduling /> },
+      { path: 'feedback', element: <AdminFeedback /> },
+      { path: 'audit-logs', element: <AdminAuditLogs /> },
+      { path: 'settings', element: <AdminSettings /> },
+      { path: 'volunteer-profile', element: <AdminVolunteerProfile /> }
     ]
   },
   {
     path: '/',
-    element: <Layout />,
+    element: (
+      <ScrollWrapper>
+        <Layout />
+      </ScrollWrapper>
+    ),
     errorElement: <ErrorBoundary />,
     children: [
-      { path: '/', element: <Home /> },
-      { path: '/login', element: <Login /> },
-      { path: '/register', element: <Register /> },
-      { path: '/map', element: <Map /> },
-      { path: '/carpooling', element: <Carpooling /> },
-      { path: '/help', element: <Help /> },
-      { path: '/help-request', element: <HelpRequestForm /> },
-      { path: '/help-offer', element: <HelpOfferForm /> },
-      { path: '/transport-request', element: <TransportRequestForm /> },
-      { path: '/transport-offer', element: <TransportOfferForm /> }
+      { index: true, element: <Home /> },
+      { path: 'login', element: <Login /> },
+      { path: 'register', element: <Register /> },
+      { path: 'map', element: <Map /> },
+      { path: 'carpooling', element: <Carpooling /> },
+      { path: 'help', element: <Help /> },
+      { path: 'help-request', element: <HelpRequestForm /> },
+      { path: 'help-offer', element: <HelpOfferForm /> },
+      { path: 'transport-request', element: <TransportRequestForm /> },
+      { path: 'transport-offer', element: <TransportOfferForm /> }
     ]
   },
   {
-    path: '/detail',
-    element: <Layout />,
+    path: 'detail',
+    element: (
+      <ScrollWrapper>
+        <Layout />
+      </ScrollWrapper>
+    ),
     errorElement: <ErrorBoundary />,
     children: Object.values(DetailTypes).map((type) => ({
-      path: `/detail/${type}/:id`,
+      path: `${type}/:id`,
       element: <Detail />
     }))
   },
   {
     path: '*',
-    element: <Layout />,
+    element: (
+      <ScrollWrapper>
+        <Layout />
+      </ScrollWrapper>
+    ),
     errorElement: <ErrorBoundary />,
     children: [{ path: '*', element: <NotFound /> }]
   }
