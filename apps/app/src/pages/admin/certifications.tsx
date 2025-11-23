@@ -25,6 +25,9 @@ export default function AdminCertifications() {
 
   const { data: items = [], isLoading } = useQuery({ queryKey: ['compliance'], queryFn: api.listCompliance });
 
+  // load users for user lookup in the create/edit dialog
+  const { data: users = [], isLoading: usersLoading } = useQuery({ queryKey: ['users'], queryFn: api.listUsers });
+
   const createMutation = useMutation({
     mutationFn: (data: any) => api.createCompliance(data),
     onSuccess: () => {
@@ -141,7 +144,6 @@ export default function AdminCertifications() {
               </Button>
             </div>
           </div>
-
           <Table>
             <TableHeader>
               <TableRow>
@@ -219,11 +221,22 @@ export default function AdminCertifications() {
           </DialogHeader>
           <div className="p-4 space-y-3">
             <div>
-              <label className="text-sm block mb-1">Volunteer (user id)</label>
-              <Input
-                value={editing?.user_id || editing?.user?.id || ''}
-                onChange={(e) => setEditing((s: any) => ({ ...(s || {}), user_id: Number(e.target.value) }))}
-              />
+              <label className="text-sm block mb-1">Volunteer</label>
+              <Select
+                value={(editing?.user_id || editing?.user?.id || '') + ''}
+                onValueChange={(v) => setEditing((s: any) => ({ ...(s || {}), user_id: Number(v) }))}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder={usersLoading ? 'Loading users...' : 'Select volunteer'} />
+                </SelectTrigger>
+                <SelectContent>
+                  {((users as any[]) || []).map((u: any) => (
+                    <SelectItem key={u.id} value={String(u.id)}>
+                      {u.firstName || u.name} {u.lastName || ''} {u.email ? `(${u.email})` : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <label className="text-sm block mb-1">Type</label>
