@@ -194,15 +194,16 @@ export default class UsersController {
       const user = await User.findOrFail(params.id)
 
       // Accept phone and profileMetadata keys
-      const payload = request.only([
+      Logger.info('Update payload', request.all());
+      const payload = request.only([    
         'email',
         'firstName',
         'lastName',
         'phone',
         'profileMetadata',
         'isDisabled',
-        'volunteerStatus'
-      ])
+        'volunteerStatus',
+      ]);
 
       // Don't allow password updates through this endpoint
       user.merge(payload)
@@ -223,8 +224,10 @@ export default class UsersController {
     try {
       const user = await User.findOrFail(params.id)
       const { roleId } = request.only(['roleId'])
-      const role = await Role.find(roleId)
+      Logger.info('Assign role payload', { userId: params.id, roleId })
+      const role = await Role.find(Number(roleId))
       if (!role) {
+        console.error('Role not found for id', roleId)
         return response.notFound({ error: { message: 'Role not found' } })
       }
 
