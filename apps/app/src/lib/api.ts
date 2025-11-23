@@ -39,6 +39,8 @@ const api = {
     if (res && Array.isArray((res as any).data)) return (res as any).data;
     return [] as const;
   },
+  listUsersPaged: async (q?: string, page = 1, perPage = 20, status?: string) =>
+    axios.get('/users', { params: { ...(q ? { search: q } : {}), page, perPage, status } }),
   createUser: async (payload: any) => axios.post('/users', payload),
   updateUser: async (id: number, data: any) => axios.put(`/users/${id}`, data),
   deleteUser: async (id: number) => axios.delete(`/users/${id}`),
