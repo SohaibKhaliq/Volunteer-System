@@ -7,7 +7,7 @@ export default class Event extends BaseModel {
   @column({ isPrimary: true })
   public id: number
 
-  @column()
+  @column({ columnName: 'organization_id' })
   public organizationId?: number
 
   @belongsTo(() => Organization)
@@ -27,6 +27,9 @@ export default class Event extends BaseModel {
 
   @column({ columnName: 'capacity' })
   public capacity?: number
+
+  @column({ columnName: 'is_recurring' })
+  public isRecurring?: boolean
 
   @column.dateTime()
   public startAt: DateTime
