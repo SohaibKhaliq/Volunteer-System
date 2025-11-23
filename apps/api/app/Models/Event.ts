@@ -1,0 +1,42 @@
+import { BaseModel, column, belongsTo, BelongsTo, hasMany, HasMany } from '@ioc:Adonis/Lucid/Orm'
+import { DateTime } from 'luxon'
+import Organization from './Organization'
+import Task from './Task'
+
+export default class Event extends BaseModel {
+  @column({ isPrimary: true })
+  public id: number
+
+  @column()
+  public organizationId?: number
+
+  @belongsTo(() => Organization)
+  public organization: BelongsTo<typeof Organization>
+
+  @column()
+  public title: string
+
+  @column()
+  public description?: string
+
+  @column()
+  public location?: string
+
+  @column.dateTime()
+  public startAt: DateTime
+
+  @column.dateTime()
+  public endAt?: DateTime
+
+  @hasMany(() => Task)
+  public tasks: HasMany<typeof Task>
+
+  @column()
+  public isPublished?: boolean
+
+  @column.dateTime({ autoCreate: true })
+  public createdAt: DateTime
+
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  public updatedAt: DateTime
+}
