@@ -256,24 +256,43 @@ export default function AdminTasks() {
               <div className="space-y-4 py-4">
                 <div className="text-sm text-muted-foreground">Select volunteers to assign</div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-64 overflow-auto">
-                  {usersList.map((u: any) => (
-                    <label key={u.id} className="flex items-center gap-2 p-2 border rounded">
-                      <input
-                        type="checkbox"
-                        checked={selectedUserIds.includes(u.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) setSelectedUserIds((s) => Array.from(new Set([...s, u.id])));
-                          else setSelectedUserIds((s) => s.filter((id) => id !== u.id));
-                        }}
-                      />
-                      <div className="text-sm">
-                        {(u.first_name ?? u.firstName ?? u.name) || ''}
-                        {(u.last_name ?? u.lastName) ? ` ${u.last_name ?? u.lastName}` : ''}
-                        {(u.email ?? u.email_address) ? ` (${u.email ?? u.email_address})` : ''}
-                      </div>
-                    </label>
-                  ))}
+                  {usersList.map((u: any) => {
+                    // support multiple shapes: object with camelCase/snake_case, primitive id or string
+                    const id = u?.id ?? u?.user_id ?? (typeof u === 'number' ? u : undefined);
+                    const rawName = u?.first_name ?? u?.firstName ?? u?.name ?? (typeof u === 'string' ? u : undefined);
+                    const fname = typeof rawName === 'string' && rawName.trim() ? rawName.trim() : undefined;
+                    const lnameRaw = u?.last_name ?? u?.lastName;
+                    const lname = typeof lnameRaw === 'string' && lnameRaw.trim() ? lnameRaw.trim() : undefined;
+                    const mailRaw = u?.email ?? u?.email_address ?? u?.user_email;
+                    const mail = typeof mailRaw === 'string' && mailRaw.trim() ? mailRaw.trim() : undefined;
+                    const display = fname ?? mail ?? (id ? `User ${id}` : 'Unknown');
+                    const checked = Boolean(id ? selectedUserIds.includes(id) : selectedUserIds.includes(u));
+                    const uid = id ?? (typeof u === 'string' ? u : String(u?.id ?? ''));
+                    return (
+                      <label key={String(uid)} className="flex items-center gap-2 p-2 border rounded">
+                        <input
+                          type="checkbox"
+                          aria-label={`assign-${display}`}
+                          checked={checked}
+                          onChange={(e) => {
+                            const thisId = id ?? u?.id ?? u;
+                            if (e.target.checked)
+                              setSelectedUserIds((s) => Array.from(new Set([...s, thisId])) as number[]);
+                            else setSelectedUserIds((s) => s.filter((id) => id !== thisId));
+                          }}
+                        />
+                        <div className="text-sm">
+                          {display}
+                          {lname ? ` ${lname}` : ''}
+                          {mail && fname ? ` (${mail})` : ''}
+                        </div>
+                      </label>
+                    );
+                  })}
                 </div>
+                {usersList.length === 0 && (
+                  <div className="text-sm text-muted-foreground">No volunteers available to assign.</div>
+                )}
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setShowAssignDialog(false)}>
@@ -620,6 +639,9 @@ export default function AdminTasks() {
                             );
                             const ids = taskAssignments.map((a: any) => a.user?.id ?? a.user_id).filter(Boolean);
                             setSelectedUserIds(ids);
+                            // debug: log users and assignments so we can inspect shapes in the browser console
+                            // eslint-disable-next-line no-console
+                            console.log('Opening Assign dialog', { task, usersList, taskAssignments });
                             setShowAssignDialog(true);
                           }}
                         >
