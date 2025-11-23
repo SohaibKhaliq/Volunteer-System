@@ -2,14 +2,13 @@ import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Event from 'App/Models/Event'
 
 export default class EventsController {
-  public async index({ request, response }: HttpContextContract) {
-    const query = request.qs()
+  public async index({ response }: HttpContextContract) {
     const events = await Event.query().preload('tasks').orderBy('start_at', 'asc')
 
     return response.ok(events)
   }
 
-  public async store({ request, response, auth }: HttpContextContract) {
+  public async store({ request, response }: HttpContextContract) {
     const payload = request.only([
       'title',
       'description',
