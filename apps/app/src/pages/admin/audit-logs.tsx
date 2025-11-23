@@ -3,11 +3,21 @@ import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { ListOrdered } from 'lucide-react';
-import { auditLogs as mockLogs } from '@/lib/mock/adminMock';
+import { useQuery } from '@tanstack/react-query';
+import api from '@/lib/api';
+import SkeletonCard from '@/components/atoms/skeleton-card';
+import { format } from 'date-fns';
 
 export default function AdminAuditLogs() {
+  const { data, isLoading } = useQuery({
+    queryKey: ['audit-logs'],
+    queryFn: api.listAuditLogs
+  });
+
+  const logs = Array.isArray(data) ? data : [];
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" aria-busy={isLoading}>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -21,17 +31,33 @@ export default function AdminAuditLogs() {
               <TableRow>
                 <TableHead>Action</TableHead>
                 <TableHead>User</TableHead>
+                <TableHead>IP Address</TableHead>
                 <TableHead>Date & Time</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockLogs.map((log) => (
-                <TableRow key={log.id}>
-                  <TableCell>{log.action}</TableCell>
-                  <TableCell>{log.user}</TableCell>
-                  <TableCell>{log.date}</TableCell>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={4}>
+                    <SkeletonCard />
+                  </TableCell>
                 </TableRow>
-              ))}
+              ) : logs.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center text-muted-foreground">
+                    No audit logs found
+                  </TableCell>
+                </TableRow>
+              ) : (
+                logs.map((log: any) => (
+                  <TableRow key={log.id}>
+                    <TableCell>{log.action}</TableCell>
+                    <TableCell>{log.user?.firstName} {log.user?.lastName}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{log.ipAddress || 'N/A'}</TableCell>
+                    <TableCell>{format(new Date(log.createdAt), 'PPpp')}</TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>
