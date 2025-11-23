@@ -29,15 +29,28 @@ const api = {
   /* Admin / management endpoints */
   listOrganizations: async () => axios.get('/organizations'),
   createOrganization: async (payload: any) => axios.post('/organizations', payload),
+  updateOrganization: async (id: number, data: any) => axios.put(`/organizations/${id}`, data),
+  deleteOrganization: async (id: number) => axios.delete(`/organizations/${id}`),
 
   listUsers: async () => axios.get('/users'),
   createUser: async (payload: any) => axios.post('/users', payload),
+  updateUser: async (id: number, data: any) => axios.put(`/users/${id}`, data),
+  deleteUser: async (id: number) => axios.delete(`/users/${id}`),
+  sendReengagementEmail: async (id: number) => axios.post(`/users/${id}/remind`),
 
   listEvents: async () => axios.get('/events'),
+  createEvent: async (data: any) => axios.post('/events', data),
+  updateEvent: async (id: number, data: any) => axios.put(`/events/${id}`, data),
+  deleteEvent: async (id: number) => axios.delete(`/events/${id}`),
+  aiMatchVolunteers: async (id: number) => axios.post(`/events/${id}/ai-match`),
   listTasks: async () => axios.get('/tasks'),
 
   aiMatch: async (task_id: number) => axios.post('/ai/match', { task_id }),
   aiForecast: async (start: string, end: string) => axios.post('/ai/forecast', { start, end }),
+
+  /* Compliance endpoints */
+  updateComplianceDoc: async (id: number, data: any) => axios.put(`/compliance/${id}`, data),
+  sendComplianceReminder: async (userId: number) => axios.post(`/compliance/remind/${userId}`),
 
   // reports endpoint with optional query options
   getReports: async <T = unknown>(params?: Record<string, unknown>): Promise<T> =>
@@ -45,6 +58,9 @@ const api = {
 
   // generic list helper for simple collections
   list: async (resource: string) => axios.get(`/${resource}`),
+  create: async (resource: string, data: any) => axios.post(`/${resource}`, data),
+  update: async (resource: string, id: number, data: any) => axios.put(`/${resource}/${id}`, data),
+  delete: async (resource: string, id: number) => axios.delete(`/${resource}/${id}`),
   // return current authenticated user's profile (roles, flags)
   getCurrentUser: async () => axios.get('/me')
 } as const;
