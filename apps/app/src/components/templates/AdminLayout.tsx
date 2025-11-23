@@ -2,7 +2,25 @@ import React, { useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useApp } from '@/providers/app-provider';
 import { cn } from '@/lib/utils';
-import { Users, Building2, Calendar, ClipboardCheck, Shield, BarChart3, Home, MessageSquare, CalendarClock, Award, Package, Clock, FileText, ListOrdered, Settings, User, Bell } from 'lucide-react';
+import {
+  Users,
+  Building2,
+  Calendar,
+  ClipboardCheck,
+  Shield,
+  BarChart3,
+  Home,
+  MessageSquare,
+  CalendarClock,
+  Award,
+  Package,
+  Clock,
+  FileText,
+  ListOrdered,
+  Settings,
+  User,
+  Bell
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Providers from '@/providers';
 
@@ -97,7 +115,7 @@ export default function AdminLayout() {
     { path: '/admin/audit-logs', icon: ListOrdered, label: 'Audit Logs' },
     { path: '/admin/settings', icon: Settings, label: 'Settings' },
     { path: '/admin/volunteer-profile', icon: User, label: 'Volunteer Profile' },
-    { path: '/admin/reports', icon: BarChart3, label: 'Reports & Analytics' },
+    { path: '/admin/reports', icon: BarChart3, label: 'Reports & Analytics' }
   ];
 
   return (
