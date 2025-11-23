@@ -118,6 +118,11 @@ Route.post('/users/:id/remind', 'UsersController.remind').middleware(['auth'])
 Route.post('/users/bulk', 'UsersController.bulkUpdate').middleware(['auth'])
 Route.get('/users/analytics', 'UsersController.analytics').middleware(['auth'])
 
+// Role management and activation endpoints
+Route.post('/users/:id/roles', 'UsersController.addRole').middleware(['auth'])
+Route.delete('/users/:id/roles/:roleId', 'UsersController.removeRole').middleware(['auth'])
+Route.post('/users/:id/activate', 'UsersController.activate').middleware(['auth'])
+
 Route.post('/events/:id/ai-match', 'EventsController.aiMatch').middleware(['auth'])
 Route.post('/compliance/remind/:userId', 'ComplianceController.remind').middleware(['auth'])
 
