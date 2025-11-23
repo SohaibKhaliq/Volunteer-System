@@ -10,7 +10,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
-  DropdownMenuLabel,
+  DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
 import {
   Dialog,
@@ -18,7 +18,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
+  DialogFooter
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -34,7 +34,7 @@ import {
   TrendingUp,
   Users,
   Calendar,
-  AlertTriangle,
+  AlertTriangle
 } from 'lucide-react';
 import { toast } from '@/components/atoms/use-toast';
 
@@ -58,10 +58,7 @@ export default function AdminOrganizations() {
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
 
-  const { data: orgs, isLoading } = useQuery<Organization[]>(
-    ['organizations'],
-    api.listOrganizations
-  );
+  const { data: orgs, isLoading } = useQuery<Organization[]>(['organizations'], api.listOrganizations);
 
   // Mutations
   const approveMutation = useMutation({
@@ -69,7 +66,7 @@ export default function AdminOrganizations() {
     onSuccess: () => {
       queryClient.invalidateQueries(['organizations']);
       toast({ title: 'Organization approved', variant: 'success' });
-    },
+    }
   });
 
   const rejectMutation = useMutation({
@@ -77,7 +74,7 @@ export default function AdminOrganizations() {
     onSuccess: () => {
       queryClient.invalidateQueries(['organizations']);
       toast({ title: 'Organization rejected', variant: 'success' });
-    },
+    }
   });
 
   const deactivateMutation = useMutation({
@@ -85,7 +82,7 @@ export default function AdminOrganizations() {
     onSuccess: () => {
       queryClient.invalidateQueries(['organizations']);
       toast({ title: 'Organization deactivated', variant: 'success' });
-    },
+    }
   });
 
   const deleteMutation = useMutation({
@@ -93,7 +90,7 @@ export default function AdminOrganizations() {
     onSuccess: () => {
       queryClient.invalidateQueries(['organizations']);
       toast({ title: 'Organization deleted', variant: 'success' });
-    },
+    }
   });
 
   // Filter organizations
@@ -133,9 +130,7 @@ export default function AdminOrganizations() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Organization Management</h2>
-          <p className="text-muted-foreground">
-            Approve, monitor, and manage volunteer organizations
-          </p>
+          <p className="text-muted-foreground"> Approve, monitor, and manage volunteer organizations</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" size="sm">
@@ -165,16 +160,10 @@ export default function AdminOrganizations() {
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuItem onClick={() => setStatusFilter('all')}>All</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setStatusFilter('approved')}>
-              Approved
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setStatusFilter('pending')}>
-              Pending Approval
-            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setStatusFilter('approved')}> Approved </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setStatusFilter('pending')}>Pending Approval</DropdownMenuItem>
             <DropdownMenuItem onClick={() => setStatusFilter('active')}>Active</DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setStatusFilter('inactive')}>
-              Inactive
-            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setStatusFilter('inactive')}>Inactive</DropdownMenuItem> 
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -187,21 +176,15 @@ export default function AdminOrganizations() {
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm">
           <div className="text-sm font-medium text-muted-foreground">Approved</div>
-          <div className="text-2xl font-bold text-green-600">
-            {orgs?.filter((o) => o.isApproved).length || 0}
-          </div>
+          <div className="text-2xl font-bold text-green-600">{orgs?.filter((o) => o.isApproved).length || 0}</div>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm">
           <div className="text-sm font-medium text-muted-foreground">Pending Approval</div>
-          <div className="text-2xl font-bold text-yellow-600">
-            {orgs?.filter((o) => !o.isApproved).length || 0}
-          </div>
+          <div className="text-2xl font-bold text-yellow-600">{orgs?.filter((o) => !o.isApproved).length || 0}</div>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm">
           <div className="text-sm font-medium text-muted-foreground">Active</div>
-          <div className="text-2xl font-bold text-blue-600">
-            {orgs?.filter((o) => o.isActive).length || 0}
-          </div>
+          <div className="text-2xl font-bold text-blue-600">{orgs?.filter((o) => o.isActive).length || 0}</div>
         </div>
       </div>
 
@@ -227,9 +210,7 @@ export default function AdminOrganizations() {
                   <TableCell>
                     <div>
                       <div className="font-medium">{org.name}</div>
-                      <div className="text-sm text-muted-foreground line-clamp-1">
-                        {org.description}
-                      </div>
+                      <div className="text-sm text-muted-foreground line-clamp-1">{org.description}</div>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -240,9 +221,13 @@ export default function AdminOrganizations() {
                         <Badge className="bg-yellow-500 w-fit">Pending</Badge>
                       )}
                       {org.isActive ? (
-                        <Badge variant="outline" className="w-fit">Active</Badge>
+                        <Badge variant="outline" className="w-fit">
+                          Active
+                        </Badge>
                       ) : (
-                        <Badge variant="secondary" className="w-fit">Inactive</Badge>
+                        <Badge variant="secondary" className="w-fit">
+                          Inactive
+                        </Badge>
                       )}
                     </div>
                   </TableCell>
@@ -266,9 +251,7 @@ export default function AdminOrganizations() {
                         <span className="text-sm">{org.complianceScore}%</span>
                       </div>
                     ) : (
-                      <span className="text-sm text-green-600">
-                        {org.complianceScore || 100}%
-                      </span>
+                      <span className="text-sm text-green-600">{org.complianceScore || 100}%</span>
                     )}
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
@@ -302,18 +285,12 @@ export default function AdminOrganizations() {
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         {!org.isApproved ? (
-                          <DropdownMenuItem
-                            onClick={() => approveMutation.mutate(org.id)}
-                            className="text-green-600"
-                          >
+                          <DropdownMenuItem onClick={() => approveMutation.mutate(org.id)} className="text-green-600">
                             <CheckCircle className="h-4 w-4 mr-2" />
                             Approve
                           </DropdownMenuItem>
                         ) : (
-                          <DropdownMenuItem
-                            onClick={() => rejectMutation.mutate(org.id)}
-                            className="text-orange-600"
-                          >
+                          <DropdownMenuItem onClick={() => rejectMutation.mutate(org.id)} className="text-orange-600">
                             <XCircle className="h-4 w-4 mr-2" />
                             Revoke Approval
                           </DropdownMenuItem>
@@ -389,15 +366,11 @@ export default function AdminOrganizations() {
               </div>
               <div>
                 <div className="text-sm font-medium text-muted-foreground">Volunteers</div>
-                <div className="mt-1 text-lg font-semibold">
-                  {selectedOrg?.volunteerCount || 0}
-                </div>
+                <div className="mt-1 text-lg font-semibold"> {selectedOrg?.volunteerCount || 0} </div>
               </div>
               <div>
                 <div className="text-sm font-medium text-muted-foreground">Events Created</div>
-                <div className="mt-1 text-lg font-semibold">
-                  {selectedOrg?.eventCount || 0}
-                </div>
+                <div className="mt-1 text-lg font-semibold"> {selectedOrg?.eventCount || 0} </div>
               </div>
               <div>
                 <div className="text-sm font-medium text-muted-foreground">Performance Score</div>
@@ -405,9 +378,7 @@ export default function AdminOrganizations() {
               </div>
               <div>
                 <div className="text-sm font-medium text-muted-foreground">Compliance Score</div>
-                <div className="mt-1 text-lg font-semibold">
-                  {selectedOrg?.complianceScore || 100}%
-                </div>
+                <div className="mt-1 text-lg font-semibold"> {selectedOrg?.complianceScore || 100}% </div>
               </div>
             </div>
           </div>
