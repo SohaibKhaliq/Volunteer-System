@@ -68,6 +68,36 @@ Route.resource('users', 'UsersController')
   })
   .apiOnly()
 
+Route.resource('organizations', 'OrganizationsController')
+  .middleware({ '*': ['auth'] })
+  .apiOnly()
+
+Route.resource('roles', 'RolesController')
+  .middleware({ '*': ['auth'] })
+  .apiOnly()
+
+Route.resource('events', 'EventsController')
+  .middleware({ '*': ['auth'] })
+  .apiOnly()
+
+Route.resource('tasks', 'TasksController')
+  .middleware({ '*': ['auth'] })
+  .apiOnly()
+
+Route.resource('assignments', 'AssignmentsController')
+  .middleware({ '*': ['auth'] })
+  .apiOnly()
+
+Route.resource('compliance', 'ComplianceController')
+  .middleware({ '*': ['auth'] })
+  .apiOnly()
+
+Route.get('/reports', 'ReportsController.index').middleware(['auth'])
+
+// AI-driven helpers
+Route.post('/ai/match', 'AiController.match') // returns suggested volunteers for a task
+Route.post('/ai/forecast', 'AiController.forecast') // returns demand forecast for a date range
+
 Route.post('/register', 'AuthController.register')
 Route.post('/login', 'AuthController.login')
 Route.post('/logout', 'AuthController.logout').middleware('auth:api')

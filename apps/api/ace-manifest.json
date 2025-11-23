@@ -1,13 +1,19 @@
 {
   "commands": {
-    "docs:generate": {
-      "settings": {
-        "loadApp": false,
-        "stayAlive": false
-      },
-      "commandPath": "./commands/DocsGenerate",
-      "commandName": "docs:generate",
-      "description": "",
+    "reminder:compliance": {
+      "settings": {},
+      "commandPath": "./commands/ComplianceExpiryReminder",
+      "commandName": "reminder:compliance",
+      "description": "Detect documents nearing expiry and notify users",
+      "args": [],
+      "aliases": [],
+      "flags": []
+    },
+    "detect:inactive": {
+      "settings": {},
+      "commandPath": "./commands/DetectInactiveUsers",
+      "commandName": "detect:inactive",
+      "description": "Detect inactive volunteer users and create re-engagement campaign",
       "args": [],
       "aliases": [],
       "flags": []

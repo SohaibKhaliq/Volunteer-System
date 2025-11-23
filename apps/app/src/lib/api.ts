@@ -18,7 +18,21 @@ const api = {
   },
   createCarpooling: async (data: FormData) => {
     return axios.post('/carpooling-ads', data);
-  }
+  },
+  /* Admin / management endpoints */
+  listOrganizations: async () => axios.get('/organizations'),
+  createOrganization: async (payload: any) => axios.post('/organizations', payload),
+
+  listUsers: async () => axios.get('/users'),
+
+  listEvents: async () => axios.get('/events'),
+  listTasks: async () => axios.get('/tasks'),
+
+  aiMatch: async (task_id: number) => axios.post('/ai/match', { task_id }),
+  aiForecast: async (start: string, end: string) => axios.post('/ai/forecast', { start, end }),
+
+  // generic list helper for simple collections
+  list: async (resource: string) => axios.get(`/${resource}`)
 } as const;
 
 export const useLazyQuery = (key: QueryKey, fn: QueryFunction, options = {}) => {
