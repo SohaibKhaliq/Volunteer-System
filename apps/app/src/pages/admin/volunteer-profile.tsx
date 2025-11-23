@@ -3,23 +3,8 @@ import React from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { User, Clock, Award } from "lucide-react";
-
-// Mock volunteer data
-const volunteer = {
-  name: "Alice Johnson",
-  role: "Community Volunteer",
-  avatar: "https://i.pravatar.cc/150?img=5",
-  hours: 124,
-  certifications: ["First Aid", "Food Safety", "Volunteer Management"],
-};
-
-// Mock recent activity (timeline)
-const activity = [
-  { id: 1, date: "2025-11-20", description: "Completed shift – Food Distribution" },
-  { id: 2, date: "2025-11-18", description: "Attended training – First Aid" },
-  { id: 3, date: "2025-11-15", description: "Logged 8 volunteer hours" },
-];
+import { User, Clock, Award } from 'lucide-react';
+import { volunteerProfile } from '@/lib/mock/adminMock';
 
 export default function AdminVolunteerProfile() {
   return (
@@ -28,12 +13,12 @@ export default function AdminVolunteerProfile() {
       <Card>
         <CardHeader className="flex flex-col items-center text-center">
           <User className="h-16 w-16 text-blue-600 mb-2" />
-          <CardTitle className="text-2xl font-bold">{volunteer.name}</CardTitle>
-          <p className="text-sm text-gray-600">{volunteer.role}</p>
-          <p className="mt-2 text-lg font-medium">{volunteer.hours} hrs volunteered</p>
+          <CardTitle className="text-2xl font-bold">{volunteerProfile.name}</CardTitle>
+          <p className="text-sm text-gray-600">{volunteerProfile.role}</p>
+          <p className="mt-2 text-lg font-medium">{volunteerProfile.hours} hrs volunteered</p>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-2 justify-center">
-          {volunteer.certifications.map((c, i) => (
+          {volunteerProfile.certifications.map((c, i) => (
             <Badge key={i} variant="default" className="flex items-center gap-1">
               <Award className="h-4 w-4" />
               {c}
@@ -59,7 +44,7 @@ export default function AdminVolunteerProfile() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {activity.map((a) => (
+              {volunteerProfile.activity.map((a) => (
                 <TableRow key={a.id}>
                   <TableCell>{a.date}</TableCell>
                   <TableCell>{a.description}</TableCell>
