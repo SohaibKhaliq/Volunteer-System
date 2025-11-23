@@ -54,12 +54,12 @@ const routes: RouteObject[] = [
       { path: '/admin/certifications', element: <AdminCertifications /> },
       { path: '/admin/communications', element: <AdminCommunications /> },
       { path: '/admin/reports', element: <AdminReports /> },
-      { path: '/admin/resources',   element: <AdminResources /> },
-{ path: '/admin/scheduling',  element: <AdminScheduling /> },
-{ path: '/admin/feedback',    element: <AdminFeedback /> },
-{ path: '/admin/audit-logs',  element: <AdminAuditLogs /> },
-{ path: '/admin/settings',    element: <AdminSettings /> },
-{ path: '/admin/volunteer-profile', element: <AdminVolunteerProfile /> },
+      { path: '/admin/resources', element: <AdminResources /> },
+      { path: '/admin/scheduling', element: <AdminScheduling /> },
+      { path: '/admin/feedback', element: <AdminFeedback /> },
+      { path: '/admin/audit-logs', element: <AdminAuditLogs /> },
+      { path: '/admin/settings', element: <AdminSettings /> },
+      { path: '/admin/volunteer-profile', element: <AdminVolunteerProfile /> },
     ]
   },
   {
