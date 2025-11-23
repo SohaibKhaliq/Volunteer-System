@@ -1,4 +1,4 @@
-import { Limiter } from '@adonisjs/limiter/build/services/index'
+
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { rules, schema } from '@ioc:Adonis/Core/Validator'
 
@@ -6,19 +6,6 @@ import User from '../../Models/User'
 
 export default class AuthController {
   public async register({ request, response, auth }: HttpContextContract) {
-    const throttleKey = `register_${request.ip()}`
-    const limiter = Limiter.use({
-      requests: 5,
-      duration: '60 mins',
-      blockDuration: '8 hours'
-    })
-
-    if (await limiter.isBlocked(throttleKey)) {
-      return response.tooManyRequests({
-        error: { message: 'Too many requests. Please try after some time' }
-      })
-    }
-
     try {
       const userSchema = schema.create({
         email: schema.string({ trim: true }, [
@@ -37,7 +24,6 @@ export default class AuthController {
 
       return response.json({ token })
     } catch (error) {
-      await limiter.increment(throttleKey)
       return response.badRequest({
         error: { message: 'Unable to register', details: error.messages || error.message }
       })
@@ -46,25 +32,11 @@ export default class AuthController {
 
   public async login({ request, response, auth }: HttpContextContract) {
     const { email, password } = request.only(['email', 'password'])
-    const throttleKey = `login_${email}_${request.ip()}`
-
-    const limiter = Limiter.use({
-      requests: 5,
-      duration: '15 mins',
-      blockDuration: '30 mins'
-    })
-
-    if (await limiter.isBlocked(throttleKey)) {
-      return response.tooManyRequests({
-        error: { message: 'Too many requests. Please try after some time' }
-      })
-    }
 
     try {
       const token = await auth.use('api').attempt(email, password)
       return response.json({ token })
     } catch (error) {
-      await limiter.increment(throttleKey)
       return response.unauthorized({
         error: { message: 'Invalid credentials' }
       })
