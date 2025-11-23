@@ -1,15 +1,14 @@
 // src/pages/admin/scheduling.tsx
-import React from "react";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Clock } from "lucide-react";
+import React from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
+import { Clock } from 'lucide-react';
 
 // Mock shift data
 const mockShifts = [
-  { id: 1, date: "2025-11-20", time: "09:00 - 13:00", role: "Food Distribution", volunteers: 5 },
-  { id: 2, date: "2025-11-22", time: "14:00 - 18:00", role: "Community Cleanup", volunteers: 8 },
-  { id: 3, date: "2025-11-25", time: "10:00 - 12:00", role: "Medical Aid", volunteers: 3 },
+  { id: 1, date: '2025-11-20', time: '09:00 - 13:00', role: 'Food Distribution', volunteers: 5 },
+  { id: 2, date: '2025-11-22', time: '14:00 - 18:00', role: 'Community Cleanup', volunteers: 8 },
+  { id: 3, date: '2025-11-25', time: '10:00 - 12:00', role: 'Medical Aid', volunteers: 3 }
 ];
 
 export default function AdminScheduling() {
