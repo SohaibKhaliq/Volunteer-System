@@ -7,7 +7,7 @@ import { FileText, Plus } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import SkeletonCard from '@/components/atoms/skeleton-card';
-import { toast } from 'sonner';
+import { toast } from '@/components/atoms/use-toast';
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
