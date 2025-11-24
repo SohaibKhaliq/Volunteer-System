@@ -29,6 +29,7 @@ import AdminReports from '@/pages/admin/reports';
 import AdminCommunications from '@/pages/admin/communications';
 import AdminResources from '@/pages/admin/resources';
 import AdminScheduling from '@/pages/admin/scheduling';
+import AdminMonitoring from '@/pages/admin/monitoring';
 import AdminFeedback from '@/pages/admin/feedback';
 import AdminAuditLogs from '@/pages/admin/audit-logs';
 import AdminSettings from '@/pages/admin/settings';
@@ -80,6 +81,7 @@ const routes: RouteObject[] = [
       { path: 'certifications', element: <AdminCertifications /> },
       { path: 'notifications', element: <AdminNotifications /> },
       { path: 'communications', element: <AdminCommunications /> },
+      { path: 'monitoring', element: <AdminMonitoring /> },
       { path: 'reports', element: <AdminReports /> },
       { path: 'resources', element: <AdminResources /> },
       { path: 'scheduling', element: <AdminScheduling /> },
