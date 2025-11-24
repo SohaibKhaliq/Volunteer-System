@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import SkeletonCard from '@/components/atoms/skeleton-card';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { toast } from 'sonner';
+import { toast } from '@/components/atoms/use-toast';
 
 export default function AdminResources() {
   const queryClient = useQueryClient();
