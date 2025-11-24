@@ -108,10 +108,13 @@ export default class ReportsController {
 
       // Calculate completion rate
       const completedEvents = eventsByStatus.find((e: any) => e.status === 'completed')
+      // Aggregated counts from Lucid queries are stored in $extras; provide fallbacks and cast to Number
+      const completedCount = Number(
+        (completedEvents as any)?.$extras?.count ?? (completedEvents as any)?.count ?? 0
+      )
+      const totalEventsCount = Number(totalEvents[0].$extras.total ?? 0)
       const completionRate =
-        totalEvents[0].$extras.total > 0
-          ? Math.round(((completedEvents?.count || 0) / totalEvents[0].$extras.total) * 100)
-          : 0
+        totalEventsCount > 0 ? Math.round((completedCount / totalEventsCount) * 100) : 0
 
       return response.ok({
         total: totalEvents[0].$extras.total,
