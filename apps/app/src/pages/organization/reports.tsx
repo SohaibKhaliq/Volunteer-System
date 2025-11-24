@@ -15,13 +15,7 @@ import {
   Cell
 } from 'recharts';
 import { Download } from 'lucide-react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function OrganizationReports() {
   // Mock data
@@ -40,17 +34,38 @@ export default function OrganizationReports() {
     { name: 'Food Drive', rate: 88 },
     { name: 'Tutoring', rate: 92 },
     { name: 'Tree Planting', rate: 75 },
-    { name: 'Elderly Care', rate: 98 },
+    { name: 'Elderly Care', rate: 98 }
   ];
 
   const skillsDistribution = [
     { name: 'Teaching', value: 400 },
     { name: 'Logistics', value: 300 },
     { name: 'Medical', value: 300 },
-    { name: 'Manual Labor', value: 200 },
+    { name: 'Manual Labor', value: 200 }
   ];
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+
+  // Debug: log data shapes to help catch objects accidentally used as React children
+  try {
+    // eslint-disable-next-line no-console
+    console.debug(
+      'OrganizationReports: participationData sample',
+      Array.isArray(participationData) ? participationData[0] : participationData
+    );
+    // eslint-disable-next-line no-console
+    console.debug(
+      'OrganizationReports: eventSuccessData sample',
+      Array.isArray(eventSuccessData) ? eventSuccessData[0] : eventSuccessData
+    );
+    // eslint-disable-next-line no-console
+    console.debug(
+      'OrganizationReports: skillsDistribution sample',
+      Array.isArray(skillsDistribution) ? skillsDistribution[0] : skillsDistribution
+    );
+  } catch (e) {
+    // ignore
+  }
 
   return (
     <div className="space-y-6">
@@ -100,7 +115,10 @@ export default function OrganizationReports() {
                   <XAxis dataKey="month" />
                   <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
                   <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
-                  <Tooltip />
+                  <Tooltip
+                    labelFormatter={(label: any) => (typeof label === 'object' ? JSON.stringify(label) : String(label))}
+                    formatter={(value: any) => (value == null ? '' : value)}
+                  />
                   <Legend />
                   <Bar yAxisId="left" dataKey="volunteers" fill="#8884d8" name="Volunteers" />
                   <Bar yAxisId="right" dataKey="hours" fill="#82ca9d" name="Hours" />
@@ -131,7 +149,10 @@ export default function OrganizationReports() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis type="number" domain={[0, 100]} />
                   <YAxis dataKey="name" type="category" width={100} />
-                  <Tooltip />
+                  <Tooltip
+                    labelFormatter={(label: any) => (typeof label === 'object' ? JSON.stringify(label) : String(label))}
+                    formatter={(value: any) => (value == null ? '' : value)}
+                  />
                   <Legend />
                   <Bar dataKey="rate" fill="#ffc658" name="Success Rate (%)" />
                 </BarChart>
@@ -163,7 +184,10 @@ export default function OrganizationReports() {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip
+                    labelFormatter={(label: any) => (typeof label === 'object' ? JSON.stringify(label) : String(label))}
+                    formatter={(value: any) => (value == null ? '' : value)}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </div>

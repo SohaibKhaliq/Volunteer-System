@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileText, Plus } from 'lucide-react';
+import { FileText, Plus, DownloadCloud } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import SkeletonCard from '@/components/atoms/skeleton-card';
@@ -33,6 +33,7 @@ export default function AdminFeedback() {
   const [viewOpen, setViewOpen] = useState(false);
   const [selectedSurvey, setSelectedSurvey] = useState<any | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [reportLoading, setReportLoading] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['surveys'],
@@ -91,6 +92,95 @@ export default function AdminFeedback() {
       window.URL.revokeObjectURL(url);
     } catch (e) {
       toast.error('Failed to export responses');
+    }
+  };
+
+  // Helper: convert JSON (array or object) to CSV string
+  const jsonToCsv = (data: any) => {
+    if (!data) return '';
+    // If array of objects
+    if (Array.isArray(data)) {
+      const rows = data as Array<Record<string, any>>;
+      const cols = Array.from(
+        rows.reduce((acc, r) => {
+          Object.keys(r || {}).forEach((k) => acc.add(k));
+          return acc;
+        }, new Set<string>())
+      );
+      const header = cols.join(',');
+      const lines = rows.map((r) =>
+        cols
+          .map((c) => {
+            const v = r[c];
+            if (v === null || v === undefined) return '';
+            return `"${String(v).replace(/"/g, '""')}"`;
+          })
+          .join(',')
+      );
+      return [header].concat(lines).join('\n');
+    }
+
+    // If object, create key,value rows
+    if (typeof data === 'object') {
+      const rows = Object.keys(data).map((k) => {
+        const v = data[k];
+        if (v === null || v === undefined) return `"${k}",""`;
+        if (typeof v === 'object') return `"${k}","${JSON.stringify(v).replace(/"/g, '""')}"`;
+        return `"${k}","${String(v).replace(/"/g, '""')}"`;
+      });
+      return ['"key","value"'].concat(rows).join('\n');
+    }
+
+    return String(data);
+  };
+
+  const downloadBlob = (blob: Blob, filename: string) => {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const handleGenerateReport = async (type: 'hours' | 'compliance' | 'performance') => {
+    setReportLoading(type);
+    try {
+      if (type === 'hours') {
+        const data = await api.getHoursStats();
+        const csv = jsonToCsv(data);
+        downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), `volunteer-hours-${Date.now()}.csv`);
+        toast.success('Volunteer hours report downloaded');
+        setReportLoading(null);
+        return;
+      }
+
+      if (type === 'compliance') {
+        const data = await api.getComplianceStats();
+        const csv = jsonToCsv(data);
+        downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), `compliance-audit-${Date.now()}.csv`);
+        toast.success('Compliance audit downloaded');
+        setReportLoading(null);
+        return;
+      }
+
+      // performance summary -> organization stats + overview
+      if (type === 'performance') {
+        const orgs = await api.getOrganizationStats();
+        const overview = await api.getReportsOverview({ range: '30days' });
+        const combined = { organizations: orgs, overview };
+        const csv = jsonToCsv(combined);
+        downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), `performance-summary-${Date.now()}.csv`);
+        toast.success('Performance summary downloaded');
+        setReportLoading(null);
+        return;
+      }
+    } catch (err) {
+      console.error('Report generation failed', err);
+      toast.error('Failed to generate report');
+      setReportLoading(null);
     }
   };
 
@@ -194,6 +284,35 @@ export default function AdminFeedback() {
               )}
             </TableBody>
           </Table>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <DownloadCloud className="h-5 w-5" />
+              Quick Report Actions
+            </CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <Button onClick={() => handleGenerateReport('hours')} disabled={reportLoading === 'hours'}>
+              <DownloadCloud className="h-4 w-4 mr-2" />
+              Generate Volunteer Hours Report
+            </Button>
+
+            <Button onClick={() => handleGenerateReport('compliance')} disabled={reportLoading === 'compliance'}>
+              <DownloadCloud className="h-4 w-4 mr-2" />
+              Generate Compliance Audit
+            </Button>
+
+            <Button onClick={() => handleGenerateReport('performance')} disabled={reportLoading === 'performance'}>
+              <DownloadCloud className="h-4 w-4 mr-2" />
+              Generate Performance Summary
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
