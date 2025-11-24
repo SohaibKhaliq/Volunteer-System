@@ -39,6 +39,8 @@ import OrganizationEvents from '@/pages/organization/events';
 import OrganizationVolunteers from '@/pages/organization/volunteers';
 import OrganizationCompliance from '@/pages/organization/compliance';
 import OrganizationReports from '@/pages/organization/reports';
+import OrganizationCommunications from '@/pages/organization/communications';
+import OrganizationSettings from '@/pages/organization/settings';
 
 // Simple wrappers to ensure pages are vertically scrollable
 const ScrollWrapper = ({ children }: any) => (
@@ -103,8 +105,8 @@ const routes: RouteObject[] = [
       { path: 'volunteers', element: <OrganizationVolunteers /> },
       { path: 'compliance', element: <OrganizationCompliance /> },
       { path: 'reports', element: <OrganizationReports /> },
-      { path: 'communications', element: <div>Organization Communications</div> },
-      { path: 'settings', element: <div>Organization Settings</div> }
+      { path: 'communications', element: <OrganizationCommunications /> },
+      { path: 'settings', element: <OrganizationSettings /> }
     ]
   },
   {
