@@ -98,9 +98,9 @@ const api = {
       const overview: any = await axios.get('/reports', { params: { range: '6months' } });
       if (overview && overview.volunteerHours && Array.isArray(overview.volunteerHours.trend)) {
         return overview.volunteerHours.trend.map((t: any) => ({
-          month: t.month,
-          volunteers: t.volunteers || 0,
-          hours: t.hours || 0
+          month: t?.month != null ? String(t.month) : String(t.name ?? ''),
+          volunteers: Number(t?.volunteers ?? t?.volunteer_count ?? t?.total ?? 0) || 0,
+          hours: Number(t?.hours ?? t?.totalHours ?? t?.total ?? 0) || 0
         }));
       }
     } catch (e) {
