@@ -15,6 +15,7 @@ import {
   Award,
   Package,
   Clock,
+  Activity,
   FileText,
   ListOrdered,
   Settings,
@@ -30,18 +31,15 @@ export default function AdminLayout() {
 
   // Check if user has admin privileges
   // Support multiple ways: isAdmin flag, is_admin flag, or 'admin' role
-  // TEMPORARILY DISABLED FOR DEBUGGING - RE-ENABLE AFTER ROLES/PERMISSIONS ARE CONFIGURED
-  const isAdmin = true; // Temporarily allow all authenticated users
-  
-  /* Original admin check - re-enable this after configuring roles/permissions:
   const isAdmin = !!(
-    user?.isAdmin || 
-    user?.is_admin || 
-    (user?.roles && Array.isArray(user.roles) && user.roles.some((r: any) => 
-      r.name === 'admin' || r.name === 'Admin' || r.role === 'admin' || r.role === 'Admin'
-    ))
+    user?.isAdmin ||
+    user?.is_admin ||
+    (user?.roles &&
+      Array.isArray(user.roles) &&
+      user.roles.some(
+        (r: any) => r?.name === 'admin' || r?.name === 'Admin' || r?.role === 'admin' || r?.role === 'Admin'
+      ))
   );
-  */
 
   // Debug logging (remove in production)
   useEffect(() => {
@@ -107,6 +105,8 @@ export default function AdminLayout() {
     { path: '/admin/compliance', icon: Shield, label: 'Compliance' },
     { path: '/admin/hours', icon: CalendarClock, label: 'Volunteer Hours' },
     { path: '/admin/communications', icon: MessageSquare, label: 'Communications' },
+    // Monitoring is an admin-only tool
+    ...(isAdmin ? [{ path: '/admin/monitoring', icon: Activity, label: 'Monitoring' }] : []),
     { path: '/admin/notifications', icon: Bell, label: 'Notifications' },
     { path: '/admin/certifications', icon: Award, label: 'Certifications' },
     { path: '/admin/resources', icon: Package, label: 'Resources' },
@@ -128,12 +128,12 @@ export default function AdminLayout() {
               <h2 className="font-bold text-xl text-gray-800">Admin Panel</h2>
               <p className="text-sm text-gray-500 mt-1">Volunteer Management System</p>
             </div>
-            
+
             <nav className="flex-1 p-4 space-y-1">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.path;
-                
+
                 return (
                   <Link
                     key={item.path}
@@ -181,9 +181,7 @@ export default function AdminLayout() {
                   <h1 className="text-2xl font-bold text-gray-900">
                     {navItems.find((item) => item.path === location.pathname)?.label || 'Dashboard'}
                   </h1>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Manage and monitor your volunteer system
-                  </p>
+                  <p className="text-sm text-gray-500 mt-1">Manage and monitor your volunteer system</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="text-sm text-gray-600">
