@@ -1,4 +1,5 @@
 /*
+/*
 |--------------------------------------------------------------------------
 | Application middleware
 |--------------------------------------------------------------------------
@@ -10,6 +11,7 @@
 */
 
 import Server from '@ioc:Adonis/Core/Server'
+import { initCommunicationSender } from 'App/Services/CommunicationSender'
 
 /*
 |--------------------------------------------------------------------------
@@ -23,7 +25,7 @@ import Server from '@ioc:Adonis/Core/Server'
 Server.middleware.register([
   () => import('@ioc:Adonis/Core/BodyParser'),
   () => import('@ioc:Adonis/Addons/RmbMiddleware'),
-  () => import('App/Middleware/SilentAuth'),
+  () => import('App/Middleware/SilentAuth')
 ])
 
 /*
@@ -44,5 +46,14 @@ Server.middleware.register([
 */
 Server.middleware.registerNamed({
   auth: () => import('App/Middleware/Auth'),
-  throttle: () => import('@adonisjs/limiter/build/throttle'),
+  throttle: () => import('@adonisjs/limiter/build/throttle')
 })
+
+// start background workers/services
+try {
+  initCommunicationSender()
+} catch (e) {
+  // avoid crashing the boot if sender fails to start
+  // eslint-disable-next-line no-console
+  console.error('Failed to start communication sender', e)
+}
