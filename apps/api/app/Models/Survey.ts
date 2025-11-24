@@ -12,8 +12,24 @@ export default class Survey extends BaseModel {
   @column()
   public description?: string
 
-  @column()
-  public questions?: string
+  @column({
+    // store as JSON string in DB, but expose as JS object/array in model
+    consume: (value) => {
+      try {
+        return value ? JSON.parse(value) : []
+      } catch (e) {
+        return []
+      }
+    },
+    prepare: (value) => {
+      try {
+        return value ? JSON.stringify(value) : null
+      } catch (e) {
+        return null
+      }
+    }
+  })
+  public questions?: any
 
   @column()
   public status?: string
