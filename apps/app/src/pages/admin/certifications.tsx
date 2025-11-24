@@ -46,6 +46,11 @@ export default function AdminCertifications() {
   const [editing, setEditing] = useState<Partial<ComplianceDoc> | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [toDelete, setToDelete] = useState<number | null>(null);
+  const [courseDeleteOpen, setCourseDeleteOpen] = useState(false);
+  // open course delete dialog when toDeleteCourse is set
+  useEffect(() => {
+    setCourseDeleteOpen(toDeleteCourse != null);
+  }, [toDeleteCourse]);
 
   const { data: items = [], isLoading } = useQuery<ComplianceDoc[]>({
     queryKey: ['compliance'],
