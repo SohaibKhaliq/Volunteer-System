@@ -55,7 +55,7 @@ const api = {
   updateEvent: async (id: number, data: any) => axios.put(`/events/${id}`, data),
   deleteEvent: async (id: number) => axios.delete(`/events/${id}`),
   aiMatchVolunteers: async (id: number) => axios.post(`/events/${id}/ai-match`),
-  listTasks: async () => axios.get('/tasks'),
+  listTasks: async (params?: any) => axios.get('/tasks', { params }),
 
   aiMatch: async (task_id: number) => axios.post('/ai/match', { task_id }),
   aiForecast: async (start: string, end: string) => axios.post('/ai/forecast', { start, end }),
@@ -77,7 +77,7 @@ const api = {
     (await axios.get('/reports', { params })) as Promise<T>,
 
   // generic list helper for simple collections
-  list: async (resource: string) => axios.get(`/${resource}`),
+  list: async (resource: string, params?: any) => axios.get(`/${resource}`, { params }),
   create: async (resource: string, data: any) => axios.post(`/${resource}`, data),
   update: async (resource: string, id: number, data: any) => axios.put(`/${resource}/${id}`, data),
   delete: async (resource: string, id: number) => axios.delete(`/${resource}/${id}`),
