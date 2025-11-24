@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -31,8 +31,9 @@ import {
 
 export default function OrganizationCompliance() {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [editingDoc, setEditingDoc] = useState<any>(null);
 
-  const documents = [
+  const [documents, setDocuments] = useState([
     {
       id: 1,
       name: 'Non-Profit Registration',
@@ -57,7 +58,58 @@ export default function OrganizationCompliance() {
       expiry: 'N/A',
       lastUpdated: '2024-03-10'
     }
-  ];
+  ]);
+
+  const [docFormData, setDocFormData] = useState({
+    name: '',
+    type: '',
+    expiry: ''
+  });
+
+  const handleOpenUpload = () => {
+    setEditingDoc(null);
+    setDocFormData({ name: '', type: '', expiry: '' });
+    setIsUploadOpen(true);
+  };
+
+  const handleOpenEdit = (doc: any) => {
+    setEditingDoc(doc);
+    setDocFormData({
+      name: doc.name,
+      type: doc.type,
+      expiry: doc.expiry === 'N/A' ? '' : doc.expiry
+    });
+    setIsUploadOpen(true);
+  };
+
+  const handleDeleteDoc = (id: number) => {
+    setDocuments(documents.filter(d => d.id !== id));
+  };
+
+  const handleDocSubmit = () => {
+    if (editingDoc) {
+      // Update
+      setDocuments(documents.map(d => d.id === editingDoc.id ? {
+        ...d,
+        name: docFormData.name,
+        type: docFormData.type,
+        expiry: docFormData.expiry || 'N/A',
+        lastUpdated: new Date().toISOString().split('T')[0]
+      } : d));
+    } else {
+      // Create
+      const newDoc = {
+        id: documents.length + 1,
+        name: docFormData.name,
+        type: docFormData.type,
+        status: 'Pending Review',
+        expiry: docFormData.expiry || 'N/A',
+        lastUpdated: new Date().toISOString().split('T')[0]
+      };
+      setDocuments([...documents, newDoc]);
+    }
+    setIsUploadOpen(false);
+  };
 
   const volunteerCompliance = [
     { id: 1, requirement: 'Background Check', total: 124, compliant: 118, pending: 6 },
@@ -74,39 +126,56 @@ export default function OrganizationCompliance() {
         </div>
         <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button onClick={handleOpenUpload}>
               <Upload className="h-4 w-4 mr-2" />
               Upload Document
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Upload Compliance Document</DialogTitle>
+              <DialogTitle>{editingDoc ? 'Edit Document' : 'Upload Compliance Document'}</DialogTitle>
               <DialogDescription>
-                Upload a new license, certification, or policy document.
+                {editingDoc ? 'Update document details.' : 'Upload a new license, certification, or policy document.'}
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="doc-name">Document Name</Label>
-                <Input id="doc-name" placeholder="e.g. 2025 Business License" />
+                <Input 
+                  id="doc-name" 
+                  placeholder="e.g. 2025 Business License" 
+                  value={docFormData.name}
+                  onChange={(e) => setDocFormData({...docFormData, name: e.target.value})}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="doc-type">Document Type</Label>
-                <Input id="doc-type" placeholder="e.g. License, Insurance" />
+                <Input 
+                  id="doc-type" 
+                  placeholder="e.g. License, Insurance" 
+                  value={docFormData.type}
+                  onChange={(e) => setDocFormData({...docFormData, type: e.target.value})}
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="expiry">Expiry Date (if applicable)</Label>
-                <Input id="expiry" type="date" />
+                <Input 
+                  id="expiry" 
+                  type="date" 
+                  value={docFormData.expiry}
+                  onChange={(e) => setDocFormData({...docFormData, expiry: e.target.value})}
+                />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="file">File</Label>
-                <Input id="file" type="file" />
-              </div>
+              {!editingDoc && (
+                <div className="space-y-2">
+                  <Label htmlFor="file">File</Label>
+                  <Input id="file" type="file" />
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsUploadOpen(false)}>Cancel</Button>
-              <Button onClick={() => setIsUploadOpen(false)}>Upload</Button>
+              <Button onClick={handleDocSubmit}>{editingDoc ? 'Update' : 'Upload'}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -183,9 +252,17 @@ export default function OrganizationCompliance() {
                       {doc.expiry}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon">
-                        <Download className="h-4 w-4" />
-                      </Button>
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(doc)}>
+                          <FileText className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon">
+                          <Download className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="text-red-600" onClick={() => handleDeleteDoc(doc.id)}>
+                          <AlertCircle className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
