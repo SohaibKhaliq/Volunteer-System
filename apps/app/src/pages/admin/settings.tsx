@@ -60,9 +60,7 @@ export default function AdminSettings() {
             <Switch
               id="email-notifications"
               checked={settings['emailNotifications'] || false}
-              onCheckedChange={(checked) =>
-                setSettings({ ...settings, emailNotifications: checked })
-              }
+              onCheckedChange={(checked) => setSettings({ ...settings, emailNotifications: checked })}
             />
           </div>
           <div className="flex flex-col space-y-1">
@@ -71,7 +69,7 @@ export default function AdminSettings() {
             </label>
             <Input
               id="site-name"
-              value={settings['siteName'] || 'Eghata Volunteer System'}
+              value={settings['siteName'] || 'Local Aid'}
               onChange={(e) => setSettings({ ...settings, siteName: e.target.value })}
             />
           </div>
