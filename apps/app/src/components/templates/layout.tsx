@@ -3,7 +3,7 @@ import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Outlet, useLocation } from 'react-router-dom';
 import LoadingSpinner from '../atoms/loading-spinner';
-import { Toaster } from '../atoms/toaster';
+// Toaster is provided globally in `src/providers/index.tsx`; avoid duplicate renders
 import Header from '../molecules/header';
 
 const Layout = () => {
@@ -23,7 +23,6 @@ const Layout = () => {
             <Outlet />
           </main>
         </div>
-        <Toaster />
       </Providers>
     </Suspense>
   );
