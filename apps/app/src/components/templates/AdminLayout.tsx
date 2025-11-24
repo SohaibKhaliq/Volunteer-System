@@ -196,9 +196,7 @@ export default function AdminLayout() {
             </main>
 
             <footer className="bg-white border-t border-gray-200 px-8 py-4">
-              <div className="text-sm text-gray-500 text-center">
-                © 2025 Eghata Volunteer System. All rights reserved.
-              </div>
+              <div className="text-sm text-gray-500 text-center">© 2025 Local Aid. All rights reserved.</div>
             </footer>
           </div>
         </div>
