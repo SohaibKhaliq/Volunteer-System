@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Send, Edit, Trash2, Plus } from 'lucide-react';
+import { MessageSquare, Send, Edit, Trash2, Plus, Eye } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import SkeletonCard from '@/components/atoms/skeleton-card';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -18,6 +18,8 @@ export default function AdminCommunications() {
   const queryClient = useQueryClient();
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<any | null>(null);
+  const [viewOpen, setViewOpen] = useState(false);
+  const [viewing, setViewing] = useState<any | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [toDelete, setToDelete] = useState<number | null>(null);
 
@@ -42,7 +44,7 @@ export default function AdminCommunications() {
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: any }) => api.updateCommunication(id, data),
     onSuccess: () => {
-queryClient.invalidateQueries({ queryKey: ['communications'] });
+      queryClient.invalidateQueries({ queryKey: ['communications'] });
       toast.success('Communication updated successfully');
       setEditOpen(false);
       setEditing(null);
@@ -62,10 +64,13 @@ queryClient.invalidateQueries({ queryKey: ['communications'] });
   });
 
   const saveCommunication = (payload: any) => {
+    // backend expects `content` property, map from `message` if used in the UI
+    const data = { ...payload, content: payload.message ?? payload.content };
+    delete (data as any).message;
     if (payload.id) {
-      updateMutation.mutate({ id: payload.id, data: payload });
+      updateMutation.mutate({ id: payload.id, data });
     } else {
-      createMutation.mutate(payload);
+      createMutation.mutate(data);
     }
   };
 
@@ -88,7 +93,12 @@ queryClient.invalidateQueries({ queryKey: ['communications'] });
               <MessageSquare className="h-5 w-5" />
               Communications & Messages
             </CardTitle>
-            <Button onClick={() => { setEditing(null); setEditOpen(true); }}>
+            <Button
+              onClick={() => {
+                setEditing(null);
+                setEditOpen(true);
+              }}
+            >
               <Plus className="h-4 w-4 mr-2" />
               New Communication
             </Button>
@@ -126,27 +136,48 @@ queryClient.invalidateQueries({ queryKey: ['communications'] });
                     <TableCell>{c.type || 'Email'}</TableCell>
                     <TableCell>{c.recipients || 'All Volunteers'}</TableCell>
                     <TableCell>
-                      <Badge variant={c.status === 'Sent' ? 'default' : c.status === 'Scheduled' ? 'secondary' : 'outline'}>
+                      <Badge
+                        variant={c.status === 'Sent' ? 'default' : c.status === 'Scheduled' ? 'secondary' : 'outline'}
+                      >
                         {c.status}
                       </Badge>
                     </TableCell>
-                    <TableCell>
-                      {c.scheduledAt ? new Date(c.scheduledAt).toLocaleString() : '-'}
-                    </TableCell>
+                    <TableCell>{c.scheduledAt ? new Date(c.scheduledAt).toLocaleString() : '-'}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Button
                           variant="ghost"
-                          onClick={() => { setEditing(c); setEditOpen(true); }}
+                          onClick={async () => {
+                            try {
+                              const res: any = await api.getCommunication(c.id);
+                              const comm = res && res.data ? res.data : res;
+                              setEditing({ ...comm, message: comm.content });
+                              setEditOpen(true);
+                            } catch (e) {
+                              toast.error('Failed to load communication');
+                            }
+                          }}
                           aria-label={`Edit ${c.id}`}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
-                          onClick={() => confirmDelete(c.id)}
-                          aria-label={`Delete ${c.id}`}
+                          onClick={async () => {
+                            try {
+                              const res: any = await api.getCommunication(c.id);
+                              const comm = res && res.data ? res.data : res;
+                              setViewing(comm);
+                              setViewOpen(true);
+                            } catch (e) {
+                              toast.error('Failed to load communication');
+                            }
+                          }}
+                          aria-label={`View ${c.id}`}
                         >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" onClick={() => confirmDelete(c.id)} aria-label={`Delete ${c.id}`}>
                           <Trash2 className="h-4 w-4 text-red-600" />
                         </Button>
                       </div>
@@ -158,6 +189,40 @@ queryClient.invalidateQueries({ queryKey: ['communications'] });
           </Table>
         </CardContent>
       </Card>
+
+      {/* View Dialog */}
+      <Dialog open={viewOpen} onOpenChange={setViewOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>View Communication</DialogTitle>
+          </DialogHeader>
+          <div className="p-4 space-y-3">
+            <div>
+              <div className="text-sm font-medium">Subject</div>
+              <div className="mt-1">{viewing?.subject}</div>
+            </div>
+            <div>
+              <div className="text-sm font-medium">Content</div>
+              <div className="mt-1 whitespace-pre-wrap">{viewing?.content}</div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <div className="text-sm font-medium">Type</div>
+                <div className="mt-1">{viewing?.type}</div>
+              </div>
+              <div>
+                <div className="text-sm font-medium">Status</div>
+                <div className="mt-1">{viewing?.status}</div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Edit / New Dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
@@ -219,7 +284,10 @@ queryClient.invalidateQueries({ queryKey: ['communications'] });
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                onClick={() => { setEditOpen(false); setEditing(null); }}
+                onClick={() => {
+                  setEditOpen(false);
+                  setEditing(null);
+                }}
               >
                 Cancel
               </Button>

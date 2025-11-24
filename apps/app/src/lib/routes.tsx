@@ -32,6 +32,13 @@ import AdminFeedback from '@/pages/admin/feedback';
 import AdminAuditLogs from '@/pages/admin/audit-logs';
 import AdminSettings from '@/pages/admin/settings';
 import AdminVolunteerProfile from '@/pages/admin/volunteer-profile';
+import OrganizationLayout from '@/components/templates/OrganizationLayout';
+import OrganizationDashboard from '@/pages/organization/dashboard';
+import OrganizationProfile from '@/pages/organization/profile';
+import OrganizationEvents from '@/pages/organization/events';
+import OrganizationVolunteers from '@/pages/organization/volunteers';
+import OrganizationCompliance from '@/pages/organization/compliance';
+import OrganizationReports from '@/pages/organization/reports';
 
 // Simple wrappers to ensure pages are vertically scrollable
 const ScrollWrapper = ({ children }: any) => (
@@ -77,6 +84,27 @@ const routes: RouteObject[] = [
       { path: 'audit-logs', element: <AdminAuditLogs /> },
       { path: 'settings', element: <AdminSettings /> },
       { path: 'volunteer-profile', element: <AdminVolunteerProfile /> }
+    ]
+  },
+  {
+    path: 'organization',
+    element: (
+      <AdminScrollWrapper>
+        <AppProvider>
+          <OrganizationLayout />
+        </AppProvider>
+      </AdminScrollWrapper>
+    ),
+    errorElement: <ErrorBoundary />,
+    children: [
+      { index: true, element: <OrganizationDashboard /> },
+      { path: 'profile', element: <OrganizationProfile /> },
+      { path: 'events', element: <OrganizationEvents /> },
+      { path: 'volunteers', element: <OrganizationVolunteers /> },
+      { path: 'compliance', element: <OrganizationCompliance /> },
+      { path: 'reports', element: <OrganizationReports /> },
+      { path: 'communications', element: <div>Organization Communications</div> },
+      { path: 'settings', element: <div>Organization Settings</div> }
     ]
   },
   {
