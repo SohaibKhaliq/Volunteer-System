@@ -51,7 +51,7 @@ export default function OrganizationLayout() {
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);
-                // Handle exact match for root path to avoid highlighting dashboard on subpages if not desired, 
+                // Handle exact match for root path to avoid highlighting dashboard on subpages if not desired,
                 // but usually dashboard is just /organization so startsWith might be too broad if we have /organization/profile
                 // Let's refine:
                 const isExactActive = location.pathname === item.path;
@@ -89,7 +89,11 @@ export default function OrganizationLayout() {
                 </div>
               </div>
               <Link to="/">
-                <Button variant="outline" className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50" size="sm">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                  size="sm"
+                >
                   <LogOut className="h-4 w-4 mr-2" />
                   Exit Portal
                 </Button>
@@ -105,9 +109,7 @@ export default function OrganizationLayout() {
                   <h1 className="text-2xl font-bold text-gray-900">
                     {navItems.find((item) => item.path === location.pathname)?.label || 'Dashboard'}
                   </h1>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Manage your organization's activities
-                  </p>
+                  <p className="text-sm text-gray-500 mt-1">Manage your organization's activities</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <Button variant="ghost" size="icon" className="relative">
@@ -126,9 +128,7 @@ export default function OrganizationLayout() {
             </main>
 
             <footer className="bg-white border-t border-gray-200 px-8 py-4">
-              <div className="text-sm text-gray-500 text-center">
-                © 2025 Eghata Volunteer System. All rights reserved.
-              </div>
+              <div className="text-sm text-gray-500 text-center">© 2025 Local Aid. All rights reserved.</div>
             </footer>
           </div>
         </div>
