@@ -180,9 +180,6 @@ const api = {
   getCurrentUser: async () => axios.get('/me'),
   getUser: async (id: number) => axios.get(`/users/${id}`),
 
-  /* Organization Panel Endpoints */
-  // Profile
-  getOrganizationProfile: async () => axios.get('/organization/profile'),
   updateOrganizationProfile: async (data: any) => axios.put('/organization/profile', data),
 
   // Team
@@ -210,7 +207,7 @@ const api = {
   getComplianceStats: async () => axios.get('/organization/compliance/stats'),
 
   // Dashboard
-  getOrganizationDashboardStats: async () => axios.get('/organization/dashboard/stats')
+  getOrganizationDashboardStats: async () => axios.get('/organization/dashboard-stats')
 } as const;
 
 export const useLazyQuery = (key: QueryKey, fn: QueryFunction, options = {}) => {
