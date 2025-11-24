@@ -26,13 +26,13 @@ import {
 export default function OrganizationReports() {
   // Mock data
   const participationData = [
-    { name: 'Jan', volunteers: 40, hours: 240 },
-    { name: 'Feb', volunteers: 30, hours: 139 },
-    { name: 'Mar', volunteers: 20, hours: 980 },
-    { name: 'Apr', volunteers: 27, hours: 390 },
-    { name: 'May', volunteers: 18, hours: 480 },
-    { name: 'Jun', volunteers: 23, hours: 380 },
-    { name: 'Jul', volunteers: 34, hours: 430 },
+    { month: 'Jan', volunteers: 40, hours: 240 },
+    { month: 'Feb', volunteers: 30, hours: 139 },
+    { month: 'Mar', volunteers: 20, hours: 980 },
+    { month: 'Apr', volunteers: 27, hours: 390 },
+    { month: 'May', volunteers: 18, hours: 480 },
+    { month: 'Jun', volunteers: 23, hours: 380 },
+    { month: 'Jul', volunteers: 34, hours: 430 }
   ];
 
   const eventSuccessData = [
@@ -93,11 +93,11 @@ export default function OrganizationReports() {
                     top: 20,
                     right: 30,
                     left: 20,
-                    bottom: 5,
+                    bottom: 5
                   }}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
+                  <XAxis dataKey="month" />
                   <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
                   <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
                   <Tooltip />
@@ -125,7 +125,7 @@ export default function OrganizationReports() {
                     top: 20,
                     right: 30,
                     left: 40,
-                    bottom: 5,
+                    bottom: 5
                   }}
                 >
                   <CartesianGrid strokeDasharray="3 3" />
