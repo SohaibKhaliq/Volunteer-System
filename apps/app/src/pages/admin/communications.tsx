@@ -1,5 +1,5 @@
 // src/pages/admin/communications.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,14 +13,13 @@ import SkeletonCard from '@/components/atoms/skeleton-card';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { toast } from 'sonner';
-import { useEffect } from 'react';
+ 
 
 export default function AdminCommunications() {
   const queryClient = useQueryClient();
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<any | null>(null);
   const [audienceType, setAudienceType] = useState<'all' | 'roles' | 'event' | 'emails'>('all');
-  const [availableRoles, setAvailableRoles] = useState<any[]>([]);
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
   const [customEmails, setCustomEmails] = useState<string>('');
