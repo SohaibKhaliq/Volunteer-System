@@ -1,9 +1,12 @@
 import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import api from '@/lib/api';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Table,
   TableBody,
@@ -26,73 +29,74 @@ import {
   Search, 
   Filter, 
   MoreHorizontal, 
-  MessageSquare, 
+  Mail, 
   Star, 
-  UserCheck,
-  AlertTriangle,
-  Plus
+  Loader2,
+  Plus,
+  Trash2
 } from 'lucide-react';
 
 export default function OrganizationVolunteers() {
+  const queryClient = useQueryClient();
   const [selectedVolunteer, setSelectedVolunteer] = useState<any>(null);
   const [isMessageOpen, setIsMessageOpen] = useState(false);
-  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isAddOpen, setIsAddOpen] = useState(false); // Renamed from isEditOpen
   const [editingVolunteer, setEditingVolunteer] = useState<any>(null);
 
-  const [volunteers, setVolunteers] = useState([
-    {
-      id: 1,
-      name: 'Sarah Ahmed',
-      email: 'sarah.ahmed@example.com',
-      phone: '+1 555-0101',
-      role: 'Volunteer',
-      status: 'Active',
-      hours: 45,
-      rating: 4.8,
-      skills: ['First Aid', 'Teaching'],
-      lastActive: '2 days ago',
-      risk: 'Low'
+  // Fetch Volunteers
+  const { data: volunteers, isLoading } = useQuery({
+    queryKey: ['organizationVolunteers'],
+    queryFn: api.listOrganizationVolunteers
+  });
+
+  // Add/Update Volunteer Mutation
+  const saveVolunteerMutation = useMutation({
+    mutationFn: (data: any) => {
+      if (editingVolunteer) {
+        return api.updateOrganizationVolunteer(editingVolunteer.id, data);
+      }
+      return api.addOrganizationVolunteer(data);
     },
-    {
-      id: 2,
-      name: 'Mohammed Ali',
-      email: 'm.ali@example.com',
-      phone: '+1 555-0102',
-      role: 'Team Leader',
-      status: 'Active',
-      hours: 120,
-      rating: 5.0,
-      skills: ['Logistics', 'Leadership'],
-      lastActive: '5 hours ago',
-      risk: 'Low'
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['organizationVolunteers'] });
+      setIsAddOpen(false);
+      toast.success(editingVolunteer ? 'Volunteer updated successfully' : 'Volunteer added successfully');
     },
-    {
-      id: 3,
-      name: 'Layla Hassan',
-      email: 'layla.h@example.com',
-      phone: '+1 555-0103',
-      role: 'Volunteer',
-      status: 'Inactive',
-      hours: 12,
-      rating: 3.5,
-      skills: ['Cooking'],
-      lastActive: '3 weeks ago',
-      risk: 'High'
+    onError: () => {
+      toast.error('Failed to save volunteer');
     }
-  ]);
+  });
+
+  // Delete Volunteer Mutation
+  const deleteVolunteerMutation = useMutation({
+    mutationFn: api.deleteOrganizationVolunteer,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['organizationVolunteers'] });
+      toast.success('Volunteer removed successfully');
+    },
+    onError: () => {
+      toast.error('Failed to remove volunteer');
+    }
+  });
 
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    phone: '',
     role: 'Volunteer',
+    status: 'Active',
     skills: ''
   });
 
   const handleOpenAdd = () => {
     setEditingVolunteer(null);
-    setFormData({ name: '', email: '', phone: '', role: 'Volunteer', skills: '' });
-    setIsEditOpen(true);
+    setFormData({
+      name: '',
+      email: '',
+      role: 'Volunteer',
+      status: 'Active',
+      skills: ''
+    });
+    setIsAddOpen(true);
   };
 
   const handleOpenEdit = (volunteer: any) => {
@@ -100,60 +104,36 @@ export default function OrganizationVolunteers() {
     setFormData({
       name: volunteer.name,
       email: volunteer.email,
-      phone: volunteer.phone,
       role: volunteer.role,
-      skills: volunteer.skills.join(', ')
+      status: volunteer.status,
+      skills: volunteer.skills ? volunteer.skills.join(', ') : ''
     });
-    setIsEditOpen(true);
-  };
-
-  const handleDeleteVolunteer = (id: number) => {
-    setVolunteers(volunteers.filter(v => v.id !== id));
+    setIsAddOpen(true);
   };
 
   const handleSubmit = () => {
-    if (editingVolunteer) {
-      // Update
-      setVolunteers(volunteers.map(v => v.id === editingVolunteer.id ? {
-        ...v,
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        role: formData.role,
-        skills: formData.skills.split(',').map(s => s.trim())
-      } : v));
-    } else {
-      // Create
-      const newVolunteer = {
-        id: volunteers.length + 1,
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        role: formData.role,
-        status: 'Active',
-        hours: 0,
-        rating: 0,
-        skills: formData.skills.split(',').map(s => s.trim()),
-        lastActive: 'Just now',
-        risk: 'Low'
-      };
-      setVolunteers([newVolunteer, ...volunteers]);
-    }
-    setIsEditOpen(false);
+    const payload = {
+      ...formData,
+      skills: formData.skills.split(',').map((s: string) => s.trim()).filter((s: string) => s)
+    };
+    saveVolunteerMutation.mutate(payload);
   };
+
+  if (isLoading) {
+    return <div className="flex justify-center items-center h-96"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
+
+  const displayVolunteers = Array.isArray(volunteers) ? volunteers : [];
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Volunteers</h2>
-          <p className="text-muted-foreground">Manage and communicate with your volunteers.</p>
+          <p className="text-muted-foreground">Manage your volunteer database and track engagement.</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
-            <UserCheck className="h-4 w-4 mr-2" />
-            Verify New
-          </Button>
+          <Button variant="outline">Export List</Button>
           <Button onClick={handleOpenAdd}>
             <Plus className="h-4 w-4 mr-2" />
             Add Volunteer
@@ -165,7 +145,7 @@ export default function OrganizationVolunteers() {
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search volunteers by name, email, or skills..."
+            placeholder="Search volunteers..."
             className="pl-8"
           />
         </div>
@@ -181,73 +161,67 @@ export default function OrganizationVolunteers() {
             <TableHeader>
               <TableRow>
                 <TableHead>Volunteer</TableHead>
+                <TableHead>Role</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Hours</TableHead>
                 <TableHead>Rating</TableHead>
-                <TableHead>Risk Level</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {volunteers.map((volunteer) => (
-                <TableRow key={volunteer.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar>
-                        <AvatarFallback>{volunteer.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="font-medium">{volunteer.name}</div>
-                        <div className="text-xs text-muted-foreground">{volunteer.email}</div>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge 
-                      variant={volunteer.status === 'Active' ? 'default' : 'secondary'}
-                      className={volunteer.status === 'Active' ? 'bg-green-500 hover:bg-green-600' : ''}
-                    >
-                      {volunteer.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="font-medium">{volunteer.hours} hrs</div>
-                    <div className="text-xs text-muted-foreground">Last: {volunteer.lastActive}</div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                      <span>{volunteer.rating}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {volunteer.risk === 'High' ? (
-                      <div className="flex items-center gap-1 text-red-600 text-xs font-medium">
-                        <AlertTriangle className="h-3 w-3" />
-                        At Risk
-                      </div>
-                    ) : (
-                      <span className="text-xs text-green-600">Stable</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="icon" onClick={() => {
-                        setSelectedVolunteer(volunteer);
-                        setIsMessageOpen(true);
-                      }}>
-                        <MessageSquare className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(volunteer)}>
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="text-red-600" onClick={() => handleDeleteVolunteer(volunteer.id)}>
-                        <AlertTriangle className="h-4 w-4" />
-                      </Button>
-                    </div>
+              {displayVolunteers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    No volunteers found. Add one to get started.
                   </TableCell>
                 </TableRow>
-              ))}
+              ) : (
+                displayVolunteers.map((volunteer: any) => (
+                  <TableRow key={volunteer.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <Avatar>
+                          <AvatarImage src={volunteer.avatar} />
+                          <AvatarFallback>{volunteer.name?.split(' ').map((n: string) => n[0]).join('')}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium">{volunteer.name}</div>
+                          <div className="text-xs text-muted-foreground">{volunteer.email}</div>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>{volunteer.role}</TableCell>
+                    <TableCell>
+                      <Badge variant={volunteer.status === 'Active' ? 'default' : 'secondary'}>
+                        {volunteer.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{volunteer.hours || 0} hrs</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                        <span>{volunteer.rating || 'N/A'}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button variant="ghost" size="icon" onClick={() => {
+                          setSelectedVolunteer(volunteer);
+                          setIsMessageOpen(true);
+                        }}>
+                          <Mail className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(volunteer)}>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="text-red-600" onClick={() => deleteVolunteerMutation.mutate(volunteer.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>
@@ -280,7 +254,7 @@ export default function OrganizationVolunteers() {
       </Dialog>
 
       {/* Add/Edit Dialog */}
-      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+      <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editingVolunteer ? 'Edit Volunteer' : 'Add Volunteer'}</DialogTitle>
