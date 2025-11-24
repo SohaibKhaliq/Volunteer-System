@@ -361,32 +361,47 @@ export default class UsersController {
   /**
    * Send reminder email to user
    */
-  public async remind({ params, request, response }: HttpContextContract) {
+  public async remind({ params, response }: HttpContextContract) {
     try {
       const user = await User.findOrFail(params.id)
-      const { roleId } = request.only(['roleId'])
-      Logger.info('Assign role payload', { userId: params.id, roleId })
-      const role = await Role.find(Number(roleId))
-      if (!role) {
-        console.error('Role not found for id', roleId)
-        return response.notFound({ error: { message: 'Role not found' } })
-      }
-
-      const exists = await Database.from('user_roles')
-        .where({ user_id: user.id, role_id: role.id })
-        .first()
-      if (!exists) {
-        await Database.table('user_roles').insert({ user_id: user.id, role_id: role.id })
-      }
-
-      return response.ok({ message: 'Role assigned' })
+      // Mock email sending
+      Logger.info(`Sending reminder email to ${user.email}`)
+      
+      return response.ok({ message: 'Reminder sent successfully' })
     } catch (error) {
-      Logger.error(
-        'Failed to add role to user: %s',
-        error instanceof Error ? error.message : String(error)
-      )
-      Logger.debug('Full error object:', error)
-      return response.badRequest({ error: { message: 'Unable to add role' } })
+      Logger.error('Failed to send reminder: %o', error)
+      return response.badRequest({ error: { message: 'Unable to send reminder' } })
+    }
+  }
+
+  public async bulkUpdate({ request, response }: HttpContextContract) {
+    try {
+      const { ids, action } = request.only(['ids', 'action'])
+      
+      if (!Array.isArray(ids) || ids.length === 0) {
+        return response.badRequest({ message: 'No IDs provided' })
+      }
+
+      const query = User.query().whereIn('id', ids)
+
+      switch (action) {
+        case 'activate':
+          await query.update({ is_disabled: 0, volunteer_status: 'active', email_verified_at: new Date() })
+          break
+        case 'deactivate':
+          await query.update({ is_disabled: 1 })
+          break
+        case 'delete':
+          await query.delete()
+          break
+        default:
+          return response.badRequest({ message: 'Invalid action' })
+      }
+
+      return response.ok({ message: 'Bulk update successful' })
+    } catch (error) {
+      Logger.error('Failed to bulk update users: %o', error)
+      return response.badRequest({ error: { message: 'Unable to perform bulk update' } })
     }
   }
 }
