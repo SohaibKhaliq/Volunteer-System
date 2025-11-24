@@ -22,12 +22,12 @@ export default class UsersController {
 
       const query = User.query().preload('roles')
 
-      // Search filter
+      // Search filter (use DB column names)
       if (search) {
         query.where((builder) => {
           builder
-            .where('firstName', 'LIKE', `%${search}%`)
-            .orWhere('lastName', 'LIKE', `%${search}%`)
+            .where('first_name', 'LIKE', `%${search}%`)
+            .orWhere('last_name', 'LIKE', `%${search}%`)
             .orWhere('email', 'LIKE', `%${search}%`)
         })
       }
@@ -52,27 +52,50 @@ export default class UsersController {
         })
       }
 
-      // Sorting
-      const validSortFields = ['createdAt', 'firstName', 'lastName', 'email']
-      const sortField = validSortFields.includes(sortBy) ? sortBy : 'createdAt'
+      // Sorting: map UI camelCase fields to DB column names
+      const sortMap: Record<string, string> = {
+        createdAt: 'created_at',
+        firstName: 'first_name',
+        lastName: 'last_name',
+        email: 'email'
+      }
+      const sortField = sortMap[sortBy] ?? 'created_at'
       query.orderBy(sortField, sortOrder === 'asc' ? 'asc' : 'desc')
 
       // Pagination
       const users = await query.paginate(page, perPage)
 
       // Remove sensitive data
-      const sanitizedUsers = users.toJSON()
-      sanitizedUsers.data = sanitizedUsers.data.map((user: any) => {
-        const { password, ...safeUser } = user
-        // normalize snake_case -> camelCase for frontend convenience
-        safeUser.firstName = safeUser.firstName ?? safeUser.first_name ?? ''
-        safeUser.lastName = safeUser.lastName ?? safeUser.last_name ?? ''
-        safeUser.isDisabled = safeUser.isDisabled ?? safeUser.is_disabled
-        safeUser.volunteerStatus = safeUser.volunteerStatus ?? safeUser.volunteer_status
-        safeUser.lastLoginAt = safeUser.lastLoginAt ?? safeUser.last_login_at
-        return safeUser
+      // Build a compact sanitized payload that flattens Lucid model internals
+      // (handles cases where models are serialized with $attributes / $preloaded)
+      const pag = users.toJSON()
+      const mapped = (pag.data || []).map((user: any) => {
+        // Support multiple shapes: Lucid model JSON, or plain object
+        const src = user.$attributes ?? user.attributes ?? user.$original ?? user
+
+        const rolesFromPreload = user.$preloaded?.roles ?? user.roles ?? []
+
+        const safe: any = {
+          id: src.id,
+          email: src.email ?? src.email_address,
+          firstName: src.firstName ?? src.first_name ?? '',
+          lastName: src.lastName ?? src.last_name ?? '',
+          isDisabled: src.isDisabled ?? src.is_disabled ?? 0,
+          volunteerStatus: src.volunteerStatus ?? src.volunteer_status ?? undefined,
+          lastLoginAt: src.lastLoginAt ?? src.last_login_at ?? src.last_active_at ?? undefined,
+          profileMetadata:
+            src.profileMetadata ?? src.profile_metadata ?? src.profile_metadata ?? null,
+          emailVerifiedAt: src.emailVerifiedAt ?? src.email_verified_at ?? null,
+          createdAt: src.createdAt ?? src.created_at ?? undefined,
+          updatedAt: src.updatedAt ?? src.updated_at ?? undefined,
+          // include roles as simple objects
+          roles: (rolesFromPreload || []).map((r: any) => ({ id: r.id, name: r.name }))
+        }
+
+        return safe
       })
 
+      const sanitizedUsers = { ...pag, data: mapped }
       return response.ok(sanitizedUsers)
     } catch (error) {
       Logger.error('Failed to fetch users: %o', error)
@@ -88,8 +111,12 @@ export default class UsersController {
       const totalUsers = await User.query().count('* as total')
       // use DB column name email_verified_at to avoid camelCase mapping issues
       const activeUsers = await User.query().whereNotNull('email_verified_at').count('* as total')
+
+      // compute 30 days ago in JS (DB-agnostic)
+      const since = new Date()
+      since.setDate(since.getDate() - 30)
       const recentUsers = await User.query()
-        .where('created_at', '>=', Database.raw("date('now', '-30 days')"))
+        .where('created_at', '>=', since.toISOString())
         .count('* as total')
 
       // Users by role
@@ -125,7 +152,8 @@ export default class UsersController {
       safeUser.lastName = safeUser.lastName ?? safeUser.last_name ?? ''
       safeUser.isDisabled = safeUser.isDisabled ?? safeUser.is_disabled
       safeUser.volunteerStatus = safeUser.volunteerStatus ?? safeUser.volunteer_status
-      safeUser.lastLoginAt = safeUser.lastLoginAt ?? safeUser.last_login_at
+      // DB schema uses `last_active_at`; map it to `lastLoginAt` for frontend
+      safeUser.lastLoginAt = safeUser.lastLoginAt ?? safeUser.last_active_at
       return response.ok(safeUser)
     } catch (error) {
       return response.badRequest({ error: { message: 'Unable to fetch current user' } })
@@ -144,7 +172,8 @@ export default class UsersController {
       safeUser.lastName = safeUser.lastName ?? safeUser.last_name ?? ''
       safeUser.isDisabled = safeUser.isDisabled ?? safeUser.is_disabled
       safeUser.volunteerStatus = safeUser.volunteerStatus ?? safeUser.volunteer_status
-      safeUser.lastLoginAt = safeUser.lastLoginAt ?? safeUser.last_login_at
+      // DB schema uses `last_active_at`; map it to `lastLoginAt` for frontend
+      safeUser.lastLoginAt = safeUser.lastLoginAt ?? safeUser.last_active_at
       return response.ok(safeUser)
     } catch (error) {
       return response.notFound({ error: { message: 'User not found' } })
@@ -203,7 +232,8 @@ export default class UsersController {
       safeUser.lastName = safeUser.lastName ?? safeUser.last_name ?? ''
       safeUser.isDisabled = safeUser.isDisabled ?? safeUser.is_disabled
       safeUser.volunteerStatus = safeUser.volunteerStatus ?? safeUser.volunteer_status
-      safeUser.lastLoginAt = safeUser.lastLoginAt ?? safeUser.last_login_at
+      // DB schema uses `last_active_at`; map it to `lastLoginAt` for frontend
+      safeUser.lastLoginAt = safeUser.lastLoginAt ?? safeUser.last_active_at
       return response.created(safeUser)
     } catch (error) {
       Logger.error('Failed to create user: %o', error?.message || error)
@@ -257,7 +287,8 @@ export default class UsersController {
       safeUser.lastName = safeUser.lastName ?? safeUser.last_name ?? ''
       safeUser.isDisabled = safeUser.isDisabled ?? safeUser.is_disabled
       safeUser.volunteerStatus = safeUser.volunteerStatus ?? safeUser.volunteer_status
-      safeUser.lastLoginAt = safeUser.lastLoginAt ?? safeUser.last_login_at
+      // DB schema uses `last_active_at`; map it to `lastLoginAt` for frontend
+      safeUser.lastLoginAt = safeUser.lastLoginAt ?? safeUser.last_active_at
       return response.ok(safeUser)
     } catch (error) {
       Logger.error(
@@ -357,7 +388,6 @@ export default class UsersController {
     }
   }
 
-
   /**
    * Send reminder email to user
    */
@@ -366,7 +396,7 @@ export default class UsersController {
       const user = await User.findOrFail(params.id)
       // Mock email sending
       Logger.info(`Sending reminder email to ${user.email}`)
-      
+
       return response.ok({ message: 'Reminder sent successfully' })
     } catch (error) {
       Logger.error('Failed to send reminder: %o', error)
@@ -377,7 +407,7 @@ export default class UsersController {
   public async bulkUpdate({ request, response }: HttpContextContract) {
     try {
       const { ids, action } = request.only(['ids', 'action'])
-      
+
       if (!Array.isArray(ids) || ids.length === 0) {
         return response.badRequest({ message: 'No IDs provided' })
       }
@@ -386,7 +416,11 @@ export default class UsersController {
 
       switch (action) {
         case 'activate':
-          await query.update({ is_disabled: 0, volunteer_status: 'active', email_verified_at: new Date() })
+          await query.update({
+            is_disabled: 0,
+            volunteer_status: 'active',
+            email_verified_at: new Date()
+          })
           break
         case 'deactivate':
           await query.update({ is_disabled: 1 })
