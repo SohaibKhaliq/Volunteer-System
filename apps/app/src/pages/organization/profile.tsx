@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import api from '@/lib/api';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -13,35 +16,125 @@ import {
   Upload, 
   Plus, 
   MoreHorizontal,
-  Trash2
+  Trash2,
+  Loader2
 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 
 export default function OrganizationProfile() {
+  const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
+  const [isTeamModalOpen, setIsTeamModalOpen] = useState(false);
+  const [editingMember, setEditingMember] = useState<any>(null);
+  const [profileData, setProfileData] = useState<any>(null);
 
-  // Mock data
-  const [profile, setProfile] = useState({
-    name: 'Eghata Foundation',
-    description: 'Non-profit organization dedicated to environmental conservation and community support.',
-    email: 'contact@eghata.org',
-    phone: '+1 (555) 123-4567',
-    website: 'https://eghata.org',
-    address: '123 Charity Lane, Volunteer City, VC 90210',
-    logo: 'https://github.com/shadcn.png',
-    type: 'Non-Profit',
-    founded: '2015'
+  // Fetch Profile
+  const { data: profile, isLoading: isProfileLoading } = useQuery({
+    queryKey: ['organizationProfile'],
+    queryFn: api.getOrganizationProfile,
+    // On success, initialize local state for editing
+    onSuccess: (data) => setProfileData(data)
   });
 
-  const [team, setTeam] = useState([
-    { id: 1, name: 'Sarah Ahmed', role: 'Admin', email: 'sarah@eghata.org', status: 'Active' },
-    { id: 2, name: 'Mohammed Ali', role: 'Coordinator', email: 'mohammed@eghata.org', status: 'Active' },
-    { id: 3, name: 'Layla Hassan', role: 'Coordinator', email: 'layla@eghata.org', status: 'Invited' }
-  ]);
+  // Fetch Team
+  const { data: team, isLoading: isTeamLoading } = useQuery({
+    queryKey: ['organizationTeam'],
+    queryFn: api.listOrganizationTeam
+  });
+
+  // Update Profile Mutation
+  const updateProfileMutation = useMutation({
+    mutationFn: api.updateOrganizationProfile,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['organizationProfile'] });
+      setIsEditing(false);
+      toast.success('Profile updated successfully');
+    },
+    onError: () => {
+      toast.error('Failed to update profile');
+    }
+  });
+
+  // Invite/Update Team Member Mutation
+  const saveTeamMemberMutation = useMutation({
+    mutationFn: (data: any) => {
+      if (editingMember) {
+        return api.updateTeamMember(editingMember.id, data);
+      }
+      return api.inviteTeamMember(data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['organizationTeam'] });
+      setIsTeamModalOpen(false);
+      toast.success(editingMember ? 'Team member updated' : 'Invitation sent');
+    },
+    onError: () => {
+      toast.error('Failed to save team member');
+    }
+  });
+
+  // Delete Team Member Mutation
+  const deleteTeamMemberMutation = useMutation({
+    mutationFn: api.deleteTeamMember,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['organizationTeam'] });
+      toast.success('Team member removed');
+    },
+    onError: () => {
+      toast.error('Failed to remove team member');
+    }
+  });
+
+  const [teamFormData, setTeamFormData] = useState({
+    name: '',
+    email: '',
+    role: 'Coordinator'
+  });
+
+  // Initialize profile data for editing if not already set
+  if (profile && !profileData) {
+    setProfileData(profile);
+  }
 
   const handleSave = () => {
-    setIsEditing(false);
-    // Logic to save profile would go here
+    updateProfileMutation.mutate(profileData);
   };
+
+  const handleOpenAddMember = () => {
+    setEditingMember(null);
+    setTeamFormData({ name: '', email: '', role: 'Coordinator' });
+    setIsTeamModalOpen(true);
+  };
+
+  const handleOpenEditMember = (member: any) => {
+    setEditingMember(member);
+    setTeamFormData({
+      name: member.name,
+      email: member.email,
+      role: member.role
+    });
+    setIsTeamModalOpen(true);
+  };
+
+  const handleTeamSubmit = () => {
+    saveTeamMemberMutation.mutate(teamFormData);
+  };
+
+  if (isProfileLoading || isTeamLoading) {
+    return <div className="flex justify-center items-center h-96"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
+
+  // Fallback if data is missing (e.g. API error or empty)
+  const displayProfile = profileData || profile || {};
+  const displayTeam = Array.isArray(team) ? team : [];
 
   return (
     <div className="space-y-6">
@@ -54,7 +147,10 @@ export default function OrganizationProfile() {
            {isEditing ? (
             <>
               <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
-              <Button onClick={handleSave}>Save Changes</Button>
+              <Button onClick={handleSave} disabled={updateProfileMutation.isLoading}>
+                {updateProfileMutation.isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save Changes
+              </Button>
             </>
           ) : (
             <Button onClick={() => setIsEditing(true)}>Edit Profile</Button>
@@ -79,7 +175,7 @@ export default function OrganizationProfile() {
               <div className="flex items-start gap-6">
                 <div className="flex flex-col items-center gap-3">
                   <Avatar className="h-32 w-32">
-                    <AvatarImage src={profile.logo} />
+                    <AvatarImage src={displayProfile.logo} />
                     <AvatarFallback>EF</AvatarFallback>
                   </Avatar>
                   {isEditing && (
@@ -96,18 +192,18 @@ export default function OrganizationProfile() {
                       <Label htmlFor="name">Organization Name</Label>
                       <Input 
                         id="name" 
-                        value={profile.name} 
+                        value={displayProfile.name || ''} 
                         disabled={!isEditing}
-                        onChange={(e) => setProfile({...profile, name: e.target.value})}
+                        onChange={(e) => setProfileData({...displayProfile, name: e.target.value})}
                       />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="type">Type</Label>
                       <Input 
                         id="type" 
-                        value={profile.type} 
+                        value={displayProfile.type || ''} 
                         disabled={!isEditing}
-                        onChange={(e) => setProfile({...profile, type: e.target.value})}
+                        onChange={(e) => setProfileData({...displayProfile, type: e.target.value})}
                       />
                     </div>
                   </div>
@@ -116,10 +212,10 @@ export default function OrganizationProfile() {
                     <Label htmlFor="description">Description</Label>
                     <Textarea 
                       id="description" 
-                      value={profile.description} 
+                      value={displayProfile.description || ''} 
                       disabled={!isEditing}
                       className="h-24"
-                      onChange={(e) => setProfile({...profile, description: e.target.value})}
+                      onChange={(e) => setProfileData({...displayProfile, description: e.target.value})}
                     />
                   </div>
                 </div>
@@ -135,27 +231,27 @@ export default function OrganizationProfile() {
                       <Label htmlFor="email">Email</Label>
                       <Input 
                         id="email" 
-                        value={profile.email} 
+                        value={displayProfile.email || ''} 
                         disabled={!isEditing}
-                        onChange={(e) => setProfile({...profile, email: e.target.value})}
+                        onChange={(e) => setProfileData({...displayProfile, email: e.target.value})}
                       />
                     </div>
                     <div className="space-y-1">
                       <Label htmlFor="phone">Phone</Label>
                       <Input 
                         id="phone" 
-                        value={profile.phone} 
+                        value={displayProfile.phone || ''} 
                         disabled={!isEditing}
-                        onChange={(e) => setProfile({...profile, phone: e.target.value})}
+                        onChange={(e) => setProfileData({...displayProfile, phone: e.target.value})}
                       />
                     </div>
                     <div className="space-y-1">
                       <Label htmlFor="website">Website</Label>
                       <Input 
                         id="website" 
-                        value={profile.website} 
+                        value={displayProfile.website || ''} 
                         disabled={!isEditing}
-                        onChange={(e) => setProfile({...profile, website: e.target.value})}
+                        onChange={(e) => setProfileData({...displayProfile, website: e.target.value})}
                       />
                     </div>
                   </div>
@@ -170,10 +266,10 @@ export default function OrganizationProfile() {
                       <Label htmlFor="address">Address</Label>
                       <Textarea 
                         id="address" 
-                        value={profile.address} 
+                        value={displayProfile.address || ''} 
                         disabled={!isEditing}
                         className="h-24"
-                        onChange={(e) => setProfile({...profile, address: e.target.value})}
+                        onChange={(e) => setProfileData({...displayProfile, address: e.target.value})}
                       />
                     </div>
                   </div>
@@ -190,18 +286,18 @@ export default function OrganizationProfile() {
                 <CardTitle>Team Members</CardTitle>
                 <CardDescription>Manage access to your organization's dashboard.</CardDescription>
               </div>
-              <Button size="sm">
+              <Button size="sm" onClick={handleOpenAddMember}>
                 <Plus className="h-4 w-4 mr-2" />
                 Invite Member
               </Button>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {team.map((member) => (
+                {displayTeam.map((member: any) => (
                   <div key={member.id} className="flex items-center justify-between p-4 border rounded-lg bg-white">
                     <div className="flex items-center gap-4">
                       <Avatar>
-                        <AvatarFallback>{member.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                        <AvatarFallback>{member.name?.split(' ').map((n: string) => n[0]).join('')}</AvatarFallback>
                       </Avatar>
                       <div>
                         <p className="font-medium text-sm">{member.name}</p>
@@ -215,9 +311,14 @@ export default function OrganizationProfile() {
                       <Badge variant={member.status === 'Active' ? 'outline' : 'secondary'} className={member.status === 'Active' ? 'text-green-600 border-green-200 bg-green-50' : ''}>
                         {member.status}
                       </Badge>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => handleOpenEditMember(member)}>
+                          <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="text-red-600" onClick={() => deleteTeamMemberMutation.mutate(member.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -271,6 +372,51 @@ export default function OrganizationProfile() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Team Member Dialog */}
+      <Dialog open={isTeamModalOpen} onOpenChange={setIsTeamModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingMember ? 'Edit Team Member' : 'Invite Team Member'}</DialogTitle>
+            <DialogDescription>
+              {editingMember ? 'Update member details.' : 'Send an invitation to a new team member.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="member-name">Name</Label>
+              <Input 
+                id="member-name" 
+                value={teamFormData.name}
+                onChange={(e) => setTeamFormData({...teamFormData, name: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="member-email">Email</Label>
+              <Input 
+                id="member-email" 
+                value={teamFormData.email}
+                onChange={(e) => setTeamFormData({...teamFormData, email: e.target.value})}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="member-role">Role</Label>
+              <Input 
+                id="member-role" 
+                value={teamFormData.role}
+                onChange={(e) => setTeamFormData({...teamFormData, role: e.target.value})}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsTeamModalOpen(false)}>Cancel</Button>
+            <Button onClick={handleTeamSubmit} disabled={saveTeamMemberMutation.isLoading}>
+              {saveTeamMemberMutation.isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {editingMember ? 'Update' : 'Invite'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
