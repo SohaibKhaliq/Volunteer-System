@@ -11,6 +11,7 @@
 
 import Server from '@ioc:Adonis/Core/Server'
 import { initCommunicationSender } from 'App/Services/CommunicationSender'
+import { initScheduler } from 'App/Services/SchedulerService'
 
 /*
 |--------------------------------------------------------------------------
@@ -55,4 +56,11 @@ try {
   // avoid crashing the boot if sender fails to start
   // eslint-disable-next-line no-console
   console.error('Failed to start communication sender', e)
+}
+
+try {
+  initScheduler()
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error('Failed to start scheduler', e)
 }
