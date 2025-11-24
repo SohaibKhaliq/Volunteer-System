@@ -141,6 +141,8 @@ const api = {
   getCommunication: async (id: number) => axios.get(`/communications/${id}`),
   updateCommunication: async (id: number, data: any) => axios.put(`/communications/${id}`, data),
   deleteCommunication: async (id: number) => axios.delete(`/communications/${id}`),
+  listCommunicationLogs: async (communicationId: number) => axios.get(`/communications/${communicationId}/logs`),
+  retryCommunicationLog: async (logId: number) => axios.post(`/communications/logs/${logId}/retry`),
 
   /* System Settings endpoints */
   getSettings: async () => axios.get('/settings'),
