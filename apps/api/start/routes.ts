@@ -167,6 +167,12 @@ Route.resource('courses', 'CoursesController')
   .middleware({ '*': ['auth'] })
   .apiOnly()
 
+// scheduled jobs (admin)
+Route.get('/scheduled-jobs', 'ScheduledJobsController.index').middleware(['auth'])
+Route.get('/scheduled-jobs/:id', 'ScheduledJobsController.show').middleware(['auth'])
+Route.post('/scheduled-jobs', 'ScheduledJobsController.store').middleware(['auth'])
+Route.post('/scheduled-jobs/:id/retry', 'ScheduledJobsController.retry').middleware(['auth'])
+
 // Organization Panel Routes
 Route.group(() => {
   // Profile & Dashboard
