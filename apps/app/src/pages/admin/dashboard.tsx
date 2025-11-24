@@ -163,7 +163,10 @@ export default function AdminDashboard() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis />
-                <Tooltip />
+                <Tooltip
+                  labelFormatter={(label: any) => (typeof label === 'object' ? JSON.stringify(label) : String(label))}
+                  formatter={(value: any) => (value == null ? '' : value)}
+                />
                 <Line type="monotone" dataKey="volunteers" stroke="#4f46e5" strokeWidth={2} />
               </LineChart>
             </ResponsiveContainer>
@@ -183,7 +186,10 @@ export default function AdminDashboard() {
                     <Cell key={idx} fill={chartColors[idx % chartColors.length]} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip
+                  labelFormatter={(label: any) => (typeof label === 'object' ? JSON.stringify(label) : String(label))}
+                  formatter={(value: any) => (value == null ? '' : value)}
+                />
                 <Legend />
               </PieChart>
             </ResponsiveContainer>
@@ -201,7 +207,10 @@ export default function AdminDashboard() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis />
-                <Tooltip />
+                <Tooltip
+                  labelFormatter={(label: any) => (typeof label === 'object' ? JSON.stringify(label) : String(label))}
+                  formatter={(value: any) => (value == null ? '' : value)}
+                />
                 <Bar dataKey="hours" fill="#0ea5e9" />
               </BarChart>
             </ResponsiveContainer>
