@@ -92,6 +92,9 @@ Route.resource('compliance', 'ComplianceController')
   .middleware({ '*': ['auth'] })
   .apiOnly()
 
+// Serve uploaded compliance files
+Route.get('/compliance/:id/file', 'ComplianceController.file').middleware(['auth'])
+
 Route.resource('background-checks', 'BackgroundChecksController')
   .middleware({ '*': ['auth'] })
   .apiOnly()
@@ -104,14 +107,20 @@ Route.post('/register', 'AuthController.register')
 Route.post('/login', 'AuthController.login')
 Route.post('/logout', 'AuthController.logout').middleware('auth:api')
 
-
-
 Route.get('/me', 'UsersController.me').middleware(['auth'])
 
-Route.resource('resources', 'ResourcesController').middleware({ '*': ['auth'] }).apiOnly()
-Route.resource('audit-logs', 'AuditLogsController').middleware({ '*': ['auth'] }).only(['index', 'show'])
-Route.resource('surveys', 'SurveysController').middleware({ '*': ['auth'] }).apiOnly()
-Route.resource('communications', 'CommunicationsController').middleware({ '*': ['auth'] }).apiOnly()
+Route.resource('resources', 'ResourcesController')
+  .middleware({ '*': ['auth'] })
+  .apiOnly()
+Route.resource('audit-logs', 'AuditLogsController')
+  .middleware({ '*': ['auth'] })
+  .only(['index', 'show'])
+Route.resource('surveys', 'SurveysController')
+  .middleware({ '*': ['auth'] })
+  .apiOnly()
+Route.resource('communications', 'CommunicationsController')
+  .middleware({ '*': ['auth'] })
+  .apiOnly()
 
 // Notifications (admin) - expose recent notifications for UI
 Route.get('/notifications', 'NotificationsController.index').middleware(['auth'])
@@ -146,19 +155,27 @@ Route.get('/hours', 'VolunteerHoursController.index').middleware(['auth'])
 Route.put('/hours/:id', 'VolunteerHoursController.update').middleware(['auth'])
 Route.post('/hours/bulk', 'VolunteerHoursController.bulkUpdate').middleware(['auth'])
 
-Route.resource('courses', 'CoursesController').middleware({ '*': ['auth'] }).apiOnly()
+Route.resource('courses', 'CoursesController')
+  .middleware({ '*': ['auth'] })
+  .apiOnly()
 
 // Organization Panel Routes
 Route.group(() => {
   // Profile & Dashboard
   Route.get('/organization/profile', 'OrganizationsController.show').middleware(['auth']) // Assuming current user's org
   Route.put('/organization/profile', 'OrganizationsController.update').middleware(['auth'])
-  Route.get('/organization/dashboard-stats', 'OrganizationsController.dashboardStats').middleware(['auth'])
+  Route.get('/organization/dashboard-stats', 'OrganizationsController.dashboardStats').middleware([
+    'auth'
+  ])
 
   // Team
   Route.get('/organization/team', 'OrganizationsController.team').middleware(['auth'])
-  Route.post('/organization/team/invite', 'OrganizationsController.inviteMember').middleware(['auth'])
-  Route.delete('/organization/team/:memberId', 'OrganizationsController.removeMember').middleware(['auth'])
+  Route.post('/organization/team/invite', 'OrganizationsController.inviteMember').middleware([
+    'auth'
+  ])
+  Route.delete('/organization/team/:memberId', 'OrganizationsController.removeMember').middleware([
+    'auth'
+  ])
 
   // Events (Scoped to Org)
   Route.get('/organization/events', 'EventsController.index').middleware(['auth']) // Should filter by org in controller or via query param
@@ -167,14 +184,32 @@ Route.group(() => {
   Route.delete('/organization/events/:id', 'EventsController.destroy').middleware(['auth'])
 
   // Volunteers
-  Route.get('/organization/volunteers', 'OrganizationVolunteersController.index').middleware(['auth'])
-  Route.post('/organization/volunteers', 'OrganizationVolunteersController.store').middleware(['auth'])
-  Route.put('/organization/volunteers/:id', 'OrganizationVolunteersController.update').middleware(['auth'])
-  Route.delete('/organization/volunteers/:id', 'OrganizationVolunteersController.destroy').middleware(['auth'])
+  Route.get('/organization/volunteers', 'OrganizationVolunteersController.index').middleware([
+    'auth'
+  ])
+  Route.post('/organization/volunteers', 'OrganizationVolunteersController.store').middleware([
+    'auth'
+  ])
+  Route.put('/organization/volunteers/:id', 'OrganizationVolunteersController.update').middleware([
+    'auth'
+  ])
+  Route.delete(
+    '/organization/volunteers/:id',
+    'OrganizationVolunteersController.destroy'
+  ).middleware(['auth'])
 
   // Compliance
-  Route.get('/organization/documents', 'OrganizationComplianceController.index').middleware(['auth'])
-  Route.post('/organization/documents', 'OrganizationComplianceController.store').middleware(['auth'])
-  Route.delete('/organization/documents/:id', 'OrganizationComplianceController.destroy').middleware(['auth'])
-  Route.get('/organization/compliance/stats', 'OrganizationComplianceController.stats').middleware(['auth'])
-}).prefix('api')
+  Route.get('/organization/documents', 'OrganizationComplianceController.index').middleware([
+    'auth'
+  ])
+  Route.post('/organization/documents', 'OrganizationComplianceController.store').middleware([
+    'auth'
+  ])
+  Route.delete(
+    '/organization/documents/:id',
+    'OrganizationComplianceController.destroy'
+  ).middleware(['auth'])
+  Route.get('/organization/compliance/stats', 'OrganizationComplianceController.stats').middleware([
+    'auth'
+  ])
+}).prefix('')
