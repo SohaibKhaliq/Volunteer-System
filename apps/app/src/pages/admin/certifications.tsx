@@ -446,6 +446,94 @@ export default function AdminCertifications() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Course create / edit dialog */}
+      <Dialog open={coursesOpen} onOpenChange={setCourseOpen}>
+        <DialogContent aria-labelledby="course-edit-title">
+          <DialogHeader>
+            <DialogTitle id="course-edit-title">{courseEditing?.id ? 'Edit Course' : 'New Course'}</DialogTitle>
+          </DialogHeader>
+          <div className="p-4 space-y-3">
+            <div>
+              <label className="text-sm block mb-1">Title</label>
+              <Input
+                value={courseEditing?.title || courseEditing?.name || ''}
+                onChange={(e) =>
+                  setCourseEditing((s) => ({ ...(s || {}), title: e.target.value, name: e.target.value }))
+                }
+              />
+            </div>
+            <div>
+              <label className="text-sm block mb-1">Description</label>
+              <Input
+                value={courseEditing?.description || ''}
+                onChange={(e) => setCourseEditing((s) => ({ ...(s || {}), description: e.target.value }))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setCourseOpen(false);
+                  setCourseEditing(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  const payload = { ...(courseEditing || {}) };
+                  if (!payload.title && !payload.name) {
+                    toast.error('Title is required');
+                    return;
+                  }
+                  if (payload.id) {
+                    courseUpdateMutation.mutate({ id: payload.id, data: payload });
+                  } else {
+                    courseCreateMutation.mutate(payload);
+                  }
+                }}
+              >
+                {courseEditing?.id ? 'Save' : 'Create'}
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Course delete confirmation */}
+      <Dialog open={courseDeleteOpen} onOpenChange={setCourseDeleteOpen}>
+        <DialogContent aria-labelledby="course-delete-title">
+          <DialogHeader>
+            <DialogTitle id="course-delete-title">Delete Course</DialogTitle>
+          </DialogHeader>
+          <div className="p-4">Are you sure you want to delete this course?</div>
+          <DialogFooter>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setCourseDeleteOpen(false);
+                  setToDeleteCourse(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  doDeleteCourse();
+                  setCourseDeleteOpen(false);
+                }}
+              >
+                Delete
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
