@@ -110,6 +110,8 @@ const api = {
   },
   exportReport: async (type: string, reportType: string) =>
     axios.get('/reports/export', { params: { type, reportType } }),
+  downloadReport: async (reportType: string, format = 'csv') =>
+    axios.get('/reports/export', { params: { reportType, type: format }, responseType: 'blob' }),
 
   /* Resources endpoints */
   listResources: async () => {
@@ -134,6 +136,13 @@ const api = {
   getSurvey: async (id: number) => axios.get(`/surveys/${id}`),
   updateSurvey: async (id: number, data: any) => axios.put(`/surveys/${id}`, data),
   deleteSurvey: async (id: number) => axios.delete(`/surveys/${id}`),
+  submitSurveyResponse: async (id: number, data: any) => axios.post(`/surveys/${id}/submit`, data),
+  listSurveyResponses: async (id: number) => axios.get(`/surveys/${id}/responses`),
+  exportSurveyResponses: async (id: number, format = 'csv') =>
+    axios.get(`/surveys/${id}/responses/export`, {
+      params: { type: format },
+      responseType: format === 'csv' ? 'blob' : undefined
+    }),
 
   /* Communications endpoints */
   listCommunications: async () => axios.get('/communications'),
@@ -143,9 +152,14 @@ const api = {
   deleteCommunication: async (id: number) => axios.delete(`/communications/${id}`),
   listCommunicationLogs: async (communicationId: number) => axios.get(`/communications/${communicationId}/logs`),
   retryCommunicationLog: async (logId: number) => axios.post(`/communications/logs/${logId}/retry`),
+  bulkRetryCommunicationLogs: async (ids: number[]) => axios.post(`/communications/logs/bulk-retry`, { ids }),
   listScheduledJobs: async () => axios.get('/scheduled-jobs'),
   createScheduledJob: async (data: any) => axios.post('/scheduled-jobs', data),
   retryScheduledJob: async (id: number) => axios.post(`/scheduled-jobs/${id}/retry`),
+
+  /* Monitoring */
+  getMonitoringStats: async () => axios.get('/monitoring/stats'),
+  getMonitoringRecent: async () => axios.get('/monitoring/recent'),
 
   /* System Settings endpoints */
   getSettings: async () => axios.get('/settings'),
