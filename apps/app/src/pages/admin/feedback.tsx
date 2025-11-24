@@ -408,7 +408,12 @@ export default function AdminFeedback() {
                                     <Cell key={`cell-${idx}`} fill={colors[idx % colors.length]} />
                                   ))}
                                 </Pie>
-                                <Tooltip />
+                                <Tooltip
+                                  labelFormatter={(label: any) =>
+                                    typeof label === 'object' ? JSON.stringify(label) : String(label)
+                                  }
+                                  formatter={(value: any) => (value == null ? '' : value)}
+                                />
                                 <Legend />
                               </PieChart>
                             </ResponsiveContainer>
@@ -419,7 +424,12 @@ export default function AdminFeedback() {
                                 <CartesianGrid strokeDasharray="3 3" />
                                 <XAxis dataKey="name" />
                                 <YAxis allowDecimals={false} />
-                                <Tooltip />
+                                <Tooltip
+                                  labelFormatter={(label: any) =>
+                                    typeof label === 'object' ? JSON.stringify(label) : String(label)
+                                  }
+                                  formatter={(value: any) => (value == null ? '' : value)}
+                                />
                                 <Bar dataKey="value" fill={colors[0]} />
                               </BarChart>
                             </ResponsiveContainer>
