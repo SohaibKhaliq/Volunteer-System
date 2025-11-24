@@ -17,7 +17,7 @@ export default class ReportsController {
   public async index({ request, response }: HttpContextContract) {
     try {
       const { range = '30days', startDate, endDate } = request.qs()
-      
+
       const data = await this.reportsService.overview(range)
       return response.ok(data)
     } catch (error) {
@@ -34,13 +34,16 @@ export default class ReportsController {
       const { range = '30days' } = request.qs()
       const daysAgo = range === '30days' ? 30 : range === '7days' ? 7 : 365
 
+      const since = new Date()
+      since.setDate(since.getDate() - daysAgo)
+
       const totalVolunteers = await User.query().count('* as total')
       const activeVolunteers = await User.query()
-        .whereNotNull('emailVerifiedAt')
+        .whereNotNull('email_verified_at')
         .count('* as total')
 
       const newVolunteers = await User.query()
-        .where('createdAt', '>=', Database.raw(`date('now', '-${daysAgo} days')`))
+        .where('created_at', '>=', since.toISOString())
         .count('* as total')
 
       // Participation rate
@@ -52,9 +55,10 @@ export default class ReportsController {
         total: totalVolunteers[0].$extras.total,
         active: activeVolunteers[0].$extras.total,
         newSignups: newVolunteers[0].$extras.total,
-        participationRate: totalVolunteers[0].$extras.total > 0
-          ? Math.round((volunteersWithHours[0].total / totalVolunteers[0].$extras.total) * 100)
-          : 0
+        participationRate:
+          totalVolunteers[0].$extras.total > 0
+            ? Math.round((volunteersWithHours[0].total / totalVolunteers[0].$extras.total) * 100)
+            : 0
       })
     } catch (error) {
       Logger.error('Failed to fetch volunteer stats: %o', error)
@@ -70,21 +74,25 @@ export default class ReportsController {
       const { range = '30days' } = request.qs()
       const daysAgo = range === '30days' ? 30 : range === '7days' ? 7 : 365
 
+      const since = new Date()
+      since.setDate(since.getDate() - daysAgo)
+
       const eventsByStatus = await Event.query()
-        .where('createdAt', '>=', Database.raw(`date('now', '-${daysAgo} days')`))
+        .where('created_at', '>=', since.toISOString())
         .select('status')
         .count('* as count')
         .groupBy('status')
 
       const totalEvents = await Event.query()
-        .where('createdAt', '>=', Database.raw(`date('now', '-${daysAgo} days')`))
+        .where('created_at', '>=', since.toISOString())
         .count('* as total')
 
       // Calculate completion rate
       const completedEvents = eventsByStatus.find((e: any) => e.status === 'completed')
-      const completionRate = totalEvents[0].$extras.total > 0
-        ? Math.round(((completedEvents?.count || 0) / totalEvents[0].$extras.total) * 100)
-        : 0
+      const completionRate =
+        totalEvents[0].$extras.total > 0
+          ? Math.round(((completedEvents?.count || 0) / totalEvents[0].$extras.total) * 100)
+          : 0
 
       return response.ok({
         total: totalEvents[0].$extras.total,
@@ -105,24 +113,27 @@ export default class ReportsController {
       const { range = '30days' } = request.qs()
       const daysAgo = range === '30days' ? 30 : range === '7days' ? 7 : 365
 
+      const since = new Date()
+      since.setDate(since.getDate() - daysAgo)
+
       const totalHours = await VolunteerHour.query()
-        .where('date', '>=', Database.raw(`date('now', '-${daysAgo} days')`))
+        .where('date', '>=', since.toISOString())
         .sum('hours as total')
 
       const approvedHours = await VolunteerHour.query()
-        .where('date', '>=', Database.raw(`date('now', '-${daysAgo} days')`))
+        .where('date', '>=', since.toISOString())
         .where('status', 'Approved')
         .sum('hours as total')
 
       const hoursByStatus = await VolunteerHour.query()
-        .where('date', '>=', Database.raw(`date('now', '-${daysAgo} days')`))
+        .where('date', '>=', since.toISOString())
         .select('status')
         .sum('hours as total')
         .groupBy('status')
 
       // Top volunteers by hours
       const topVolunteers = await VolunteerHour.query()
-        .where('date', '>=', Database.raw(`date('now', '-${daysAgo} days')`))
+        .where('date', '>=', since.toISOString())
         .where('status', 'Approved')
         .select('user_id')
         .sum('hours as totalHours')
@@ -183,20 +194,22 @@ export default class ReportsController {
         .where('status', 'approved')
         .count('* as total')
 
+      const now = new Date()
+      const in30 = new Date()
+      in30.setDate(in30.getDate() + 30)
+
       const expiredDocs = await ComplianceDocument.query()
-        .where('expiresAt', '<', new Date())
+        .where('expires_at', '<', now.toISOString())
         .count('* as total')
 
       const expiringSoon = await ComplianceDocument.query()
-        .whereBetween('expiresAt', [
-          new Date(),
-          Database.raw("date('now', '+30 days')")
-        ])
+        .whereBetween('expires_at', [now.toISOString(), in30.toISOString()])
         .count('* as total')
 
-      const adherenceRate = totalDocs[0].$extras.total > 0
-        ? Math.round((approvedDocs[0].$extras.total / totalDocs[0].$extras.total) * 100)
-        : 0
+      const adherenceRate =
+        totalDocs[0].$extras.total > 0
+          ? Math.round((approvedDocs[0].$extras.total / totalDocs[0].$extras.total) * 100)
+          : 0
 
       return response.ok({
         total: totalDocs[0].$extras.total,
