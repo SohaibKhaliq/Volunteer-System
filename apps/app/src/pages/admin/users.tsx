@@ -101,7 +101,8 @@ export default function AdminUsers() {
           ? true
           : !u.is_disabled,
     roles: u.roles || [],
-    lastLoginAt: u.lastLoginAt ?? u.last_login_at ?? undefined,
+    // backend exposes `last_active_at`; accept that as the last login time
+    lastLoginAt: u.lastLoginAt ?? u.last_active_at ?? u.last_login_at ?? undefined,
     participationCount: u.participationCount ?? u.participation_count ?? 0,
     complianceStatus: u.complianceStatus ?? u.compliance_status ?? undefined
   })) as User[];
