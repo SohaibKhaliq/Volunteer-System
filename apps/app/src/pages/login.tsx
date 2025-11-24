@@ -23,11 +23,7 @@ export default function Login() {
       if (token) {
         setToken(token);
         try {
-          toast({ 
-            title: 'Signed in', 
-            description: 'Welcome back!',
-            variant: 'success' 
-          });
+          toast.success('Signed in');
         } catch (e) {
           console.warn('Unable to show toast', e);
         }
@@ -45,11 +41,7 @@ export default function Login() {
       }
     },
     onError(error: any) {
-      toast({
-        title: 'Authentication failed',
-        description: error?.response?.data?.error?.message || 'Invalid email or password',
-        variant: 'destructive'
-      });
+      toast.error(error?.response?.data?.error?.message || 'Invalid email or password');
     }
   });
 
