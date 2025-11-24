@@ -15,7 +15,7 @@ import { Command, CommandGroup, CommandInput, CommandItem } from '@/components/a
 import React, { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { toast } from 'sonner';
+import { toast } from '@/components/atoms/use-toast';
 
 export default function AdminHours() {
   const queryClient = useQueryClient();
