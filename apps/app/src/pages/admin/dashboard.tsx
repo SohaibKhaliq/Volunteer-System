@@ -1,5 +1,7 @@
 // src/pages/admin/dashboard.tsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import api from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Users, Calendar, AlertTriangle, TrendingUp } from 'lucide-react';
 import {
@@ -18,20 +20,57 @@ import {
   CartesianGrid
 } from 'recharts';
 import { Badge } from '@/components/ui/badge';
-import {
-  dashboardStats as stats,
-  activityFeed as activity,
-  topVolunteers,
-  chartData,
-  eventDistribution,
-  chartColors
-} from '@/lib/mock/adminMock';
+import { chartData as fallbackChartData, chartColors } from '@/lib/mock/adminMock';
+
 
 export default function AdminDashboard() {
-  // Using shared mock data from /src/lib/mock/adminMock.ts
+  const { data: overview, isLoading: loadingOverview } = useQuery(['reports', 'overview'], () =>
+    api.getReportsOverview({ range: '30days' })
+  );
+
+  const { data: hoursStats, isLoading: loadingHours } = useQuery(['reports', 'hours'], () => api.getHoursStats({ range: '30days' }));
+
+  const { data: tasksRaw } = useQuery({ queryKey: ['tasks'], queryFn: api.listTasks, staleTime: 60 * 1000 });
+
+  const [topVols, setTopVols] = useState<Array<{ name: string; hours: number }>>([]);
+
+  useEffect(() => {
+    const fetchNames = async () => {
+      if (!hoursStats || !Array.isArray((hoursStats as any).topVolunteers)) return;
+      try {
+        const tops = (hoursStats as any).topVolunteers;
+        const users = await Promise.all(
+          tops.map(async (t: any) => {
+            try {
+              const res: any = await api.getUser(t.user_id);
+              const u = res && res.data ? res.data : res;
+              return { name: `${u.firstName || (u as any).first_name || u.email}`, hours: t.totalHours || t.total_hours || 0 };
+            } catch (e) {
+              return { name: `User ${t.user_id}`, hours: t.totalHours || t.total_hours || 0 };
+            }
+          })
+        );
+        setTopVols(users);
+      } catch (e) {
+        // ignore
+      }
+    };
+    fetchNames();
+  }, [hoursStats]);
+
+  const stats = {
+    volunteers: overview?.volunteerParticipation?.total || 0,
+    events: overview?.eventCompletion?.total || 0,
+    pendingTasks: Array.isArray(tasksRaw) ? tasksRaw.filter((t: any) => (t.status || '').toLowerCase() !== 'completed').length : 0,
+    compliance: overview?.complianceAdherence?.adherenceRate || 0
+  };
+
+  const activity = [{ time: 'Live', desc: 'Live activity coming soon' }];
+
+  const chartData = fallbackChartData;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" aria-busy={loadingOverview || loadingHours}>
       {/* Header */}
       <header className="flex items-center justify-between">
         <h2 className="text-3xl font-bold">Admin Dashboard</h2>
@@ -102,7 +141,7 @@ export default function AdminDashboard() {
             <ResponsiveContainer width="80%" height={150}>
               <PieChart>
                 <Pie data={eventDistribution} dataKey="value" nameKey="name" outerRadius={60} fill="#8884d8">
-                  {eventDistribution.map((_, idx) => (
+                  {chartData.slice(0, 3).map((_, idx) => (
                     <Cell key={`cell-${idx}`} fill={chartColors[idx % chartColors.length]} />
                   ))}
                 </Pie>
