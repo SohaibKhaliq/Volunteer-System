@@ -4,7 +4,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Award, Edit, Trash2, Plus } from 'lucide-react';
+import { Award, Edit, Trash2, Plus, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
@@ -14,7 +14,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import SkeletonCard from '@/components/atoms/skeleton-card';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { toast } from 'sonner';
+import { API_URL } from '@/lib/config';
+import { toast } from '@/components/atoms/use-toast';
 
 interface User {
   id: number;
@@ -111,11 +112,35 @@ export default function AdminCertifications() {
   });
 
   const saveCert = (payload: Partial<ComplianceDoc>) => {
+    // If a file is attached, send as FormData so backend can process multipart upload
+    const hasFile = !!(payload as any).file;
     if (payload.id) {
-      updateMutation.mutate({ id: payload.id, data: payload });
+      if (hasFile) {
+        const fd = new FormData();
+        fd.append('file', (payload as any).file);
+        if (payload.user_id) fd.append('user_id', String(payload.user_id));
+        if (payload.doc_type) fd.append('doc_type', String(payload.doc_type));
+        if (payload.issued_at) fd.append('issued_at', String(payload.issued_at));
+        if (payload.expires_at) fd.append('expires_at', String(payload.expires_at));
+        if (payload.status) fd.append('status', String(payload.status));
+        updateMutation.mutate({ id: payload.id, data: fd } as any);
+      } else {
+        updateMutation.mutate({ id: payload.id, data: payload });
+      }
     } else {
-      // create expects user_id, doc_type, issued_at, expires_at
-      createMutation.mutate(payload);
+      if (hasFile) {
+        const fd = new FormData();
+        fd.append('file', (payload as any).file);
+        if (payload.user_id) fd.append('user_id', String(payload.user_id));
+        if (payload.doc_type) fd.append('doc_type', String(payload.doc_type));
+        if (payload.issued_at) fd.append('issued_at', String(payload.issued_at));
+        if (payload.expires_at) fd.append('expires_at', String(payload.expires_at));
+        if (payload.status) fd.append('status', String(payload.status));
+        createMutation.mutate(fd as any);
+      } else {
+        // create expects user_id, doc_type, issued_at, expires_at
+        createMutation.mutate(payload);
+      }
     }
   };
 
@@ -242,6 +267,15 @@ export default function AdminCertifications() {
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
+                        {c.metadata?.file?.path && (
+                          <Button
+                            variant="ghost"
+                            onClick={() => window.open(`${API_URL}/compliance/${c.id}/file`, '_blank')}
+                            aria-label={`Download file for ${c.id}`}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Button variant="ghost" onClick={() => confirmDelete(c.id)} aria-label={`Delete ${c.id}`}>
                           <Trash2 className="h-4 w-4 text-red-600" />
                         </Button>
@@ -317,6 +351,32 @@ export default function AdminCertifications() {
                 value={editing?.expires_at ? editing.expires_at.split('T')[0] : editing?.expires || ''}
                 onChange={(e) => setEditing((s) => ({ ...(s || {}), expires_at: e.target.value }))}
               />
+            </div>
+            <div>
+              <label className="text-sm block mb-1">Upload File (optional)</label>
+              <Input
+                type="file"
+                onChange={(e) => {
+                  const f = e.target.files && e.target.files[0];
+                  setEditing((s) => ({ ...(s || {}), file: f }));
+                }}
+              />
+              {editing?.id && editing?.metadata?.file?.path && (
+                <div className="mt-2 flex items-center gap-2">
+                  <a
+                    className="text-sm text-primary underline"
+                    href={`${API_URL}/compliance/${editing.id}/file`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    View uploaded file
+                  </a>
+                  <span className="text-xs text-muted-foreground">(opens in new tab)</span>
+                </div>
+              )}
+              {editing && (editing as any).file && (
+                <div className="mt-2 text-sm text-muted-foreground">Selected: {(editing as any).file.name}</div>
+              )}
             </div>
             <div>
               <label className="text-sm block mb-1">Status</label>
