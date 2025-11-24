@@ -8,11 +8,18 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { MessageSquare, Send, Edit, Trash2, Plus, Eye } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter
+} from '@/components/ui/dialog';
 import SkeletonCard from '@/components/atoms/skeleton-card';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { toast } from 'sonner';
+import { toast } from '@/components/atoms/use-toast';
 
 export default function AdminCommunications() {
   const queryClient = useQueryClient();
@@ -47,7 +54,12 @@ export default function AdminCommunications() {
       setEditOpen(false);
       setEditing(null);
     },
-    onError: () => toast.error('Failed to create communication')
+    onError: (err: any) => {
+      // Log server error payload for debugging
+      // eslint-disable-next-line no-console
+      console.error('createCommunication error', err?.response?.data ?? err);
+      toast.error('Failed to create communication');
+    }
   });
 
   const updateMutation = useMutation({
@@ -261,6 +273,7 @@ export default function AdminCommunications() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>View Communication</DialogTitle>
+            <DialogDescription>Read the full details and audience for this message.</DialogDescription>
           </DialogHeader>
           <div className="p-4 space-y-3">
             <div>
@@ -360,6 +373,7 @@ export default function AdminCommunications() {
         <DialogContent aria-labelledby="comm-edit-title">
           <DialogHeader>
             <DialogTitle id="comm-edit-title">{editing?.id ? 'Edit Communication' : 'New Communication'}</DialogTitle>
+            <DialogDescription>Compose and target your message to volunteers.</DialogDescription>
           </DialogHeader>
           <div className="p-4 space-y-3">
             <div>
@@ -443,6 +457,7 @@ export default function AdminCommunications() {
         <DialogContent aria-labelledby="comm-delete-title">
           <DialogHeader>
             <DialogTitle id="comm-delete-title">Delete Communication</DialogTitle>
+            <DialogDescription>Confirm deletion of this scheduled or draft communication.</DialogDescription>
           </DialogHeader>
           <div className="p-4">Are you sure you want to delete this communication?</div>
           <DialogFooter>
