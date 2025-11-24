@@ -126,6 +126,10 @@ Route.resource('communications', 'CommunicationsController')
   .middleware({ '*': ['auth'] })
   .apiOnly()
 
+// communication logs and retry
+Route.get('/communications/:id/logs', 'CommunicationsController.logs').middleware(['auth'])
+Route.post('/communications/logs/:id/retry', 'CommunicationsController.retryLog').middleware(['auth'])
+
 // Notifications (admin) - expose recent notifications for UI
 Route.get('/notifications', 'NotificationsController.index').middleware(['auth'])
 Route.put('/notifications/:id/read', 'NotificationsController.markRead').middleware(['auth'])
