@@ -1,6 +1,7 @@
 import Communication from 'App/Models/Communication'
 import User from 'App/Models/User'
 import Notification from 'App/Models/Notification'
+import CommunicationLog from 'App/Models/CommunicationLog'
 // import Mail from '@ioc:Adonis/Addons/Mail'
 import Env from '@ioc:Adonis/Core/Env'
 import Logger from '@ioc:Adonis/Core/Logger'
@@ -36,7 +37,7 @@ async function processDue() {
             if (parsed.roles && Array.isArray(parsed.roles) && parsed.roles.length) {
               const roles = parsed.roles
               const users = await User.query()
-                .whereHas('roles', (builder) => {
+                .whereHas('roles', (builder: any) => {
                   builder.whereIn('name', roles)
                 })
                 .select('email')
@@ -67,18 +68,33 @@ async function processDue() {
           const fromAddr = Env.get('MAIL_FROM', 'no-reply@local.test')
 
           for (const to of recipients) {
+            // create a log record for this recipient
+            const user = await User.query().where('email', to).first()
+            const log = await CommunicationLog.create({
+              communicationId: comm.id,
+              recipient: to,
+              userId: user ? user.id : undefined,
+              status: 'Pending',
+              attempts: 0
+            })
+
             try {
               // Send email (plain text). If Mail is not configured this will throw.
               // await Mail.send((message) => {
               //   message.from(fromAddr)
               //   message.to(to)
               //   message.subject(comm.subject || '')
-              //   // send as plain text; frontend content may be HTML but plain text is safer here
               //   message.text(comm.content || '')
               // })
 
-              // try to find a user for this recipient to create an in-app notification
-              const user = await User.query().where('email', to).first()
+              // mark log success
+              log.status = 'Success'
+              log.attempts = (log.attempts || 0) + 1
+              log.error = undefined
+              log.lastAttemptAt = DateTime.local()
+              await log.save()
+
+              // create in-app notification for user if exists
               if (user) {
                 await Notification.create({
                   userId: user.id,
@@ -88,6 +104,11 @@ async function processDue() {
               }
             } catch (e) {
               Logger.error('Failed to send email to ' + to + ': ' + String(e))
+              log.status = 'Failed'
+              log.attempts = (log.attempts || 0) + 1
+              log.error = String(e)
+              log.lastAttemptAt = DateTime.local()
+              await log.save()
             }
           }
         } else {
