@@ -62,6 +62,10 @@ Route.resource('types', 'TypesController')
   })
   .apiOnly()
 
+// Register analytics before resource routes so static path doesn't get
+// shadowed by the `GET /users/:id` parameter route.
+Route.get('/users/analytics', 'UsersController.analytics').middleware(['auth'])
+
 Route.resource('users', 'UsersController')
   .middleware({
     '*': ['auth']
@@ -129,7 +133,7 @@ Route.put('/notifications/:id/read', 'NotificationsController.markRead').middlew
 // Custom endpoints
 Route.post('/users/:id/remind', 'UsersController.remind').middleware(['auth'])
 Route.post('/users/bulk', 'UsersController.bulkUpdate').middleware(['auth'])
-Route.get('/users/analytics', 'UsersController.analytics').middleware(['auth'])
+// (moved analytics route earlier to avoid route shadowing)
 
 // Role management and activation endpoints
 Route.post('/users/:id/roles', 'UsersController.addRole').middleware(['auth'])
