@@ -22,7 +22,20 @@ export default class ReportsController {
       return response.ok(data)
     } catch (error) {
       Logger.error('Failed to fetch reports: %o', error)
-      return response.badRequest({ error: { message: 'Unable to fetch reports' } })
+      // Return safe empty overview so dashboard doesn't break
+      return response.ok({
+        volunteerParticipation: { total: 0, active: 0, inactive: 0, trend: [] },
+        eventCompletion: { total: 0, completed: 0, ongoing: 0, cancelled: 0, completionRate: 0 },
+        volunteerHours: { total: 0, thisMonth: 0, lastMonth: 0, trend: [] },
+        organizationPerformance: { topPerformers: [], averageScore: 0 },
+        complianceAdherence: { compliant: 0, pending: 0, expired: 0, adherenceRate: 0 },
+        predictions: {
+          volunteerDemand: { nextMonth: 0, confidence: 0 },
+          noShowRate: 0,
+          eventSuccessRate: 0
+        },
+        error: { message: 'Unable to fetch reports', details: error?.message ?? String(error) }
+      })
     }
   }
 
@@ -61,8 +74,14 @@ export default class ReportsController {
             : 0
       })
     } catch (error) {
-      Logger.error('Failed to fetch volunteer stats: %o', error)
-      return response.badRequest({ error: { message: 'Unable to fetch volunteer statistics' } })
+        Logger.error('Failed to fetch volunteer stats: %o', error)
+          return response.ok({
+            total: 0,
+            active: 0,
+            newSignups: 0,
+            participationRate: 0,
+            error: error?.message ?? String(error)
+          })
     }
   }
 
@@ -100,8 +119,13 @@ export default class ReportsController {
         completionRate
       })
     } catch (error) {
-      Logger.error('Failed to fetch event stats: %o', error)
-      return response.badRequest({ error: { message: 'Unable to fetch event statistics' } })
+        Logger.error('Failed to fetch event stats: %o', error)
+          return response.ok({
+            total: 0,
+            byStatus: [],
+            completionRate: 0,
+            error: error?.message ?? String(error)
+          })
     }
   }
 
@@ -148,8 +172,14 @@ export default class ReportsController {
         topVolunteers
       })
     } catch (error) {
-      Logger.error('Failed to fetch hours stats: %o', error)
-      return response.badRequest({ error: { message: 'Unable to fetch hours statistics' } })
+        Logger.error('Failed to fetch hours stats: %o', error)
+          return response.ok({
+            total: 0,
+            approved: 0,
+            byStatus: [],
+            topVolunteers: [],
+            error: error?.message ?? String(error)
+          })
     }
   }
 
@@ -179,8 +209,12 @@ export default class ReportsController {
         }))
       })
     } catch (error) {
-      Logger.error('Failed to fetch organization stats: %o', error)
-      return response.badRequest({ error: { message: 'Unable to fetch organization statistics' } })
+        Logger.error('Failed to fetch organization stats: %o', error)
+          return response.ok({
+            total: 0,
+            topPerformers: [],
+            error: error?.message ?? String(error)
+          })
     }
   }
 
@@ -219,8 +253,15 @@ export default class ReportsController {
         adherenceRate
       })
     } catch (error) {
-      Logger.error('Failed to fetch compliance stats: %o', error)
-      return response.badRequest({ error: { message: 'Unable to fetch compliance statistics' } })
+        Logger.error('Failed to fetch compliance stats: %o', error)
+          return response.ok({
+            total: 0,
+            approved: 0,
+            expired: 0,
+            expiringSoon: 0,
+            adherenceRate: 0,
+            error: error?.message ?? String(error)
+          })
     }
   }
 
@@ -253,8 +294,10 @@ export default class ReportsController {
 
       return response.ok(data)
     } catch (error) {
-      Logger.error('Failed to export report: %o', error)
-      return response.badRequest({ error: { message: 'Unable to export report' } })
+        Logger.error('Failed to export report: %o', error)
+          return response.ok({
+            error: { message: 'Unable to export report', details: error?.message ?? String(error) }
+          })
     }
   }
 }
