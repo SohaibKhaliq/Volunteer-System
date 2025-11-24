@@ -51,7 +51,7 @@ export default class SurveysController {
   }
 
   // submit a response to a survey
-  public async submit({ params, request, auth, request: req, response }: HttpContextContract) {
+  public async submit({ params, request, auth, response }: HttpContextContract) {
     const survey = await Survey.find(params.id)
     if (!survey) return response.notFound()
     if (survey.status !== 'Open') return response.status(400).send({ error: 'Survey not open' })
@@ -63,7 +63,7 @@ export default class SurveysController {
       surveyId: survey.id,
       userId: auth.user?.id,
       answers,
-      ipAddress: req.ip()
+      ipAddress: request.ip()
     })
 
     return response.created(r)
@@ -106,33 +106,4 @@ export default class SurveysController {
     return response.send(csv)
   }
 }
-import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import Survey from 'App/Models/Survey'
 
-export default class SurveysController {
-  public async index({}: HttpContextContract) {
-    return Survey.query().preload('responses')
-  }
-
-  public async store({ request }: HttpContextContract) {
-    const data = request.only(['title', 'description', 'status'])
-    return Survey.create(data)
-  }
-
-  public async show({ params }: HttpContextContract) {
-    return Survey.query().where('id', params.id).preload('responses').firstOrFail()
-  }
-
-  public async update({ params, request }: HttpContextContract) {
-    const survey = await Survey.findOrFail(params.id)
-    const data = request.only(['title', 'description', 'status'])
-    survey.merge(data)
-    await survey.save()
-    return survey
-  }
-
-  public async destroy({ params }: HttpContextContract) {
-    const survey = await Survey.findOrFail(params.id)
-    await survey.delete()
-  }
-}
