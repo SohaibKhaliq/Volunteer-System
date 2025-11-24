@@ -112,7 +112,14 @@ const api = {
     axios.get('/reports/export', { params: { type, reportType } }),
 
   /* Resources endpoints */
-  listResources: async () => axios.get('/resources'),
+  listResources: async () => {
+    const res = await axios.get('/resources');
+    // backend may return a plain array or a wrapper object { data: [...] } or { resources: [...] }
+    if (Array.isArray(res)) return res;
+    if (res && Array.isArray((res as any).data)) return (res as any).data;
+    if (res && Array.isArray((res as any).resources)) return (res as any).resources;
+    return [] as const;
+  },
   createResource: async (data: any) => axios.post('/resources', data),
   updateResource: async (id: number, data: any) => axios.put(`/resources/${id}`, data),
   deleteResource: async (id: number) => axios.delete(`/resources/${id}`),
