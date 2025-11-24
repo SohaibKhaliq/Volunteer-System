@@ -547,7 +547,7 @@ export default function AdminEvents() {
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => {
-                              navigate(`/admin/assignments?eventId=${event.id}`);
+                              navigate(`/admin/tasks?eventId=${event.id}`);
                             }}
                           >
                             <Users className="h-4 w-4 mr-2" />
