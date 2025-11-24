@@ -106,14 +106,7 @@ const api = {
     } catch (e) {
       // ignore and fallthrough to fallback
     }
-    return [
-      { month: 'Jan', volunteers: 50, hours: 120 },
-      { month: 'Feb', volunteers: 60, hours: 140 },
-      { month: 'Mar', volunteers: 80, hours: 160 },
-      { month: 'Apr', volunteers: 90, hours: 200 },
-      { month: 'May', volunteers: 110, hours: 240 },
-      { month: 'Jun', volunteers: 130, hours: 260 }
-    ];
+    return [];
   },
   exportReport: async (type: string, reportType: string) =>
     axios.get('/reports/export', { params: { type, reportType } }),
@@ -204,7 +197,7 @@ const api = {
   listOrganizationDocuments: async () => axios.get('/organization/documents'),
   uploadOrganizationDocument: async (data: any) => axios.post('/organization/documents', data),
   deleteOrganizationDocument: async (id: number) => axios.delete(`/organization/documents/${id}`),
-  getComplianceStats: async () => axios.get('/organization/compliance/stats'),
+  getOrganizationComplianceStats: async () => axios.get('/organization/compliance/stats'),
 
   // Dashboard
   getOrganizationDashboardStats: async () => axios.get('/organization/dashboard-stats')
