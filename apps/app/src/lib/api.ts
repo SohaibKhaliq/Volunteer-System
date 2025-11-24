@@ -143,6 +143,9 @@ const api = {
   deleteCommunication: async (id: number) => axios.delete(`/communications/${id}`),
   listCommunicationLogs: async (communicationId: number) => axios.get(`/communications/${communicationId}/logs`),
   retryCommunicationLog: async (logId: number) => axios.post(`/communications/logs/${logId}/retry`),
+  listScheduledJobs: async () => axios.get('/scheduled-jobs'),
+  createScheduledJob: async (data: any) => axios.post('/scheduled-jobs', data),
+  retryScheduledJob: async (id: number) => axios.post(`/scheduled-jobs/${id}/retry`),
 
   /* System Settings endpoints */
   getSettings: async () => axios.get('/settings'),
