@@ -22,11 +22,7 @@ export default function Register() {
       if (token) {
         setToken(token);
         try {
-          toast({ 
-            title: 'Account created', 
-            description: 'Welcome!',
-            variant: 'success'
-          });
+          toast.success('Account created');
         } catch (e) {
           console.warn('Unable to show toast', e);
         }
@@ -34,11 +30,7 @@ export default function Register() {
       }
     },
     onError(error: any) {
-      toast({
-        title: 'Registration failed',
-        description: error?.response?.data?.error?.message || 'Unable to create account',
-        variant: 'destructive'
-      });
+      toast.error(error?.response?.data?.error?.message || 'Unable to create account');
     }
   });
 
