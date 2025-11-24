@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import api from '@/lib/api';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -22,53 +25,76 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { 
-  ShieldCheck, 
   FileText, 
   Upload, 
-  AlertCircle, 
-  Download
+  CheckCircle, 
+  AlertTriangle, 
+  Clock,
+  Download,
+  Trash2,
+  MoreHorizontal,
+  Loader2
 } from 'lucide-react';
 
 export default function OrganizationCompliance() {
+  const queryClient = useQueryClient();
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [editingDoc, setEditingDoc] = useState<any>(null);
 
-  const [documents, setDocuments] = useState([
-    {
-      id: 1,
-      name: 'Non-Profit Registration',
-      type: 'License',
-      status: 'Valid',
-      expiry: '2026-12-31',
-      lastUpdated: '2024-01-15'
+  // Fetch Documents
+  const { data: documents, isLoading: isDocsLoading } = useQuery({
+    queryKey: ['organizationDocuments'],
+    queryFn: api.listOrganizationDocuments
+  });
+
+  // Fetch Stats
+  const { data: stats, isLoading: isStatsLoading } = useQuery({
+    queryKey: ['organizationComplianceStats'],
+    queryFn: api.getComplianceStats
+  });
+
+  // Upload/Update Document Mutation
+  const saveDocMutation = useMutation({
+    mutationFn: (data: any) => {
+      // Note: In a real app, this would likely involve FormData for file uploads
+      // For now, we're simulating it with JSON data as per the previous implementation
+      if (editingDoc) {
+        // Assuming we have an update endpoint or logic
+        return api.uploadOrganizationDocument({ ...data, id: editingDoc.id });
+      }
+      return api.uploadOrganizationDocument(data);
     },
-    {
-      id: 2,
-      name: 'Liability Insurance',
-      type: 'Insurance',
-      status: 'Expiring Soon',
-      expiry: '2025-06-30',
-      lastUpdated: '2024-06-30'
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['organizationDocuments'] });
+      setIsUploadOpen(false);
+      toast.success(editingDoc ? 'Document updated successfully' : 'Document uploaded successfully');
     },
-    {
-      id: 3,
-      name: 'Safety Protocol Guidelines',
-      type: 'Policy',
-      status: 'Valid',
-      expiry: 'N/A',
-      lastUpdated: '2024-03-10'
+    onError: () => {
+      toast.error('Failed to save document');
     }
-  ]);
+  });
+
+  // Delete Document Mutation
+  const deleteDocMutation = useMutation({
+    mutationFn: api.deleteOrganizationDocument,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['organizationDocuments'] });
+      toast.success('Document deleted successfully');
+    },
+    onError: () => {
+      toast.error('Failed to delete document');
+    }
+  });
 
   const [docFormData, setDocFormData] = useState({
     name: '',
-    type: '',
+    type: 'License',
     expiry: ''
   });
 
   const handleOpenUpload = () => {
     setEditingDoc(null);
-    setDocFormData({ name: '', type: '', expiry: '' });
+    setDocFormData({ name: '', type: 'License', expiry: '' });
     setIsUploadOpen(true);
   };
 
@@ -77,38 +103,17 @@ export default function OrganizationCompliance() {
     setDocFormData({
       name: doc.name,
       type: doc.type,
-      expiry: doc.expiry === 'N/A' ? '' : doc.expiry
+      expiry: doc.expiry
     });
     setIsUploadOpen(true);
   };
 
-  const handleDeleteDoc = (id: number) => {
-    setDocuments(documents.filter(d => d.id !== id));
-  };
-
   const handleDocSubmit = () => {
-    if (editingDoc) {
-      // Update
-      setDocuments(documents.map(d => d.id === editingDoc.id ? {
-        ...d,
-        name: docFormData.name,
-        type: docFormData.type,
-        expiry: docFormData.expiry || 'N/A',
-        lastUpdated: new Date().toISOString().split('T')[0]
-      } : d));
-    } else {
-      // Create
-      const newDoc = {
-        id: documents.length + 1,
-        name: docFormData.name,
-        type: docFormData.type,
-        status: 'Pending Review',
-        expiry: docFormData.expiry || 'N/A',
-        lastUpdated: new Date().toISOString().split('T')[0]
-      };
-      setDocuments([...documents, newDoc]);
-    }
-    setIsUploadOpen(false);
+    saveDocMutation.mutate({
+      ...docFormData,
+      status: 'Pending', // Default status for new uploads
+      uploadedAt: new Date().toISOString().split('T')[0]
+    });
   };
 
   const volunteerCompliance = [
@@ -117,12 +122,23 @@ export default function OrganizationCompliance() {
     { id: 3, requirement: 'Safety Training', total: 124, compliant: 98, pending: 26 },
   ];
 
+  if (isDocsLoading || isStatsLoading) {
+    return <div className="flex justify-center items-center h-96"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+  }
+
+  const displayDocs = Array.isArray(documents) ? documents : [];
+  const displayStats = stats || {
+    compliantVolunteers: 0,
+    pendingDocuments: 0,
+    expiringSoon: 0
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Compliance</h2>
-          <p className="text-muted-foreground">Manage licenses, certifications, and regulatory requirements.</p>
+          <p className="text-muted-foreground">Manage legal documents and volunteer certifications.</p>
         </div>
         <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
           <DialogTrigger asChild>
@@ -141,167 +157,178 @@ export default function OrganizationCompliance() {
             <div className="grid gap-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="doc-name">Document Name</Label>
-                <Input 
-                  id="doc-name" 
-                  placeholder="e.g. 2025 Business License" 
+                <Input
+                  id="doc-name"
+                  placeholder="e.g. Liability Insurance"
                   value={docFormData.name}
-                  onChange={(e) => setDocFormData({...docFormData, name: e.target.value})}
+                  onChange={(e) => setDocFormData({ ...docFormData, name: e.target.value })}
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="doc-type">Document Type</Label>
-                <Input 
-                  id="doc-type" 
-                  placeholder="e.g. License, Insurance" 
-                  value={docFormData.type}
-                  onChange={(e) => setDocFormData({...docFormData, type: e.target.value})}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="expiry">Expiry Date (if applicable)</Label>
-                <Input 
-                  id="expiry" 
-                  type="date" 
-                  value={docFormData.expiry}
-                  onChange={(e) => setDocFormData({...docFormData, expiry: e.target.value})}
-                />
-              </div>
-              {!editingDoc && (
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="file">File</Label>
-                  <Input id="file" type="file" />
+                  <Label htmlFor="doc-type">Type</Label>
+                  <Input
+                    id="doc-type"
+                    placeholder="e.g. Insurance"
+                    value={docFormData.type}
+                    onChange={(e) => setDocFormData({ ...docFormData, type: e.target.value })}
+                  />
                 </div>
-              )}
+                <div className="space-y-2">
+                  <Label htmlFor="doc-expiry">Expiry Date</Label>
+                  <Input
+                    id="doc-expiry"
+                    type="date"
+                    value={docFormData.expiry}
+                    onChange={(e) => setDocFormData({ ...docFormData, expiry: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="file">File</Label>
+                <Input id="file" type="file" />
+              </div>
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsUploadOpen(false)}>Cancel</Button>
-              <Button onClick={handleDocSubmit}>{editingDoc ? 'Update' : 'Upload'}</Button>
+              <Button onClick={handleDocSubmit} disabled={saveDocMutation.isLoading}>
+                {saveDocMutation.isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {editingDoc ? 'Update' : 'Upload'}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="bg-green-50 border-green-100">
-          <CardContent className="p-6 flex items-center gap-4">
-            <div className="p-3 bg-green-100 rounded-full text-green-600">
-              <ShieldCheck className="h-8 w-8" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-green-600">Overall Status</p>
-              <h3 className="text-2xl font-bold text-green-700">Compliant</h3>
-            </div>
+      <div className="grid gap-4 md:grid-cols-3">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Compliant Volunteers</CardTitle>
+            <CheckCircle className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{displayStats.compliantVolunteers}%</div>
+            <p className="text-xs text-muted-foreground">
+              +2.5% from last month
+            </p>
           </CardContent>
         </Card>
-        <Card className="bg-blue-50 border-blue-100">
-          <CardContent className="p-6 flex items-center gap-4">
-            <div className="p-3 bg-blue-100 rounded-full text-blue-600">
-              <FileText className="h-8 w-8" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-blue-600">Active Documents</p>
-              <h3 className="text-2xl font-bold text-blue-700">12</h3>
-            </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pending Review</CardTitle>
+            <Clock className="h-4 w-4 text-yellow-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{displayStats.pendingDocuments}</div>
+            <p className="text-xs text-muted-foreground">
+              Documents awaiting approval
+            </p>
           </CardContent>
         </Card>
-        <Card className="bg-orange-50 border-orange-100">
-          <CardContent className="p-6 flex items-center gap-4">
-            <div className="p-3 bg-orange-100 rounded-full text-orange-600">
-              <AlertCircle className="h-8 w-8" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-orange-600">Action Required</p>
-              <h3 className="text-2xl font-bold text-orange-700">1 Item</h3>
-            </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Expiring Soon</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{displayStats.expiringSoon}</div>
+            <p className="text-xs text-muted-foreground">
+              Documents expiring in 30 days
+            </p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Organization Documents</CardTitle>
-            <CardDescription>Official licenses and certifications.</CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
+      <Card>
+        <CardHeader>
+          <CardTitle>Organization Documents</CardTitle>
+          <CardDescription>Official documents, licenses, and insurance policies.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Document Name</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Expiry Date</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {displayDocs.length === 0 ? (
                 <TableRow>
-                  <TableHead>Document</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Expiry</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
+                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    No documents found. Upload one to ensure compliance.
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {documents.map((doc) => (
+              ) : (
+                displayDocs.map((doc: any) => (
                   <TableRow key={doc.id}>
-                    <TableCell>
-                      <div className="font-medium">{doc.name}</div>
-                      <div className="text-xs text-muted-foreground">{doc.type}</div>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        {doc.name}
+                      </div>
                     </TableCell>
+                    <TableCell>{doc.type}</TableCell>
                     <TableCell>
-                      <Badge 
-                        variant={doc.status === 'Valid' ? 'outline' : 'destructive'}
-                        className={doc.status === 'Valid' ? 'text-green-600 border-green-200 bg-green-50' : ''}
-                      >
+                      <Badge variant={doc.status === 'Valid' ? 'default' : doc.status === 'Expiring' ? 'destructive' : 'secondary'} className={doc.status === 'Valid' ? 'bg-green-500' : ''}>
                         {doc.status}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {doc.expiry}
-                    </TableCell>
+                    <TableCell>{doc.expiry}</TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(doc)}>
-                          <FileText className="h-4 w-4" />
-                        </Button>
+                      <div className="flex justify-end gap-2">
                         <Button variant="ghost" size="icon">
                           <Download className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="text-red-600" onClick={() => handleDeleteDoc(doc.id)}>
-                          <AlertCircle className="h-4 w-4" />
+                        <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(doc)}>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="text-red-600" onClick={() => deleteDocMutation.mutate(doc.id)}>
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Volunteer Compliance</CardTitle>
-            <CardDescription>Tracking volunteer requirements.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              {volunteerCompliance.map((item) => (
-                <div key={item.id} className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="font-medium">{item.requirement}</span>
-                    <span className="text-muted-foreground">{item.compliant}/{item.total} Compliant</span>
-                  </div>
-                  <div className="w-full bg-gray-100 rounded-full h-2.5">
-                    <div 
-                      className={`h-2.5 rounded-full ${item.pending > 0 ? 'bg-orange-500' : 'bg-green-500'}`} 
-                      style={{ width: `${(item.compliant / item.total) * 100}%` }}
-                    ></div>
-                  </div>
-                  {item.pending > 0 && (
-                    <p className="text-xs text-orange-600 flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" />
-                      {item.pending} volunteers pending verification
-                    </p>
-                  )}
+      <Card>
+        <CardHeader>
+          <CardTitle>Volunteer Compliance</CardTitle>
+          <CardDescription>Tracking volunteer requirements.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-6">
+            {volunteerCompliance.map((item) => (
+              <div key={item.id} className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="font-medium">{item.requirement}</span>
+                  <span className="text-muted-foreground">{item.compliant}/{item.total} Compliant</span>
                 </div>
-              ))}
-            </div>
+                <div className="w-full bg-gray-100 rounded-full h-2.5">
+                  <div
+                    className={`h-2.5 rounded-full ${item.pending > 0 ? 'bg-orange-500' : 'bg-green-500'}`}
+                    style={{ width: `${(item.compliant / item.total) * 100}%` }}
+                  ></div>
+                </div>
+                {item.pending > 0 && (
+                  <p className="text-xs text-orange-600 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" />
+                    {item.pending} volunteers pending verification
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
           </CardContent>
-        </Card>
-      </div>
+      </Card>
     </div>
   );
 }
