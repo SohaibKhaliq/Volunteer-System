@@ -155,6 +155,8 @@ const api = {
 
   // return current authenticated user's profile (roles, flags)
   getCurrentUser: async () => axios.get('/me')
+  ,
+  getUser: async (id: number) => axios.get(`/users/${id}`)
 } as const;
 
 export const useLazyQuery = (key: QueryKey, fn: QueryFunction, options = {}) => {
