@@ -13,14 +13,22 @@ export default class CommunicationsController {
 
   public async store({ request, response }: HttpContextContract) {
     try {
-      const data = request.only([
-        'subject',
-        'content',
-        'type',
-        'status',
-        'sendAt',
-        'targetAudience'
-      ])
+      // normalize incoming payload: accept camelCase or snake_case and provide safe defaults
+      const data: any = {}
+      data.subject = request.input('subject') || request.input('Subject') || ''
+      data.content = request.input('content') || request.input('message') || ''
+      data.type = request.input('type') || request.input('Type') || 'Email'
+      data.status = request.input('status') || 'Draft'
+      // accept sendAt or send_at
+      const sendAt = request.input('sendAt') ?? request.input('send_at') ?? request.input('sendAt')
+      if (sendAt) data.sendAt = sendAt
+      // accept targetAudience or target_audience
+      const ta =
+        request.input('targetAudience') ??
+        request.input('target_audience') ??
+        request.input('targetAudience')
+      if (ta !== undefined) data.targetAudience = ta
+
       const comm = await Communication.create(data)
       return comm
     } catch (err) {
