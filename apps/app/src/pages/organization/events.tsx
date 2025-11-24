@@ -126,7 +126,7 @@ export default function OrganizationEvents() {
     const payload = {
       ...formData,
       capacity: parseInt(formData.capacity) || 0,
-      skills: formData.skills.split(',').map(s => s.trim()).filter(s => s)
+      skills: formData.skills.split(',').map((s: string) => s.trim()).filter((s: string) => s)
     };
     saveEventMutation.mutate(payload);
   };
@@ -156,7 +156,6 @@ export default function OrganizationEvents() {
           <Input
             placeholder="Search events..."
             className="pl-8"
-            onChange={(e) => setSearch(e.target.value)}
           />
         </div>
         <Button variant="outline">
@@ -173,120 +172,187 @@ export default function OrganizationEvents() {
                 <TableHead>Event Name</TableHead>
                 <TableHead>Date & Time</TableHead>
                 <TableHead>Location</TableHead>
-                <TableHead>Volunteers</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Volunteers</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {(isLoading ? [] : eventsRaw || [])
-                .filter((event: any) => {
-                  if (!search) return true;
-                  const q = search.toLowerCase();
-                  return (
-                    String(event.title || '')
-                      .toLowerCase()
-                      .includes(q) ||
-                    String(event.location || '')
-                      .toLowerCase()
-                      .includes(q) ||
-                    (Array.isArray(event.skills) && event.skills.join(',').toLowerCase().includes(q))
-                  );
-                })
-                .map((event: any) => (
+              {displayEvents.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    No events found. Create one to get started.
+                  </TableCell>
+                </TableRow>
+              ) : (
+                displayEvents.map((event: any) => (
                   <TableRow key={event.id}>
                     <TableCell className="font-medium">
-                      <div>{event.title}</div>
-                      <div className="flex gap-1 mt-1">
-                        {(Array.isArray(event.skills) ? event.skills : []).map((skill: string, i: number) => (
-                          <Badge key={String(skill) + i} variant="secondary" className="text-[10px] px-1 py-0 h-5">
-                            {skill}
-                          </Badge>
-                        ))}
+                      {event.title}
+                      <div className="text-xs text-muted-foreground">{event.type}</div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Calendar className="h-3 w-3 text-muted-foreground" />
+                        {event.date}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Clock className="h-3 w-3" />
+                        {event.time}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        <Calendar className="mr-2 h-4 w-4" />
-                        {(() => {
-                          const start = event.start_at ?? event.startAt ?? event.date ?? null;
-                          if (!start) return '-';
-                          try {
-                            const d = new Date(start);
-                            return d.toLocaleDateString();
-                          } catch (e) {
-                            return String(start).slice(0, 10);
-                          }
-                        })()}
-                      </div>
-                      <div className="flex items-center text-sm text-muted-foreground mt-1">
-                        <Clock className="mr-2 h-4 w-4" />
-                        {(() => {
-                          const start = event.start_at ?? event.startAt ?? event.time ?? null;
-                          if (!start) return '-';
-                          try {
-                            const d = new Date(start);
-                            return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                          } catch (e) {
-                            return String(start).slice(11, 16) || String(start);
-                          }
-                        })()}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        <MapPin className="mr-2 h-4 w-4" />
+                      <div className="flex items-center gap-2 text-sm">
+                        <MapPin className="h-3 w-3 text-muted-foreground" />
                         {event.location}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className="bg-gray-200 rounded-full h-2.5 w-24">
-                          {(() => {
-                            const registered = event.volunteers?.registered ?? event.assigned_volunteers ?? 0;
-                            const required =
-                              event.volunteers?.required ?? event.required_volunteers ?? event.capacity ?? 0;
-                            const pct = required ? Math.min(100, Math.round((registered / required) * 100)) : 0;
-                            return <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${pct}%` }} />;
-                          })()}
-                        </div>
-                        <span className="text-xs text-muted-foreground">
-                          {event.volunteers?.registered ?? event.assigned_volunteers ?? 0}/
-                          {event.volunteers?.required ?? event.required_volunteers ?? event.capacity ?? '-'}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          event.status === 'Active' ? 'default' : event.status === 'Completed' ? 'secondary' : 'outline'
-                        }
-                        className={event.status === 'Active' ? 'bg-green-500 hover:bg-green-600' : ''}
-                      >
+                      <Badge variant={event.status === 'Upcoming' ? 'default' : 'secondary'}>
                         {event.status}
                       </Badge>
                     </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <div className="w-full bg-gray-200 rounded-full h-2 w-24">
+                          <div 
+                            className="bg-blue-600 h-2 rounded-full" 
+                            style={{ width: `${(event.registered / event.capacity) * 100}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-xs text-muted-foreground">{event.registered}/{event.capacity}</span>
+                      </div>
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => handleOpenEdit(event)}>
-                          Edit
+                        <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(event)}>
+                          <MoreHorizontal className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-600"
-                          onClick={() => handleDeleteEvent(event.id)}
-                        >
-                          Delete
+                        <Button variant="ghost" size="icon" className="text-red-600" onClick={() => deleteEventMutation.mutate(event.id)}>
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{editingEvent ? 'Edit Event' : 'Create New Event'}</DialogTitle>
+            <DialogDescription>
+              {editingEvent ? 'Update event details.' : 'Fill in the details to create a new event or task for volunteers.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="title">Event Title</Label>
+                <Input 
+                  id="title" 
+                  placeholder="e.g. Beach Cleanup" 
+                  value={formData.title}
+                  onChange={(e) => setFormData({...formData, title: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="type">Type</Label>
+                <Input 
+                  id="type" 
+                  placeholder="e.g. Community, Emergency" 
+                  value={formData.type}
+                  onChange={(e) => setFormData({...formData, type: e.target.value})}
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="date">Date</Label>
+                <Input 
+                  id="date" 
+                  type="date" 
+                  value={formData.date}
+                  onChange={(e) => setFormData({...formData, date: e.target.value})}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="time">Time</Label>
+                <Input 
+                  id="time" 
+                  type="time" 
+                  value={formData.time}
+                  onChange={(e) => setFormData({...formData, time: e.target.value})}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="location">Location</Label>
+              <div className="relative">
+                <MapPin className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  id="location" 
+                  className="pl-8" 
+                  placeholder="Address or venue" 
+                  value={formData.location}
+                  onChange={(e) => setFormData({...formData, location: e.target.value})}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Description</Label>
+              <Textarea 
+                id="description" 
+                placeholder="Describe the event and what volunteers will do..." 
+                className="h-24"
+                value={formData.description}
+                onChange={(e) => setFormData({...formData, description: e.target.value})}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="capacity">Volunteer Capacity</Label>
+                <div className="flex gap-2">
+                  <Input 
+                    id="capacity" 
+                    type="number" 
+                    placeholder="e.g. 50" 
+                    value={formData.capacity}
+                    onChange={(e) => setFormData({...formData, capacity: e.target.value})}
+                  />
+                  <Button variant="outline" size="icon" title="Get AI Suggestion">
+                    <Sparkles className="h-4 w-4 text-purple-600" />
+                  </Button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="skills">Required Skills</Label>
+                <Input 
+                  id="skills" 
+                  placeholder="e.g. First Aid, Cooking" 
+                  value={formData.skills}
+                  onChange={(e) => setFormData({...formData, skills: e.target.value})}
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
+            <Button onClick={handleSubmit} disabled={saveEventMutation.isLoading}>
+              {saveEventMutation.isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {editingEvent ? 'Update Event' : 'Create Event'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
