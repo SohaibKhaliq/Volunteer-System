@@ -46,7 +46,7 @@ export default function AdminCertifications() {
   const [editing, setEditing] = useState<Partial<ComplianceDoc> | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [toDelete, setToDelete] = useState<number | null>(null);
-  const [courseDeleteOpen, setCourseDeleteOpen] = useState(false);
+  
 
   const { data: items = [], isLoading } = useQuery<ComplianceDoc[]>({
     queryKey: ['compliance'],
@@ -154,6 +154,53 @@ export default function AdminCertifications() {
     if (toDelete == null) return;
     deleteMutation.mutate(toDelete);
   };
+
+  // Courses CRUD wiring
+  const [coursesOpen, setCourseOpen] = useState(false);
+  const [courseEditing, setCourseEditing] = useState<any | null>(null);
+  const { data: courses = [], isLoading: coursesLoading } = useQuery(['courses'], api.listCourses);
+
+  const courseCreateMutation = useMutation({
+    mutationFn: (data: any) => api.createCourse(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['courses']);
+      toast.success('Course created');
+      setCourseOpen(false);
+    },
+    onError: () => toast.error('Failed to create course')
+  });
+
+  const courseUpdateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: any }) => api.updateCourse(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['courses']);
+      toast.success('Course updated');
+      setCourseOpen(false);
+    },
+    onError: () => toast.error('Failed to update course')
+  });
+
+  const courseDeleteMutation = useMutation({
+    mutationFn: (id: number) => api.deleteCourse(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['courses']);
+      toast.success('Course deleted');
+    },
+    onError: () => toast.error('Failed to delete course')
+  });
+
+  const [toDeleteCourse, setToDeleteCourse] = useState<number | null>(null);
+  const confirmCourseDelete = (id: number) => setToDeleteCourse(id);
+  const doDeleteCourse = () => {
+    if (toDeleteCourse == null) return;
+    courseDeleteMutation.mutate(toDeleteCourse);
+    setToDeleteCourse(null);
+  };
+
+  const [courseDeleteOpen, setCourseDeleteOpen] = useState(false);
+  useEffect(() => {
+    setCourseDeleteOpen(toDeleteCourse != null);
+  }, [toDeleteCourse]);
 
   return (
     <div className="space-y-6" aria-busy={isLoading}>
