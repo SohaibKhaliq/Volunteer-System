@@ -11,146 +11,124 @@ import {
 } from 'lucide-react';
 
 export default function OrganizationDashboard() {
-  // Mock data for dashboard
-  const stats = [
-    {
-      title: 'Active Volunteers',
-      value: '124',
-      change: '+12%',
-      trend: 'up',
-      icon: Users,
-      color: 'text-blue-600',
-      bg: 'bg-blue-100'
-    },
-    {
-      title: 'Upcoming Events',
-      value: '8',
-      change: 'Next: Tomorrow',
-      trend: 'neutral',
-      icon: Calendar,
-      color: 'text-purple-600',
-      bg: 'bg-purple-100'
-    },
-    {
-      title: 'Total Hours',
-      value: '1,248',
-      change: '+54 this month',
-      trend: 'up',
-      icon: Clock,
-      color: 'text-green-600',
-      bg: 'bg-green-100'
-    },
-    {
-      title: 'Compliance Rate',
-      value: '94%',
-      change: '2 pending review',
-      trend: 'down',
-      icon: CheckCircle2,
-      color: 'text-orange-600',
-      bg: 'bg-orange-100'
-    }
-  ];
+  // Dashboard stats (fetched)
+  const { data: stats, isLoading } = useQuery({
+    queryKey: ['organizationDashboardStats'],
+    queryFn: api.getOrganizationDashboardStats
+  });
 
-  const recentActivities = [
-    {
-      id: 1,
-      user: 'Sarah Ahmed',
-      action: 'registered for',
-      target: 'Beach Cleanup Drive',
-      time: '2 hours ago',
-      initials: 'SA'
-    },
-    {
-      id: 2,
-      user: 'Mohammed Ali',
-      action: 'completed task',
-      target: 'Food Distribution Logistics',
-      time: '4 hours ago',
-      initials: 'MA'
-    },
-    {
-      id: 3,
-      user: 'System',
-      action: 'alert',
-      target: 'License renewal due in 5 days',
-      time: '1 day ago',
-      initials: 'SYS',
-      isAlert: true
-    }
-  ];
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-96">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const displayStats = stats || {
+    activeVolunteers: 0,
+    upcomingEvents: 0,
+    totalHours: 0,
+    impactScore: 0
+  };
 
   return (
     <div className="space-y-6">
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <Card key={index} className="border-none shadow-sm hover:shadow-md transition-shadow">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`p-3 rounded-full ${stat.bg}`}>
-                    <Icon className={`h-6 w-6 ${stat.color}`} />
-                  </div>
-                  {stat.trend === 'up' && <TrendingUp className="h-4 w-4 text-green-500" />}
-                </div>
-                <div className="space-y-1">
-                  <h3 className="text-sm font-medium text-gray-500">{stat.title}</h3>
-                  <div className="text-2xl font-bold text-gray-900">{stat.value}</div>
-                  <p className="text-xs text-gray-500">{stat.change}</p>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+          <p className="text-muted-foreground">Welcome back! Here's what's happening with your organization.</p>
+        </div>
+        <Button asChild>
+          <Link to="/organization/events">
+            Create Event <ArrowRight className="ml-2 h-4 w-4" />
+          </Link>
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Chart Area (Placeholder) */}
-        <Card className="lg:col-span-2 border-none shadow-sm">
-          <CardHeader>
-            <CardTitle>Volunteer Engagement</CardTitle>
-            <CardDescription>Weekly participation overview</CardDescription>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Active Volunteers</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="h-[300px] flex items-center justify-center bg-gray-50 rounded-lg border border-dashed border-gray-200">
-              <div className="text-center">
-                <TrendingUp className="h-10 w-10 text-gray-300 mx-auto mb-2" />
-                <p className="text-gray-400">Engagement Chart Visualization</p>
+            <div className="text-2xl font-bold">{displayStats.activeVolunteers}</div>
+            <p className="text-xs text-muted-foreground">+12% from last month</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Upcoming Events</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{displayStats.upcomingEvents}</div>
+            <p className="text-xs text-muted-foreground">Next event in 2 days</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Hours</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{displayStats.totalHours}</div>
+            <p className="text-xs text-muted-foreground">+8% from last month</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Impact Score</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{displayStats.impactScore}</div>
+            <p className="text-xs text-muted-foreground">Top 10% of organizations</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        <Card className="col-span-4">
+          <CardHeader>
+            <CardTitle>Overview</CardTitle>
+          </CardHeader>
+          <CardContent className="pl-2">
+            <div className="h-[200px] flex items-center justify-center text-muted-foreground">
+              Chart Placeholder (Activity over time)
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="col-span-3">
+          <CardHeader>
+            <CardTitle>Recent Activity</CardTitle>
+            <CardDescription>Latest actions from your volunteers.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-8">
+              <div className="flex items-center">
+                <div className="ml-4 space-y-1">
+                  <p className="text-sm font-medium leading-none">Sarah Ahmed joined "Beach Cleanup"</p>
+                  <p className="text-sm text-muted-foreground">2 minutes ago</p>
+                </div>
+              </div>
+              <div className="flex items-center">
+                <div className="ml-4 space-y-1">
+                  <p className="text-sm font-medium leading-none">New volunteer application: John Doe</p>
+                  <p className="text-sm text-muted-foreground">1 hour ago</p>
+                </div>
+              </div>
+              <div className="flex items-center">
+                <div className="ml-4 space-y-1">
+                  <p className="text-sm font-medium leading-none">Compliance document expiring soon</p>
+                  <p className="text-sm text-muted-foreground">5 hours ago</p>
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
-
-        {/* Recent Activity */}
-        <Card className="border-none shadow-sm">
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>Latest updates from your organization</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              {recentActivities.map((activity) => (
-                <div key={activity.id} className="flex gap-4">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${activity.isAlert ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-600'}`}>
-                    {activity.isAlert ? <AlertCircle className="h-5 w-5" /> : activity.initials}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-gray-900">
-                      <span className="font-medium">{activity.user}</span> {activity.action} <span className="font-medium">{activity.target}</span>
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <Button variant="outline" className="w-full mt-6">
-              View All Activity
-            </Button>
-          </CardContent>
-        </Card>
       </div>
-
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-none shadow-md">
