@@ -3,7 +3,6 @@ import User from 'App/Models/User'
 import Notification from 'App/Models/Notification'
 import CommunicationLog from 'App/Models/CommunicationLog'
 // import Mail from '@ioc:Adonis/Addons/Mail'
-import Env from '@ioc:Adonis/Core/Env'
 import Logger from '@ioc:Adonis/Core/Logger'
 import { DateTime } from 'luxon'
 
@@ -20,6 +19,20 @@ async function processDue() {
 
     for (const comm of due) {
       try {
+        // Try to atomically claim this communication (Scheduled -> Running)
+        const claimed = await Communication.query()
+          .where('id', comm.id)
+          .andWhere('status', 'Scheduled')
+          .andWhere('send_at', '<=', now)
+          .update({ status: 'Running' })
+
+        if (!claimed) {
+          Logger.info(`Communication ${comm.id} already claimed by another sender, skipping`)
+          continue
+        }
+        // refresh instance to reflect claimed status
+        await comm.refresh()
+
         // Determine recipients. Support several formats for targetAudience:
         // - null/empty or 'all' => all active users
         // - comma-separated emails string
@@ -65,8 +78,6 @@ async function processDue() {
         }
 
         if (comm.type && comm.type.toLowerCase() === 'email') {
-          const fromAddr = Env.get('MAIL_FROM', 'no-reply@local.test')
-
           for (const to of recipients) {
             // create a log record for this recipient
             const user = await User.query().where('email', to).first()
