@@ -17,8 +17,29 @@ async function processDue() {
 
     for (const job of due) {
       try {
-        job.status = 'Running'
-        await job.save()
+        // Try to atomically claim the job: update status from 'Scheduled' -> 'Running'
+        const updated = await ScheduledJob.query()
+          .where('id', job.id)
+          .andWhere('status', 'Scheduled')
+          .andWhere('run_at', '<=', now)
+          .update({ status: 'Running' })
+
+        // If another instance claimed it (no rows updated), skip processing
+        if (!updated) {
+          Logger.info(`Job ${job.id} already claimed by another worker, skipping`)
+          continue
+        }
+        // reload job to reflect claimed status
+        await job.refresh()
+
+        // enforce max attempts: avoid infinite retries
+        const maxAttempts = 5
+        if ((job.attempts || 0) >= maxAttempts) {
+          job.status = 'Failed'
+          job.lastError = `Exceeded max attempts (${maxAttempts})`
+          await job.save()
+          continue
+        }
 
         const type = (job.type || '').toLowerCase()
         const payload = job.payload ? JSON.parse(job.payload) : {}
@@ -53,11 +74,18 @@ async function processDue() {
         await job.save()
       } catch (err) {
         Logger.error(`Error processing job ${job.id}: ${String(err)}`)
-        job.status = 'Failed'
-        job.attempts = (job.attempts || 0) + 1
-        job.lastError = String(err)
-        job.lastRunAt = DateTime.local()
-        await job.save()
+        // On error, increment attempts and set next runAt with exponential backoff
+        try {
+          job.attempts = (job.attempts || 0) + 1
+          const backoffMinutes = Math.min(60, Math.pow(2, job.attempts || 1))
+          job.runAt = DateTime.local().plus({ minutes: backoffMinutes })
+          job.status = 'Scheduled'
+          job.lastError = String(err)
+          job.lastRunAt = DateTime.local()
+          await job.save()
+        } catch (saveErr) {
+          Logger.error(`Failed to update job after error ${job.id}: ${String(saveErr)}`)
+        }
       }
     }
   } catch (err) {
