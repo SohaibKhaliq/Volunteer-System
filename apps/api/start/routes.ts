@@ -129,10 +129,21 @@ Route.resource('communications', 'CommunicationsController')
 // communication logs and retry
 Route.get('/communications/:id/logs', 'CommunicationsController.logs').middleware(['auth'])
 Route.post('/communications/logs/:id/retry', 'CommunicationsController.retryLog').middleware(['auth'])
+Route.post('/communications/logs/bulk-retry', 'CommunicationsController.bulkRetryLogs').middleware([
+  'auth'
+])
 
 // Notifications (admin) - expose recent notifications for UI
 Route.get('/notifications', 'NotificationsController.index').middleware(['auth'])
 Route.put('/notifications/:id/read', 'NotificationsController.markRead').middleware(['auth'])
+
+// Surveys (feedback)
+Route.resource('surveys', 'SurveysController')
+  .middleware({ '*': ['auth'] })
+  .apiOnly()
+Route.post('/surveys/:id/submit', 'SurveysController.submit')
+Route.get('/surveys/:id/responses', 'SurveysController.responses').middleware(['auth'])
+Route.get('/surveys/:id/responses/export', 'SurveysController.exportResponses').middleware(['auth'])
 
 // Custom endpoints
 Route.post('/users/:id/remind', 'UsersController.remind').middleware(['auth'])
@@ -158,6 +169,10 @@ Route.get('/reports/export', 'ReportsController.export').middleware(['auth'])
 
 Route.get('/settings', 'SystemSettingsController.index').middleware(['auth'])
 Route.post('/settings', 'SystemSettingsController.update').middleware(['auth'])
+
+// Monitoring endpoints for admin dashboard
+Route.get('/monitoring/stats', 'MonitoringController.stats').middleware(['auth'])
+Route.get('/monitoring/recent', 'MonitoringController.recent').middleware(['auth'])
 
 Route.get('/hours', 'VolunteerHoursController.index').middleware(['auth'])
 Route.put('/hours/:id', 'VolunteerHoursController.update').middleware(['auth'])
