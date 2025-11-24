@@ -22,13 +22,14 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { chartData as fallbackChartData, chartColors } from '@/lib/mock/adminMock';
 
-
 export default function AdminDashboard() {
   const { data: overview, isLoading: loadingOverview } = useQuery(['reports', 'overview'], () =>
     api.getReportsOverview({ range: '30days' })
   );
 
-  const { data: hoursStats, isLoading: loadingHours } = useQuery(['reports', 'hours'], () => api.getHoursStats({ range: '30days' }));
+  const { data: hoursStats, isLoading: loadingHours } = useQuery(['reports', 'hours'], () =>
+    api.getHoursStats({ range: '30days' })
+  );
 
   const { data: tasksRaw } = useQuery({ queryKey: ['tasks'], queryFn: api.listTasks, staleTime: 60 * 1000 });
 
@@ -44,7 +45,10 @@ export default function AdminDashboard() {
             try {
               const res: any = await api.getUser(t.user_id);
               const u = res && res.data ? res.data : res;
-              return { name: `${u.firstName || (u as any).first_name || u.email}`, hours: t.totalHours || t.total_hours || 0 };
+              return {
+                name: `${u.firstName || (u as any).first_name || u.email}`,
+                hours: t.totalHours || t.total_hours || 0
+              };
             } catch (e) {
               return { name: `User ${t.user_id}`, hours: t.totalHours || t.total_hours || 0 };
             }
@@ -61,7 +65,9 @@ export default function AdminDashboard() {
   const stats = {
     volunteers: overview?.volunteerParticipation?.total || 0,
     events: overview?.eventCompletion?.total || 0,
-    pendingTasks: Array.isArray(tasksRaw) ? tasksRaw.filter((t: any) => (t.status || '').toLowerCase() !== 'completed').length : 0,
+    pendingTasks: Array.isArray(tasksRaw)
+      ? tasksRaw.filter((t: any) => (t.status || '').toLowerCase() !== 'completed').length
+      : 0,
     compliance: overview?.complianceAdherence?.adherenceRate || 0
   };
 
