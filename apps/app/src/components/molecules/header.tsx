@@ -19,7 +19,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useTranslation } from 'react-i18next';
 
 const Header = () => {
-  const { showBackButton, authenticated } = useApp();
+  const { showBackButton, authenticated, user } = useApp();
   const { theme } = useTheme();
   const { setToken } = useStore();
   const navigate = useNavigate();
@@ -98,9 +98,35 @@ const Header = () => {
           <Language />
 
           {authenticated && (
-            <Button variant="ghost" size="sm" onClick={() => logoutMutation.mutate()}>
-              Logout
-            </Button>
+            <>
+              {user?.roles?.some((r: any) => r.name === 'admin') && (
+                <Link to="/admin" className="text-sm font-medium hover:text-primary">
+                  Admin Panel
+                </Link>
+              )}
+              {/* Show Org Panel if user has org role or is part of an org (simplified check) */}
+              {(user?.roles?.some((r: any) => r.name === 'organization_admin' || r.name === 'organization_member') || user?.organizationId) && (
+                <Link to="/organization" className="text-sm font-medium hover:text-primary">
+                  Organization Panel
+                </Link>
+              )}
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="gap-2">
+                    <span className="hidden sm:inline">{user?.firstName || 'Account'}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => navigate('/profile')}>
+                    My Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => logoutMutation.mutate()}>
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
           )}
         </div>
       </div>
