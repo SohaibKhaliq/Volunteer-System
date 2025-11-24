@@ -74,14 +74,14 @@ export default class ReportsController {
             : 0
       })
     } catch (error) {
-        Logger.error('Failed to fetch volunteer stats: %o', error)
-          return response.ok({
-            total: 0,
-            active: 0,
-            newSignups: 0,
-            participationRate: 0,
-            error: error?.message ?? String(error)
-          })
+      Logger.error('Failed to fetch volunteer stats: %o', error)
+      return response.ok({
+        total: 0,
+        active: 0,
+        newSignups: 0,
+        participationRate: 0,
+        error: error?.message ?? String(error)
+      })
     }
   }
 
@@ -119,13 +119,13 @@ export default class ReportsController {
         completionRate
       })
     } catch (error) {
-        Logger.error('Failed to fetch event stats: %o', error)
-          return response.ok({
-            total: 0,
-            byStatus: [],
-            completionRate: 0,
-            error: error?.message ?? String(error)
-          })
+      Logger.error('Failed to fetch event stats: %o', error)
+      return response.ok({
+        total: 0,
+        byStatus: [],
+        completionRate: 0,
+        error: error?.message ?? String(error)
+      })
     }
   }
 
@@ -172,14 +172,14 @@ export default class ReportsController {
         topVolunteers
       })
     } catch (error) {
-        Logger.error('Failed to fetch hours stats: %o', error)
-          return response.ok({
-            total: 0,
-            approved: 0,
-            byStatus: [],
-            topVolunteers: [],
-            error: error?.message ?? String(error)
-          })
+      Logger.error('Failed to fetch hours stats: %o', error)
+      return response.ok({
+        total: 0,
+        approved: 0,
+        byStatus: [],
+        topVolunteers: [],
+        error: error?.message ?? String(error)
+      })
     }
   }
 
@@ -191,7 +191,7 @@ export default class ReportsController {
       const orgs = await Organization.query()
         .select('id', 'name')
         .withCount('events')
-        .withCount('volunteers', (query) => {
+        .withCount('volunteers' as any, (query) => {
           query.as('volunteer_count')
         })
 
@@ -209,12 +209,12 @@ export default class ReportsController {
         }))
       })
     } catch (error) {
-        Logger.error('Failed to fetch organization stats: %o', error)
-          return response.ok({
-            total: 0,
-            topPerformers: [],
-            error: error?.message ?? String(error)
-          })
+      Logger.error('Failed to fetch organization stats: %o', error)
+      return response.ok({
+        total: 0,
+        topPerformers: [],
+        error: error?.message ?? String(error)
+      })
     }
   }
 
@@ -253,15 +253,15 @@ export default class ReportsController {
         adherenceRate
       })
     } catch (error) {
-        Logger.error('Failed to fetch compliance stats: %o', error)
-          return response.ok({
-            total: 0,
-            approved: 0,
-            expired: 0,
-            expiringSoon: 0,
-            adherenceRate: 0,
-            error: error?.message ?? String(error)
-          })
+      Logger.error('Failed to fetch compliance stats: %o', error)
+      return response.ok({
+        total: 0,
+        approved: 0,
+        expired: 0,
+        expiringSoon: 0,
+        adherenceRate: 0,
+        error: error?.message ?? String(error)
+      })
     }
   }
 
@@ -288,16 +288,91 @@ export default class ReportsController {
       }
 
       if (type === 'csv') {
-        // TODO: Implement CSV conversion
-        return response.header('Content-Type', 'text/csv').send('CSV export coming soon')
+        // Support CSV exports for some report types
+        if (reportType === 'communications') {
+          const rows = await (await import('App/Models/Communication')).default
+            .query()
+            .orderBy('created_at', 'desc')
+          const cols = [
+            'id',
+            'subject',
+            'type',
+            'status',
+            'sendAt',
+            'sentAt',
+            'targetAudience',
+            'createdAt'
+          ]
+          const csv = [cols.join(',')]
+            .concat(
+              rows.map((r: any) =>
+                cols
+                  .map((c) => {
+                    const v = r[c] ?? r[c === 'sendAt' ? 'send_at' : c]
+                    if (v === null || v === undefined) return ''
+                    return String(v).replace(/"/g, '""')
+                  })
+                  .join(',')
+              )
+            )
+            .join('\n')
+
+          response.header('Content-Type', 'text/csv')
+          response.header(
+            'Content-Disposition',
+            `attachment; filename="communications-${Date.now()}.csv"`
+          )
+          return response.send(csv)
+        }
+
+        if (reportType === 'scheduled_jobs') {
+          const rows = await (await import('App/Models/ScheduledJob')).default
+            .query()
+            .orderBy('created_at', 'desc')
+          const cols = [
+            'id',
+            'name',
+            'type',
+            'status',
+            'attempts',
+            'runAt',
+            'lastError',
+            'createdAt'
+          ]
+          const csv = [cols.join(',')]
+            .concat(
+              rows.map((r: any) =>
+                cols
+                  .map((c) => {
+                    const v = r[c] ?? (c === 'runAt' ? r.run_at : r[c])
+                    if (v === null || v === undefined) return ''
+                    return String(v).replace(/"/g, '""')
+                  })
+                  .join(',')
+              )
+            )
+            .join('\n')
+
+          response.header('Content-Type', 'text/csv')
+          response.header(
+            'Content-Disposition',
+            `attachment; filename="scheduled-jobs-${Date.now()}.csv"`
+          )
+          return response.send(csv)
+        }
+
+        // Fallback message
+        return response
+          .header('Content-Type', 'text/csv')
+          .send('CSV export not available for this report type')
       }
 
       return response.ok(data)
     } catch (error) {
-        Logger.error('Failed to export report: %o', error)
-          return response.ok({
-            error: { message: 'Unable to export report', details: error?.message ?? String(error) }
-          })
+      Logger.error('Failed to export report: %o', error)
+      return response.ok({
+        error: { message: 'Unable to export report', details: error?.message ?? String(error) }
+      })
     }
   }
 }
