@@ -44,35 +44,8 @@ export default class ReportsController {
    */
   public async volunteerStats({ request, response }: HttpContextContract) {
     try {
-      const { range = '30days' } = request.qs()
-      const daysAgo = range === '30days' ? 30 : range === '7days' ? 7 : 365
-
-      const since = new Date()
-      since.setDate(since.getDate() - daysAgo)
-
-      const totalVolunteers = await User.query().count('* as total')
-      const activeVolunteers = await User.query()
-        .whereNotNull('email_verified_at')
-        .count('* as total')
-
-      const newVolunteers = await User.query()
-        .where('created_at', '>=', since.toISOString())
-        .count('* as total')
-
-      // Participation rate
-      const volunteersWithHours = await Database.from('volunteer_hours')
-        .distinct('user_id')
-        .count('* as total')
-
-      return response.ok({
-        total: totalVolunteers[0].$extras.total,
-        active: activeVolunteers[0].$extras.total,
-        newSignups: newVolunteers[0].$extras.total,
-        participationRate:
-          totalVolunteers[0].$extras.total > 0
-            ? Math.round((volunteersWithHours[0].total / totalVolunteers[0].$extras.total) * 100)
-            : 0
-      })
+      const data = await this.buildVolunteerStats(request.qs())
+      return response.ok(data)
     } catch (error) {
       Logger.error('Failed to fetch volunteer stats: %o', error)
       return response.ok({
@@ -85,42 +58,47 @@ export default class ReportsController {
     }
   }
 
+  // Extracted helper so callers (including export) can obtain raw data without
+  // sending an HTTP response directly.
+  private async buildVolunteerStats(qs: Record<string, any>) {
+    const { range = '30days' } = qs || {}
+    const daysAgo = range === '30days' ? 30 : range === '7days' ? 7 : 365
+
+    const since = new Date()
+    since.setDate(since.getDate() - daysAgo)
+
+    const totalVolunteers = await User.query().count('* as total')
+    const activeVolunteers = await User.query()
+      .whereNotNull('email_verified_at')
+      .count('* as total')
+
+    const newVolunteers = await User.query()
+      .where('created_at', '>=', since.toISOString())
+      .count('* as total')
+
+    // Participation rate
+    const volunteersWithHours = await Database.from('volunteer_hours')
+      .distinct('user_id')
+      .count('* as total')
+
+    return {
+      total: totalVolunteers[0].$extras.total || 0,
+      active: activeVolunteers[0].$extras.total || 0,
+      newSignups: newVolunteers[0].$extras.total || 0,
+      participationRate:
+        totalVolunteers[0].$extras.total > 0
+          ? Math.round((volunteersWithHours[0].total / totalVolunteers[0].$extras.total) * 100)
+          : 0
+    }
+  }
+
   /**
    * Get event completion statistics
    */
   public async eventStats({ request, response }: HttpContextContract) {
     try {
-      const { range = '30days' } = request.qs()
-      const daysAgo = range === '30days' ? 30 : range === '7days' ? 7 : 365
-
-      const since = new Date()
-      since.setDate(since.getDate() - daysAgo)
-
-      const eventsByStatus = await Event.query()
-        .where('created_at', '>=', since.toISOString())
-        .select('status')
-        .count('* as count')
-        .groupBy('status')
-
-      const totalEvents = await Event.query()
-        .where('created_at', '>=', since.toISOString())
-        .count('* as total')
-
-      // Calculate completion rate
-      const completedEvents = eventsByStatus.find((e: any) => e.status === 'completed')
-      // Aggregated counts from Lucid queries are stored in $extras; provide fallbacks and cast to Number
-      const completedCount = Number(
-        (completedEvents as any)?.$extras?.count ?? (completedEvents as any)?.count ?? 0
-      )
-      const totalEventsCount = Number(totalEvents[0].$extras.total ?? 0)
-      const completionRate =
-        totalEventsCount > 0 ? Math.round((completedCount / totalEventsCount) * 100) : 0
-
-      return response.ok({
-        total: totalEvents[0].$extras.total,
-        byStatus: eventsByStatus,
-        completionRate
-      })
+      const data = await this.buildEventStats(request.qs())
+      return response.ok(data)
     } catch (error) {
       Logger.error('Failed to fetch event stats: %o', error)
       return response.ok({
@@ -132,48 +110,45 @@ export default class ReportsController {
     }
   }
 
+  private async buildEventStats(qs: Record<string, any>) {
+    const { range = '30days' } = qs || {}
+    const daysAgo = range === '30days' ? 30 : range === '7days' ? 7 : 365
+
+    const since = new Date()
+    since.setDate(since.getDate() - daysAgo)
+
+    const eventsByStatus = await Event.query()
+      .where('created_at', '>=', since.toISOString())
+      .select('status')
+      .count('* as count')
+      .groupBy('status')
+
+    const totalEvents = await Event.query()
+      .where('created_at', '>=', since.toISOString())
+      .count('* as total')
+
+    const completedEvents = eventsByStatus.find((e: any) => e.status === 'completed')
+    const completedCount = Number(
+      (completedEvents as any)?.$extras?.count ?? (completedEvents as any)?.count ?? 0
+    )
+    const totalEventsCount = Number(totalEvents[0].$extras.total ?? 0)
+    const completionRate =
+      totalEventsCount > 0 ? Math.round((completedCount / totalEventsCount) * 100) : 0
+
+    return {
+      total: totalEvents[0].$extras.total || 0,
+      byStatus: eventsByStatus,
+      completionRate
+    }
+  }
+
   /**
    * Get volunteer hours analytics
    */
   public async hoursStats({ request, response }: HttpContextContract) {
     try {
-      const { range = '30days' } = request.qs()
-      const daysAgo = range === '30days' ? 30 : range === '7days' ? 7 : 365
-
-      const since = new Date()
-      since.setDate(since.getDate() - daysAgo)
-
-      const totalHours = await VolunteerHour.query()
-        .where('date', '>=', since.toISOString())
-        .sum('hours as total')
-
-      const approvedHours = await VolunteerHour.query()
-        .where('date', '>=', since.toISOString())
-        .where('status', 'Approved')
-        .sum('hours as total')
-
-      const hoursByStatus = await VolunteerHour.query()
-        .where('date', '>=', since.toISOString())
-        .select('status')
-        .sum('hours as total')
-        .groupBy('status')
-
-      // Top volunteers by hours
-      const topVolunteers = await VolunteerHour.query()
-        .where('date', '>=', since.toISOString())
-        .where('status', 'Approved')
-        .select('user_id')
-        .sum('hours as totalHours')
-        .groupBy('user_id')
-        .orderBy('totalHours', 'desc')
-        .limit(10)
-
-      return response.ok({
-        total: totalHours[0].$extras.total || 0,
-        approved: approvedHours[0].$extras.total || 0,
-        byStatus: hoursByStatus,
-        topVolunteers
-      })
+      const data = await this.buildHoursStats(request.qs())
+      return response.ok(data)
     } catch (error) {
       Logger.error('Failed to fetch hours stats: %o', error)
       return response.ok({
@@ -183,6 +158,45 @@ export default class ReportsController {
         topVolunteers: [],
         error: error?.message ?? String(error)
       })
+    }
+  }
+
+  private async buildHoursStats(qs: Record<string, any>) {
+    const { range = '30days' } = qs || {}
+    const daysAgo = range === '30days' ? 30 : range === '7days' ? 7 : 365
+
+    const since = new Date()
+    since.setDate(since.getDate() - daysAgo)
+
+    const totalHours = await VolunteerHour.query()
+      .where('date', '>=', since.toISOString())
+      .sum('hours as total')
+
+    const approvedHours = await VolunteerHour.query()
+      .where('date', '>=', since.toISOString())
+      .where('status', 'Approved')
+      .sum('hours as total')
+
+    const hoursByStatus = await VolunteerHour.query()
+      .where('date', '>=', since.toISOString())
+      .select('status')
+      .sum('hours as total')
+      .groupBy('status')
+
+    const topVolunteers = await VolunteerHour.query()
+      .where('date', '>=', since.toISOString())
+      .where('status', 'Approved')
+      .select('user_id')
+      .sum('hours as totalHours')
+      .groupBy('user_id')
+      .orderBy('totalHours', 'desc')
+      .limit(10)
+
+    return {
+      total: totalHours[0].$extras.total || 0,
+      approved: approvedHours[0].$extras.total || 0,
+      byStatus: hoursByStatus,
+      topVolunteers
     }
   }
 
@@ -278,13 +292,13 @@ export default class ReportsController {
       let data
       switch (reportType) {
         case 'volunteers':
-          data = await this.volunteerStats({ request, response } as any)
+          data = await this.buildVolunteerStats(request.qs())
           break
         case 'events':
-          data = await this.eventStats({ request, response } as any)
+          data = await this.buildEventStats(request.qs())
           break
         case 'hours':
-          data = await this.hoursStats({ request, response } as any)
+          data = await this.buildHoursStats(request.qs())
           break
         default:
           data = await this.reportsService.overview('30days')
