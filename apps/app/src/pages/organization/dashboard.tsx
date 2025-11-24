@@ -1,14 +1,10 @@
 
+import { useQuery } from '@tanstack/react-query';
+import api from '@/lib/api';
+import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { 
-  Users, 
-  Calendar, 
-  CheckCircle2, 
-  Clock, 
-  AlertCircle,
-  TrendingUp
-} from 'lucide-react';
+import { Users, Calendar, Clock, TrendingUp, Loader2, ArrowRight } from 'lucide-react';
 
 export default function OrganizationDashboard() {
   // Dashboard stats (fetched)
@@ -37,7 +33,9 @@ export default function OrganizationDashboard() {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-          <p className="text-muted-foreground">Welcome back! Here's what's happening with your organization.</p>
+          <p className="text-muted-foreground">
+            Welcome back! Here&apos;s what&apos;s happening with your organization.
+          </p>
         </div>
         <Button asChild>
           <Link to="/organization/events">
@@ -109,7 +107,7 @@ export default function OrganizationDashboard() {
             <div className="space-y-8">
               <div className="flex items-center">
                 <div className="ml-4 space-y-1">
-                  <p className="text-sm font-medium leading-none">Sarah Ahmed joined "Beach Cleanup"</p>
+                  <p className="text-sm font-medium leading-none">Sarah Ahmed joined &quot;Beach Cleanup&quot;</p>
                   <p className="text-sm text-muted-foreground">2 minutes ago</p>
                 </div>
               </div>
