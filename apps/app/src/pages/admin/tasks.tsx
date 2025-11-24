@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -82,7 +83,13 @@ export default function AdminTasks() {
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
 
-  const { data: tasksRaw, isLoading } = useQuery<any>(['tasks'], () => api.list('tasks'));
+  const [searchParams] = useSearchParams();
+  const eventIdParam = searchParams.get('eventId');
+
+  const { data: tasksRaw, isLoading } = useQuery<any>(
+    ['tasks', eventIdParam], 
+    () => api.list('tasks', eventIdParam ? { event_id: eventIdParam } : undefined)
+  );
   // normalize tasks from API (handle snake_case or camelCase and paginated responses)
   const tasks: Task[] | undefined = React.useMemo(() => {
     const list: any[] = Array.isArray(tasksRaw) ? tasksRaw : (tasksRaw?.data ?? []);
