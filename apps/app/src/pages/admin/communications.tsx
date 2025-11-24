@@ -13,11 +13,17 @@ import SkeletonCard from '@/components/atoms/skeleton-card';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { toast } from 'sonner';
+import { useEffect } from 'react';
 
 export default function AdminCommunications() {
   const queryClient = useQueryClient();
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<any | null>(null);
+  const [audienceType, setAudienceType] = useState<'all' | 'roles' | 'event' | 'emails'>('all');
+  const [availableRoles, setAvailableRoles] = useState<any[]>([]);
+  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+  const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
+  const [customEmails, setCustomEmails] = useState<string>('');
   const [viewOpen, setViewOpen] = useState(false);
   const [viewing, setViewing] = useState<any | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -29,6 +35,11 @@ export default function AdminCommunications() {
   });
 
   const communications = Array.isArray(data) ? data : [];
+
+  const { data: rolesData } = useQuery({ queryKey: ['roles'], queryFn: api.listRoles });
+  const roles = Array.isArray(rolesData) ? rolesData : [];
+  const { data: eventsData } = useQuery({ queryKey: ['events'], queryFn: api.listEvents });
+  const events = Array.isArray(eventsData) ? eventsData : [];
 
   const createMutation = useMutation({
     mutationFn: api.createCommunication,
@@ -64,13 +75,31 @@ export default function AdminCommunications() {
   });
 
   const saveCommunication = (payload: any) => {
-    // backend expects `content` property, map from `message` if used in the UI
-    const data = { ...payload, content: payload.message ?? payload.content };
-    delete (data as any).message;
+    // compute targetAudience based on audience fields if present on payload
+    const computed = { ...payload } as any;
+    // if UI used `message`, map to `content`
+    computed.content = payload.message ?? payload.content;
+    delete computed.message;
+
+    // prefer explicit audienceType state (controlled by UI) if present on payload
+    const atype = payload.audienceType ?? audienceType;
+    if (atype === 'all') {
+      computed.targetAudience = 'all';
+    } else if (atype === 'roles') {
+      // send role names as JSON so backend can resolve
+      computed.targetAudience = JSON.stringify({ roles: selectedRoles });
+    } else if (atype === 'event') {
+      if (selectedEventId) computed.targetAudience = JSON.stringify({ eventId: selectedEventId });
+      else computed.targetAudience = null;
+    } else if (atype === 'emails') {
+      // save as comma separated string for backward compatibility
+      computed.targetAudience = customEmails || '';
+    }
+
     if (payload.id) {
-      updateMutation.mutate({ id: payload.id, data });
+      updateMutation.mutate({ id: payload.id, data: computed });
     } else {
-      createMutation.mutate(data);
+      createMutation.mutate(computed);
     }
   };
 
@@ -96,6 +125,10 @@ export default function AdminCommunications() {
             <Button
               onClick={() => {
                 setEditing(null);
+                setAudienceType('all');
+                setSelectedRoles([]);
+                setSelectedEventId(null);
+                setCustomEmails('');
                 setEditOpen(true);
               }}
             >
@@ -152,6 +185,41 @@ export default function AdminCommunications() {
                               const res: any = await api.getCommunication(c.id);
                               const comm = res && res.data ? res.data : res;
                               setEditing({ ...comm, message: comm.content });
+                              // parse existing targetAudience into UI state
+                              const ta = comm.targetAudience;
+                              if (!ta || ta === 'all') {
+                                setAudienceType('all');
+                                setSelectedRoles([]);
+                                setSelectedEventId(null);
+                                setCustomEmails('');
+                              } else {
+                                try {
+                                  const parsed = JSON.parse(ta);
+                                  if (parsed.roles && Array.isArray(parsed.roles)) {
+                                    setAudienceType('roles');
+                                    setSelectedRoles(parsed.roles);
+                                    setSelectedEventId(null);
+                                    setCustomEmails('');
+                                  } else if (parsed.eventId) {
+                                    setAudienceType('event');
+                                    setSelectedEventId(parsed.eventId);
+                                    setSelectedRoles([]);
+                                    setCustomEmails('');
+                                  } else {
+                                    setAudienceType('emails');
+                                    setCustomEmails(typeof ta === 'string' ? ta : '');
+                                    setSelectedRoles([]);
+                                    setSelectedEventId(null);
+                                  }
+                                } catch (err) {
+                                  // fallback to comma-separated emails
+                                  setAudienceType('emails');
+                                  setCustomEmails(String(ta || ''));
+                                  setSelectedRoles([]);
+                                  setSelectedEventId(null);
+                                }
+                              }
+
                               setEditOpen(true);
                             } catch (e) {
                               toast.error('Failed to load communication');
@@ -214,6 +282,71 @@ export default function AdminCommunications() {
                 <div className="text-sm font-medium">Status</div>
                 <div className="mt-1">{viewing?.status}</div>
               </div>
+            </div>
+            <div>
+              <label className="text-sm block mb-1">Audience</label>
+              <Select value={audienceType} onValueChange={(v) => setAudienceType(v as any)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Volunteers</SelectItem>
+                  <SelectItem value="roles">By Role</SelectItem>
+                  <SelectItem value="event">Event Participants</SelectItem>
+                  <SelectItem value="emails">Custom Emails</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {audienceType === 'roles' && (
+                <div className="mt-2 space-y-1">
+                  <div className="text-xs text-muted-foreground">Select one or more roles:</div>
+                  <div className="flex flex-wrap gap-2 mt-1">
+                    {(roles || []).map((r: any) => (
+                      <label key={r.id} className="inline-flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedRoles.includes(r.name)}
+                          onChange={(e) => {
+                            const next = selectedRoles.includes(r.name)
+                              ? selectedRoles.filter((s) => s !== r.name)
+                              : [...selectedRoles, r.name];
+                            setSelectedRoles(next);
+                          }}
+                        />
+                        <span className="text-sm">{r.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {audienceType === 'event' && (
+                <div className="mt-2">
+                  <div className="text-xs text-muted-foreground">Select an event:</div>
+                  <Select
+                    value={selectedEventId ? String(selectedEventId) : undefined}
+                    onValueChange={(v) => setSelectedEventId(Number(v))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(events || []).map((ev: any) => (
+                        <SelectItem key={ev.id} value={String(ev.id)}>
+                          {ev.title || ev.name || `Event ${ev.id}`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {audienceType === 'emails' && (
+                <div className="mt-2">
+                  <div className="text-xs text-muted-foreground">Enter comma-separated emails</div>
+                  <Textarea value={customEmails} onChange={(e) => setCustomEmails(e.target.value)} rows={3} />
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>
