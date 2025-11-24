@@ -12,6 +12,7 @@ import Register from '@/pages/register';
 import Map from '@/pages/map';
 import TransportOfferForm from '@/pages/transport-offer-form';
 import TransportRequestForm from '@/pages/transport-request-form';
+import Profile from '@/pages/profile';
 import { RouteObject } from 'react-router-dom';
 import AdminLayout from '@/components/templates/AdminLayout';
 import AppProvider from '@/providers/app-provider';
@@ -129,7 +130,8 @@ const routes: RouteObject[] = [
       { path: 'help-request', element: <HelpRequestForm /> },
       { path: 'help-offer', element: <HelpOfferForm /> },
       { path: 'transport-request', element: <TransportRequestForm /> },
-      { path: 'transport-offer', element: <TransportOfferForm /> }
+      { path: 'transport-offer', element: <TransportOfferForm /> },
+      { path: 'profile', element: <Profile /> }
     ]
   },
   {
