@@ -19,15 +19,37 @@ import {
   FileText,
   ListOrdered,
   Settings,
+  LogOut,
   User,
   Bell
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import api from '@/lib/api';
+import { useMutation } from '@tanstack/react-query';
+import { useStore } from '@/lib/store';
+import { showApiError } from '@/lib/error-to-toast';
+import { toast } from '@/components/atoms/use-toast';
+import { useNavigate } from 'react-router-dom';
 import Providers from '@/providers';
 
 export default function AdminLayout() {
   const { user, authenticated } = useApp();
   const location = useLocation();
+  const { setToken } = useStore();
+  const navigate = useNavigate();
+
+  const logoutMutation = useMutation(api.logout, {
+    onSuccess: () => {
+      setToken('');
+      try {
+        toast({ title: 'Signed out', description: 'You have been logged out.' });
+      } catch (e) {}
+      navigate('/login');
+    },
+    onError: (err: any) => {
+      showApiError(err, 'Logout failed');
+    }
+  });
 
   // Check if user has admin privileges
   // Support multiple ways: isAdmin flag, is_admin flag, or 'admin' role
@@ -164,12 +186,25 @@ export default function AdminLayout() {
                   <div className="text-xs text-gray-500 truncate">{user?.email}</div>
                 </div>
               </div>
-              <Link to="/">
-                <Button variant="outline" className="w-full justify-start" size="sm">
-                  <Home className="h-4 w-4 mr-2" />
-                  Back to Main Site
+              <div className="space-y-2">
+                <Link to="/">
+                  <Button variant="outline" className="w-full justify-start" size="sm">
+                    <Home className="h-4 w-4 mr-2" />
+                    Back to Main Site
+                  </Button>
+                </Link>
+
+                {/* Logout button for admin panel */}
+                <Button
+                  variant="outline"
+                  className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                  size="sm"
+                  onClick={() => logoutMutation.mutate()}
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign out
                 </Button>
-              </Link>
+              </div>
             </div>
           </aside>
 
