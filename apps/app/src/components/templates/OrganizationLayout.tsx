@@ -13,7 +13,7 @@ import {
   LogOut,
   Bell,
   MessageSquare,
-  Briefcase,
+  Briefcase
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Providers from '@/providers';
