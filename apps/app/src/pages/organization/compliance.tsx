@@ -1,18 +1,11 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { toast } from 'sonner';
+import { toast } from '@/components/atoms/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   Dialog,
   DialogContent,
@@ -20,15 +13,15 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogTrigger
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { 
-  FileText, 
-  Upload, 
-  CheckCircle, 
-  AlertTriangle, 
+import {
+  FileText,
+  Upload,
+  CheckCircle,
+  AlertTriangle,
   Clock,
   Download,
   Trash2,
@@ -50,7 +43,7 @@ export default function OrganizationCompliance() {
   // Fetch Stats
   const { data: stats, isLoading: isStatsLoading } = useQuery({
     queryKey: ['organizationComplianceStats'],
-    queryFn: api.getComplianceStats
+    queryFn: api.getOrganizationComplianceStats
   });
 
   // Upload/Update Document Mutation
@@ -119,11 +112,15 @@ export default function OrganizationCompliance() {
   const volunteerCompliance = [
     { id: 1, requirement: 'Background Check', total: 124, compliant: 118, pending: 6 },
     { id: 2, requirement: 'Code of Conduct', total: 124, compliant: 124, pending: 0 },
-    { id: 3, requirement: 'Safety Training', total: 124, compliant: 98, pending: 26 },
+    { id: 3, requirement: 'Safety Training', total: 124, compliant: 98, pending: 26 }
   ];
 
   if (isDocsLoading || isStatsLoading) {
-    return <div className="flex justify-center items-center h-96"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+    return (
+      <div className="flex justify-center items-center h-96">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
   const displayDocs = Array.isArray(documents) ? documents : [];
@@ -190,7 +187,9 @@ export default function OrganizationCompliance() {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsUploadOpen(false)}>Cancel</Button>
+              <Button variant="outline" onClick={() => setIsUploadOpen(false)}>
+                Cancel
+              </Button>
               <Button onClick={handleDocSubmit} disabled={saveDocMutation.isLoading}>
                 {saveDocMutation.isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {editingDoc ? 'Update' : 'Upload'}
@@ -208,9 +207,7 @@ export default function OrganizationCompliance() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{displayStats.compliantVolunteers}%</div>
-            <p className="text-xs text-muted-foreground">
-              +2.5% from last month
-            </p>
+            <p className="text-xs text-muted-foreground">+2.5% from last month</p>
           </CardContent>
         </Card>
         <Card>
@@ -220,9 +217,7 @@ export default function OrganizationCompliance() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{displayStats.pendingDocuments}</div>
-            <p className="text-xs text-muted-foreground">
-              Documents awaiting approval
-            </p>
+            <p className="text-xs text-muted-foreground">Documents awaiting approval</p>
           </CardContent>
         </Card>
         <Card>
@@ -232,9 +227,7 @@ export default function OrganizationCompliance() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{displayStats.expiringSoon}</div>
-            <p className="text-xs text-muted-foreground">
-              Documents expiring in 30 days
-            </p>
+            <p className="text-xs text-muted-foreground">Documents expiring in 30 days</p>
           </CardContent>
         </Card>
       </div>
@@ -273,7 +266,12 @@ export default function OrganizationCompliance() {
                     </TableCell>
                     <TableCell>{doc.type}</TableCell>
                     <TableCell>
-                      <Badge variant={doc.status === 'Valid' ? 'default' : doc.status === 'Expiring' ? 'destructive' : 'secondary'} className={doc.status === 'Valid' ? 'bg-green-500' : ''}>
+                      <Badge
+                        variant={
+                          doc.status === 'Valid' ? 'default' : doc.status === 'Expiring' ? 'destructive' : 'secondary'
+                        }
+                        className={doc.status === 'Valid' ? 'bg-green-500' : ''}
+                      >
                         {doc.status}
                       </Badge>
                     </TableCell>
@@ -286,7 +284,12 @@ export default function OrganizationCompliance() {
                         <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(doc)}>
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="text-red-600" onClick={() => deleteDocMutation.mutate(doc.id)}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-red-600"
+                          onClick={() => deleteDocMutation.mutate(doc.id)}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -310,7 +313,9 @@ export default function OrganizationCompliance() {
               <div key={item.id} className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="font-medium">{item.requirement}</span>
-                  <span className="text-muted-foreground">{item.compliant}/{item.total} Compliant</span>
+                  <span className="text-muted-foreground">
+                    {item.compliant}/{item.total} Compliant
+                  </span>
                 </div>
                 <div className="w-full bg-gray-100 rounded-full h-2.5">
                   <div
@@ -327,7 +332,7 @@ export default function OrganizationCompliance() {
               </div>
             ))}
           </div>
-          </CardContent>
+        </CardContent>
       </Card>
     </div>
   );
