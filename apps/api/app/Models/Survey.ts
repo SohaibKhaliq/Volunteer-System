@@ -1,6 +1,6 @@
 import { BaseModel, column, hasMany, HasMany } from '@ioc:Adonis/Lucid/Orm'
+import SurveyResponse from './SurveyResponse'
 import { DateTime } from 'luxon'
-import SurveyResponse from 'App/Models/SurveyResponse'
 
 export default class Survey extends BaseModel {
   @column({ isPrimary: true })
@@ -13,7 +13,22 @@ export default class Survey extends BaseModel {
   public description?: string
 
   @column()
-  public status: string
+  public questions?: string
+
+  @column()
+  public status?: string
+
+  @column()
+  public settings?: string
+
+  @column({ columnName: 'created_by' })
+  public createdBy?: number
+
+  @column.dateTime({ columnName: 'published_at' })
+  public publishedAt?: DateTime
+
+  @column.dateTime({ columnName: 'closed_at' })
+  public closedAt?: DateTime
 
   @hasMany(() => SurveyResponse)
   public responses: HasMany<typeof SurveyResponse>
