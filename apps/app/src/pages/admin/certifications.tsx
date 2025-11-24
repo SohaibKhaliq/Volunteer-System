@@ -47,10 +47,6 @@ export default function AdminCertifications() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [toDelete, setToDelete] = useState<number | null>(null);
   const [courseDeleteOpen, setCourseDeleteOpen] = useState(false);
-  // open course delete dialog when toDeleteCourse is set
-  useEffect(() => {
-    setCourseDeleteOpen(toDeleteCourse != null);
-  }, [toDeleteCourse]);
 
   const { data: items = [], isLoading } = useQuery<ComplianceDoc[]>({
     queryKey: ['compliance'],
@@ -170,7 +166,52 @@ export default function AdminCertifications() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <SkeletonCard />
+          {/* Courses list and CRUD */}
+          <div className="flex items-center mb-4">
+            <div className="text-sm text-muted-foreground">Manage training courses offered to volunteers.</div>
+            <div className="ml-auto">
+              <Button
+                onClick={() => {
+                  setCourseEditing(null);
+                  setCourseOpen(true);
+                }}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                New Course
+              </Button>
+            </div>
+          </div>
+
+          {coursesLoading ? (
+            <SkeletonCard />
+          ) : courses.length === 0 ? (
+            <div className="text-sm text-muted-foreground">No courses found. Add a new course to get started.</div>
+          ) : (
+            <div className="space-y-3">
+              {courses.map((course: any) => (
+                <div key={course.id} className="flex items-center p-3 rounded border">
+                  <div>
+                    <div className="font-medium">{course.title || course.name}</div>
+                    {course.description && <div className="text-sm text-muted-foreground">{course.description}</div>}
+                  </div>
+                  <div className="ml-auto flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        setCourseEditing(course);
+                        setCourseOpen(true);
+                      }}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" onClick={() => confirmCourseDelete(course.id)}>
+                      <Trash2 className="h-4 w-4 text-red-600" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
