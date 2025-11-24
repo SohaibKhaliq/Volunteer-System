@@ -31,6 +31,9 @@ export default function AdminCommunications() {
   const [customEmails, setCustomEmails] = useState<string>('');
   const [viewOpen, setViewOpen] = useState(false);
   const [viewing, setViewing] = useState<any | null>(null);
+  const [logsOpen, setLogsOpen] = useState(false);
+  const [logsFor, setLogsFor] = useState<any | null>(null);
+  const [logs, setLogs] = useState<any[]>([]);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [toDelete, setToDelete] = useState<number | null>(null);
 
@@ -255,6 +258,23 @@ export default function AdminCommunications() {
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
+                        <Button
+                          variant="ghost"
+                          onClick={async () => {
+                            try {
+                              const res: any = await api.listCommunicationLogs(c.id);
+                              const data = res && res.data ? res.data : res;
+                              setLogs(data || []);
+                              setLogsFor(c);
+                              setLogsOpen(true);
+                            } catch (e) {
+                              toast.error('Failed to load logs');
+                            }
+                          }}
+                          aria-label={`Logs ${c.id}`}
+                        >
+                          <MessageSquare className="h-4 w-4" />
+                        </Button>
                         <Button variant="ghost" onClick={() => confirmDelete(c.id)} aria-label={`Delete ${c.id}`}>
                           <Trash2 className="h-4 w-4 text-red-600" />
                         </Button>
@@ -362,6 +382,87 @@ export default function AdminCommunications() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setViewOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Logs Dialog */}
+      <Dialog open={logsOpen} onOpenChange={setLogsOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Communication Logs</DialogTitle>
+            <DialogDescription>Per-recipient delivery status and retry failed sends.</DialogDescription>
+          </DialogHeader>
+          <div className="p-4 space-y-3">
+            <div className="text-sm font-medium">Communication</div>
+            <div className="mb-2">{logsFor?.subject}</div>
+
+            <div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Recipient</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Attempts</TableHead>
+                    <TableHead>Last Error</TableHead>
+                    <TableHead>Last Attempt</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {logs.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center text-muted-foreground">
+                        No logs found
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    logs.map((l: any) => (
+                      <TableRow key={l.id}>
+                        <TableCell>{l.recipient}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              l.status === 'Success' ? 'default' : l.status === 'Failed' ? 'destructive' : 'secondary'
+                            }
+                          >
+                            {l.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{l.attempts}</TableCell>
+                        <TableCell className="max-w-xs break-words">{l.error || '-'}</TableCell>
+                        <TableCell>{l.lastAttemptAt ? new Date(l.lastAttemptAt).toLocaleString() : '-'}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              onClick={async () => {
+                                try {
+                                  await api.retryCommunicationLog(l.id);
+                                  const res: any = await api.listCommunicationLogs(logsFor.id);
+                                  const data = res && res.data ? res.data : res;
+                                  setLogs(data || []);
+                                  toast.success('Retry requested');
+                                } catch (e) {
+                                  toast.error('Retry failed');
+                                }
+                              }}
+                            >
+                              Retry
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLogsOpen(false)}>
               Close
             </Button>
           </DialogFooter>
