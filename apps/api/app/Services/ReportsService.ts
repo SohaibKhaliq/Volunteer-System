@@ -111,7 +111,15 @@ export default class ReportsService {
           total: totalVolunteers || 0,
           active: activeVolunteers || 0,
           inactive: (totalVolunteers || 0) - (activeVolunteers || 0),
-          trend: 0 // Placeholder
+          // percent change in active volunteers month-over-month
+          trend:
+            trend.length >= 2
+              ? Math.round(
+                  ((trend[trend.length - 1].volunteers - trend[trend.length - 2].volunteers) /
+                    Math.max(1, trend[trend.length - 2].volunteers)) *
+                    100
+                )
+              : 0
         },
         eventCompletion: {
           total: totalEvents || 0,
