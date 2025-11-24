@@ -48,14 +48,19 @@ export default class OrganizationsController {
   }
 
   // Dashboard Stats
-  public async dashboardStats({ response }: HttpContextContract) {
-    // Assuming the user belongs to an organization or we pass org ID. 
-    // For now, let's assume we get the org ID from the user's context or params.
-    // In a real app, we'd check auth.user.organizationId or similar.
-    // Here, we'll assume the first org found for the user or passed via query.
+  public async dashboardStats({ auth, response }: HttpContextContract) {
+    const user = auth.user!
     
-    // Mocking org ID retrieval for now, or getting from query
-    const orgId = 1 // Replace with actual logic: auth.user?.organizationId
+    // Find organization for the current user
+    const memberRecord = await OrganizationTeamMember.query()
+      .where('user_id', user.id)
+      .first()
+
+    if (!memberRecord) {
+      return response.notFound({ message: 'User is not part of any organization' })
+    }
+
+    const orgId = memberRecord.organizationId
 
     const activeVolunteers = await OrganizationVolunteer.query()
       .where('organization_id', orgId)
@@ -71,13 +76,21 @@ export default class OrganizationsController {
       .where('organization_id', orgId)
       .sum('hours as total')
 
-    // Impact score logic (placeholder)
-    const impactScore = 98.5
+
+
+    const volCount = activeVolunteers[0].$extras.total
+    const hoursCount = totalHours[0].$extras.total || 0
+    
+    // Simple impact score calculation: (Total Hours / Active Volunteers) * 10, capped at 100
+    let impactScore = 0
+    if (volCount > 0) {
+      impactScore = Math.min(100, Math.round((hoursCount / volCount) * 10))
+    }
 
     return response.ok({
-      activeVolunteers: activeVolunteers[0].$extras.total,
+      activeVolunteers: volCount,
       upcomingEvents: upcomingEvents[0].$extras.total,
-      totalHours: totalHours[0].$extras.total || 0,
+      totalHours: hoursCount,
       impactScore
     })
   }
