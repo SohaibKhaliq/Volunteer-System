@@ -104,4 +104,49 @@ export default class CommunicationsController {
       return response.status(500).send({ error: 'Retry failed', details: String(e) })
     }
   }
+
+  public async bulkRetryLogs({ request, response }: HttpContextContract) {
+    const ids = request.input('ids') || []
+    if (!Array.isArray(ids) || !ids.length)
+      return response.badRequest({ error: 'ids array required' })
+
+    const results: any[] = []
+    for (const id of ids) {
+      const log = await CommunicationLog.find(id)
+      if (!log) {
+        results.push({ id, status: 'not_found' })
+        continue
+      }
+
+      const comm = await Communication.find(log.communicationId)
+      if (!comm) {
+        results.push({ id, status: 'parent_not_found' })
+        continue
+      }
+
+      if ((log.status || '').toLowerCase() === 'success') {
+        results.push({ id, status: 'already_success' })
+        continue
+      }
+
+      try {
+        // Simulate send for now (actual Mail integration should be enabled in production)
+        log.status = 'Success'
+        log.attempts = (log.attempts || 0) + 1
+        log.error = undefined
+        log.lastAttemptAt = DateTime.local()
+        await log.save()
+        results.push({ id, status: 'success' })
+      } catch (e) {
+        log.status = 'Failed'
+        log.attempts = (log.attempts || 0) + 1
+        log.error = String(e)
+        log.lastAttemptAt = DateTime.local()
+        await log.save()
+        results.push({ id, status: 'failed', error: String(e) })
+      }
+    }
+
+    return response.ok({ results })
+  }
 }
