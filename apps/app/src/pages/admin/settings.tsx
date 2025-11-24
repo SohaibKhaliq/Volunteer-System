@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Settings } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { toast } from 'sonner';
+import { toast } from '@/components/atoms/use-toast';
 import SkeletonCard from '@/components/atoms/skeleton-card';
 
 export default function AdminSettings() {
