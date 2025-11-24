@@ -1,6 +1,8 @@
 import Communication from 'App/Models/Communication'
 import User from 'App/Models/User'
+import Notification from 'App/Models/Notification'
 // import Mail from '@ioc:Adonis/Addons/Mail'
+import Env from '@ioc:Adonis/Core/Env'
 import Logger from '@ioc:Adonis/Core/Logger'
 import { DateTime } from 'luxon'
 
@@ -43,7 +45,10 @@ async function processDue() {
               // event participants: find assignments for tasks under event or volunteer_hours entries
               const eventId = parsed.eventId
               // try volunteer_hours
-              const hours = await (await import('App/Models/VolunteerHour')).default.query().where('event_id', eventId).select('user_id')
+              const hours = await (await import('App/Models/VolunteerHour')).default
+                .query()
+                .where('event_id', eventId)
+                .select('user_id')
               const userIds = hours.map((h: any) => h.userId)
               if (userIds.length) {
                 const users = await User.query().whereIn('id', userIds).select('email')
@@ -59,9 +64,28 @@ async function processDue() {
         }
 
         if (comm.type && comm.type.toLowerCase() === 'email') {
+          const fromAddr = Env.get('MAIL_FROM', 'no-reply@local.test')
+
           for (const to of recipients) {
             try {
-              
+              // Send email (plain text). If Mail is not configured this will throw.
+              // await Mail.send((message) => {
+              //   message.from(fromAddr)
+              //   message.to(to)
+              //   message.subject(comm.subject || '')
+              //   // send as plain text; frontend content may be HTML but plain text is safer here
+              //   message.text(comm.content || '')
+              // })
+
+              // try to find a user for this recipient to create an in-app notification
+              const user = await User.query().where('email', to).first()
+              if (user) {
+                await Notification.create({
+                  userId: user.id,
+                  type: 'communication',
+                  payload: JSON.stringify({ communicationId: comm.id, subject: comm.subject })
+                })
+              }
             } catch (e) {
               Logger.error('Failed to send email to ' + to + ': ' + String(e))
             }
