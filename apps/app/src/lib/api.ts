@@ -35,8 +35,7 @@ const api = {
   /* Organization Volunteer Management */
   getOrganizationVolunteers: async (orgId: number, filters?: any) =>
     axios.get(`/organizations/${orgId}/volunteers`, { params: filters }),
-  addOrganizationVolunteer: async (orgId: number, data: any) =>
-    axios.post(`/organizations/${orgId}/volunteers`, data),
+  addOrganizationVolunteer: async (orgId: number, data: any) => axios.post(`/organizations/${orgId}/volunteers`, data),
   updateOrganizationVolunteer: async (orgId: number, userId: number, data: any) =>
     axios.put(`/organizations/${orgId}/volunteers/${userId}`, data),
   removeOrganizationVolunteer: async (orgId: number, userId: number) =>
@@ -60,8 +59,7 @@ const api = {
   /* Organization Invitations */
   getOrganizationInvites: async (orgId: number, status?: string) =>
     axios.get(`/organizations/${orgId}/invites`, { params: status ? { status } : undefined }),
-  sendOrganizationInvite: async (orgId: number, data: any) =>
-    axios.post(`/organizations/${orgId}/invites`, data),
+  sendOrganizationInvite: async (orgId: number, data: any) => axios.post(`/organizations/${orgId}/invites`, data),
   resendOrganizationInvite: async (orgId: number, inviteId: number) =>
     axios.post(`/organizations/${orgId}/invites/${inviteId}/resend`),
   cancelOrganizationInvite: async (orgId: number, inviteId: number) =>
@@ -236,7 +234,15 @@ const api = {
   getCurrentUser: async () => axios.get('/me'),
   getUser: async (id: number) => axios.get(`/users/${id}`),
 
-  updateOrganizationProfile: async (data: any) => axios.put('/organization/profile', data),
+  updateOrganizationProfile: async (data: any) => {
+    // if data is FormData upload, ensure headers let the browser set boundary
+    if (data instanceof FormData) {
+      return axios.put('/organization/profile', data, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    }
+    return axios.put('/organization/profile', data);
+  },
   getOrganizationProfile: async () => axios.get('/organization/profile'),
 
   // Team
@@ -267,34 +273,27 @@ const api = {
   getOrganizationDashboardStats: async () => axios.get('/organization/dashboard-stats'),
 
   // Volunteer Hours Management
-  getOrganizationPendingHours: async (filters?: any) => 
-    axios.get('/organization/hours/pending', { params: filters }),
-  approveVolunteerHour: async (id: number, notes?: string) => 
+  getOrganizationPendingHours: async (filters?: any) => axios.get('/organization/hours/pending', { params: filters }),
+  approveVolunteerHour: async (id: number, notes?: string) =>
     axios.post(`/organization/hours/${id}/approve`, { notes }),
-  rejectVolunteerHour: async (id: number, reason?: string) => 
+  rejectVolunteerHour: async (id: number, reason?: string) =>
     axios.post(`/organization/hours/${id}/reject`, { reason }),
-  bulkApproveHours: async (ids: number[]) => 
-    axios.post('/organization/hours/bulk-approve', { ids }),
-  getVolunteerHours: async (volunteerId: number, filters?: any) => 
+  bulkApproveHours: async (ids: number[]) => axios.post('/organization/hours/bulk-approve', { ids }),
+  getVolunteerHours: async (volunteerId: number, filters?: any) =>
     axios.get(`/organization/volunteers/${volunteerId}/hours`, { params: filters }),
 
   // Volunteer Analytics
-  getVolunteerAnalytics: async (dateRange?: any) => 
+  getVolunteerAnalytics: async (dateRange?: any) =>
     axios.get('/organization/analytics/volunteers', { params: dateRange }),
-  getVolunteerLeaderboard: async (params?: any) => 
-    axios.get('/organization/analytics/leaderboard', { params }),
-  getVolunteerTrends: async (dateRange?: any) => 
-    axios.get('/organization/analytics/trends', { params: dateRange }),
+  getVolunteerLeaderboard: async (params?: any) => axios.get('/organization/analytics/leaderboard', { params }),
+  getVolunteerTrends: async (dateRange?: any) => axios.get('/organization/analytics/trends', { params: dateRange }),
 
   // Communications
-  getOrganizationCommunications: async (filters?: any) => 
+  getOrganizationCommunications: async (filters?: any) =>
     axios.get('/organization/communications', { params: filters }),
-  sendOrganizationMessage: async (data: any) => 
-    axios.post('/organization/communications/send', data),
-  getOrganizationCommunication: async (id: number) => 
-    axios.get(`/organization/communications/${id}`),
-  broadcastOrganizationMessage: async (data: any) => 
-    axios.post('/organization/communications/broadcast', data)
+  sendOrganizationMessage: async (data: any) => axios.post('/organization/communications/send', data),
+  getOrganizationCommunication: async (id: number) => axios.get(`/organization/communications/${id}`),
+  broadcastOrganizationMessage: async (data: any) => axios.post('/organization/communications/broadcast', data)
 } as const;
 
 export const useLazyQuery = (key: QueryKey, fn: QueryFunction, options = {}) => {
