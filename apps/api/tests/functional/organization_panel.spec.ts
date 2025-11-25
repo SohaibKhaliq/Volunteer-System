@@ -13,6 +13,18 @@ test.group('Organization panel endpoints', () => {
     resp.assertStatus(401)
   })
 
+  test('events: authenticated but not part of org -> 404', async ({ client }) => {
+    const u = await User.create({ email: 'noorg@test', password: 'pass' })
+    await client.loginAs(u).get('/organization/events').assertStatus(404)
+
+    // attempt to create should also be rejected
+    await client
+      .loginAs(u)
+      .post('/organization/events')
+      .json({ title: 'Unauth event', start_at: DateTime.now().toISO() })
+      .assertStatus(404)
+  })
+
   test('events: scoped to organization member and can create', async ({ client }) => {
     const orgA = await Organization.create({ name: 'Org A' })
     const orgB = await Organization.create({ name: 'Org B' })
