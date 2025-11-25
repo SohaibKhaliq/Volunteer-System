@@ -1,4 +1,6 @@
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
@@ -12,60 +14,64 @@ import {
   ResponsiveContainer,
   PieChart,
   Pie,
-  Cell
+  Cell,
+  LineChart,
+  Line
 } from 'recharts';
-import { Download } from 'lucide-react';
+import { Download, Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function OrganizationReports() {
-  // Mock data
-  const participationData = [
-    { month: 'Jan', volunteers: 40, hours: 240 },
-    { month: 'Feb', volunteers: 30, hours: 139 },
-    { month: 'Mar', volunteers: 20, hours: 980 },
-    { month: 'Apr', volunteers: 27, hours: 390 },
-    { month: 'May', volunteers: 18, hours: 480 },
-    { month: 'Jun', volunteers: 23, hours: 380 },
-    { month: 'Jul', volunteers: 34, hours: 430 }
-  ];
+  const [dateRange, setDateRange] = React.useState('last-6-months');
 
-  const eventSuccessData = [
-    { name: 'Beach Cleanup', rate: 95 },
-    { name: 'Food Drive', rate: 88 },
-    { name: 'Tutoring', rate: 92 },
-    { name: 'Tree Planting', rate: 75 },
-    { name: 'Elderly Care', rate: 98 }
-  ];
+  // Fetch analytics data
+  const { data: analyticsData, isLoading: isAnalyticsLoading } = useQuery({
+    queryKey: ['volunteerAnalytics'],
+    queryFn: () => api.getVolunteerAnalytics()
+  });
 
-  const skillsDistribution = [
-    { name: 'Teaching', value: 400 },
-    { name: 'Logistics', value: 300 },
-    { name: 'Medical', value: 300 },
-    { name: 'Manual Labor', value: 200 }
-  ];
+  // Fetch leaderboard
+  const { data: leaderboardData, isLoading: isLeaderboardLoading } = useQuery({
+    queryKey: ['volunteerLeaderboard'],
+    queryFn: () => api.getVolunteerLeaderboard({ metric: 'hours', limit: 5 })
+  });
+
+  // Fetch trends
+  const { data: trendsData, isLoading: isTrendsLoading } = useQuery({
+    queryKey: ['volunteerTrends', dateRange],
+    queryFn: () => api.getVolunteerTrends({ interval: 'month' })
+  });
+
+  if (isAnalyticsLoading || isLeaderboardLoading || isTrendsLoading) {
+    return (
+      <div className="flex justify-center items-center h-96">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const analytics = analyticsData || {};
+  const leaderboard = Array.isArray(leaderboardData) ? leaderboardData : [];
+  const trends = trendsData || {};
+  
+  // Transform hours trend for chart
+  const hoursTrendData = Array.isArray(trends.hours_trend) 
+    ? trends.hours_trend.map((item: any) => ({
+        month: new Date(item.period).toLocaleDateString('en-US', { month: 'short' }),
+        volunteers: item.volunteer_count || 0,
+        hours: item.total_hours || 0
+      }))
+    : [];
+
+  // Transform status distribution for pie chart
+  const statusData = Array.isArray(analytics.status_distribution)
+    ? analytics.status_distribution.map((item: any) => ({
+        name: item.status,
+        value: item.count
+      }))
+    : [];
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
-
-  // Debug: log data shapes to help catch objects accidentally used as React children
-  try {
-    // eslint-disable-next-line no-console
-    console.debug(
-      'OrganizationReports: participationData sample',
-      Array.isArray(participationData) ? participationData[0] : participationData
-    );
-    // eslint-disable-next-line no-console
-    console.debug(
-      'OrganizationReports: eventSuccessData sample',
-      Array.isArray(eventSuccessData) ? eventSuccessData[0] : eventSuccessData
-    );
-    // eslint-disable-next-line no-console
-    console.debug(
-      'OrganizationReports: skillsDistribution sample',
-      Array.isArray(skillsDistribution) ? skillsDistribution[0] : skillsDistribution
-    );
-  } catch (e) {
-    // ignore
-  }
 
   return (
     <div className="space-y-6">
@@ -75,7 +81,7 @@ export default function OrganizationReports() {
           <p className="text-muted-foreground">Insights into your organization's impact and performance.</p>
         </div>
         <div className="flex gap-2">
-          <Select defaultValue="last-6-months">
+          <Select value={dateRange} onValueChange={setDateRange}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Select period" />
             </SelectTrigger>
@@ -101,95 +107,101 @@ export default function OrganizationReports() {
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={participationData}
-                  margin={{
-                    top: 20,
-                    right: 30,
-                    left: 20,
-                    bottom: 5
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
-                  <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
-                  <Tooltip
-                    labelFormatter={(label: any) => (typeof label === 'object' ? JSON.stringify(label) : String(label))}
-                    formatter={(value: any) => (value == null ? '' : value)}
-                  />
-                  <Legend />
-                  <Bar yAxisId="left" dataKey="volunteers" fill="#8884d8" name="Volunteers" />
-                  <Bar yAxisId="right" dataKey="hours" fill="#82ca9d" name="Hours" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Event Success Rate</CardTitle>
-            <CardDescription>Completion and satisfaction rates by event type.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  layout="vertical"
-                  data={eventSuccessData}
-                  margin={{
-                    top: 20,
-                    right: 30,
-                    left: 40,
-                    bottom: 5
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" domain={[0, 100]} />
-                  <YAxis dataKey="name" type="category" width={100} />
-                  <Tooltip
-                    labelFormatter={(label: any) => (typeof label === 'object' ? JSON.stringify(label) : String(label))}
-                    formatter={(value: any) => (value == null ? '' : value)}
-                  />
-                  <Legend />
-                  <Bar dataKey="rate" fill="#ffc658" name="Success Rate (%)" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Skills Distribution</CardTitle>
-            <CardDescription>Breakdown of volunteer skills available.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={skillsDistribution}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
+              {hoursTrendData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={hoursTrendData}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                   >
-                    {skillsDistribution.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    labelFormatter={(label: any) => (typeof label === 'object' ? JSON.stringify(label) : String(label))}
-                    formatter={(value: any) => (value == null ? '' : value)}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
+                    <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
+                    <Tooltip />
+                    <Legend />
+                    <Line yAxisId="left" type="monotone" dataKey="volunteers" stroke="#8884d8" name="Volunteers" />
+                    <Line yAxisId="right" type="monotone" dataKey="hours" stroke="#82ca9d" name="Hours" />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                  No data available
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Top Volunteers</CardTitle>
+            <CardDescription>Leaderboard by hours contributed.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
+              {leaderboard.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    layout="vertical"
+                    data={leaderboard}
+                    margin={{ top: 20, right: 30, left: 80, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis type="number" />
+                    <YAxis 
+                      dataKey="first_name" 
+                      type="category" 
+                      width={80}
+                      tickFormatter={(value, index) => {
+                        const item = leaderboard[index];
+                        return `${item.first_name} ${item.last_name?.charAt(0) || ''}`;
+                      }}
+                    />
+                    <Tooltip />
+                    <Bar dataKey="total_hours" fill="#8884d8" name="Hours" />
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                  No volunteers yet
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Volunteer Status Distribution</CardTitle>
+            <CardDescription>Breakdown of volunteer statuses.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[300px]">
+              {statusData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={statusData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {statusData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-full text-muted-foreground">
+                  No status data
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -202,24 +214,26 @@ export default function OrganizationReports() {
           <CardContent>
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 bg-blue-50 rounded-lg">
-                <p className="text-sm font-medium text-blue-600">Total Hours</p>
-                <h3 className="text-2xl font-bold text-blue-900">3,248</h3>
-                <p className="text-xs text-blue-500">+12% from last period</p>
+                <p className="text-sm font-medium text-blue-600">Total Volunteers</p>
+                <h3 className="text-2xl font-bold text-blue-900">{analytics.total_volunteers || 0}</h3>
+                <p className="text-xs text-blue-500">{analytics.retention_rate || 0}% retention rate</p>
               </div>
               <div className="p-4 bg-green-50 rounded-lg">
-                <p className="text-sm font-medium text-green-600">Events Completed</p>
-                <h3 className="text-2xl font-bold text-green-900">24</h3>
-                <p className="text-xs text-green-500">100% completion rate</p>
+                <p className="text-sm font-medium text-green-600">Active Volunteers</p>
+                <h3 className="text-2xl font-bold text-green-900">{analytics.active_volunteers || 0}</h3>
+                <p className="text-xs text-green-500">In last 30 days</p>
               </div>
               <div className="p-4 bg-purple-50 rounded-lg">
-                <p className="text-sm font-medium text-purple-600">New Volunteers</p>
-                <h3 className="text-2xl font-bold text-purple-900">56</h3>
-                <p className="text-xs text-purple-500">+8% from last period</p>
+                <p className="text-sm font-medium text-purple-600">Avg Hours/Volunteer</p>
+                <h3 className="text-2xl font-bold text-purple-900">{analytics.avg_hours_per_volunteer || 0}</h3>
+                <p className="text-xs text-purple-500">Per volunteer</p>
               </div>
               <div className="p-4 bg-orange-50 rounded-lg">
-                <p className="text-sm font-medium text-orange-600">Avg. Rating</p>
-                <h3 className="text-2xl font-bold text-orange-900">4.8</h3>
-                <p className="text-xs text-orange-500">Based on 142 reviews</p>
+                <p className="text-sm font-medium text-orange-600">Growth</p>
+                <h3 className="text-2xl font-bold text-orange-900">
+                  {analytics.volunteer_growth?.[0]?.count || 0}
+                </h3>
+                <p className="text-xs text-orange-500">New this month</p>
               </div>
             </div>
           </CardContent>
