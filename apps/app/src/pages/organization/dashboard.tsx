@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Users, Calendar, Clock, TrendingUp, Loader2, ArrowRight } from 'lucide-react';
+import { AreaChart, Area, ResponsiveContainer, XAxis, Tooltip } from 'recharts';
 
 export default function OrganizationDashboard() {
   // Dashboard stats (fetched)
@@ -16,6 +17,20 @@ export default function OrganizationDashboard() {
     queryFn: api.getOrganizationDashboardStats
   });
 
+  // Fetch additional data used on the dashboard
+  const { data: events } = useQuery({
+    queryKey: ['organizationEvents'],
+    queryFn: api.listOrganizationEvents
+  });
+  const { data: volunteers } = useQuery({
+    queryKey: ['organizationVolunteers'],
+    queryFn: api.listOrganizationVolunteers
+  });
+  const { data: compliance } = useQuery({
+    queryKey: ['organizationComplianceStats'],
+    queryFn: api.getOrganizationComplianceStats
+  });
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-96">
@@ -24,31 +39,53 @@ export default function OrganizationDashboard() {
     );
   }
 
-  // If API returned 404 (user not part of any organization), show a friendly message
-  // if ((error as any)?.response?.status === 404) {
-  //   // API returned a friendly 404 telling the user they're not part of an organization
-  //   return (
-  //     <div className="min-h-[300px] flex flex-col items-center justify-center text-center p-8">
-  //       <h2 className="text-xl font-bold">Organization not found</h2>
-  //       <p className="text-sm text-muted-foreground mt-2">
-  //         You are not currently part of any organization. To use this dashboard, ask your organization admin to add you,
-  //         or create an organization.
-  //       </p>
-  //       <div className="mt-4 flex gap-2">
-  //         <Link to="/organization/profile">
-  //           <Button variant="outline">View Profile</Button>
-  //         </Link>
-  //       </div>
-  //     </div>
-  //   );
-  // }
-
-  const displayStats = stats || {
+  const displayStats = (stats as unknown as {
+    activeVolunteers: number;
+    upcomingEvents: number;
+    totalHours: number;
+    impactScore: number;
+  }) || {
     activeVolunteers: 0,
     upcomingEvents: 0,
     totalHours: 0,
     impactScore: 0
   };
+
+  // Build small chart dataset from events grouped by date
+  // build a simple chart dataset from the first few events
+  type EventItem = { startAt?: string | number; assigned_volunteers?: number; title?: string };
+  const chartData = Array.isArray(events)
+    ? (events as EventItem[]).slice(0, 8).map((ev) => ({
+        date: new Date(String(ev.startAt)).toLocaleDateString(),
+        attendees: Number(ev.assigned_volunteers ?? 0)
+      }))
+    : [];
+
+  type RecentItem = { type: 'event' | 'volunteer'; text: string; when?: string };
+  const recentActivity: RecentItem[] = [];
+  if (Array.isArray(events)) {
+    for (const e of events.slice(0, 5)) {
+      recentActivity.push({ type: 'event', text: `Event: ${e.title}`, when: e.startAt });
+    }
+  }
+  type VolunteerItem = {
+    user?: { first_name?: string; firstName?: string; email?: string };
+    createdAt?: string;
+    created_at?: string;
+  };
+  if (Array.isArray(volunteers)) {
+    for (const v of (volunteers as VolunteerItem[]).slice(0, 5)) {
+      recentActivity.push({
+        type: 'volunteer',
+        text: `Volunteer: ${v.user?.first_name || v.user?.firstName || v.user?.email}`,
+        when: v.createdAt || v.created_at
+      });
+    }
+  }
+
+  // use compliance in UI to avoid unused var
+  type ComplianceStats = { compliantVolunteers?: number; pendingDocuments?: number; expiringSoon?: number };
+  const pendingDocuments = (compliance as ComplianceStats)?.pendingDocuments ?? null;
 
   return (
     <div className="space-y-6">
@@ -116,14 +153,26 @@ export default function OrganizationDashboard() {
           </CardHeader>
           <CardContent className="pl-2">
             <div className="h-[200px] flex items-center justify-center text-muted-foreground">
-              Chart Placeholder (Activity over time)
+              {chartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={200}>
+                  <AreaChart data={chartData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+                    <XAxis dataKey="date" hide />
+                    <Tooltip />
+                    <Area type="monotone" dataKey="attendees" stroke="#0ea5e9" fill="#0ea5e9" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="text-sm text-muted-foreground">No activity yet. Create an event to get started.</div>
+              )}
             </div>
           </CardContent>
         </Card>
         <Card className="col-span-3">
           <CardHeader>
             <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>Latest actions from your volunteers.</CardDescription>
+            <CardDescription>
+              Latest actions from your volunteers. {pendingDocuments ? `${pendingDocuments} pending docs` : ''}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-8">
