@@ -3,6 +3,15 @@ import Event from 'App/Models/Event'
 
 export default class EventsController {
   public async index({ auth, request, response }: HttpContextContract) {
+    // Debug logging for easier diagnostics in dev
+    if (process.env.NODE_ENV !== 'production') {
+      try {
+        // eslint-disable-next-line no-console
+        console.debug('EventsController.index called', { url: request.url(), qs: request.qs() })
+      } catch (e) {
+        // ignore
+      }
+    }
     // preload tasks and their assignments so we can compute volunteer counts
     const { organization_id } = request.qs()
 
@@ -19,7 +28,16 @@ export default class EventsController {
         .query()
         .where('user_id', auth.user!.id)
         .first()
-      if (member) query.where('organization_id', member.organizationId)
+      // When calling the namespaced route used by the organization panel
+      // (/organization/events) we expect the authenticated user to be a
+      // member of an organization. If they're not, return Not Found to
+      // match the dashboard/compliance behavior.
+      if (request.url().startsWith('/organization')) {
+        if (!member) return response.notFound({ message: 'User is not part of any organization' })
+        query.where('organization_id', member.organizationId)
+      } else if (member) {
+        query.where('organization_id', member.organizationId)
+      }
     }
 
     const events = await query.orderBy('start_at', 'asc')
@@ -94,7 +112,11 @@ export default class EventsController {
         .where('user_id', auth.user!.id)
         .first()
       if (member) payload.organizationId = member.organizationId
-      else if (typeof raw.organization_id !== 'undefined')
+      else if (request.url().startsWith('/organization')) {
+        // If this call is the namespaced /organization/events route, the
+        // caller must be a member of an organization.
+        return response.notFound({ message: 'User is not part of any organization' })
+      } else if (typeof raw.organization_id !== 'undefined')
         payload.organizationId = raw.organization_id
     } else if (typeof raw.organization_id !== 'undefined') {
       payload.organizationId = raw.organization_id
@@ -142,6 +164,10 @@ export default class EventsController {
         .query()
         .where('user_id', auth.user!.id)
         .first()
+      if (!member && request.url().startsWith('/organization')) {
+        return response.notFound({ message: 'User is not part of any organization' })
+      }
+
       if (member && event.organizationId !== member.organizationId) {
         return response.forbidden({ message: 'Event does not belong to your organization' })
       }
@@ -194,6 +220,10 @@ export default class EventsController {
         .query()
         .where('user_id', auth.user!.id)
         .first()
+      if (!member && request.url().startsWith('/organization')) {
+        return response.notFound({ message: 'User is not part of any organization' })
+      }
+
       if (member && event.organizationId !== member.organizationId) {
         return response.forbidden({ message: 'Event does not belong to your organization' })
       }
