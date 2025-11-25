@@ -32,6 +32,43 @@ const api = {
   updateOrganization: async (id: number, data: any) => axios.put(`/organizations/${id}`, data),
   deleteOrganization: async (id: number) => axios.delete(`/organizations/${id}`),
 
+  /* Organization Volunteer Management */
+  getOrganizationVolunteers: async (orgId: number, filters?: any) =>
+    axios.get(`/organizations/${orgId}/volunteers`, { params: filters }),
+  addOrganizationVolunteer: async (orgId: number, data: any) =>
+    axios.post(`/organizations/${orgId}/volunteers`, data),
+  updateOrganizationVolunteer: async (orgId: number, userId: number, data: any) =>
+    axios.put(`/organizations/${orgId}/volunteers/${userId}`, data),
+  removeOrganizationVolunteer: async (orgId: number, userId: number) =>
+    axios.delete(`/organizations/${orgId}/volunteers/${userId}`),
+
+  /* Organization Events & Tasks */
+  getOrganizationEvents: async (orgId: number) => axios.get(`/organizations/${orgId}/events`),
+  getOrganizationTasks: async (orgId: number) => axios.get(`/organizations/${orgId}/tasks`),
+
+  /* Organization Hours */
+  getOrganizationHours: async (orgId: number, filters?: any) =>
+    axios.get(`/organizations/${orgId}/hours`, { params: filters }),
+  approveOrganizationHours: async (orgId: number, hourIds: number[], status?: string, notes?: string) =>
+    axios.post(`/organizations/${orgId}/hours/approve`, { hour_ids: hourIds, status, notes }),
+
+  /* Organization Analytics & Compliance */
+  getOrganizationAnalytics: async (orgId: number, dateRange?: { startDate?: string; endDate?: string }) =>
+    axios.get(`/organizations/${orgId}/analytics`, { params: dateRange }),
+  getOrganizationCompliance: async (orgId: number) => axios.get(`/organizations/${orgId}/compliance`),
+
+  /* Organization Invitations */
+  getOrganizationInvites: async (orgId: number, status?: string) =>
+    axios.get(`/organizations/${orgId}/invites`, { params: status ? { status } : undefined }),
+  sendOrganizationInvite: async (orgId: number, data: any) =>
+    axios.post(`/organizations/${orgId}/invites`, data),
+  resendOrganizationInvite: async (orgId: number, inviteId: number) =>
+    axios.post(`/organizations/${orgId}/invites/${inviteId}/resend`),
+  cancelOrganizationInvite: async (orgId: number, inviteId: number) =>
+    axios.delete(`/organizations/${orgId}/invites/${inviteId}`),
+  acceptInvite: async (token: string) => axios.post(`/invites/${token}/accept`),
+  rejectInvite: async (token: string) => axios.post(`/invites/${token}/reject`),
+
   listUsers: async (q?: string) => {
     const res = await axios.get('/users', { params: q ? { search: q } : undefined });
     // backend may return a paginated object { data: [...] } or a plain array

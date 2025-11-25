@@ -77,6 +77,34 @@ Route.resource('organizations', 'OrganizationsController')
   .middleware({ '*': ['auth'] })
   .apiOnly()
 
+// Organization volunteer management
+Route.get('/organizations/:id/volunteers', 'OrganizationsController.getVolunteers').middleware(['auth'])
+Route.post('/organizations/:id/volunteers', 'OrganizationsController.addVolunteer').middleware(['auth'])
+Route.put('/organizations/:id/volunteers/:userId', 'OrganizationsController.updateVolunteer').middleware(['auth'])
+Route.delete('/organizations/:id/volunteers/:userId', 'OrganizationsController.removeVolunteer').middleware(['auth'])
+
+// Organization events & tasks
+Route.get('/organizations/:id/events', 'OrganizationsController.getEvents').middleware(['auth'])
+Route.get('/organizations/:id/tasks', 'OrganizationsController.getTasks').middleware(['auth'])
+
+// Organization hours
+Route.get('/organizations/:id/hours', 'OrganizationsController.getHours').middleware(['auth'])
+Route.post('/organizations/:id/hours/approve', 'OrganizationsController.approveHours').middleware(['auth'])
+
+// Organization analytics & compliance
+Route.get('/organizations/:id/analytics', 'OrganizationsController.getAnalytics').middleware(['auth'])
+Route.get('/organizations/:id/compliance', 'OrganizationsController.getCompliance').middleware(['auth'])
+
+// Organization invitations
+Route.get('/organizations/:organizationId/invites', 'OrganizationInvitesController.index').middleware(['auth'])
+Route.post('/organizations/:organizationId/invites', 'OrganizationInvitesController.store').middleware(['auth'])
+Route.post('/organizations/:organizationId/invites/:id/resend', 'OrganizationInvitesController.resend').middleware(['auth'])
+Route.delete('/organizations/:organizationId/invites/:id', 'OrganizationInvitesController.destroy').middleware(['auth'])
+
+// Public invitation endpoints (token-based, no auth required for accept/reject)
+Route.post('/invites/:token/accept', 'OrganizationInvitesController.accept').middleware(['auth'])
+Route.post('/invites/:token/reject', 'OrganizationInvitesController.reject')
+
 Route.resource('roles', 'RolesController')
   .middleware({ '*': ['auth'] })
   .apiOnly()
