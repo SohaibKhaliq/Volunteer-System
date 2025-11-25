@@ -39,6 +39,12 @@ export default class Organization extends BaseModel {
   @column()
   public isActive?: boolean
 
+  @column()
+  public publicProfile?: boolean
+
+  @column()
+  public autoApproveVolunteers?: boolean
+
   @hasMany(() => Event)
   public events: HasMany<typeof Event>
 
