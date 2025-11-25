@@ -580,7 +580,17 @@ export default function OrganizationProfile() {
           <DialogHeader>
             <DialogTitle>{editingMember ? 'Edit Team Member' : 'Invite Team Member'}</DialogTitle>
             <DialogDescription>
-              {editingMember ? 'Update member details.' : 'Send an invitation to a new team member.'}
+              {editingMember ? (
+                'Update member details.'
+              ) : (
+                <>
+                  Send an invitation to a new team member.
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Note: If the email belongs to a registered user, they will be added directly to your team. Otherwise
+                    an email invitation will be created which the recipient can accept to join your organization.
+                  </p>
+                </>
+              )}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
