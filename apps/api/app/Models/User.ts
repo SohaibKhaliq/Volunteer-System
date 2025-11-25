@@ -7,6 +7,7 @@ import Offer from './Offer'
 import Assignment from './Assignment'
 import ComplianceDocument from './ComplianceDocument'
 import Role from './Role'
+import Organization from './Organization'
 
 
 export default class User extends BaseModel {
@@ -69,6 +70,17 @@ export default class User extends BaseModel {
     pivotRelatedForeignKey: 'role_id'
   })
   public roles: ManyToMany<typeof Role>
+
+  @manyToMany(() => Organization, {
+    pivotTable: 'organization_volunteers',
+    localKey: 'id',
+    pivotForeignKey: 'user_id',
+    relatedKey: 'id',
+    pivotRelatedForeignKey: 'organization_id',
+    pivotColumns: ['role', 'status', 'joined_at', 'notes'],
+    pivotTimestamps: true
+  })
+  public organizations: ManyToMany<typeof Organization>
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
