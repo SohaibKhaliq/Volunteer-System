@@ -235,12 +235,7 @@ const api = {
   getUser: async (id: number) => axios.get(`/users/${id}`),
 
   updateOrganizationProfile: async (data: any) => {
-    // if data is FormData upload, ensure headers let the browser set boundary
-    if (data instanceof FormData) {
-      return axios.put('/organization/profile', data, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-    }
+    // If FormData, let axios/browser set the Content-Type (with boundary) so server can parse multipart
     return axios.put('/organization/profile', data);
   },
   getOrganizationProfile: async () => axios.get('/organization/profile'),
