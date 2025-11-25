@@ -181,4 +181,47 @@ test.group('Organization panel endpoints', () => {
     // one pending document exists
     stats.assertBodyContains({ pendingDocuments: 1 })
   })
+
+  test('profile: update persists new profile fields and returns normalized payload', async ({
+    client
+  }) => {
+    const org = await Organization.create({ name: 'Profile Org' })
+    const admin = await User.create({ email: 'profileadmin@test', password: 'pass' })
+    await OrganizationTeamMember.create({ organizationId: org.id, userId: admin.id, role: 'Admin' })
+
+    // initial fetch
+    const fetchResp = await client.loginAs(admin).get('/organization/profile')
+    fetchResp.assertStatus(200)
+
+    // update profile with new fields
+    const payload = {
+      name: 'Profile Org Updated',
+      email: 'contact@profile.org',
+      phone: '1234567890',
+      website: 'https://profile.example',
+      address: '123 Main St',
+      type: 'Non-profit',
+      logo: 'logos/profile.png',
+      description: 'Updated description'
+    }
+
+    const updateResp = await client.loginAs(admin).put('/organization/profile').json(payload)
+    updateResp.assertStatus(200)
+    const body = updateResp.body()
+
+    // ensure the normalized keys are present
+    test.assert(body.name === payload.name)
+    test.assert(body.email === payload.email)
+    test.assert(body.phone === payload.phone)
+    test.assert(body.website === payload.website)
+    test.assert(body.address === payload.address)
+    test.assert(body.type === payload.type)
+    test.assert(body.logo === payload.logo)
+
+    // confirm persisted in DB
+    const dbRow = await Database.from('organizations').where('id', org.id).first()
+    test.assert(dbRow.name === payload.name)
+    test.assert(dbRow.website === payload.website)
+    test.assert(dbRow.address === payload.address)
+  })
 })
