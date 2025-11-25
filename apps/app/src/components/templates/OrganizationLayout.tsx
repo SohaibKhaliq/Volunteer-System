@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useApp } from '@/providers/app-provider';
 import { cn } from '@/lib/utils';
 import {
@@ -21,6 +21,7 @@ import Providers from '@/providers';
 export default function OrganizationLayout() {
   const { user, authenticated } = useApp();
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Navigation items for Organization Panel
   const navItems = [
@@ -33,6 +34,15 @@ export default function OrganizationLayout() {
     { path: '/organization/communications', icon: MessageSquare, label: 'Communications' },
     { path: '/organization/settings', icon: Settings, label: 'Settings' }
   ];
+
+  // Redirect to login if not authenticated (do it in effect to avoid synchronous navigation during render)
+  useEffect(() => {
+    if (!authenticated) {
+      navigate(`/login?returnTo=${encodeURIComponent(location.pathname + location.search + location.hash)}`);
+    }
+  }, [authenticated, navigate, location.pathname, location.search, location.hash]);
+
+  if (!authenticated) return null;
 
   return (
     <Providers>
