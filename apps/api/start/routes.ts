@@ -20,6 +20,7 @@
 
 import HealthCheck from '@ioc:Adonis/Core/HealthCheck'
 import Route from '@ioc:Adonis/Core/Route'
+import './organization'
 
 Route.get('/', async () => {
   return { hello: 'world' }
@@ -187,60 +188,4 @@ Route.get('/scheduled-jobs/:id', 'ScheduledJobsController.show').middleware(['au
 Route.post('/scheduled-jobs', 'ScheduledJobsController.store').middleware(['auth'])
 Route.post('/scheduled-jobs/:id/retry', 'ScheduledJobsController.retry').middleware(['auth'])
 
-// Organization Panel Routes
-Route.group(() => {
-  // Profile & Dashboard
-  Route.get('/organization/profile', 'OrganizationsController.show').middleware(['auth']) // Assuming current user's org
-  Route.put('/organization/profile', 'OrganizationsController.update').middleware(['auth'])
-  Route.get('/organization/dashboard-stats', 'OrganizationsController.dashboardStats').middleware([
-    'auth'
-  ])
-
-  // Team
-  Route.get('/organization/team', 'OrganizationsController.team').middleware(['auth'])
-  Route.post('/organization/team/invite', 'OrganizationsController.inviteMember').middleware([
-    'auth'
-  ])
-  Route.put('/organization/team/:memberId', 'OrganizationsController.updateMember').middleware([
-    'auth'
-  ])
-  Route.delete('/organization/team/:memberId', 'OrganizationsController.removeMember').middleware([
-    'auth'
-  ])
-
-  // Events (Scoped to Org)
-  Route.get('/organization/events', 'EventsController.index').middleware(['auth']) // Should filter by org in controller or via query param
-  Route.post('/organization/events', 'EventsController.store').middleware(['auth'])
-  Route.put('/organization/events/:id', 'EventsController.update').middleware(['auth'])
-  Route.delete('/organization/events/:id', 'EventsController.destroy').middleware(['auth'])
-
-  // Volunteers
-  Route.get('/organization/volunteers', 'OrganizationVolunteersController.index').middleware([
-    'auth'
-  ])
-  Route.post('/organization/volunteers', 'OrganizationVolunteersController.store').middleware([
-    'auth'
-  ])
-  Route.put('/organization/volunteers/:id', 'OrganizationVolunteersController.update').middleware([
-    'auth'
-  ])
-  Route.delete(
-    '/organization/volunteers/:id',
-    'OrganizationVolunteersController.destroy'
-  ).middleware(['auth'])
-
-  // Compliance
-  Route.get('/organization/documents', 'OrganizationComplianceController.index').middleware([
-    'auth'
-  ])
-  Route.post('/organization/documents', 'OrganizationComplianceController.store').middleware([
-    'auth'
-  ])
-  Route.delete(
-    '/organization/documents/:id',
-    'OrganizationComplianceController.destroy'
-  ).middleware(['auth'])
-  Route.get('/organization/compliance/stats', 'OrganizationComplianceController.stats').middleware([
-    'auth'
-  ])
-}).prefix('')
+// Organization routes are defined in start/organization.ts
