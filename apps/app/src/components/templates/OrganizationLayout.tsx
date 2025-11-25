@@ -39,7 +39,7 @@ export default function OrganizationLayout() {
       <div className="min-h-screen bg-gray-50">
         <div className="flex">
           {/* Sidebar */}
-          <aside className="w-64 bg-white border-r border-gray-200 h-screen sticky top-0 flex flex-col">
+          <aside className="w-64 bg-white border-r border-gray-200 h-screen sticky top-0 flex flex-col min-h-0">
             <div className="p-6 border-b border-gray-200">
               <div className="flex items-center gap-2">
                 <Briefcase className="h-6 w-6 text-blue-600" />
@@ -47,7 +47,7 @@ export default function OrganizationLayout() {
               </div>
               <p className="text-sm text-gray-500 mt-1">Management Portal</p>
             </div>
-            <nav className="flex-1 p-4 space-y-1">
+            <nav className="flex-1 p-4 space-y-1 overflow-y-auto min-h-0">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);

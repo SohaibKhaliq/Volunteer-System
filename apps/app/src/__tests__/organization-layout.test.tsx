@@ -7,19 +7,19 @@ import Providers from '@/providers';
 // Mock useApp to provide a simple user/context
 vi.mock('@/providers/app-provider', () => ({
   useApp: () => ({
-    user: { firstName: 'Jane', lastName: 'Doe', email: 'jane@example.com' },
+    user: { firstName: 'John', lastName: 'Doe', email: 'org@example.com' },
     authenticated: true
   })
 }));
 
-import AdminLayout from '@/components/templates/AdminLayout';
+import OrganizationLayout from '@/components/templates/OrganizationLayout';
 
-describe('AdminLayout sidebar', () => {
-  it('renders nav with overflow and shows Sign out button', async () => {
+describe('OrganizationLayout sidebar', () => {
+  it('renders nav with overflow and shows Exit Portal button', async () => {
     const { container } = render(
       <Providers>
-        <MemoryRouter initialEntries={['/admin']}>
-          <AdminLayout />
+        <MemoryRouter initialEntries={["/organization"]}>
+          <OrganizationLayout />
         </MemoryRouter>
       </Providers>
     );
@@ -29,8 +29,8 @@ describe('AdminLayout sidebar', () => {
     // ensure our overflow class is present so the middle area scrolls independently
     expect(nav).toHaveClass('overflow-y-auto');
 
-    // Sign out should be present in the sidebar bottom block
-    const logoutBtn = await screen.findByText(/Sign out/i);
-    expect(logoutBtn).toBeInTheDocument();
+    // Exit Portal should be present in the sidebar bottom block
+    const exitBtn = await screen.findByText(/Exit Portal/i);
+    expect(exitBtn).toBeInTheDocument();
   });
 });
