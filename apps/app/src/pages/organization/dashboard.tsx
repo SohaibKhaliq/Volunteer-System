@@ -180,6 +180,29 @@ export default function OrganizationDashboard() {
   recentActivity.sort((a, b) => (b.ts || 0) - (a.ts || 0));
   const recentSlice = recentActivity.slice(0, 5);
 
+  // compute upcoming events and the next event label
+  const nowTs = Date.now();
+  const upcomingEvents = eventsList.filter((ev) => {
+    const raw = (ev as any).startAt ?? (ev as any).start_at ?? (ev as any).start_date;
+    const ts = raw ? Date.parse(String(raw)) : NaN;
+    return !Number.isNaN(ts) && ts > nowTs;
+  });
+
+  const upcomingEventsCount = upcomingEvents.length || (displayStats.upcomingEvents ?? 0);
+
+  const nextEvent = upcomingEvents
+    .map((ev) => {
+      const raw = (ev as any).startAt ?? (ev as any).start_at ?? (ev as any).start_date;
+      const ts = raw ? Date.parse(String(raw)) : NaN;
+      return { ev, ts };
+    })
+    .filter((x) => !Number.isNaN(x.ts))
+    .sort((a, b) => a.ts - b.ts)[0];
+
+  const nextEventLabel = nextEvent
+    ? `${nextEvent.ev.title ?? 'Untitled'} — ${new Date(nextEvent.ts).toLocaleString()}`
+    : null;
+
   // use compliance in UI to avoid unused var
   type ComplianceStats = { compliantVolunteers?: number; pendingDocuments?: number; expiringSoon?: number };
   const pendingDocuments = (compliance as ComplianceStats)?.pendingDocuments ?? null;
@@ -308,9 +331,13 @@ export default function OrganizationDashboard() {
           <CardContent className="p-6 flex items-center justify-between">
             <div>
               <h3 className="font-bold text-lg mb-1">Create Event</h3>
-              <p className="text-blue-100 text-sm mb-4">Schedule a new volunteer activity</p>
-              <Button size="sm" variant="secondary" className="text-blue-600">
-                Create Now
+              <p className="text-blue-100 text-sm mb-4">
+                {upcomingEventsCount > 0
+                  ? `${upcomingEventsCount} upcoming event${upcomingEventsCount === 1 ? '' : 's'}`
+                  : 'No upcoming events — create one to get started'}
+              </p>
+              <Button asChild size="sm" variant="secondary" className="text-blue-600">
+                <Link to="/organization/events">{nextEventLabel ? `Next: ${nextEventLabel}` : 'Create Now'}</Link>
               </Button>
             </div>
             <Calendar className="h-12 w-12 text-blue-200 opacity-50" />
@@ -326,8 +353,8 @@ export default function OrganizationDashboard() {
                   ? `${pendingHoursCount} pending hour log${pendingHoursCount === 1 ? '' : 's'}`
                   : 'No pending hour logs'}
               </p>
-              <Button size="sm" variant="secondary" className="text-purple-600">
-                Review Logs
+              <Button asChild size="sm" variant="secondary" className="text-purple-600">
+                <Link to="/organization/hours-approval">Review Logs</Link>
               </Button>
             </div>
             <Clock className="h-12 w-12 text-purple-200 opacity-50" />
@@ -339,8 +366,8 @@ export default function OrganizationDashboard() {
             <div>
               <h3 className="font-bold text-lg mb-1">Invite Volunteers</h3>
               <p className="text-green-100 text-sm mb-4">{volunteersCount} volunteers — grow your impact team</p>
-              <Button size="sm" variant="secondary" className="text-green-600">
-                Send Invites
+              <Button asChild size="sm" variant="secondary" className="text-green-600">
+                <Link to="/organization/volunteers">Send Invites</Link>
               </Button>
             </div>
             <Users className="h-12 w-12 text-green-200 opacity-50" />
