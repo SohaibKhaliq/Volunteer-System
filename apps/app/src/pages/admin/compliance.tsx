@@ -1,28 +1,370 @@
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator
+} from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
+import {
+  MoreVertical,
+  Search,
+  Filter,
+  Download,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  Eye,
+  FileText,
+  Mail,
+  Clock,
+  Shield,
+  AlertCircle
+} from 'lucide-react';
+import { toast } from '@/components/atoms/use-toast';
+
+interface ComplianceDocument {
+  id: number;
+  userId: number;
+  userName: string;
+  userEmail: string;
+  docType: 'background_check' | 'wwcc' | 'police_check' | 'certification' | 'other';
+  status: 'pending' | 'approved' | 'rejected' | 'expired';
+  uploadedAt: string;
+  expiresAt?: string;
+  verifiedAt?: string;
+  verifiedBy?: string;
+  notes?: string;
+  riskLevel?: 'low' | 'medium' | 'high';
+}
 
 export default function AdminCompliance() {
-  const { data: docs, isLoading } = useQuery(['compliance'], () => api.list('compliance'));
+  const queryClient = useQueryClient();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [docTypeFilter, setDocTypeFilter] = useState<string>('all');
 
-  if (isLoading) return <div>Loading compliance…</div>;
+  const { data: docsRaw, isLoading } = useQuery(['compliance'], () => api.listCompliance());
+  const { data: usersRaw } = useQuery(['users', 'all'], () => api.listUsers());
+  const { data: checksRaw } = useQuery(['backgroundChecks'], () => api.listBackgroundChecks());
+
+  const docs = Array.isArray(docsRaw) ? docsRaw : ((docsRaw as any)?.data ?? []);
+  const users = Array.isArray(usersRaw) ? usersRaw : ((usersRaw as any)?.data ?? []);
+  const checks = Array.isArray(checksRaw) ? checksRaw : ((checksRaw as any)?.data ?? []);
+
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+
+  // Mutations
+  const approveMutation = useMutation({
+    mutationFn: (docId: number) =>
+      api.updateComplianceDoc(docId, { status: 'approved', verifiedAt: new Date().toISOString() }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['compliance']);
+      toast({ title: 'Document approved', variant: 'success' });
+    }
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: ({ docId, notes }: { docId: number; notes: string }) =>
+      api.updateComplianceDoc(docId, { status: 'rejected', notes }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['compliance']);
+      toast({ title: 'Document rejected', variant: 'success' });
+    }
+  });
+
+  const sendReminderMutation = useMutation({
+    mutationFn: (userId: number) => api.sendComplianceReminder(userId),
+    onSuccess: () => {
+      toast({ title: 'Reminder sent', variant: 'success' });
+    }
+  });
+
+  const createCheck = useMutation({
+    mutationFn: (payload: any) => api.createBackgroundCheck(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['backgroundChecks']);
+      toast({ title: 'Background check requested', variant: 'success' });
+    }
+  });
+
+  // Filter documents
+  const filteredDocs = docs?.filter((doc: any) => {
+    const matchesSearch =
+      (doc.userName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (doc.userEmail || '').toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesStatus = statusFilter === 'all' || doc.status === statusFilter;
+    const matchesDocType = docTypeFilter === 'all' || doc.docType === docTypeFilter;
+
+    return matchesSearch && matchesStatus && matchesDocType;
+  });
+
+  const getStatusBadge = (status: string) => {
+    const variants: Record<string, { color: string; label: string; icon: any }> = {
+      pending: { color: 'bg-yellow-500', label: 'Pending', icon: Clock },
+      approved: { color: 'bg-green-500', label: 'Approved', icon: CheckCircle },
+      rejected: { color: 'bg-red-500', label: 'Rejected', icon: XCircle },
+      expired: { color: 'bg-orange-500', label: 'Expired', icon: AlertTriangle }
+    };
+    const variant = variants[status] || variants.pending;
+    const Icon = variant.icon;
+    return (
+      <Badge className={`${variant.color} gap-1`}>
+        <Icon className="h-3 w-3" />
+        {variant.label}
+      </Badge>
+    );
+  };
+
+  const getRiskBadge = (risk?: string) => {
+    if (!risk) return null;
+    const colors: Record<string, string> = { low: 'bg-green-500', medium: 'bg-yellow-500', high: 'bg-red-500' };
+    return <Badge className={colors[risk]}>{risk?.toUpperCase()} RISK</Badge>;
+  };
+
+  const getDocTypeLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      background_check: 'Background Check',
+      wwcc: 'WWCC',
+      police_check: 'Police Check',
+      certification: 'Certification',
+      other: 'Other'
+    };
+    return labels[type] || type;
+  };
+
+  const isExpiringSoon = (expiresAt?: string) => {
+    if (!expiresAt) return false;
+    const daysUntilExpiry = Math.ceil((new Date(expiresAt).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+    return daysUntilExpiry <= 30 && daysUntilExpiry > 0;
+  };
+
+  const isExpired = (expiresAt?: string) => {
+    if (!expiresAt) return false;
+    return new Date(expiresAt) < new Date();
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-lg">Loading compliance documents...</div>
+      </div>
+    );
+  }
+
+  const pendingCount = docs?.filter((d: any) => d.status === 'pending').length || 0;
+  const expiredCount = docs?.filter((d: any) => isExpired(d.expiresAt)).length || 0;
+  const expiringSoonCount = docs?.filter((d: any) => isExpiringSoon(d.expiresAt)).length || 0;
+  const highRiskCount = docs?.filter((d: any) => d.riskLevel === 'high').length || 0;
 
   return (
-    <div>
-      <h2 className="text-xl mb-4">Compliance</h2>
-      <div className="bg-white rounded shadow p-4">
-        <ul className="divide-y">
-          {Array.isArray(docs) &&
-            docs.map((d: any) => (
-              <li key={d.id} className="py-3 flex justify-between items-center">
-                <div>
-                  <div className="font-semibold">{d.docType}</div>
-                  <div className="text-sm text-slate-500">Status: {d.status}</div>
-                </div>
-                <div className="text-sm text-slate-600">Expires: {d.expiresAt}</div>
-              </li>
-            ))}
-        </ul>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Compliance & Verification</h2>
+          <p className="text-muted-foreground">Manage volunteer compliance documents and background checks</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm">
+            <Download className="h-4 w-4 mr-2" />
+            Export Report
+          </Button>
+          <Button variant="outline" size="sm">
+            <Mail className="h-4 w-4 mr-2" />
+            Send Bulk Reminders
+          </Button>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="flex gap-4 items-center bg-white p-4 rounded-lg shadow-sm">
+        <div className="flex-1 relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by volunteer name or email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              <Filter className="h-4 w-4 mr-2" />
+              Status: {statusFilter}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem onClick={() => setStatusFilter('all')}>All</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setStatusFilter('pending')}>Pending</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setStatusFilter('approved')}>Approved</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setStatusFilter('rejected')}>Rejected</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setStatusFilter('expired')}>Expired</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              <FileText className="h-4 w-4 mr-2" />
+              Type: {docTypeFilter}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent>
+            <DropdownMenuItem onClick={() => setDocTypeFilter('all')}>All Types</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setDocTypeFilter('background_check')}>Background Check</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setDocTypeFilter('wwcc')}>WWCC</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setDocTypeFilter('police_check')}>Police Check</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setDocTypeFilter('certification')}>Certification</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {/* Alert Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-yellow-500">
+          <div className="flex items-center gap-2 text-yellow-700">
+            <Clock className="h-5 w-5" />
+            <div className="text-sm font-medium">Pending Review</div>
+          </div>
+          <div className="text-2xl font-bold mt-2">{pendingCount}</div>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-red-500">
+          <div className="flex items-center gap-2 text-red-700">
+            <AlertTriangle className="h-5 w-5" />
+            <div className="text-sm font-medium">Expired</div>
+          </div>
+          <div className="text-2xl font-bold mt-2">{expiredCount}</div>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-orange-500">
+          <div className="flex items-center gap-2 text-orange-700">
+            <AlertCircle className="h-5 w-5" />
+            <div className="text-sm font-medium">Expiring Soon</div>
+          </div>
+          <div className="text-2xl font-bold mt-2">{expiringSoonCount}</div>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-purple-500">
+          <div className="flex items-center gap-2 text-purple-700">
+            <Shield className="h-5 w-5" />
+            <div className="text-sm font-medium">High Risk</div>
+          </div>
+          <div className="text-2xl font-bold mt-2">{highRiskCount}</div>
+        </div>
+      </div>
+
+      {/* Compliance Table */}
+      <div className="bg-white rounded-lg shadow-sm">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Volunteer</TableHead>
+              <TableHead>Document Type</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Uploaded</TableHead>
+              <TableHead>Expires</TableHead>
+              <TableHead>Risk Level</TableHead>
+              <TableHead>Verified By</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredDocs && filteredDocs.length > 0 ? (
+              filteredDocs.map((doc: any) => (
+                <TableRow
+                  key={doc.id}
+                  className={
+                    isExpired(doc.expiresAt) ? 'bg-red-50' : isExpiringSoon(doc.expiresAt) ? 'bg-yellow-50' : ''
+                  }
+                >
+                  <TableCell>
+                    <div>
+                      <div className="font-medium">{doc.userName}</div>
+                      <div className="text-sm text-muted-foreground">{doc.userEmail}</div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{getDocTypeLabel(doc.docType)}</Badge>
+                  </TableCell>
+                  <TableCell>{getStatusBadge(doc.status)}</TableCell>
+                  <TableCell className="text-sm">{new Date(doc.uploadedAt).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    {doc.expiresAt ? (
+                      <div className="text-sm">
+                        <div>{new Date(doc.expiresAt).toLocaleDateString()}</div>
+                        {isExpired(doc.expiresAt) && <Badge className="bg-red-500 mt-1">Expired</Badge>}
+                        {isExpiringSoon(doc.expiresAt) && !isExpired(doc.expiresAt) && (
+                          <Badge className="bg-orange-500 mt-1">Expiring Soon</Badge>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">N/A</span>
+                    )}
+                  </TableCell>
+                  <TableCell>{getRiskBadge(doc.riskLevel)}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{doc.verifiedBy || 'Not verified'}</TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem>
+                          <Eye className="h-4 w-4 mr-2" />
+                          View Document
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          <FileText className="h-4 w-4 mr-2" />
+                          View Details
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        {doc.status === 'pending' && (
+                          <>
+                            <DropdownMenuItem onClick={() => approveMutation.mutate(doc.id)} className="text-green-600">
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                              Approve
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                const notes = prompt('Rejection reason:');
+                                if (notes) rejectMutation.mutate({ docId: doc.id, notes });
+                              }}
+                              className="text-red-600"
+                            >
+                              <XCircle className="h-4 w-4 mr-2" />
+                              Reject
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => sendReminderMutation.mutate(doc.userId)}>
+                          <Mail className="h-4 w-4 mr-2" />
+                          Send Reminder
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                  No compliance documents found
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

@@ -7,7 +7,7 @@ export default class Event extends BaseModel {
   @column({ isPrimary: true })
   public id: number
 
-  @column()
+  @column({ columnName: 'organization_id' })
   public organizationId?: number
 
   @belongsTo(() => Organization)
@@ -22,6 +22,15 @@ export default class Event extends BaseModel {
   @column()
   public location?: string
 
+  @column({ columnName: 'recurring_rule' })
+  public recurringRule?: string
+
+  @column({ columnName: 'capacity' })
+  public capacity?: number
+
+  @column({ columnName: 'is_recurring' })
+  public isRecurring?: boolean
+
   @column.dateTime()
   public startAt: DateTime
 
@@ -31,7 +40,7 @@ export default class Event extends BaseModel {
   @hasMany(() => Task)
   public tasks: HasMany<typeof Task>
 
-  @column()
+  @column({ columnName: 'is_published' })
   public isPublished?: boolean
 
   @column.dateTime({ autoCreate: true })

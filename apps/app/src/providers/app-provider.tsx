@@ -1,9 +1,9 @@
-import useFingerprint from '@/hooks/useFingerprint';
 import api from '@/lib/api';
 import { useStore } from '@/lib/store';
 import { useQuery } from '@tanstack/react-query';
 import { createContext, useContext, useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { toast } from '@/components/atoms/use-toast';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 type AppProviderProps = {
   children: React.ReactNode;
@@ -11,7 +11,8 @@ type AppProviderProps = {
 
 type AppProviderState = {
   showBackButton: boolean;
-  authenticated?: boolean;
+  authenticated: boolean;
+  user?: any;
 };
 
 const initialState: AppProviderState = {
@@ -19,40 +20,58 @@ const initialState: AppProviderState = {
   authenticated: false
 };
 
-const AppProviderContext = createContext<AppProviderState>(initialState);
+const AppProviderContext = createContext<AppProviderState | undefined>(undefined);
 
 export default function AppProvider({ children }: AppProviderProps) {
   const location = useLocation();
+  const navigate = useNavigate();
   const [showBackButton, setShowBackButton] = useState(location.pathname !== '/');
-  const { fingerprint } = useFingerprint();
+
   const { token, setToken } = useStore();
 
-  const { isLoading } = useQuery({
-    queryKey: ['authenticate'],
-    queryFn: () => api.authenticate(fingerprint),
-    onSuccess: (data) => {
-      const token = data?.token.token;
-      if (token) setToken(token);
-    },
-    enabled: !token
+  const { data: me, isLoading: isLoadingMe } = useQuery({
+    queryKey: ['me'],
+    queryFn: api.getCurrentUser,
+    enabled: !!token, // only run when token exists
+    retry: false,
+    onError: (error: any) => {
+      const status = error?.response?.status;
+
+      if (status === 401) {
+        setToken('');
+        toast({
+          title: 'Session expired',
+          description: 'Please sign in again.'
+        });
+
+        const returnTo = encodeURIComponent(window.location.pathname + window.location.search + window.location.hash);
+
+        navigate(`/login?returnTo=${returnTo}`, { replace: true });
+      }
+    }
   });
 
-  const value = {
+  const value: AppProviderState = {
     showBackButton,
-    authenticated: !!token
+    authenticated: !!token,
+    user: me?.data ?? me // supports Axios or direct JSON
   };
 
   useEffect(() => {
     setShowBackButton(location.pathname !== '/');
   }, [location]);
 
-  if (isLoading) <div>Loading...</div>;
+  if (isLoadingMe && token) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
+
   return <AppProviderContext.Provider value={value}>{children}</AppProviderContext.Provider>;
 }
 
 export const useApp = () => {
   const context = useContext(AppProviderContext);
-  if (context === undefined) throw new Error('useApp must be used within a AppProvider');
-
+  if (!context) {
+    throw new Error('useApp must be used inside <AppProvider>');
+  }
   return context;
 };

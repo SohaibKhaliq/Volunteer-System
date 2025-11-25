@@ -1,5 +1,6 @@
-import { BaseModel, column, HasMany, hasMany, ManyToMany, manyToMany } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, column, HasMany, hasMany, ManyToMany, manyToMany, beforeSave } from '@ioc:Adonis/Lucid/Orm'
 import { DateTime } from 'luxon'
+import Hash from '@ioc:Adonis/Core/Hash'
 import CarpoolingAd from './CarpoolingAd'
 import HelpRequest from './HelpRequest'
 import Offer from './Offer'
@@ -12,10 +13,10 @@ export default class User extends BaseModel {
   @column({ isPrimary: true })
   public id: number
 
-  @column()
+  @column({ columnName: 'is_admin' })
   public isAdmin: boolean
 
-  @column()
+  @column({ columnName: 'is_disabled' })
   public isDisabled: boolean
 
   @column()
@@ -24,23 +25,26 @@ export default class User extends BaseModel {
   @column({ serializeAs: null })
   public password: string
 
-  @column()
-  public fingerprint: string
-
-  @column()
+  @column({ columnName: 'first_name' })
   public firstName?: string
 
-  @column()
+  @column({ columnName: 'last_name' })
   public lastName?: string
 
   @column()
   public phone?: string
 
-  @column.dateTime()
-  public lastActiveAt?: DateTime
+  @column({ columnName: 'profile_metadata' })
+  public profileMetadata?: string
 
-  @column()
+  @column.dateTime({ columnName: 'last_active_at' })
+  public lastLoginAt?: DateTime
+
+  @column({ columnName: 'volunteer_status' })
   public volunteerStatus?: string
+
+  @column.dateTime({ columnName: 'email_verified_at' })
+  public emailVerifiedAt?: DateTime
 
   @hasMany(() => CarpoolingAd)
   public carpoolingAds: HasMany<typeof CarpoolingAd>
@@ -71,4 +75,11 @@ export default class User extends BaseModel {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   public updatedAt: DateTime
+
+  @beforeSave()
+  public static async hashPassword(user: User) {
+    if (user.$dirty.password) {
+      user.password = await Hash.make(user.password)
+    }
+  }
 }

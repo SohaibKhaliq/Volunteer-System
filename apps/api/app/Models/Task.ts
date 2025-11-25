@@ -8,6 +8,7 @@ export default class Task extends BaseModel {
   public id: number
 
   @column()
+  @column({ columnName: 'event_id' })
   public eventId: number
 
   @belongsTo(() => Event)
@@ -20,16 +21,24 @@ export default class Task extends BaseModel {
   public description?: string
 
   @column.dateTime()
+  @column.dateTime({ columnName: 'start_at' })
   public startAt?: DateTime
 
   @column.dateTime()
+  @column.dateTime({ columnName: 'end_at' })
   public endAt?: DateTime
 
   @hasMany(() => Assignment)
   public assignments: HasMany<typeof Assignment>
 
-  @column()
+  @column({ columnName: 'slot_count' })
   public slotCount?: number
+
+  @column({ columnName: 'status' })
+  public status?: string
+
+  @column()
+  public priority?: string
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime

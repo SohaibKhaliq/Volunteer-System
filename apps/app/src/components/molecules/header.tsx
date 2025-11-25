@@ -1,22 +1,114 @@
 import { cn } from '@/lib/utils';
 import { useApp } from '@/providers/app-provider';
 import { useTheme } from '@/providers/theme-provider';
-import BackButton from '../atoms/back-button';
 import Language from '../atoms/language';
+import { Button } from '../ui/button';
+import api from '@/lib/api';
+import { useMutation } from '@tanstack/react-query';
+import { useStore } from '@/lib/store';
+import { showApiError } from '@/lib/error-to-toast';
+import { toast } from '@/components/atoms/use-toast';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import { useTranslation } from 'react-i18next';
 
 const Header = () => {
-  const { showBackButton } = useApp();
+  const { authenticated, user } = useApp();
   const { theme } = useTheme();
+  const { setToken } = useStore();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { t } = useTranslation();
+
+  const logoutMutation = useMutation(api.logout, {
+    onSuccess: () => {
+      setToken('');
+      try {
+        toast({ title: 'Signed out', description: 'You have been logged out.' });
+      } catch (e) {}
+      navigate('/login');
+    },
+    onError: (err: any) => {
+      showApiError(err, 'Logout failed');
+    }
+  });
 
   return (
-    <header className="flex justify-between w-full p-6 rtl:flex-row-reverse">
-      <BackButton
-        className={cn({
-          'opacity-0': !showBackButton
-        })}
-      />
-      <img src={theme === 'dark' ? '/logo-light.svg' : 'logo.svg'} alt="logo" className="object-cover h-10" />
-      <Language />
+    <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
+      <div className="container flex h-16 items-center justify-between">
+        <div className="flex items-center gap-8">
+          <Link to="/" className="flex items-center gap-2">
+            <img src={theme === 'dark' ? '/logo-light.svg' : '/logo.svg'} alt="logo" className="h-8 w-auto" />
+            <span className="text-xl font-bold hidden md:inline-block">Eghata</span>
+          </Link>
+
+          <nav className="hidden md:flex items-center gap-6">
+            <Link to="/" className={cn("text-sm font-medium transition-colors hover:text-primary", location.pathname === '/' ? "text-primary" : "text-muted-foreground")}>
+              {t('Home')}
+            </Link>
+            <Link to="/map" className={cn("text-sm font-medium transition-colors hover:text-primary", location.pathname === '/map' ? "text-primary" : "text-muted-foreground")}>
+              {t('Find Opportunities')}
+            </Link>
+            <Link to="/organizations" className={cn("text-sm font-medium transition-colors hover:text-primary", location.pathname === '/organizations' ? "text-primary" : "text-muted-foreground")}>
+              {t('Organizations')}
+            </Link>
+          </nav>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <Language />
+
+          {authenticated ? (
+            <div className="flex items-center gap-4">
+              {user?.roles?.some((r: any) => r.name === 'admin') && (
+                <Link to="/admin" className="hidden md:block text-sm font-medium text-muted-foreground hover:text-primary">
+                  Admin
+                </Link>
+              )}
+               {(user?.roles?.some((r: any) => r.name === 'organization_admin' || r.name === 'organization_member') || user?.organizationId) && (
+                <Link to="/organization" className="hidden md:block text-sm font-medium text-muted-foreground hover:text-primary">
+                  Organization
+                </Link>
+              )}
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="gap-2">
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
+                      {user?.firstName?.[0] || 'U'}
+                    </div>
+                    <span className="hidden sm:inline-block font-medium">{user?.firstName}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem onClick={() => navigate('/profile')} className="cursor-pointer">
+                    My Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/help-request')} className="cursor-pointer">
+                    Request Help
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/help-offer')} className="cursor-pointer">
+                    Offer Help
+                  </DropdownMenuItem>
+                  <div className="h-px bg-border my-1" />
+                  <DropdownMenuItem onClick={() => logoutMutation.mutate()} className="cursor-pointer text-red-600 focus:text-red-600">
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Link to="/login">
+                <Button variant="ghost" size="sm">{t('Log in')}</Button>
+              </Link>
+              <Link to="/register">
+                <Button size="sm">{t('Join Now')}</Button>
+              </Link>
+            </div>
+          )}
+        </div>
+      </div>
     </header>
   );
 };

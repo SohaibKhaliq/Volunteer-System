@@ -1,88 +1,44 @@
-import { Limiter } from '@adonisjs/limiter/build/services/index'
+
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { rules, schema } from '@ioc:Adonis/Core/Validator'
-import { LoginDTO } from 'shared/dist/dto/user'
+
 import User from '../../Models/User'
 
 export default class AuthController {
-  public async authenticate({ request, response, auth }: HttpContextContract) {
-    try {
-      const { fingerprint } = request.only(['fingerprint'])
-      const user = await User.firstOrCreate({ fingerprint })
-      const token = await auth.use('api').generate(user, {
-        expiresIn: '1 day' // Don't give too much time
-      })
-
-      return response.json({ token } as LoginDTO)
-    } catch (error) {
-      console.log(error)
-      return response.badRequest({
-        error: { message: 'Unable to authenticate' }
-      })
-    }
-  }
-
   public async register({ request, response, auth }: HttpContextContract) {
-    const throttleKey = `register_${request.ip()}`
-    const limiter = Limiter.use({
-      requests: 5,
-      duration: '60 mins',
-      blockDuration: '8 hours'
-    })
-
     try {
       const userSchema = schema.create({
-        fingerprint: schema.string({ trim: true }, [
-          rules.unique({ table: 'users', column: 'fingerprint', caseInsensitive: false })
-        ])
+        email: schema.string({ trim: true }, [
+          rules.email(),
+          rules.unique({ table: 'users', column: 'email', caseInsensitive: true })
+        ]),
+        password: schema.string({}, [rules.minLength(8)]),
+        firstName: schema.string.optional({ trim: true }),
+        lastName: schema.string.optional({ trim: true }),
       })
-      const data = await request.validate({ schema: userSchema })
 
-      if (await limiter.isBlocked(throttleKey)) {
-        return response.tooManyRequests({
-          error: { message: 'Too many requests. Please try after some time' }
-        })
-      }
+      const data = await request.validate({ schema: userSchema })
 
       const user = await User.create(data)
       const token = await auth.use('api').generate(user)
 
       return response.json({ token })
     } catch (error) {
-      await limiter.increment(throttleKey)
       return response.badRequest({
-        error: { message: 'Unable to register' }
+        error: { message: 'Unable to register', details: error.messages || error.message }
       })
     }
   }
 
   public async login({ request, response, auth }: HttpContextContract) {
-    const { fingerprint } = request.only(['fingerprint'])
-
-    const throttleKey = `login_${fingerprint}_${request.ip()}`
-
-    const limiter = Limiter.use({
-      requests: 1,
-      duration: '15 mins',
-      blockDuration: '30 mins'
-    })
-
-    if (await limiter.isBlocked(throttleKey)) {
-      return response.tooManyRequests({
-        error: { message: 'Too many requests. Please try after some time' }
-      })
-    }
+    const { email, password } = request.only(['email', 'password'])
 
     try {
-      const user = await User.findByOrFail('fingerprint', fingerprint)
-
-      const token = await auth.use('api').generate(user)
-
+      const token = await auth.use('api').attempt(email, password)
       return response.json({ token })
     } catch (error) {
-      await limiter.increment(throttleKey)
       return response.unauthorized({
-        error: { message: 'Invalid fingerprint' }
+        error: { message: 'Invalid credentials' }
       })
     }
   }

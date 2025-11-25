@@ -11,12 +11,7 @@ const loadPersistedState = () => {
 };
 
 const storage = {
-  getFingerprint() {
-    return localStorage.getItem('fingerprint');
-  },
-  setFingerprint(fingerprint: string) {
-    return localStorage.setItem('fingerprint', fingerprint);
-  },
+
   getToken() {
     const state = loadPersistedState();
     return state?.state?.token;
