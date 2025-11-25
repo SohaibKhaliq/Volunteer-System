@@ -1,4 +1,3 @@
-
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Link } from 'react-router-dom';
@@ -8,7 +7,11 @@ import { Users, Calendar, Clock, TrendingUp, Loader2, ArrowRight } from 'lucide-
 
 export default function OrganizationDashboard() {
   // Dashboard stats (fetched)
-  const { data: stats, isLoading } = useQuery({
+  const {
+    data: stats,
+    isLoading,
+    error
+  } = useQuery({
     queryKey: ['organizationDashboardStats'],
     queryFn: api.getOrganizationDashboardStats
   });
@@ -20,6 +23,25 @@ export default function OrganizationDashboard() {
       </div>
     );
   }
+
+  // If API returned 404 (user not part of any organization), show a friendly message
+  // if ((error as any)?.response?.status === 404) {
+  //   // API returned a friendly 404 telling the user they're not part of an organization
+  //   return (
+  //     <div className="min-h-[300px] flex flex-col items-center justify-center text-center p-8">
+  //       <h2 className="text-xl font-bold">Organization not found</h2>
+  //       <p className="text-sm text-muted-foreground mt-2">
+  //         You are not currently part of any organization. To use this dashboard, ask your organization admin to add you,
+  //         or create an organization.
+  //       </p>
+  //       <div className="mt-4 flex gap-2">
+  //         <Link to="/organization/profile">
+  //           <Button variant="outline">View Profile</Button>
+  //         </Link>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   const displayStats = stats || {
     activeVolunteers: 0,

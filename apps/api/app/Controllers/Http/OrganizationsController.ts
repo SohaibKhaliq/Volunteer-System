@@ -133,6 +133,16 @@ export default class OrganizationsController {
       return response.badRequest({ message: 'User not found' })
     }
 
+    // Prevent duplicate membership
+    const existing = await OrganizationTeamMember.query()
+      .where('organization_id', orgId)
+      .andWhere('user_id', targetUser.id)
+      .first()
+
+    if (existing) {
+      return response.conflict({ message: 'User is already a member of this organization' })
+    }
+
     const member = await OrganizationTeamMember.create({
       organizationId: orgId,
       userId: targetUser.id,
@@ -166,5 +176,37 @@ export default class OrganizationsController {
 
     await member.delete()
     return response.noContent()
+  }
+
+  // Update team member (role etc). Only allowed by org admins/coordinators
+  public async updateMember({ auth, params, request, response }: HttpContextContract) {
+    const currentUser = auth.user!
+    const currentOrgRec = await OrganizationTeamMember.query()
+      .where('user_id', currentUser.id)
+      .first()
+    if (!currentOrgRec)
+      return response.notFound({ message: 'User is not part of any organization' })
+
+    // Only admins/coordinators can update other members
+    const allowedRoles = ['admin', 'coordinator']
+    if (!allowedRoles.includes((currentOrgRec.role || '').toLowerCase())) {
+      return response.forbidden({ message: 'You do not have permission to update team members' })
+    }
+
+    const member = await OrganizationTeamMember.find(params.memberId)
+    if (!member) return response.notFound()
+
+    if (member.organizationId !== currentOrgRec.organizationId) {
+      return response.forbidden({ message: 'Member does not belong to your organization' })
+    }
+
+    const payload = request.only(['role'])
+    if (payload.role) member.role = payload.role
+
+    await member.save()
+    await member.refresh()
+    await member.preload('user')
+
+    return response.ok(member)
   }
 }

@@ -125,7 +125,9 @@ Route.resource('communications', 'CommunicationsController')
 
 // communication logs and retry
 Route.get('/communications/:id/logs', 'CommunicationsController.logs').middleware(['auth'])
-Route.post('/communications/logs/:id/retry', 'CommunicationsController.retryLog').middleware(['auth'])
+Route.post('/communications/logs/:id/retry', 'CommunicationsController.retryLog').middleware([
+  'auth'
+])
 Route.post('/communications/logs/bulk-retry', 'CommunicationsController.bulkRetryLogs').middleware([
   'auth'
 ])
@@ -197,6 +199,9 @@ Route.group(() => {
   // Team
   Route.get('/organization/team', 'OrganizationsController.team').middleware(['auth'])
   Route.post('/organization/team/invite', 'OrganizationsController.inviteMember').middleware([
+    'auth'
+  ])
+  Route.put('/organization/team/:memberId', 'OrganizationsController.updateMember').middleware([
     'auth'
   ])
   Route.delete('/organization/team/:memberId', 'OrganizationsController.removeMember').middleware([
