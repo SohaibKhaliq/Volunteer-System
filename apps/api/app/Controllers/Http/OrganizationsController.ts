@@ -4,7 +4,6 @@ import User from 'App/Models/User'
 import Database from '@ioc:Adonis/Lucid/Database'
 import { DateTime } from 'luxon'
 import OrganizationTeamMember from 'App/Models/OrganizationTeamMember'
-import User from 'App/Models/User'
 import Event from 'App/Models/Event'
 import OrganizationVolunteer from 'App/Models/OrganizationVolunteer'
 
@@ -476,6 +475,8 @@ export default class OrganizationsController {
       rejected: categorized.rejected.length,
       documents: categorized
     })
+  }
+
   // Dashboard Stats
   public async dashboardStats({ auth, response }: HttpContextContract) {
     const user = auth.user!
