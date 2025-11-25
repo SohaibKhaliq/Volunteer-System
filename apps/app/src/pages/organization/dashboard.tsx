@@ -31,6 +31,12 @@ export default function OrganizationDashboard() {
     queryFn: api.getOrganizationComplianceStats
   });
 
+  // Fetch organization documents so we can generate recent compliance activity (expiries, uploads)
+  const { data: documents } = useQuery({
+    queryKey: ['organizationDocuments'],
+    queryFn: api.listOrganizationDocuments
+  });
+
   const { data: pendingHoursData } = useQuery({
     queryKey: ['organizationPendingHours', 'count'],
     queryFn: () => api.getOrganizationPendingHours({ page: 1, limit: 1 })
@@ -56,21 +62,58 @@ export default function OrganizationDashboard() {
     impactScore: 0
   };
 
-  // Build small chart dataset from events grouped by date
-  // build a simple chart dataset from the first few events
-  type EventItem = { startAt?: string | number; assigned_volunteers?: number; title?: string };
-  const chartData = Array.isArray(events)
-    ? (events as EventItem[]).slice(0, 8).map((ev) => ({
-        date: new Date(String(ev.startAt)).toLocaleDateString(),
-        attendees: Number(ev.assigned_volunteers ?? 0)
-      }))
-    : [];
+  // Build small chart dataset from events (use a reliable human-friendly label `dateLabel` for tooltip)
+  type EventItem = {
+    startAt?: string | number;
+    start_at?: string | number;
+    start_date?: string | number;
+    assigned_volunteers?: number;
+    volunteer_count?: number;
+    title?: string;
+    createdAt?: string;
+    created_at?: string;
+  };
+  const eventsList = Array.isArray(events) ? (events as EventItem[]) : ((events as any)?.data ?? []);
 
-  type RecentItem = { type: 'event' | 'volunteer'; text: string; when?: string };
+  const chartData = eventsList
+    .slice(0, 8)
+    .map((ev) => {
+      // prefer explicit start date fields, fall back to created time
+      const rawDate = ev.startAt ?? ev.start_at ?? ev.start_date ?? ev.createdAt ?? ev.created_at;
+      const ts = rawDate ? Date.parse(String(rawDate)) : NaN;
+      const dateLabel = !Number.isNaN(ts) ? new Date(ts).toLocaleDateString() : 'Unknown';
+      const attendees = Number(ev.assigned_volunteers ?? ev.volunteer_count ?? 0);
+      return { dateLabel, dateRaw: ts, attendees };
+    })
+    .filter((d) => d.dateLabel !== 'Unknown');
+
+  type RecentItem = {
+    id?: string | number;
+    type: 'event' | 'volunteer' | 'compliance';
+    text: string;
+    when?: string;
+    ts?: number;
+  };
+
   const recentActivity: RecentItem[] = [];
-  if (Array.isArray(events)) {
-    for (const e of events.slice(0, 5)) {
-      recentActivity.push({ type: 'event', text: `Event: ${e.title}`, when: e.startAt });
+
+  // Add latest events
+  if (Array.isArray(eventsList)) {
+    for (const e of eventsList.slice(0, 10)) {
+      const raw =
+        (e as any).startAt ??
+        (e as any).start_at ??
+        (e as any).start_date ??
+        (e as any).createdAt ??
+        (e as any).created_at;
+      const ts = raw ? Date.parse(String(raw)) : Date.now();
+      recentActivity.push({
+        id: (e as any).id ?? (e as any).title,
+        type: 'event',
+        text: `Event created: ${e.title ?? 'Unnamed event'}`,
+        when: raw ? new Date(ts).toLocaleString() : undefined,
+        ts
+      });
     }
   }
   type VolunteerItem = {
@@ -78,15 +121,64 @@ export default function OrganizationDashboard() {
     createdAt?: string;
     created_at?: string;
   };
-  if (Array.isArray(volunteers)) {
-    for (const v of (volunteers as VolunteerItem[]).slice(0, 5)) {
+  const volunteersList = Array.isArray(volunteers)
+    ? (volunteers as VolunteerItem[])
+    : ((volunteers as any)?.data ?? []);
+  if (Array.isArray(volunteersList)) {
+    for (const v of volunteersList.slice(0, 10)) {
+      const raw = (v as any).createdAt ?? (v as any).created_at;
+      const ts = raw ? Date.parse(String(raw)) : Date.now();
       recentActivity.push({
+        id: (v as any).id ?? (v as any).user?.email,
         type: 'volunteer',
-        text: `Volunteer: ${v.user?.first_name || v.user?.firstName || v.user?.email}`,
-        when: v.createdAt || v.created_at
+        text: `New volunteer: ${v.user?.first_name ?? v.user?.firstName ?? v.user?.email ?? 'Unknown'}`,
+        when: raw ? new Date(ts).toLocaleString() : undefined,
+        ts
       });
     }
   }
+
+  // Add recent compliance changes (uploads, expiring soon)
+  const docsList = Array.isArray(documents) ? (documents as any[]) : ((documents as any)?.data ?? []);
+  if (Array.isArray(docsList)) {
+    for (const d of docsList.slice(0, 20)) {
+      // use created_at / uploadedAt / issued_at as event time; also check expires_at for expiring soon
+      const createdRaw = d.createdAt ?? d.created_at ?? d.uploadedAt ?? d.uploaded_at;
+      const createdTs = createdRaw ? Date.parse(String(createdRaw)) : NaN;
+
+      // Expiring soon: within 30 days
+      const expiresRaw = d.expiresAt ?? d.expires_at ?? d.expiration_date;
+      const expiresTs = expiresRaw ? Date.parse(String(expiresRaw)) : NaN;
+      if (!Number.isNaN(expiresTs)) {
+        const now = Date.now();
+        const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+        if (expiresTs > now && expiresTs - now <= thirtyDays) {
+          recentActivity.push({
+            id: d.id,
+            type: 'compliance',
+            text: `Compliance doc expiring soon: ${d.name ?? d.doc_type ?? 'document'}`,
+            when: new Date(expiresTs).toLocaleString(),
+            ts: expiresTs
+          });
+        }
+      }
+
+      // Newly uploaded
+      if (!Number.isNaN(createdTs)) {
+        recentActivity.push({
+          id: d.id,
+          type: 'compliance',
+          text: `Compliance uploaded: ${d.name ?? d.doc_type ?? 'document'}`,
+          when: new Date(createdTs).toLocaleString(),
+          ts: createdTs
+        });
+      }
+    }
+  }
+
+  // sort by timestamp desc and take up to 5 most recent
+  recentActivity.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+  const recentSlice = recentActivity.slice(0, 5);
 
   // use compliance in UI to avoid unused var
   type ComplianceStats = { compliantVolunteers?: number; pendingDocuments?: number; expiringSoon?: number };
@@ -174,7 +266,7 @@ export default function OrganizationDashboard() {
               {chartData.length > 0 ? (
                 <ResponsiveContainer width="100%" height={200}>
                   <AreaChart data={chartData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
-                    <XAxis dataKey="date" hide />
+                    <XAxis dataKey="dateLabel" hide />
                     <Tooltip />
                     <Area type="monotone" dataKey="attendees" stroke="#0ea5e9" fill="#0ea5e9" />
                   </AreaChart>
@@ -194,24 +286,18 @@ export default function OrganizationDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-8">
-              <div className="flex items-center">
-                <div className="ml-4 space-y-1">
-                  <p className="text-sm font-medium leading-none">Sarah Ahmed joined &quot;Beach Cleanup&quot;</p>
-                  <p className="text-sm text-muted-foreground">2 minutes ago</p>
-                </div>
-              </div>
-              <div className="flex items-center">
-                <div className="ml-4 space-y-1">
-                  <p className="text-sm font-medium leading-none">New volunteer application: John Doe</p>
-                  <p className="text-sm text-muted-foreground">1 hour ago</p>
-                </div>
-              </div>
-              <div className="flex items-center">
-                <div className="ml-4 space-y-1">
-                  <p className="text-sm font-medium leading-none">Compliance document expiring soon</p>
-                  <p className="text-sm text-muted-foreground">5 hours ago</p>
-                </div>
-              </div>
+              {recentSlice.length === 0 ? (
+                <div className="text-sm text-muted-foreground">No recent activity</div>
+              ) : (
+                recentSlice.map((item) => (
+                  <div className="flex items-center" key={`${item.type}-${item.id ?? item.ts ?? Math.random()}`}>
+                    <div className="ml-4 space-y-1">
+                      <p className="text-sm font-medium leading-none">{item.text}</p>
+                      <p className="text-sm text-muted-foreground">{item.when ?? 'Just now'}</p>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
