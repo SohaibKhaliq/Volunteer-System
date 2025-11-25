@@ -50,6 +50,8 @@ const MOCK_RIDES = [
 const Carpooling = () => {
   const { t } = useTranslation();
   const [date, setDate] = useState<Date | undefined>(new Date());
+  // Filters panel state (closed by default)
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-slate-50 py-12">
@@ -109,9 +111,22 @@ const Carpooling = () => {
         </Card>
 
         {/* Results */}
+        {/* Filters toggle (closed on initial load) */}
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <Button
+              variant="outline"
+              onClick={() => setFiltersOpen((s) => !s)}
+              aria-expanded={filtersOpen}
+              aria-controls="filters-panel"
+            >
+              <Filter className="h-4 w-4 mr-2" /> {filtersOpen ? t('Hide Filters') : t('Filters')}
+            </Button>
+          </div>
+        </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Filters Sidebar (Desktop) */}
-          <div className="hidden lg:block space-y-6">
+          {/* Filters Sidebar (desktop + responsive) - initially hidden, toggle opens it */}
+          <div id="filters-panel" className={`${filtersOpen ? 'block' : 'hidden'} space-y-6 lg:space-y-6` }>
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
