@@ -17,14 +17,23 @@ export default class OrganizationsController {
     return response.created(org)
   }
 
-  public async show({ params, response }: HttpContextContract) {
-    const org = await Organization.find(params.id)
+  public async show({ auth, response }: HttpContextContract) {
+    const user = auth.user!
+
+    const memberRecord = await OrganizationTeamMember.query().where('user_id', user.id).first()
+    if (!memberRecord) return response.notFound({ message: 'User is not part of any organization' })
+
+    const org = await Organization.find(memberRecord.organizationId)
     if (!org) return response.notFound()
     return response.ok(org)
   }
 
-  public async update({ params, request, response }: HttpContextContract) {
-    const org = await Organization.find(params.id)
+  public async update({ auth, request, response }: HttpContextContract) {
+    const user = auth.user!
+    const memberRecord = await OrganizationTeamMember.query().where('user_id', user.id).first()
+    if (!memberRecord) return response.notFound({ message: 'User is not part of any organization' })
+
+    const org = await Organization.find(memberRecord.organizationId)
     if (!org) return response.notFound()
     org.merge(
       request.only([
@@ -50,11 +59,9 @@ export default class OrganizationsController {
   // Dashboard Stats
   public async dashboardStats({ auth, response }: HttpContextContract) {
     const user = auth.user!
-    
+
     // Find organization for the current user
-    const memberRecord = await OrganizationTeamMember.query()
-      .where('user_id', user.id)
-      .first()
+    const memberRecord = await OrganizationTeamMember.query().where('user_id', user.id).first()
 
     if (!memberRecord) {
       return response.notFound({ message: 'User is not part of any organization' })
@@ -76,11 +83,9 @@ export default class OrganizationsController {
       .where('organization_id', orgId)
       .sum('hours as total')
 
-
-
     const volCount = activeVolunteers[0].$extras.total
     const hoursCount = totalHours[0].$extras.total || 0
-    
+
     // Simple impact score calculation: (Total Hours / Active Volunteers) * 10, capped at 100
     let impactScore = 0
     if (volCount > 0) {
@@ -96,38 +101,69 @@ export default class OrganizationsController {
   }
 
   // Team Management
-  public async team({ params, response }: HttpContextContract) {
-    // params.id is organization id
+  public async team({ auth, response }: HttpContextContract) {
+    const user = auth.user!
+    const memberRecord = await OrganizationTeamMember.query().where('user_id', user.id).first()
+    if (!memberRecord) return response.notFound({ message: 'User is not part of any organization' })
+
+    const orgId = memberRecord.organizationId
     const members = await OrganizationTeamMember.query()
-      .where('organization_id', params.id)
+      .where('organization_id', orgId)
       .preload('user')
     return response.ok(members)
   }
 
-  public async inviteMember({ params, request, response }: HttpContextContract) {
-    const orgId = params.id
+  public async inviteMember({ auth, request, response }: HttpContextContract) {
+    const currentUser = auth.user!
+    const memberRecord = await OrganizationTeamMember.query()
+      .where('user_id', currentUser.id)
+      .first()
+    if (!memberRecord) return response.notFound({ message: 'User is not part of any organization' })
+
+    const orgId = memberRecord.organizationId
+    // Only allow invites from Admins or Coordinators
+    const allowedInviteRoles = ['admin', 'coordinator']
+    if (!allowedInviteRoles.includes((memberRecord.role || '').toLowerCase())) {
+      return response.forbidden({ message: 'You do not have permission to invite members' })
+    }
     const { email, role } = request.only(['email', 'role'])
-    
-    const user = await User.findBy('email', email)
-    if (!user) {
+
+    const targetUser = await User.findBy('email', email)
+    if (!targetUser) {
       return response.badRequest({ message: 'User not found' })
     }
 
     const member = await OrganizationTeamMember.create({
       organizationId: orgId,
-      userId: user.id,
+      userId: targetUser.id,
       role: role || 'Member'
     })
 
     return response.created(member)
   }
 
-  public async removeMember({ params, response }: HttpContextContract) {
+  public async removeMember({ auth, params, response }: HttpContextContract) {
     // params.id is organization id, params.memberId is user id or team member id
     // Let's assume route is /organizations/:id/team/:memberId
     // where memberId is the ID of the OrganizationTeamMember record
+    const user = auth.user!
+    const currentOrgRec = await OrganizationTeamMember.query().where('user_id', user.id).first()
+    if (!currentOrgRec)
+      return response.notFound({ message: 'User is not part of any organization' })
+
     const member = await OrganizationTeamMember.find(params.memberId)
     if (!member) return response.notFound()
+
+    if (member.organizationId !== currentOrgRec.organizationId) {
+      return response.forbidden({ message: 'Member does not belong to your organization' })
+    }
+
+    // Only allow deletion by Admins or Coordinators
+    const allowedRemoveRoles = ['admin', 'coordinator']
+    if (!allowedRemoveRoles.includes((currentOrgRec.role || '').toLowerCase())) {
+      return response.forbidden({ message: 'You do not have permission to remove members' })
+    }
+
     await member.delete()
     return response.noContent()
   }
