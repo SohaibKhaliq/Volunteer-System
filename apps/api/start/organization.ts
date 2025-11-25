@@ -56,6 +56,24 @@ Route.group(() => {
   Route.get('/organization/compliance/stats', 'OrganizationComplianceController.stats').middleware([
     'auth'
   ])
+
+  // Hours Management
+  Route.get('/organization/hours/pending', 'VolunteerHoursManagementController.pending').middleware(['auth'])
+  Route.post('/organization/hours/:id/approve', 'VolunteerHoursManagementController.approve').middleware(['auth'])
+  Route.post('/organization/hours/:id/reject', 'VolunteerHoursManagementController.reject').middleware(['auth'])
+  Route.post('/organization/hours/bulk-approve', 'VolunteerHoursManagementController.bulkApprove').middleware(['auth'])
+  Route.get('/organization/volunteers/:id/hours', 'VolunteerHoursManagementController.volunteerHours').middleware(['auth'])
+
+  // Analytics
+  Route.get('/organization/analytics/volunteers', 'VolunteerAnalyticsController.volunteers').middleware(['auth'])
+  Route.get('/organization/analytics/leaderboard', 'VolunteerAnalyticsController.leaderboard').middleware(['auth'])
+  Route.get('/organization/analytics/trends', 'VolunteerAnalyticsController.trends').middleware(['auth'])
+
+  // Communications
+  Route.get('/organization/communications', 'OrganizationCommunicationsController.index').middleware(['auth'])
+  Route.post('/organization/communications/send', 'OrganizationCommunicationsController.send').middleware(['auth'])
+  Route.get('/organization/communications/:id', 'OrganizationCommunicationsController.show').middleware(['auth'])
+  Route.post('/organization/communications/broadcast', 'OrganizationCommunicationsController.broadcast').middleware(['auth'])
 }).prefix('')
 
 export {}
