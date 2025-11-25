@@ -10,9 +10,9 @@ import OrganizationVolunteer from 'App/Models/OrganizationVolunteer'
 export default class OrganizationsController {
   public async index({ response, request }: HttpContextContract) {
     const { withCounts } = request.qs()
-    
+
     const query = Organization.query()
-    
+
     if (withCounts === 'true') {
       // Load counts for frontend
       const orgs = await query
@@ -29,7 +29,7 @@ export default class OrganizationsController {
       )
       return response.ok(orgsWithCounts)
     }
-    
+
     const list = await query
     return response.ok(list)
   }
@@ -49,7 +49,15 @@ export default class OrganizationsController {
     if (params?.id) {
       const org = await Organization.find(params.id)
       if (!org) return response.notFound()
-      return response.ok(org)
+      // normalize keys for frontend convenience
+      const payload: any = org.toJSON()
+      payload.email = payload.contactEmail ?? payload.email
+      payload.phone = payload.contactPhone ?? payload.phone
+      payload.website = payload.website ?? null
+      payload.address = payload.address ?? null
+      payload.type = payload.type ?? null
+      payload.logo = payload.logo ?? null
+      return response.ok(payload)
     }
 
     // Otherwise, resolve the organization for the authenticated user (org panel)
@@ -59,16 +67,25 @@ export default class OrganizationsController {
 
     const org = await Organization.find(memberRecord.organizationId)
     if (!org) return response.notFound()
-    
+
     // Include counts
     const volunteerCount = await org.getVolunteerCount()
     const eventCount = await org.getEventCount()
-    
-    return response.ok({
+
+    const payload: any = {
       ...org.toJSON(),
       volunteer_count: volunteerCount,
       event_count: eventCount
-    })
+    }
+    // provide easy keys which frontend expects
+    payload.email = payload.contactEmail ?? payload.email
+    payload.phone = payload.contactPhone ?? payload.phone
+    payload.website = payload.website ?? null
+    payload.address = payload.address ?? null
+    payload.type = payload.type ?? null
+    payload.logo = payload.logo ?? null
+
+    return response.ok(payload)
   }
 
   public async update({ auth, params, request, response }: HttpContextContract) {
@@ -90,16 +107,43 @@ export default class OrganizationsController {
       org = await Organization.find(memberRecord.organizationId)
       if (!org) return response.notFound()
     }
-    org.merge(
-      request.only([
-        'name',
-        'description',
-        'contact_email',
-        'contact_phone',
-        'is_approved',
-        'is_active'
-      ])
-    )
+    // Accept both camel/cased frontend keys and DB-style keys.
+    const body = request.only([
+      'name',
+      'description',
+      'contact_email',
+      'contact_phone',
+      'email',
+      'phone',
+      'website',
+      'address',
+      'type',
+      'logo',
+      'is_approved',
+      'is_active'
+    ])
+
+    // Normalize keys to model property names
+    if (body.email) body.contactEmail = body.email
+    if (body.phone) body.contactPhone = body.phone
+
+    // Map snake_case request keys as well
+    if (body.contact_email) body.contactEmail = body.contact_email
+    if (body.contact_phone) body.contactPhone = body.contact_phone
+
+    // Merge only allowed model keys
+    org.merge({
+      name: body.name,
+      description: body.description,
+      contactEmail: body.contactEmail,
+      contactPhone: body.contactPhone,
+      website: body.website,
+      address: body.address,
+      type: body.type,
+      logo: body.logo,
+      isApproved: body.is_approved ?? body.isApproved,
+      isActive: body.is_active ?? body.isActive
+    })
     await org.save()
     return response.ok(org)
   }
@@ -120,8 +164,7 @@ export default class OrganizationsController {
 
     const { status, role, search, page = 1, limit = 20 } = request.qs()
 
-    let query = Database
-      .from('users')
+    let query = Database.from('users')
       .join('organization_volunteers', 'users.id', 'organization_volunteers.user_id')
       .where('organization_volunteers.organization_id', org.id)
       .select(
@@ -152,14 +195,12 @@ export default class OrganizationsController {
     // Add volunteer hours for each
     const volunteersWithStats = await Promise.all(
       volunteers.map(async (volunteer) => {
-        const hoursResult = await Database
-          .from('volunteer_hours')
+        const hoursResult = await Database.from('volunteer_hours')
           .where('user_id', volunteer.id)
           .where('status', 'approved')
           .sum('hours as total_hours')
-        
-        const eventsResult = await Database
-          .from('assignments')
+
+        const eventsResult = await Database.from('assignments')
           .join('tasks', 'tasks.id', 'assignments.task_id')
           .where('assignments.user_id', volunteer.id)
           .whereNotNull('tasks.event_id')
@@ -183,19 +224,18 @@ export default class OrganizationsController {
     const org = await Organization.find(params.id)
     if (!org) return response.notFound({ message: 'Organization not found' })
 
-    const { user_id, role = 'volunteer', status = 'active', notes } = request.only([
-      'user_id',
-      'role',
-      'status',
-      'notes'
-    ])
+    const {
+      user_id,
+      role = 'volunteer',
+      status = 'active',
+      notes
+    } = request.only(['user_id', 'role', 'status', 'notes'])
 
     const user = await User.find(user_id)
     if (!user) return response.notFound({ message: 'User not found' })
 
     // Check if already exists
-    const existing = await Database
-      .from('organization_volunteers')
+    const existing = await Database.from('organization_volunteers')
       .where('organization_id', org.id)
       .where('user_id', user_id)
       .first()
@@ -231,8 +271,7 @@ export default class OrganizationsController {
     if (status) updateData.status = status
     if (notes !== undefined) updateData.notes = notes
 
-    await Database
-      .from('organization_volunteers')
+    await Database.from('organization_volunteers')
       .where('organization_id', org.id)
       .where('user_id', userId)
       .update(updateData)
@@ -261,21 +300,18 @@ export default class OrganizationsController {
     const org = await Organization.find(params.id)
     if (!org) return response.notFound({ message: 'Organization not found' })
 
-    const events = await Database
-      .from('events')
+    const events = await Database.from('events')
       .where('organization_id', org.id)
       .orderBy('start_date', 'desc')
 
     // Add attendance for each event
     const eventsWithStats = await Promise.all(
       events.map(async (event) => {
-        const tasksResult = await Database
-          .from('tasks')
+        const tasksResult = await Database.from('tasks')
           .where('event_id', event.id)
           .count('* as task_count')
 
-        const assignmentsResult = await Database
-          .from('assignments')
+        const assignmentsResult = await Database.from('assignments')
           .join('tasks', 'tasks.id', 'assignments.task_id')
           .where('tasks.event_id', event.id)
           .count('* as volunteer_count')
@@ -298,8 +334,7 @@ export default class OrganizationsController {
     const org = await Organization.find(params.id)
     if (!org) return response.notFound({ message: 'Organization not found' })
 
-    const tasks = await Database
-      .from('tasks')
+    const tasks = await Database.from('tasks')
       .join('events', 'events.id', 'tasks.event_id')
       .where('events.organization_id', org.id)
       .select('tasks.*', 'events.title as event_title')
@@ -308,8 +343,7 @@ export default class OrganizationsController {
     // Add assignment counts
     const tasksWithAssignments = await Promise.all(
       tasks.map(async (task) => {
-        const assignmentsResult = await Database
-          .from('assignments')
+        const assignmentsResult = await Database.from('assignments')
           .where('task_id', task.id)
           .count('* as assignment_count')
 
@@ -332,17 +366,11 @@ export default class OrganizationsController {
 
     const { status, userId, startDate, endDate, page = 1, limit = 50 } = request.qs()
 
-    let query = Database
-      .from('volunteer_hours')
+    let query = Database.from('volunteer_hours')
       .join('organization_volunteers', 'volunteer_hours.user_id', 'organization_volunteers.user_id')
       .join('users', 'users.id', 'volunteer_hours.user_id')
       .where('organization_volunteers.organization_id', org.id)
-      .select(
-        'volunteer_hours.*',
-        'users.first_name',
-        'users.last_name',
-        'users.email'
-      )
+      .select('volunteer_hours.*', 'users.first_name', 'users.last_name', 'users.email')
       .orderBy('volunteer_hours.date', 'desc')
 
     if (status) {
@@ -379,10 +407,7 @@ export default class OrganizationsController {
     const updateData: any = { status }
     if (notes) updateData.notes = notes
 
-    await Database
-      .from('volunteer_hours')
-      .whereIn('id', hour_ids)
-      .update(updateData)
+    await Database.from('volunteer_hours').whereIn('id', hour_ids).update(updateData)
 
     return response.ok({ message: `${hour_ids.length} hours ${status}` })
   }
@@ -402,8 +427,7 @@ export default class OrganizationsController {
     const analytics = await org.getAnalytics(start, end)
 
     // Get volunteer growth (monthly)
-    const volunteerGrowth = await Database
-      .from('organization_volunteers')
+    const volunteerGrowth = await Database.from('organization_volunteers')
       .where('organization_id', org.id)
       .select(Database.raw("DATE_TRUNC('month', joined_at) as month"))
       .count('* as count')
@@ -412,8 +436,7 @@ export default class OrganizationsController {
       .limit(12)
 
     // Get top volunteers by hours
-    const topVolunteers = await Database
-      .from('volunteer_hours')
+    const topVolunteers = await Database.from('volunteer_hours')
       .join('organization_volunteers', 'volunteer_hours.user_id', 'organization_volunteers.user_id')
       .join('users', 'users.id', 'volunteer_hours.user_id')
       .where('organization_volunteers.organization_id', org.id)
@@ -443,25 +466,37 @@ export default class OrganizationsController {
     if (!org) return response.notFound({ message: 'Organization not found' })
 
     // Get compliance documents for all volunteers
-    const compliance = await Database
-      .from('compliance_documents')
-      .join('organization_volunteers', 'compliance_documents.user_id', 'organization_volunteers.user_id')
+    const compliance = await Database.from('compliance_documents')
+      .join(
+        'organization_volunteers',
+        'compliance_documents.user_id',
+        'organization_volunteers.user_id'
+      )
       .join('users', 'users.id', 'compliance_documents.user_id')
       .where('organization_volunteers.organization_id', org.id)
-      .select(
-        'compliance_documents.*',
-        'users.first_name',
-        'users.last_name',
-        'users.email'
-      )
+      .select('compliance_documents.*', 'users.first_name', 'users.last_name', 'users.email')
       .orderBy('compliance_documents.expiration_date', 'asc')
 
     // Categorize by status
     const now = DateTime.now()
     const categorized = {
-      valid: compliance.filter((doc) => doc.status === 'approved' && (!doc.expiration_date || DateTime.fromJSDate(doc.expiration_date) > now)),
-      expiring_soon: compliance.filter((doc) => doc.status === 'approved' && doc.expiration_date && DateTime.fromJSDate(doc.expiration_date).diff(now, 'days').days <= 30),
-      expired: compliance.filter((doc) => doc.status === 'approved' && doc.expiration_date && DateTime.fromJSDate(doc.expiration_date) < now),
+      valid: compliance.filter(
+        (doc) =>
+          doc.status === 'approved' &&
+          (!doc.expiration_date || DateTime.fromJSDate(doc.expiration_date) > now)
+      ),
+      expiring_soon: compliance.filter(
+        (doc) =>
+          doc.status === 'approved' &&
+          doc.expiration_date &&
+          DateTime.fromJSDate(doc.expiration_date).diff(now, 'days').days <= 30
+      ),
+      expired: compliance.filter(
+        (doc) =>
+          doc.status === 'approved' &&
+          doc.expiration_date &&
+          DateTime.fromJSDate(doc.expiration_date) < now
+      ),
       pending: compliance.filter((doc) => doc.status === 'pending'),
       rejected: compliance.filter((doc) => doc.status === 'rejected')
     }
