@@ -237,6 +237,7 @@ const api = {
   getUser: async (id: number) => axios.get(`/users/${id}`),
 
   updateOrganizationProfile: async (data: any) => axios.put('/organization/profile', data),
+  getOrganizationProfile: async () => axios.get('/organization/profile'),
 
   // Team
   listOrganizationTeam: async () => axios.get('/organization/team'),
@@ -263,7 +264,37 @@ const api = {
   getOrganizationComplianceStats: async () => axios.get('/organization/compliance/stats'),
 
   // Dashboard
-  getOrganizationDashboardStats: async () => axios.get('/organization/dashboard-stats')
+  getOrganizationDashboardStats: async () => axios.get('/organization/dashboard-stats'),
+
+  // Volunteer Hours Management
+  getOrganizationPendingHours: async (filters?: any) => 
+    axios.get('/organization/hours/pending', { params: filters }),
+  approveVolunteerHour: async (id: number, notes?: string) => 
+    axios.post(`/organization/hours/${id}/approve`, { notes }),
+  rejectVolunteerHour: async (id: number, reason?: string) => 
+    axios.post(`/organization/hours/${id}/reject`, { reason }),
+  bulkApproveHours: async (ids: number[]) => 
+    axios.post('/organization/hours/bulk-approve', { ids }),
+  getVolunteerHours: async (volunteerId: number, filters?: any) => 
+    axios.get(`/organization/volunteers/${volunteerId}/hours`, { params: filters }),
+
+  // Volunteer Analytics
+  getVolunteerAnalytics: async (dateRange?: any) => 
+    axios.get('/organization/analytics/volunteers', { params: dateRange }),
+  getVolunteerLeaderboard: async (params?: any) => 
+    axios.get('/organization/analytics/leaderboard', { params }),
+  getVolunteerTrends: async (dateRange?: any) => 
+    axios.get('/organization/analytics/trends', { params: dateRange }),
+
+  // Communications
+  getOrganizationCommunications: async (filters?: any) => 
+    axios.get('/organization/communications', { params: filters }),
+  sendOrganizationMessage: async (data: any) => 
+    axios.post('/organization/communications/send', data),
+  getOrganizationCommunication: async (id: number) => 
+    axios.get(`/organization/communications/${id}`),
+  broadcastOrganizationMessage: async (data: any) => 
+    axios.post('/organization/communications/broadcast', data)
 } as const;
 
 export const useLazyQuery = (key: QueryKey, fn: QueryFunction, options = {}) => {
