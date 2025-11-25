@@ -22,6 +22,18 @@ export default class Organization extends BaseModel {
   public contactPhone?: string
 
   @column()
+  public logo?: string
+
+  @column()
+  public type?: string
+
+  @column()
+  public website?: string
+
+  @column()
+  public address?: string
+
+  @column()
   public isApproved?: boolean
 
   @column()
@@ -56,8 +68,7 @@ export default class Organization extends BaseModel {
    * Get total volunteer count
    */
   public async getVolunteerCount(): Promise<number> {
-    const result = await Database
-      .from('organization_volunteers')
+    const result = await Database.from('organization_volunteers')
       .where('organization_id', this.id)
       .count('* as total')
     return result[0]?.total || 0
@@ -67,8 +78,7 @@ export default class Organization extends BaseModel {
    * Get active volunteer count
    */
   public async getActiveVolunteerCount(): Promise<number> {
-    const result = await Database
-      .from('organization_volunteers')
+    const result = await Database.from('organization_volunteers')
       .where('organization_id', this.id)
       .where('status', 'active')
       .count('* as total')
@@ -79,8 +89,7 @@ export default class Organization extends BaseModel {
    * Get event count
    */
   public async getEventCount(): Promise<number> {
-    const result = await Database
-      .from('events')
+    const result = await Database.from('events')
       .where('organization_id', this.id)
       .count('* as total')
     return result[0]?.total || 0
@@ -90,12 +99,16 @@ export default class Organization extends BaseModel {
    * Get volunteers by status
    */
   public async getVolunteersByStatus(status: string) {
-    const volunteers = await Database
-      .from('users')
+    const volunteers = await Database.from('users')
       .join('organization_volunteers', 'users.id', 'organization_volunteers.user_id')
       .where('organization_volunteers.organization_id', this.id)
       .where('organization_volunteers.status', status)
-      .select('users.*', 'organization_volunteers.role', 'organization_volunteers.status', 'organization_volunteers.joined_at')
+      .select(
+        'users.*',
+        'organization_volunteers.role',
+        'organization_volunteers.status',
+        'organization_volunteers.joined_at'
+      )
     return volunteers
   }
 
@@ -108,8 +121,7 @@ export default class Organization extends BaseModel {
     const eventCount = await this.getEventCount()
 
     // Get total hours
-    let hoursQuery = Database
-      .from('volunteer_hours')
+    let hoursQuery = Database.from('volunteer_hours')
       .join('organization_volunteers', 'volunteer_hours.user_id', 'organization_volunteers.user_id')
       .where('organization_volunteers.organization_id', this.id)
       .where('volunteer_hours.status', 'approved')
