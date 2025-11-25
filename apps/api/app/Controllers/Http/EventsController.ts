@@ -38,6 +38,24 @@ export default class EventsController {
       }, 0)
       evJson.required_volunteers = required
       evJson.assigned_volunteers = assigned
+      // Friendly properties for frontend (date/time, registered/capacity)
+      try {
+        const d = new Date(ev.startAt as any)
+        evJson.date = d.toLocaleDateString()
+        evJson.time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      } catch (e) {
+        evJson.date = ev.startAt
+        evJson.time = ''
+      }
+      evJson.registered = assigned
+      evJson.capacity = ev.capacity ?? ev.capacity
+      evJson.type = ev.type ?? 'Community'
+      try {
+        const start = new Date(ev.startAt as any)
+        evJson.status = start > new Date() ? 'Upcoming' : 'Past'
+      } catch (e) {
+        evJson.status = 'Upcoming'
+      }
       return evJson
     })
 
@@ -82,6 +100,15 @@ export default class EventsController {
       payload.organizationId = raw.organization_id
     }
     if (typeof raw.is_published !== 'undefined') payload.isPublished = raw.is_published
+
+    // Support frontend sending separate `date` and `time` fields (e.g. from forms)
+    if (!payload.startAt && raw.date && raw.time) {
+      try {
+        payload.startAt = new Date(`${raw.date}T${raw.time}`)
+      } catch (e) {
+        // ignore — leave undefined
+      }
+    }
 
     const event = await Event.create(payload)
     return response.created(event)
@@ -143,6 +170,15 @@ export default class EventsController {
     if (typeof raw.capacity !== 'undefined') normalized.capacity = raw.capacity
     if (typeof raw.is_published !== 'undefined') normalized.isPublished = raw.is_published
     if (typeof raw.organization_id !== 'undefined') normalized.organizationId = raw.organization_id
+
+    // support date/time fields for updates
+    if (!normalized.startAt && raw.date && raw.time) {
+      try {
+        normalized.startAt = new Date(`${raw.date}T${raw.time}`)
+      } catch (e) {
+        // ignore
+      }
+    }
 
     event.merge(normalized)
     await event.save()
