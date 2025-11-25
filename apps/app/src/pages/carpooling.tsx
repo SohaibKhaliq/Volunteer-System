@@ -84,23 +84,15 @@ const Carpooling = () => {
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
-                    variant={"outline"}
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !date && "text-muted-foreground"
-                    )}
+                    variant={'outline'}
+                    className={cn('w-full justify-start text-left font-normal', !date && 'text-muted-foreground')}
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {date ? format(date, "PPP") : <span>{t('Pick a date')}</span>}
+                    {date ? format(date, 'PPP') : <span>{t('Pick a date')}</span>}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={setDate}
-                    initialFocus
-                  />
+                  <Calendar mode="single" selected={date} onSelect={setDate} initialFocus />
                 </PopoverContent>
               </Popover>
               <Button className="w-full">
@@ -126,7 +118,7 @@ const Carpooling = () => {
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Filters Sidebar (desktop + responsive) - initially hidden, toggle opens it */}
-          <div id="filters-panel" className={`${filtersOpen ? 'block' : 'hidden'} space-y-6 lg:space-y-6` }>
+          <div id="filters-panel" className={`${filtersOpen ? 'block' : 'hidden'} space-y-6`}>
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
@@ -162,12 +154,10 @@ const Carpooling = () => {
                     {/* Time & Route */}
                     <div className="flex-1 space-y-4">
                       <div className="flex justify-between items-start">
-                        <Badge variant={ride.type === 'Offer' ? 'default' : 'secondary'}>
-                          {ride.type}
-                        </Badge>
+                        <Badge variant={ride.type === 'Offer' ? 'default' : 'secondary'}>{ride.type}</Badge>
                         <span className="font-bold text-lg text-primary">{ride.price}</span>
                       </div>
-                      
+
                       <div className="relative pl-6 border-l-2 border-slate-200 space-y-6 py-1">
                         <div className="relative">
                           <div className="absolute -left-[29px] top-1 h-3 w-3 rounded-full border-2 border-slate-400 bg-white" />
