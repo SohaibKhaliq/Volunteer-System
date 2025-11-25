@@ -1,7 +1,6 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import ComplianceDocument from 'App/Models/ComplianceDocument'
 
-
 export default class OrganizationComplianceController {
   public async index({ request, response }: HttpContextContract) {
     // In a real app, we'd filter by organization's users
@@ -62,11 +61,45 @@ export default class OrganizationComplianceController {
         .query()
         .where('user_id', auth.user!.id)
         .first()
-      if (member) orgId = member.organizationId
+
+      // If the current user is authenticated but is not a member of any org, mirror
+      // the behavior from dashboardStats and return Not Found (404)
+      if (!member) return response.notFound({ message: 'User is not part of any organization' })
+
+      orgId = member.organizationId
     }
 
+    // Build a base query scoped to the organization's users when orgId is provided.
+    // ComplianceDocument doesn't have an `organization_id` column. Instead, we compute
+    // the set of user IDs that belong to the organization (team members + volunteers)
+    // and filter ComplianceDocument by those user_ids.
     const baseQuery = ComplianceDocument.query()
-    if (typeof orgId !== 'undefined') baseQuery.where('organization_id', orgId)
+    if (typeof orgId !== 'undefined') {
+      // load user ids that belong to the organization from team members & volunteers
+      const OrganizationTeamMember = await import('App/Models/OrganizationTeamMember')
+      const OrganizationVolunteer = await import('App/Models/OrganizationVolunteer')
+
+      const memberRows = await OrganizationTeamMember.default
+        .query()
+        .where('organization_id', orgId)
+        .select('user_id')
+
+      const volunteerRows = await OrganizationVolunteer.default
+        .query()
+        .where('organization_id', orgId)
+        .select('user_id')
+
+      const userIds = new Set<number>()
+      memberRows.forEach((r: any) => userIds.add(r.user_id))
+      volunteerRows.forEach((r: any) => userIds.add(r.user_id))
+
+      if (userIds.size === 0) {
+        // no scoped users — return zeros
+        return response.ok({ compliantVolunteers: 0, pendingDocuments: 0, expiringSoon: 0 })
+      }
+
+      baseQuery.whereIn('user_id', Array.from(userIds))
+    }
 
     const pendingDocuments = await baseQuery.clone().where('status', 'Pending').count('* as total')
     const expiringSoon = await baseQuery
