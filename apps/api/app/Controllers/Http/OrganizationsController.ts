@@ -5,6 +5,8 @@ import Database from '@ioc:Adonis/Lucid/Database'
 import { DateTime } from 'luxon'
 import OrganizationTeamMember from 'App/Models/OrganizationTeamMember'
 import Event from 'App/Models/Event'
+import Drive from '@ioc:Adonis/Core/Drive'
+import Logger from '@ioc:Adonis/Core/Logger'
 import OrganizationVolunteer from 'App/Models/OrganizationVolunteer'
 
 export default class OrganizationsController {
@@ -51,12 +53,26 @@ export default class OrganizationsController {
       if (!org) return response.notFound()
       // normalize keys for frontend convenience
       const payload: any = org.toJSON()
-      payload.email = payload.contactEmail ?? payload.email
-      payload.phone = payload.contactPhone ?? payload.phone
+      payload.email = payload.contactEmail ?? payload.email ?? payload.contact_email
+      payload.phone = payload.contactPhone ?? payload.phone ?? payload.contact_phone
       payload.website = payload.website ?? null
       payload.address = payload.address ?? null
       payload.type = payload.type ?? null
       payload.logo = payload.logo ?? null
+      payload.public_profile = payload.public_profile ?? payload.publicProfile ?? false
+      payload.publicProfile = payload.public_profile
+      payload.auto_approve_volunteers =
+        payload.auto_approve_volunteers ?? payload.autoApproveVolunteers ?? false
+      payload.autoApproveVolunteers = payload.auto_approve_volunteers
+      // Try to convert stored disk path into an accessible URL using Drive
+      try {
+        if (payload.logo) {
+          const maybeUrl = await Drive.getUrl(payload.logo)
+          payload.logo = maybeUrl ?? payload.logo
+        }
+      } catch (e) {
+        // ignore — fallback to the stored path
+      }
       return response.ok(payload)
     }
 
@@ -84,6 +100,20 @@ export default class OrganizationsController {
     payload.address = payload.address ?? null
     payload.type = payload.type ?? null
     payload.logo = payload.logo ?? null
+    payload.public_profile = payload.public_profile ?? payload.publicProfile ?? false
+    payload.publicProfile = payload.public_profile
+    payload.auto_approve_volunteers =
+      payload.auto_approve_volunteers ?? payload.autoApproveVolunteers ?? false
+    payload.autoApproveVolunteers = payload.auto_approve_volunteers
+    // Try to convert stored disk path into an accessible URL using Drive
+    try {
+      if (payload.logo) {
+        const maybeUrl = await Drive.getUrl(payload.logo)
+        payload.logo = maybeUrl ?? payload.logo
+      }
+    } catch (e) {
+      // ignore — fallback to stored path
+    }
 
     return response.ok(payload)
   }
@@ -119,6 +149,8 @@ export default class OrganizationsController {
       'address',
       'type',
       'logo',
+      'public_profile',
+      'auto_approve_volunteers',
       'is_approved',
       'is_active'
     ])
@@ -131,21 +163,105 @@ export default class OrganizationsController {
     if (body.contact_email) body.contactEmail = body.contact_email
     if (body.contact_phone) body.contactPhone = body.contact_phone
 
-    // Merge only allowed model keys
-    org.merge({
-      name: body.name,
-      description: body.description,
-      contactEmail: body.contactEmail,
-      contactPhone: body.contactPhone,
-      website: body.website,
-      address: body.address,
-      type: body.type,
-      logo: body.logo,
-      isApproved: body.is_approved ?? body.isApproved,
-      isActive: body.is_active ?? body.isActive
-    })
+    // map settings keys
+    if (Object.prototype.hasOwnProperty.call(body, 'public_profile'))
+      body.publicProfile = body.public_profile
+    if (Object.prototype.hasOwnProperty.call(body, 'auto_approve_volunteers'))
+      body.autoApproveVolunteers = body.auto_approve_volunteers
+
+    // if a file was uploaded, handle saving it first
+    const updateData: any = {}
+    try {
+      const logoFile = request.file('logo')
+      if (logoFile) {
+        await logoFile.moveToDisk('local', { dirname: 'organizations' })
+        // prefer the disk path
+        updateData.logo = `organizations/${logoFile.fileName}`
+      }
+    } catch (err) {
+      Logger.error('Error saving organization logo: ' + String(err))
+    }
+
+    // Merge only provided keys to avoid clobbering existing data with undefined
+    const setIf = (key: string, mappedKey?: string) => {
+      if (Object.prototype.hasOwnProperty.call(body, key) && body[key] !== undefined) {
+        updateData[mappedKey ?? key] = body[key]
+      }
+    }
+
+    const parseBoolean = (v: any): boolean | undefined => {
+      if (v === undefined || v === null) return undefined
+      if (typeof v === 'boolean') return v
+      if (typeof v === 'number') return v === 1
+      if (typeof v === 'string') {
+        const lower = v.trim().toLowerCase()
+        if (lower === 'true' || lower === '1') return true
+        if (lower === 'false' || lower === '0') return false
+      }
+      return undefined
+    }
+
+    setIf('name')
+    setIf('description')
+    // contact email/phone can come in multiple shapes
+    setIf('contactEmail')
+    setIf('contactPhone')
+    setIf('contact_email', 'contactEmail')
+    setIf('contact_phone', 'contactPhone')
+    setIf('email', 'contactEmail')
+    setIf('phone', 'contactPhone')
+
+    setIf('website')
+    setIf('address')
+    setIf('type')
+    setIf('logo')
+    // boolean flags should be coerced to proper booleans (incoming FormData may carry 'true'/'false' strings)
+    if (Object.prototype.hasOwnProperty.call(body, 'publicProfile')) {
+      const parsed = parseBoolean(body.publicProfile)
+      if (parsed !== undefined) updateData.publicProfile = parsed
+      else updateData.publicProfile = body.publicProfile
+    }
+    if (Object.prototype.hasOwnProperty.call(body, 'autoApproveVolunteers')) {
+      const parsed = parseBoolean(body.autoApproveVolunteers)
+      if (parsed !== undefined) updateData.autoApproveVolunteers = parsed
+      else updateData.autoApproveVolunteers = body.autoApproveVolunteers
+    }
+
+    if (Object.prototype.hasOwnProperty.call(body, 'is_approved'))
+      updateData.isApproved = body.is_approved
+    if (Object.prototype.hasOwnProperty.call(body, 'is_active'))
+      updateData.isActive = body.is_active
+    if (Object.prototype.hasOwnProperty.call(body, 'isApproved'))
+      updateData.isApproved = body.isApproved
+    if (Object.prototype.hasOwnProperty.call(body, 'isActive')) updateData.isActive = body.isActive
+
+    org.merge(updateData)
     await org.save()
-    return response.ok(org)
+
+    // Return normalized payload so frontend sees consistent keys
+    const payload: any = org.toJSON()
+    payload.email = payload.contactEmail ?? payload.email ?? payload.contact_email
+    payload.phone = payload.contactPhone ?? payload.phone ?? payload.contact_phone
+    payload.website = payload.website ?? null
+    payload.address = payload.address ?? null
+    payload.type = payload.type ?? null
+    payload.logo = payload.logo ?? null
+    payload.public_profile = payload.public_profile ?? payload.publicProfile ?? false
+    payload.publicProfile = payload.public_profile
+    payload.auto_approve_volunteers =
+      payload.auto_approve_volunteers ?? payload.autoApproveVolunteers ?? false
+    payload.autoApproveVolunteers = payload.auto_approve_volunteers
+    // convert logo path to a usable URL if possible
+    try {
+      if (payload.logo) {
+        const url = await Drive.getUrl(payload.logo)
+        payload.logo = url ?? payload.logo
+      }
+    } catch (e) {
+      // ignore errors - just return stored path
+    }
+
+    return response.ok(payload)
   }
 
   public async destroy({ params, response }: HttpContextContract) {
