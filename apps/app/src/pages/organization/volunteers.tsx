@@ -144,10 +144,7 @@ export default function OrganizationVolunteers() {
       <div className="flex items-center gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search volunteers..."
-            className="pl-8"
-          />
+          <Input placeholder="Search volunteers..." className="pl-8" />
         </div>
         <Button variant="outline">
           <Filter className="h-4 w-4 mr-2" />
@@ -182,7 +179,12 @@ export default function OrganizationVolunteers() {
                       <div className="flex items-center gap-3">
                         <Avatar>
                           <AvatarImage src={volunteer.avatar} />
-                          <AvatarFallback>{volunteer.name?.split(' ').map((n: string) => n[0]).join('')}</AvatarFallback>
+                          <AvatarFallback>
+                            {volunteer.name
+                              ?.split(' ')
+                              .map((n: string) => n[0])
+                              .join('')}
+                          </AvatarFallback>
                         </Avatar>
                         <div>
                           <div className="font-medium">{volunteer.name}</div>
@@ -205,16 +207,25 @@ export default function OrganizationVolunteers() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => {
-                          setSelectedVolunteer(volunteer);
-                          setIsMessageOpen(true);
-                        }}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setSelectedVolunteer(volunteer);
+                            setIsMessageOpen(true);
+                          }}
+                        >
                           <Mail className="h-4 w-4" />
                         </Button>
                         <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(volunteer)}>
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="text-red-600" onClick={() => deleteVolunteerMutation.mutate(volunteer.id)}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-red-600"
+                          onClick={() => deleteVolunteerMutation.mutate(volunteer.id)}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -232,9 +243,7 @@ export default function OrganizationVolunteers() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Message {selectedVolunteer?.name}</DialogTitle>
-            <DialogDescription>
-              Send an email or in-app notification to this volunteer.
-            </DialogDescription>
+            <DialogDescription>Send an email or in-app notification to this volunteer.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
@@ -247,7 +256,9 @@ export default function OrganizationVolunteers() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsMessageOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setIsMessageOpen(false)}>
+              Cancel
+            </Button>
             <Button onClick={() => setIsMessageOpen(false)}>Send Message</Button>
           </DialogFooter>
         </DialogContent>
@@ -264,54 +275,66 @@ export default function OrganizationVolunteers() {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">Name</Label>
-              <Input 
-                id="name" 
-                className="col-span-3" 
+              <Label htmlFor="name" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="name"
+                className="col-span-3"
                 value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="email" className="text-right">Email</Label>
-              <Input 
-                id="email" 
-                className="col-span-3" 
+              <Label htmlFor="email" className="text-right">
+                Email
+              </Label>
+              <Input
+                id="email"
+                className="col-span-3"
                 value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="phone" className="text-right">Phone</Label>
-              <Input 
-                id="phone" 
-                className="col-span-3" 
+              <Label htmlFor="phone" className="text-right">
+                Phone
+              </Label>
+              <Input
+                id="phone"
+                className="col-span-3"
                 value={formData.phone}
-                onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="role" className="text-right">Role</Label>
-              <Input 
-                id="role" 
-                className="col-span-3" 
+              <Label htmlFor="role" className="text-right">
+                Role
+              </Label>
+              <Input
+                id="role"
+                className="col-span-3"
                 value={formData.role}
-                onChange={(e) => setFormData({...formData, role: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="skills" className="text-right">Skills</Label>
-              <Input 
-                id="skills" 
-                className="col-span-3" 
+              <Label htmlFor="skills" className="text-right">
+                Skills
+              </Label>
+              <Input
+                id="skills"
+                className="col-span-3"
                 placeholder="Comma separated"
                 value={formData.skills}
-                onChange={(e) => setFormData({...formData, skills: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setIsAddOpen(false)}>
+              Cancel
+            </Button>
             <Button onClick={handleSubmit}>{editingVolunteer ? 'Update' : 'Add'}</Button>
           </DialogFooter>
         </DialogContent>
