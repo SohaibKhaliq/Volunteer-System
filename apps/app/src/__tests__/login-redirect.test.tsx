@@ -18,7 +18,7 @@ function renderWithProviders(ui: React.ReactElement, { route = '/login?returnTo=
 
 describe('Login page redirect behavior', () => {
   it('navigates back to returnTo after successful login', async () => {
-    mockedApi.authenticate = vi.fn().mockResolvedValue({ token: { token: 'abc' } });
+    mockedApi.login = vi.fn().mockResolvedValue({ token: { token: 'abc' } });
 
     // render login page in a memory router with returnTo
     const { container } = render(
@@ -30,12 +30,14 @@ describe('Login page redirect behavior', () => {
       </MemoryRouter>
     );
 
-    // click Use Dev Fingerprint to populate
-    const useDevBtn = screen.getByText(/Use Dev Fingerprint/i);
-    fireEvent.click(useDevBtn);
+    // fill credentials and submit
+    const emailInput = container.querySelector('input[type="email"]') as HTMLInputElement;
+    const pwInput = container.querySelector('input[type="password"]') as HTMLInputElement;
+    fireEvent.change(emailInput, { target: { value: 'org@example.test' } });
+    fireEvent.change(pwInput, { target: { value: 'password' } });
 
-    const authBtn = screen.getByText(/Authenticate/i);
-    fireEvent.click(authBtn);
+    const signInBtn = screen.getByText(/Sign In/i);
+    fireEvent.click(signInBtn);
 
     await waitFor(() => {
       expect(screen.getByText(/Admin page/i)).toBeDefined();

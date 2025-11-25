@@ -20,6 +20,7 @@
 
 import HealthCheck from '@ioc:Adonis/Core/HealthCheck'
 import Route from '@ioc:Adonis/Core/Route'
+import './organization'
 
 Route.get('/', async () => {
   return { hello: 'world' }
@@ -61,6 +62,10 @@ Route.resource('types', 'TypesController')
     // update: ['auth:api']
   })
   .apiOnly()
+
+// Register analytics before resource routes so static path doesn't get
+// shadowed by the `GET /users/:id` parameter route.
+Route.get('/users/analytics', 'UsersController.analytics').middleware(['auth'])
 
 Route.resource('users', 'UsersController')
   .middleware({
@@ -120,6 +125,9 @@ Route.resource('compliance', 'ComplianceController')
   .middleware({ '*': ['auth'] })
   .apiOnly()
 
+// Serve uploaded compliance files
+Route.get('/compliance/:id/file', 'ComplianceController.file').middleware(['auth'])
+
 Route.resource('background-checks', 'BackgroundChecksController')
   .middleware({ '*': ['auth'] })
   .apiOnly()
@@ -132,23 +140,43 @@ Route.post('/register', 'AuthController.register')
 Route.post('/login', 'AuthController.login')
 Route.post('/logout', 'AuthController.logout').middleware('auth:api')
 
-
-
 Route.get('/me', 'UsersController.me').middleware(['auth'])
 
-Route.resource('resources', 'ResourcesController').middleware({ '*': ['auth'] }).apiOnly()
-Route.resource('audit-logs', 'AuditLogsController').middleware({ '*': ['auth'] }).only(['index', 'show'])
-Route.resource('surveys', 'SurveysController').middleware({ '*': ['auth'] }).apiOnly()
-Route.resource('communications', 'CommunicationsController').middleware({ '*': ['auth'] }).apiOnly()
+Route.resource('resources', 'ResourcesController')
+  .middleware({ '*': ['auth'] })
+  .apiOnly()
+Route.resource('audit-logs', 'AuditLogsController')
+  .middleware({ '*': ['auth'] })
+  .only(['index', 'show'])
+Route.resource('communications', 'CommunicationsController')
+  .middleware({ '*': ['auth'] })
+  .apiOnly()
+
+// communication logs and retry
+Route.get('/communications/:id/logs', 'CommunicationsController.logs').middleware(['auth'])
+Route.post('/communications/logs/:id/retry', 'CommunicationsController.retryLog').middleware([
+  'auth'
+])
+Route.post('/communications/logs/bulk-retry', 'CommunicationsController.bulkRetryLogs').middleware([
+  'auth'
+])
 
 // Notifications (admin) - expose recent notifications for UI
 Route.get('/notifications', 'NotificationsController.index').middleware(['auth'])
 Route.put('/notifications/:id/read', 'NotificationsController.markRead').middleware(['auth'])
 
+// Surveys (feedback)
+Route.resource('surveys', 'SurveysController')
+  .middleware({ '*': ['auth'] })
+  .apiOnly()
+Route.post('/surveys/:id/submit', 'SurveysController.submit')
+Route.get('/surveys/:id/responses', 'SurveysController.responses').middleware(['auth'])
+Route.get('/surveys/:id/responses/export', 'SurveysController.exportResponses').middleware(['auth'])
+
 // Custom endpoints
 Route.post('/users/:id/remind', 'UsersController.remind').middleware(['auth'])
 Route.post('/users/bulk', 'UsersController.bulkUpdate').middleware(['auth'])
-Route.get('/users/analytics', 'UsersController.analytics').middleware(['auth'])
+// (moved analytics route earlier to avoid route shadowing)
 
 // Role management and activation endpoints
 Route.post('/users/:id/roles', 'UsersController.addRole').middleware(['auth'])
@@ -170,8 +198,22 @@ Route.get('/reports/export', 'ReportsController.export').middleware(['auth'])
 Route.get('/settings', 'SystemSettingsController.index').middleware(['auth'])
 Route.post('/settings', 'SystemSettingsController.update').middleware(['auth'])
 
+// Monitoring endpoints for admin dashboard
+Route.get('/monitoring/stats', 'MonitoringController.stats').middleware(['auth'])
+Route.get('/monitoring/recent', 'MonitoringController.recent').middleware(['auth'])
+
 Route.get('/hours', 'VolunteerHoursController.index').middleware(['auth'])
 Route.put('/hours/:id', 'VolunteerHoursController.update').middleware(['auth'])
 Route.post('/hours/bulk', 'VolunteerHoursController.bulkUpdate').middleware(['auth'])
 
-Route.resource('courses', 'CoursesController').middleware({ '*': ['auth'] }).apiOnly()
+Route.resource('courses', 'CoursesController')
+  .middleware({ '*': ['auth'] })
+  .apiOnly()
+
+// scheduled jobs (admin)
+Route.get('/scheduled-jobs', 'ScheduledJobsController.index').middleware(['auth'])
+Route.get('/scheduled-jobs/:id', 'ScheduledJobsController.show').middleware(['auth'])
+Route.post('/scheduled-jobs', 'ScheduledJobsController.store').middleware(['auth'])
+Route.post('/scheduled-jobs/:id/retry', 'ScheduledJobsController.retry').middleware(['auth'])
+
+// Organization routes are defined in start/organization.ts

@@ -87,11 +87,12 @@ const api = {
   activateUser: async (id: number) => axios.post(`/users/${id}/activate`),
 
   listEvents: async () => axios.get('/events'),
+  listRoles: async () => axios.get('/roles'),
   createEvent: async (data: any) => axios.post('/events', data),
   updateEvent: async (id: number, data: any) => axios.put(`/events/${id}`, data),
   deleteEvent: async (id: number) => axios.delete(`/events/${id}`),
   aiMatchVolunteers: async (id: number) => axios.post(`/events/${id}/ai-match`),
-  listTasks: async () => axios.get('/tasks'),
+  listTasks: async (params?: any) => axios.get('/tasks', { params }),
 
   aiMatch: async (task_id: number) => axios.post('/ai/match', { task_id }),
   aiForecast: async (start: string, end: string) => axios.post('/ai/forecast', { start, end }),
@@ -113,7 +114,7 @@ const api = {
     (await axios.get('/reports', { params })) as Promise<T>,
 
   // generic list helper for simple collections
-  list: async (resource: string) => axios.get(`/${resource}`),
+  list: async (resource: string, params?: any) => axios.get(`/${resource}`, { params }),
   create: async (resource: string, data: any) => axios.post(`/${resource}`, data),
   update: async (resource: string, id: number, data: any) => axios.put(`/${resource}/${id}`, data),
   delete: async (resource: string, id: number) => axios.delete(`/${resource}/${id}`),
@@ -128,11 +129,36 @@ const api = {
   getHoursStats: async (params?: Record<string, unknown>) => axios.get('/reports/hours', { params }),
   getOrganizationStats: async () => axios.get('/reports/organizations'),
   getComplianceStats: async () => axios.get('/reports/compliance'),
+  getChartData: async () => {
+    // Try to build chart data from reports overview; fallback to a small static dataset
+    try {
+      const overview: any = await axios.get('/reports', { params: { range: '6months' } });
+      if (overview && overview.volunteerHours && Array.isArray(overview.volunteerHours.trend)) {
+        return overview.volunteerHours.trend.map((t: any) => ({
+          month: t?.month != null ? String(t.month) : String(t.name ?? ''),
+          volunteers: Number(t?.volunteers ?? t?.volunteer_count ?? t?.total ?? 0) || 0,
+          hours: Number(t?.hours ?? t?.totalHours ?? t?.total ?? 0) || 0
+        }));
+      }
+    } catch (e) {
+      // ignore and fallthrough to fallback
+    }
+    return [];
+  },
   exportReport: async (type: string, reportType: string) =>
     axios.get('/reports/export', { params: { type, reportType } }),
+  downloadReport: async (reportType: string, format = 'csv') =>
+    axios.get('/reports/export', { params: { reportType, type: format }, responseType: 'blob' }),
 
   /* Resources endpoints */
-  listResources: async () => axios.get('/resources'),
+  listResources: async () => {
+    const res = await axios.get('/resources');
+    // backend may return a plain array or a wrapper object { data: [...] } or { resources: [...] }
+    if (Array.isArray(res)) return res;
+    if (res && Array.isArray((res as any).data)) return (res as any).data;
+    if (res && Array.isArray((res as any).resources)) return (res as any).resources;
+    return [] as const;
+  },
   createResource: async (data: any) => axios.post('/resources', data),
   updateResource: async (id: number, data: any) => axios.put(`/resources/${id}`, data),
   deleteResource: async (id: number) => axios.delete(`/resources/${id}`),
@@ -147,6 +173,13 @@ const api = {
   getSurvey: async (id: number) => axios.get(`/surveys/${id}`),
   updateSurvey: async (id: number, data: any) => axios.put(`/surveys/${id}`, data),
   deleteSurvey: async (id: number) => axios.delete(`/surveys/${id}`),
+  submitSurveyResponse: async (id: number, data: any) => axios.post(`/surveys/${id}/submit`, data),
+  listSurveyResponses: async (id: number) => axios.get(`/surveys/${id}/responses`),
+  exportSurveyResponses: async (id: number, format = 'csv') =>
+    axios.get(`/surveys/${id}/responses/export`, {
+      params: { type: format },
+      responseType: format === 'csv' ? 'blob' : undefined
+    }),
 
   /* Communications endpoints */
   listCommunications: async () => axios.get('/communications'),
@@ -154,6 +187,16 @@ const api = {
   getCommunication: async (id: number) => axios.get(`/communications/${id}`),
   updateCommunication: async (id: number, data: any) => axios.put(`/communications/${id}`, data),
   deleteCommunication: async (id: number) => axios.delete(`/communications/${id}`),
+  listCommunicationLogs: async (communicationId: number) => axios.get(`/communications/${communicationId}/logs`),
+  retryCommunicationLog: async (logId: number) => axios.post(`/communications/logs/${logId}/retry`),
+  bulkRetryCommunicationLogs: async (ids: number[]) => axios.post(`/communications/logs/bulk-retry`, { ids }),
+  listScheduledJobs: async () => axios.get('/scheduled-jobs'),
+  createScheduledJob: async (data: any) => axios.post('/scheduled-jobs', data),
+  retryScheduledJob: async (id: number) => axios.post(`/scheduled-jobs/${id}/retry`),
+
+  /* Monitoring */
+  getMonitoringStats: async () => axios.get('/monitoring/stats'),
+  getMonitoringRecent: async () => axios.get('/monitoring/recent'),
 
   /* System Settings endpoints */
   getSettings: async () => axios.get('/settings'),
@@ -190,7 +233,37 @@ const api = {
   listCompliance: async () => axios.get('/compliance'),
 
   // return current authenticated user's profile (roles, flags)
-  getCurrentUser: async () => axios.get('/me')
+  getCurrentUser: async () => axios.get('/me'),
+  getUser: async (id: number) => axios.get(`/users/${id}`),
+
+  updateOrganizationProfile: async (data: any) => axios.put('/organization/profile', data),
+
+  // Team
+  listOrganizationTeam: async () => axios.get('/organization/team'),
+  inviteTeamMember: async (data: any) => axios.post('/organization/team/invite', data),
+  updateTeamMember: async (id: number, data: any) => axios.put(`/organization/team/${id}`, data),
+  deleteTeamMember: async (id: number) => axios.delete(`/organization/team/${id}`),
+
+  // Events
+  listOrganizationEvents: async () => axios.get('/organization/events'),
+  createOrganizationEvent: async (data: any) => axios.post('/organization/events', data),
+  updateOrganizationEvent: async (id: number, data: any) => axios.put(`/organization/events/${id}`, data),
+  deleteOrganizationEvent: async (id: number) => axios.delete(`/organization/events/${id}`),
+
+  // Volunteers
+  listOrganizationVolunteers: async () => axios.get('/organization/volunteers'),
+  addOrganizationVolunteer: async (data: any) => axios.post('/organization/volunteers', data),
+  updateOrganizationVolunteer: async (id: number, data: any) => axios.put(`/organization/volunteers/${id}`, data),
+  deleteOrganizationVolunteer: async (id: number) => axios.delete(`/organization/volunteers/${id}`),
+
+  // Compliance
+  listOrganizationDocuments: async () => axios.get('/organization/documents'),
+  uploadOrganizationDocument: async (data: any) => axios.post('/organization/documents', data),
+  deleteOrganizationDocument: async (id: number) => axios.delete(`/organization/documents/${id}`),
+  getOrganizationComplianceStats: async () => axios.get('/organization/compliance/stats'),
+
+  // Dashboard
+  getOrganizationDashboardStats: async () => axios.get('/organization/dashboard-stats')
 } as const;
 
 export const useLazyQuery = (key: QueryKey, fn: QueryFunction, options = {}) => {

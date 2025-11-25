@@ -16,8 +16,7 @@ describe('AppProvider session expiry flow', () => {
     const setToken = useStore.getState().setToken;
     setToken('sometoken');
 
-    // set a fingerprint so authenticate won't be attempted
-    localStorage.setItem('fingerprint', 'admin-local-fingerprint');
+    // fingerprint feature removed — no fingerprint setup
 
     // mock getCurrentUser to reject with 401
     const err = new Error('unauthorized') as any;

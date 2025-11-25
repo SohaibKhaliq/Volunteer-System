@@ -3,8 +3,9 @@ import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Outlet, useLocation } from 'react-router-dom';
 import LoadingSpinner from '../atoms/loading-spinner';
-import { Toaster } from '../atoms/toaster';
+// Toaster is provided globally in `src/providers/index.tsx`; avoid duplicate renders
 import Header from '../molecules/header';
+import Footer from '../molecules/footer';
 
 const Layout = () => {
   const { i18n } = useTranslation();
@@ -19,11 +20,11 @@ const Layout = () => {
       <Providers>
         <div className="flex flex-col min-h-screen">
           {!hideHeaderRoutes.some((route) => location.pathname.includes(route)) && <Header />}
-          <main className="flex-grow overflow-y-auto w-full bg-background">
+          <main className="flex-grow w-full bg-background">
             <Outlet />
           </main>
+          {!hideHeaderRoutes.some((route) => location.pathname.includes(route)) && <Footer />}
         </div>
-        <Toaster />
       </Providers>
     </Suspense>
   );

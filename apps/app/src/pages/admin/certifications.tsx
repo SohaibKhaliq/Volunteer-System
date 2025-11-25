@@ -4,7 +4,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Award, Edit, Trash2, Plus } from 'lucide-react';
+import { Award, Edit, Trash2, Plus, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
@@ -14,7 +14,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import SkeletonCard from '@/components/atoms/skeleton-card';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { toast } from 'sonner';
+import { API_URL } from '@/lib/config';
+import { toast } from '@/components/atoms/use-toast';
 
 interface User {
   id: number;
@@ -45,6 +46,7 @@ export default function AdminCertifications() {
   const [editing, setEditing] = useState<Partial<ComplianceDoc> | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [toDelete, setToDelete] = useState<number | null>(null);
+  
 
   const { data: items = [], isLoading } = useQuery<ComplianceDoc[]>({
     queryKey: ['compliance'],
@@ -111,11 +113,35 @@ export default function AdminCertifications() {
   });
 
   const saveCert = (payload: Partial<ComplianceDoc>) => {
+    // If a file is attached, send as FormData so backend can process multipart upload
+    const hasFile = !!(payload as any).file;
     if (payload.id) {
-      updateMutation.mutate({ id: payload.id, data: payload });
+      if (hasFile) {
+        const fd = new FormData();
+        fd.append('file', (payload as any).file);
+        if (payload.user_id) fd.append('user_id', String(payload.user_id));
+        if (payload.doc_type) fd.append('doc_type', String(payload.doc_type));
+        if (payload.issued_at) fd.append('issued_at', String(payload.issued_at));
+        if (payload.expires_at) fd.append('expires_at', String(payload.expires_at));
+        if (payload.status) fd.append('status', String(payload.status));
+        updateMutation.mutate({ id: payload.id, data: fd } as any);
+      } else {
+        updateMutation.mutate({ id: payload.id, data: payload });
+      }
     } else {
-      // create expects user_id, doc_type, issued_at, expires_at
-      createMutation.mutate(payload);
+      if (hasFile) {
+        const fd = new FormData();
+        fd.append('file', (payload as any).file);
+        if (payload.user_id) fd.append('user_id', String(payload.user_id));
+        if (payload.doc_type) fd.append('doc_type', String(payload.doc_type));
+        if (payload.issued_at) fd.append('issued_at', String(payload.issued_at));
+        if (payload.expires_at) fd.append('expires_at', String(payload.expires_at));
+        if (payload.status) fd.append('status', String(payload.status));
+        createMutation.mutate(fd as any);
+      } else {
+        // create expects user_id, doc_type, issued_at, expires_at
+        createMutation.mutate(payload);
+      }
     }
   };
 
@@ -129,6 +155,53 @@ export default function AdminCertifications() {
     deleteMutation.mutate(toDelete);
   };
 
+  // Courses CRUD wiring
+  const [coursesOpen, setCourseOpen] = useState(false);
+  const [courseEditing, setCourseEditing] = useState<any | null>(null);
+  const { data: courses = [], isLoading: coursesLoading } = useQuery(['courses'], api.listCourses);
+
+  const courseCreateMutation = useMutation({
+    mutationFn: (data: any) => api.createCourse(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['courses']);
+      toast.success('Course created');
+      setCourseOpen(false);
+    },
+    onError: () => toast.error('Failed to create course')
+  });
+
+  const courseUpdateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: any }) => api.updateCourse(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['courses']);
+      toast.success('Course updated');
+      setCourseOpen(false);
+    },
+    onError: () => toast.error('Failed to update course')
+  });
+
+  const courseDeleteMutation = useMutation({
+    mutationFn: (id: number) => api.deleteCourse(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['courses']);
+      toast.success('Course deleted');
+    },
+    onError: () => toast.error('Failed to delete course')
+  });
+
+  const [toDeleteCourse, setToDeleteCourse] = useState<number | null>(null);
+  const confirmCourseDelete = (id: number) => setToDeleteCourse(id);
+  const doDeleteCourse = () => {
+    if (toDeleteCourse == null) return;
+    courseDeleteMutation.mutate(toDeleteCourse);
+    setToDeleteCourse(null);
+  };
+
+  const [courseDeleteOpen, setCourseDeleteOpen] = useState(false);
+  useEffect(() => {
+    setCourseDeleteOpen(toDeleteCourse != null);
+  }, [toDeleteCourse]);
+
   return (
     <div className="space-y-6" aria-busy={isLoading}>
       {/* Courses summary (read-only) */}
@@ -140,7 +213,52 @@ export default function AdminCertifications() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <SkeletonCard />
+          {/* Courses list and CRUD */}
+          <div className="flex items-center mb-4">
+            <div className="text-sm text-muted-foreground">Manage training courses offered to volunteers.</div>
+            <div className="ml-auto">
+              <Button
+                onClick={() => {
+                  setCourseEditing(null);
+                  setCourseOpen(true);
+                }}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                New Course
+              </Button>
+            </div>
+          </div>
+
+          {coursesLoading ? (
+            <SkeletonCard />
+          ) : courses.length === 0 ? (
+            <div className="text-sm text-muted-foreground">No courses found. Add a new course to get started.</div>
+          ) : (
+            <div className="space-y-3">
+              {courses.map((course: any) => (
+                <div key={course.id} className="flex items-center p-3 rounded border">
+                  <div>
+                    <div className="font-medium">{course.title || course.name}</div>
+                    {course.description && <div className="text-sm text-muted-foreground">{course.description}</div>}
+                  </div>
+                  <div className="ml-auto flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        setCourseEditing(course);
+                        setCourseOpen(true);
+                      }}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" onClick={() => confirmCourseDelete(course.id)}>
+                      <Trash2 className="h-4 w-4 text-red-600" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -242,6 +360,15 @@ export default function AdminCertifications() {
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
+                        {c.metadata?.file?.path && (
+                          <Button
+                            variant="ghost"
+                            onClick={() => window.open(`${API_URL}/compliance/${c.id}/file`, '_blank')}
+                            aria-label={`Download file for ${c.id}`}
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        )}
                         <Button variant="ghost" onClick={() => confirmDelete(c.id)} aria-label={`Delete ${c.id}`}>
                           <Trash2 className="h-4 w-4 text-red-600" />
                         </Button>
@@ -319,6 +446,32 @@ export default function AdminCertifications() {
               />
             </div>
             <div>
+              <label className="text-sm block mb-1">Upload File (optional)</label>
+              <Input
+                type="file"
+                onChange={(e) => {
+                  const f = e.target.files && e.target.files[0];
+                  setEditing((s) => ({ ...(s || {}), file: f }));
+                }}
+              />
+              {editing?.id && editing?.metadata?.file?.path && (
+                <div className="mt-2 flex items-center gap-2">
+                  <a
+                    className="text-sm text-primary underline"
+                    href={`${API_URL}/compliance/${editing.id}/file`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    View uploaded file
+                  </a>
+                  <span className="text-xs text-muted-foreground">(opens in new tab)</span>
+                </div>
+              )}
+              {editing && (editing as any).file && (
+                <div className="mt-2 text-sm text-muted-foreground">Selected: {(editing as any).file.name}</div>
+              )}
+            </div>
+            <div>
               <label className="text-sm block mb-1">Status</label>
               <Select
                 value={editing?.status || 'Valid'}
@@ -375,6 +528,94 @@ export default function AdminCertifications() {
                 Cancel
               </Button>
               <Button variant="destructive" onClick={doDelete}>
+                Delete
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Course create / edit dialog */}
+      <Dialog open={coursesOpen} onOpenChange={setCourseOpen}>
+        <DialogContent aria-labelledby="course-edit-title">
+          <DialogHeader>
+            <DialogTitle id="course-edit-title">{courseEditing?.id ? 'Edit Course' : 'New Course'}</DialogTitle>
+          </DialogHeader>
+          <div className="p-4 space-y-3">
+            <div>
+              <label className="text-sm block mb-1">Title</label>
+              <Input
+                value={courseEditing?.title || courseEditing?.name || ''}
+                onChange={(e) =>
+                  setCourseEditing((s) => ({ ...(s || {}), title: e.target.value, name: e.target.value }))
+                }
+              />
+            </div>
+            <div>
+              <label className="text-sm block mb-1">Description</label>
+              <Input
+                value={courseEditing?.description || ''}
+                onChange={(e) => setCourseEditing((s) => ({ ...(s || {}), description: e.target.value }))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setCourseOpen(false);
+                  setCourseEditing(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => {
+                  const payload = { ...(courseEditing || {}) };
+                  if (!payload.title && !payload.name) {
+                    toast.error('Title is required');
+                    return;
+                  }
+                  if (payload.id) {
+                    courseUpdateMutation.mutate({ id: payload.id, data: payload });
+                  } else {
+                    courseCreateMutation.mutate(payload);
+                  }
+                }}
+              >
+                {courseEditing?.id ? 'Save' : 'Create'}
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Course delete confirmation */}
+      <Dialog open={courseDeleteOpen} onOpenChange={setCourseDeleteOpen}>
+        <DialogContent aria-labelledby="course-delete-title">
+          <DialogHeader>
+            <DialogTitle id="course-delete-title">Delete Course</DialogTitle>
+          </DialogHeader>
+          <div className="p-4">Are you sure you want to delete this course?</div>
+          <DialogFooter>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setCourseDeleteOpen(false);
+                  setToDeleteCourse(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  doDeleteCourse();
+                  setCourseDeleteOpen(false);
+                }}
+              >
                 Delete
               </Button>
             </div>

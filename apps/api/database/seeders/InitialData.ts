@@ -100,5 +100,62 @@ export default class InitialDataSeeder extends BaseSeeder {
         })
       }
     }
+
+    // Create an organization account and link a user to it (organization@gmail.com / 12345678)
+    const existingOrgUser = await User.findBy('email', 'organization@gmail.com')
+    let orgUser: User | null = existingOrgUser
+    if (!orgUser) {
+      orgUser = await User.create({
+        email: 'organization@gmail.com',
+        password: '12345678',
+        firstName: 'Org',
+        lastName: 'Admin'
+      })
+    }
+
+    // Link orgUser to the organization as an admin team member
+    const OrganizationTeamMember = await import('App/Models/OrganizationTeamMember')
+    const existingMember = await OrganizationTeamMember.default
+      .query()
+      .where('user_id', orgUser.id)
+      .andWhere('organization_id', org.id)
+      .first()
+
+    if (!existingMember) {
+      await OrganizationTeamMember.default.create({
+        organizationId: org.id,
+        userId: orgUser.id,
+        role: 'Admin'
+      })
+    }
+
+    // Seed a couple of volunteers for the organization
+    const OrganizationVolunteer = await import('App/Models/OrganizationVolunteer')
+    const volCount = await OrganizationVolunteer.default
+      .query()
+      .where('organization_id', org.id)
+      .count('* as total')
+    if (Number(volCount[0].$extras.total) === 0) {
+      await OrganizationVolunteer.default.create({
+        organizationId: org.id,
+        userId: orgUser.id,
+        status: 'Active',
+        role: 'Volunteer',
+        hours: 12,
+        rating: 4,
+        skills: 'Organizing,Communication'
+      })
+
+      const adminUser = await User.findBy('email', 'admin@gmail.com')
+      await OrganizationVolunteer.default.create({
+        organizationId: org.id,
+        userId: adminUser ? adminUser.id : orgUser.id,
+        status: 'Active',
+        role: 'Volunteer',
+        hours: 5,
+        rating: 3,
+        skills: 'Cleanup'
+      })
+    }
   }
 }

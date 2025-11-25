@@ -7,21 +7,27 @@ export default class SurveyResponse extends BaseModel {
   @column({ isPrimary: true })
   public id: number
 
-  @column()
+  @column({ columnName: 'survey_id' })
   public surveyId: number
 
   @belongsTo(() => Survey)
   public survey: BelongsTo<typeof Survey>
 
-  @column()
+  @column({ columnName: 'user_id' })
   public userId?: number
 
   @belongsTo(() => User)
   public user: BelongsTo<typeof User>
 
   @column()
-  public answers: string // JSON string
+  public answers?: string // JSON string
+
+  @column({ columnName: 'ip_address' })
+  public ipAddress?: string
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
+
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  public updatedAt: DateTime
 }

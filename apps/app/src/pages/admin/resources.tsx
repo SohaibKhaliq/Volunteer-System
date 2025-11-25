@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import SkeletonCard from '@/components/atoms/skeleton-card';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { toast } from 'sonner';
+import { toast } from '@/components/atoms/use-toast';
 
 export default function AdminResources() {
   const queryClient = useQueryClient();
@@ -35,10 +35,19 @@ export default function AdminResources() {
     api.listUsers(debouncedUserQuery)
   );
 
-  const { data: resources = [], isLoading } = useQuery({
+  const { data: resourcesRaw, isLoading } = useQuery({
     queryKey: ['resources'],
     queryFn: api.listResources
   });
+
+  // Normalize possible response shapes: plain array, { data: [] }, { resources: [] }
+  const resources: any[] = Array.isArray(resourcesRaw)
+    ? resourcesRaw
+    : resourcesRaw && Array.isArray((resourcesRaw as any).data)
+      ? (resourcesRaw as any).data
+      : resourcesRaw && Array.isArray((resourcesRaw as any).resources)
+        ? (resourcesRaw as any).resources
+        : [];
 
   const createMutation = useMutation({
     mutationFn: api.createResource,

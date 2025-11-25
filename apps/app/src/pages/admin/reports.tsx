@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { toast } from '@/components/atoms/use-toast';
@@ -55,8 +55,8 @@ export default function AdminReports() {
   const [timeRange, setTimeRange] = useState('30days');
   const [exportFormat, setExportFormat] = useState('pdf');
 
-  const { data: reportData, isLoading } = useQuery<ReportData>(
-    ['reports', reportType, timeRange],
+  const { data: rawReportData, isLoading } = useQuery<ReportData>(
+    ['admin-reports-data', reportType, timeRange],
     () => api.getReports<ReportData>({ type: reportType, range: timeRange }),
     {
       suspense: false,
@@ -70,6 +70,59 @@ export default function AdminReports() {
       }
     }
   );
+
+  const reportData = useMemo(() => {
+    if (!rawReportData || typeof rawReportData !== 'object' || Array.isArray(rawReportData)) return null;
+    const r = rawReportData as any;
+    
+    const getNum = (val: any) => (typeof val === 'number' ? val : 0);
+    
+    return {
+      volunteerParticipation: {
+        total: getNum(r.volunteerParticipation?.total),
+        active: getNum(r.volunteerParticipation?.active),
+        inactive: getNum(r.volunteerParticipation?.inactive),
+        trend: getNum(r.volunteerParticipation?.trend),
+      },
+      eventCompletion: {
+        total: getNum(r.eventCompletion?.total),
+        completed: getNum(r.eventCompletion?.completed),
+        ongoing: getNum(r.eventCompletion?.ongoing),
+        cancelled: getNum(r.eventCompletion?.cancelled),
+        completionRate: getNum(r.eventCompletion?.completionRate),
+      },
+      volunteerHours: {
+        total: getNum(r.volunteerHours?.total),
+        thisMonth: getNum(r.volunteerHours?.thisMonth),
+        lastMonth: getNum(r.volunteerHours?.lastMonth),
+        trend: getNum(r.volunteerHours?.trend),
+      },
+      organizationPerformance: {
+        topPerformers: Array.isArray(r.organizationPerformance?.topPerformers) 
+          ? r.organizationPerformance.topPerformers.map((p: any) => ({
+              name: String(p?.name || 'Unknown'),
+              score: getNum(p?.score),
+              events: getNum(p?.events)
+            }))
+          : [],
+        averageScore: getNum(r.organizationPerformance?.averageScore)
+      },
+      complianceAdherence: {
+        compliant: getNum(r.complianceAdherence?.compliant),
+        pending: getNum(r.complianceAdherence?.pending),
+        expired: getNum(r.complianceAdherence?.expired),
+        adherenceRate: getNum(r.complianceAdherence?.adherenceRate),
+      },
+      predictions: {
+        volunteerDemand: {
+          nextMonth: getNum(r.predictions?.volunteerDemand?.nextMonth),
+          confidence: getNum(r.predictions?.volunteerDemand?.confidence),
+        },
+        noShowRate: getNum(r.predictions?.noShowRate),
+        eventSuccessRate: getNum(r.predictions?.eventSuccessRate),
+      }
+    };
+  }, [rawReportData]);
 
   const handleExport = () => {
     // Basic client-side export for CSV using mock/report data

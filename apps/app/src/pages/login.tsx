@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import api from '@/lib/api';
-
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/atoms/use-toast';
-import { useLocation, Link } from 'react-router-dom';
+import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
 import { useStore } from '@/lib/store';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Loader2 } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -23,16 +24,11 @@ export default function Login() {
       if (token) {
         setToken(token);
         try {
-          toast({ 
-            title: 'Signed in', 
-            description: 'Welcome back!',
-            variant: 'success' 
-          });
+          toast({ title: 'Welcome back!', description: 'You have successfully signed in.' });
         } catch (e) {
           console.warn('Unable to show toast', e);
         }
 
-        // sanitize return target — only allow relative paths
         let target = '/';
         try {
           const decoded = decodeURIComponent(returnTo);
@@ -45,10 +41,9 @@ export default function Login() {
       }
     },
     onError(error: any) {
-      toast({
-        title: 'Authentication failed',
-        description: error?.response?.data?.error?.message || 'Invalid email or password',
-        variant: 'destructive'
+      toast({ 
+        title: 'Authentication failed', 
+        description: error?.response?.data?.error?.message || 'Invalid email or password'
       });
     }
   });
@@ -59,37 +54,97 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-6">
-      <div className="max-w-md w-full bg-white rounded shadow p-6">
-        <h2 className="text-lg font-semibold mb-2">Login</h2>
-        <p className="text-sm text-slate-600 mb-4">
-          Sign in to your account
-        </p>
-        <form onSubmit={submit} className="grid gap-3">
-          <Input 
-            type="email" 
-            value={email} 
-            onChange={(e) => setEmail(e.target.value)} 
-            placeholder="Email" 
-            required
-          />
-          <Input 
-            type="password" 
-            value={password} 
-            onChange={(e) => setPassword(e.target.value)} 
-            placeholder="Password" 
-            required
-          />
-          <div className="flex justify-between gap-2 items-center">
-            <button type="submit" className="px-4 py-2 rounded bg-primary text-white w-full">
-              Sign In
-            </button>
+    <div className="min-h-screen grid lg:grid-cols-2">
+      {/* Left Side - Form */}
+      <div className="flex items-center justify-center p-8 bg-background">
+        <div className="w-full max-w-md space-y-8">
+          <div className="text-center lg:text-left">
+            <h1 className="text-3xl font-bold tracking-tight">Welcome back</h1>
+            <p className="text-muted-foreground mt-2">
+              Enter your credentials to access your account
+            </p>
           </div>
-        </form>
-        <div className="mt-4 text-center text-sm">
-          Don't have an account? <Link to="/register" className="text-primary hover:underline">Sign up</Link>
+
+          <form onSubmit={submit} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input 
+                id="email"
+                type="email" 
+                value={email} 
+                onChange={(e) => setEmail(e.target.value)} 
+                placeholder="name@example.com" 
+                required
+                className="h-11"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <Link to="/forgot-password" className="text-sm font-medium text-primary hover:underline">
+                  Forgot password?
+                </Link>
+              </div>
+              <Input 
+                id="password"
+                type="password" 
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)} 
+                placeholder="••••••••" 
+                required
+                className="h-11"
+              />
+            </div>
+
+            <Button type="submit" className="w-full h-11" disabled={mutation.isLoading}>
+              {mutation.isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Signing in...
+                </>
+              ) : (
+                'Sign In'
+              )}
+            </Button>
+          </form>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                Or continue with
+              </span>
+            </div>
+          </div>
+
+          <div className="text-center text-sm">
+            Don't have an account?{' '}
+            <Link to="/register" className="font-medium text-primary hover:underline">
+              Sign up for free
+            </Link>
+          </div>
         </div>
-        {mutation.isError && <div className="mt-3 text-sm text-destructive">Authentication failed</div>}
+      </div>
+
+      {/* Right Side - Image/Visual */}
+      <div className="hidden lg:block relative bg-slate-900">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-slate-900/60 mix-blend-multiply" />
+        <img 
+          src="https://images.unsplash.com/photo-1559027615-cd4628902d4a?q=80&w=2074&auto=format&fit=crop" 
+          alt="Volunteers working together" 
+          className="absolute inset-0 w-full h-full object-cover opacity-50"
+        />
+        <div className="relative h-full flex flex-col justify-end p-12 text-white">
+          <blockquote className="space-y-2">
+            <p className="text-lg font-medium leading-relaxed">
+              "Volunteering is at the very core of being a human. No one has made it through life without someone else's help."
+            </p>
+            <footer className="text-sm opacity-80">— Heather French Henry</footer>
+          </blockquote>
+        </div>
       </div>
     </div>
   );
