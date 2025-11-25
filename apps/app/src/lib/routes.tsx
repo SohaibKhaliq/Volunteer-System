@@ -10,6 +10,8 @@ import Home from '@/pages/home';
 import Login from '@/pages/login';
 import Register from '@/pages/register';
 import Map from '@/pages/map';
+import Organizations from '@/pages/organizations';
+import OrganizationRegister from '@/pages/organization-register';
 import TransportOfferForm from '@/pages/transport-offer-form';
 import TransportRequestForm from '@/pages/transport-request-form';
 import Profile from '@/pages/profile';
@@ -56,7 +58,8 @@ export enum DetailTypes {
   Offer = 'offer',
   Request = 'request',
   RideRequest = 'ride-request',
-  RideOffer = 'ride-offer'
+  RideOffer = 'ride-offer',
+  Event = 'event'
 }
 
 const routes: RouteObject[] = [
@@ -127,6 +130,8 @@ const routes: RouteObject[] = [
       { path: 'login', element: <Login /> },
       { path: 'register', element: <Register /> },
       { path: 'map', element: <Map /> },
+      { path: 'organizations', element: <Organizations /> },
+      { path: 'organizations/register', element: <OrganizationRegister /> },
       { path: 'carpooling', element: <Carpooling /> },
       { path: 'help', element: <Help /> },
       { path: 'help-request', element: <HelpRequestForm /> },
