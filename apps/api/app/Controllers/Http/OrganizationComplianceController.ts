@@ -90,8 +90,19 @@ export default class OrganizationComplianceController {
         .select('user_id')
 
       const userIds = new Set<number>()
-      memberRows.forEach((r: any) => userIds.add(r.user_id))
-      volunteerRows.forEach((r: any) => userIds.add(r.user_id))
+
+      // Helper to safely extract a numeric user id and add only valid ids
+      const addIfValid = (row: any) => {
+        if (!row) return
+        // support snake_case, camelCase and id fields
+        const raw = row.user_id ?? row.userId ?? row.id
+        if (raw === undefined || raw === null) return
+        const n = Number(raw)
+        if (Number.isInteger(n) && n > 0) userIds.add(n)
+      }
+
+      memberRows.forEach((r: any) => addIfValid(r))
+      volunteerRows.forEach((r: any) => addIfValid(r))
 
       if (userIds.size === 0) {
         // no scoped users — return zeros

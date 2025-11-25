@@ -128,4 +128,25 @@ test.group('Organization panel endpoints', () => {
     stats.assertStatus(200)
     stats.assertBodyContains({ pendingDocuments: 1 })
   })
+
+  test('compliance stats: works with mixed team-member & volunteer users', async ({ client }) => {
+    const org = await Organization.create({ name: 'Mixed Users Org' })
+    const admin = await User.create({ email: 'mixedadmin@test', password: 'pass' })
+    await OrganizationTeamMember.create({ organizationId: org.id, userId: admin.id, role: 'Admin' })
+
+    // create two volunteers, one via OrganizationVolunteer, another is a team member
+    const v1 = await User.create({ email: 'mixedv1@test', password: 'pass' })
+    const v2 = await User.create({ email: 'mixedv2@test', password: 'pass' })
+    await OrganizationVolunteer.create({ organizationId: org.id, userId: v1.id, status: 'Active' })
+    await OrganizationTeamMember.create({ organizationId: org.id, userId: v2.id, role: 'Member' })
+
+    // create compliance docs
+    await ComplianceDocument.create({ userId: v1.id, status: 'Pending', docType: 'License' })
+    await ComplianceDocument.create({ userId: v2.id, status: 'Approved', docType: 'ID' })
+
+    const stats = await client.loginAs(admin).get('/organization/compliance/stats')
+    stats.assertStatus(200)
+    // one pending document exists
+    stats.assertBodyContains({ pendingDocuments: 1 })
+  })
 })
