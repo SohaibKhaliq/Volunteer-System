@@ -35,8 +35,8 @@ import Providers from '@/providers';
 export default function AdminLayout() {
   const { user, authenticated } = useApp();
   const location = useLocation();
-  const { setToken } = useStore();
   const navigate = useNavigate();
+  const { setToken } = useStore();
 
   const logoutMutation = useMutation(api.logout, {
     onSuccess: () => {
@@ -71,13 +71,14 @@ export default function AdminLayout() {
     console.log('AdminLayout - User roles:', user?.roles);
   }, [user, authenticated, isAdmin]);
 
-  // If user is not authed, redirect to root
-  // useEffect(() => {
-  //   if (!authenticated) {
-  //     console.log('Not authenticated, redirecting to home');
-  //     navigate('/');
-  //   }
-  // }, [authenticated, navigate]);
+  // If user is not authed, redirect to login (run in effect to avoid synchronous navigation during render)
+  useEffect(() => {
+    if (!authenticated) {
+      navigate(`/login?returnTo=${encodeURIComponent(location.pathname + location.search + location.hash)}`);
+    }
+  }, [authenticated, navigate, location.pathname, location.search, location.hash]);
+
+  if (!authenticated) return null;
 
   // TEMPORARILY DISABLED FOR TESTING - RE-ENABLE AFTER TESTING
   // Show loading while checking authentication
