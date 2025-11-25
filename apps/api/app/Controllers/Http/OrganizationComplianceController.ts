@@ -18,7 +18,14 @@ export default class OrganizationComplianceController {
   }
 
   public async store({ request, response }: HttpContextContract) {
-    const payload = request.only(['user_id', 'doc_type', 'issued_at', 'expires_at', 'metadata', 'status'])
+    const payload = request.only([
+      'user_id',
+      'doc_type',
+      'issued_at',
+      'expires_at',
+      'metadata',
+      'status'
+    ])
     const doc = await ComplianceDocument.create(payload)
     return response.created(doc)
   }
@@ -26,7 +33,7 @@ export default class OrganizationComplianceController {
   public async update({ params, request, response }: HttpContextContract) {
     const doc = await ComplianceDocument.find(params.id)
     if (!doc) return response.notFound()
-    
+
     const payload = request.only(['doc_type', 'issued_at', 'expires_at', 'metadata', 'status'])
     doc.merge(payload)
     await doc.save()
@@ -40,36 +47,39 @@ export default class OrganizationComplianceController {
     return response.noContent()
   }
 
-  public async stats({ response }: HttpContextContract) {
-    
+  public async stats({ auth, response }: HttpContextContract) {
     // Find organization for the current user to scope the stats
     // Assuming we want stats for the organization the user belongs to
     // We need to import OrganizationTeamMember to find the org
     // For now, if we can't find org, we return 0
     // Ideally, this logic should be in a service or shared
-    
-    // Since we don't have OrganizationTeamMember imported here, let's just count for the user's associated volunteers if any, 
-    // or if this is an admin view, all docs. 
-    // But the requirement is "Organization Panel", so it should be scoped.
-    // Let's assume we pass organization_id or derive it.
-    // For simplicity and robustness, let's just count global compliance for now OR 
-    // if we want to be strict, we need to fetch the org ID first.
-    
-    // Let's fetch all docs for now as a fallback if scoping is complex without imports, 
-    // but to be "wired completely", we should really scope it.
-    // I will rely on the fact that we can filter by the user's organization volunteers.
-    
-    const pendingDocuments = await ComplianceDocument.query().where('status', 'Pending').count('* as total')
-    const expiringSoon = await ComplianceDocument.query()
+
+    // Scope stats to the authenticated user's organization (preferred) or fall back to global counts
+    let orgId: number | undefined = undefined
+    if (auth?.user) {
+      const OrganizationTeamMember = await import('App/Models/OrganizationTeamMember')
+      const member = await OrganizationTeamMember.default
+        .query()
+        .where('user_id', auth.user!.id)
+        .first()
+      if (member) orgId = member.organizationId
+    }
+
+    const baseQuery = ComplianceDocument.query()
+    if (typeof orgId !== 'undefined') baseQuery.where('organization_id', orgId)
+
+    const pendingDocuments = await baseQuery.clone().where('status', 'Pending').count('* as total')
+    const expiringSoon = await baseQuery
+      .clone()
       .where('expires_at', '<', new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)) // 30 days
       .count('* as total')
 
-    const totalDocs = await ComplianceDocument.query().count('* as total')
-    const approvedDocs = await ComplianceDocument.query().where('status', 'Approved').count('* as total')
-    
+    const totalDocs = await baseQuery.clone().count('* as total')
+    const approvedDocs = await baseQuery.clone().where('status', 'Approved').count('* as total')
+
     const total = totalDocs[0].$extras.total
     const approved = approvedDocs[0].$extras.total
-    
+
     const compliantVolunteers = total > 0 ? Math.round((approved / total) * 100) : 0
 
     return response.ok({
