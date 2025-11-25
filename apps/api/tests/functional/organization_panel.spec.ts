@@ -3,6 +3,7 @@ import Organization from 'App/Models/Organization'
 import User from 'App/Models/User'
 import OrganizationTeamMember from 'App/Models/OrganizationTeamMember'
 import OrganizationVolunteer from 'App/Models/OrganizationVolunteer'
+import Database from '@ioc:Adonis/Lucid/Database'
 import Event from 'App/Models/Event'
 import ComplianceDocument from 'App/Models/ComplianceDocument'
 import { DateTime } from 'luxon'
@@ -127,6 +128,37 @@ test.group('Organization panel endpoints', () => {
     const stats = await client.loginAs(admin).get('/organization/compliance/stats')
     stats.assertStatus(200)
     stats.assertBodyContains({ pendingDocuments: 1 })
+  })
+
+  test('pending hours: returns paginated count for organization', async ({ client }) => {
+    const org = await Organization.create({ name: 'Hours Org' })
+    const admin = await User.create({ email: 'hoursadmin@test', password: 'pass' })
+    await OrganizationTeamMember.create({ organizationId: org.id, userId: admin.id, role: 'Admin' })
+
+    // volunteer
+    const v = await User.create({ email: 'hoursv@test', password: 'pass' })
+    await OrganizationVolunteer.create({ organizationId: org.id, userId: v.id, status: 'Active' })
+
+    // create two pending hour logs
+    await Database.table('volunteer_hours').insert({
+      user_id: v.id,
+      status: 'pending',
+      hours: 3,
+      date: new Date()
+    })
+    await Database.table('volunteer_hours').insert({
+      user_id: v.id,
+      status: 'pending',
+      hours: 2,
+      date: new Date()
+    })
+
+    // request with limit=1 to ensure pagination meta total is used
+    const resp = await client.loginAs(admin).get('/organization/hours/pending?page=1&limit=1')
+    resp.assertStatus(200)
+    const body = resp.body()
+    // Ensure paginator meta has total equal to 2
+    test.assert(body?.meta?.total === 2)
   })
 
   test('compliance stats: works with mixed team-member & volunteer users', async ({ client }) => {

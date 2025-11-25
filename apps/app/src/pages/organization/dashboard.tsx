@@ -31,6 +31,11 @@ export default function OrganizationDashboard() {
     queryFn: api.getOrganizationComplianceStats
   });
 
+  const { data: pendingHoursData } = useQuery({
+    queryKey: ['organizationPendingHours', 'count'],
+    queryFn: () => api.getOrganizationPendingHours({ page: 1, limit: 1 })
+  });
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-96">
@@ -86,6 +91,19 @@ export default function OrganizationDashboard() {
   // use compliance in UI to avoid unused var
   type ComplianceStats = { compliantVolunteers?: number; pendingDocuments?: number; expiringSoon?: number };
   const pendingDocuments = (compliance as ComplianceStats)?.pendingDocuments ?? null;
+
+  // compute pending hours count (paginated responses contain meta.total)
+  const pendingHoursCount = (() => {
+    if (!pendingHoursData) return 0;
+    // axios wrapper sometimes returns full response / paginated object
+    // check .data.meta.total or .meta.total or if it's an array
+    // Support both shapes
+    const paged = (pendingHoursData as any).data ?? pendingHoursData;
+    return paged?.meta?.total ?? paged?.total ?? (Array.isArray(paged) ? paged.length : 0);
+  })();
+
+  // number of volunteers for invite card - prefer volunteers query, fallback to dashboard stats
+  const volunteersCount = Array.isArray(volunteers) ? volunteers.length : (displayStats.activeVolunteers ?? 0);
 
   return (
     <div className="space-y-6">
@@ -217,7 +235,11 @@ export default function OrganizationDashboard() {
           <CardContent className="p-6 flex items-center justify-between">
             <div>
               <h3 className="font-bold text-lg mb-1">Verify Hours</h3>
-              <p className="text-purple-100 text-sm mb-4">12 pending hour logs</p>
+              <p className="text-purple-100 text-sm mb-4">
+                {pendingHoursCount > 0
+                  ? `${pendingHoursCount} pending hour log${pendingHoursCount === 1 ? '' : 's'}`
+                  : 'No pending hour logs'}
+              </p>
               <Button size="sm" variant="secondary" className="text-purple-600">
                 Review Logs
               </Button>
@@ -230,7 +252,7 @@ export default function OrganizationDashboard() {
           <CardContent className="p-6 flex items-center justify-between">
             <div>
               <h3 className="font-bold text-lg mb-1">Invite Volunteers</h3>
-              <p className="text-green-100 text-sm mb-4">Grow your impact team</p>
+              <p className="text-green-100 text-sm mb-4">{volunteersCount} volunteers — grow your impact team</p>
               <Button size="sm" variant="secondary" className="text-green-600">
                 Send Invites
               </Button>
