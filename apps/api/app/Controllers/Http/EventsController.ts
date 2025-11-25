@@ -2,13 +2,27 @@ import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Event from 'App/Models/Event'
 
 export default class EventsController {
-  public async index({ response }: HttpContextContract) {
+  public async index({ auth, request, response }: HttpContextContract) {
     // preload tasks and their assignments so we can compute volunteer counts
-    const events = await Event.query()
-      .preload('tasks', (taskQuery) => {
-        taskQuery.preload('assignments')
-      })
-      .orderBy('start_at', 'asc')
+    const { organization_id } = request.qs()
+
+    const query = Event.query().preload('tasks', (taskQuery) => {
+      taskQuery.preload('assignments')
+    })
+
+    // If query provided an explicit org, prefer that
+    if (organization_id) {
+      query.where('organization_id', organization_id)
+    } else if (auth?.user) {
+      const OrganizationTeamMember = await import('App/Models/OrganizationTeamMember')
+      const member = await OrganizationTeamMember.default
+        .query()
+        .where('user_id', auth.user!.id)
+        .first()
+      if (member) query.where('organization_id', member.organizationId)
+    }
+
+    const events = await query.orderBy('start_at', 'asc')
 
     // enrich events with required_volunteers and assigned_volunteers for frontend convenience
     const payload = events.map((ev) => {
@@ -30,7 +44,7 @@ export default class EventsController {
     return response.ok(payload)
   }
 
-  public async store({ request, response }: HttpContextContract) {
+  public async store({ auth, request, response }: HttpContextContract) {
     const raw = request.only([
       'title',
       'description',
@@ -54,22 +68,57 @@ export default class EventsController {
     if (raw.recurring_rule) payload.recurringRule = raw.recurring_rule
     if (typeof raw.is_recurring !== 'undefined') payload.isRecurring = raw.is_recurring
     if (typeof raw.capacity !== 'undefined') payload.capacity = raw.capacity
-    if (typeof raw.organization_id !== 'undefined') payload.organizationId = raw.organization_id
+    // If the authenticated user belongs to an organization, prefer that organization
+    if (auth?.user) {
+      const OrganizationTeamMember = await import('App/Models/OrganizationTeamMember')
+      const member = await OrganizationTeamMember.default
+        .query()
+        .where('user_id', auth.user!.id)
+        .first()
+      if (member) payload.organizationId = member.organizationId
+      else if (typeof raw.organization_id !== 'undefined')
+        payload.organizationId = raw.organization_id
+    } else if (typeof raw.organization_id !== 'undefined') {
+      payload.organizationId = raw.organization_id
+    }
     if (typeof raw.is_published !== 'undefined') payload.isPublished = raw.is_published
 
     const event = await Event.create(payload)
     return response.created(event)
   }
 
-  public async show({ params, response }: HttpContextContract) {
+  public async show({ auth, params, response }: HttpContextContract) {
     const event = await Event.query().where('id', params.id).preload('tasks').first()
     if (!event) return response.notFound()
+
+    // If user is an org user, ensure the event matches their organization
+    if (auth?.user) {
+      const OrganizationTeamMember = await import('App/Models/OrganizationTeamMember')
+      const member = await OrganizationTeamMember.default
+        .query()
+        .where('user_id', auth.user!.id)
+        .first()
+      if (member && event.organizationId !== member.organizationId) {
+        return response.forbidden({ message: 'Event does not belong to your organization' })
+      }
+    }
+
     return response.ok(event)
   }
 
-  public async update({ params, request, response }: HttpContextContract) {
+  public async update({ auth, params, request, response }: HttpContextContract) {
     const event = await Event.find(params.id)
     if (!event) return response.notFound()
+    if (auth?.user) {
+      const OrganizationTeamMember = await import('App/Models/OrganizationTeamMember')
+      const member = await OrganizationTeamMember.default
+        .query()
+        .where('user_id', auth.user!.id)
+        .first()
+      if (member && event.organizationId !== member.organizationId) {
+        return response.forbidden({ message: 'Event does not belong to your organization' })
+      }
+    }
     const raw = request.only([
       'title',
       'description',
@@ -100,9 +149,20 @@ export default class EventsController {
     return response.ok(event)
   }
 
-  public async destroy({ params, response }: HttpContextContract) {
+  public async destroy({ auth, params, response }: HttpContextContract) {
     const event = await Event.find(params.id)
     if (!event) return response.notFound()
+    if (auth?.user) {
+      const OrganizationTeamMember = await import('App/Models/OrganizationTeamMember')
+      const member = await OrganizationTeamMember.default
+        .query()
+        .where('user_id', auth.user!.id)
+        .first()
+      if (member && event.organizationId !== member.organizationId) {
+        return response.forbidden({ message: 'Event does not belong to your organization' })
+      }
+    }
+
     await event.delete()
     return response.noContent()
   }
