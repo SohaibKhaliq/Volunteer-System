@@ -18,7 +18,18 @@ export default class OrganizationVolunteersController {
     }
 
     const volunteers = await query
-    return response.ok(volunteers)
+    // Flatten user fields for frontend convenience
+    const payload = volunteers.map((v) => {
+      const obj: any = v.toJSON()
+      if (obj.user) {
+        obj.name = obj.user.name || obj.user.first_name || obj.user.firstName || obj.user.email
+        obj.email = obj.user.email
+        obj.avatar = obj.user.avatar || obj.user.profile_picture || null
+      }
+      return obj
+    })
+
+    return response.ok(payload)
   }
 
   public async store({ auth, request, response }: HttpContextContract) {
