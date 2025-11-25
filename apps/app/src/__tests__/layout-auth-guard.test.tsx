@@ -30,8 +30,8 @@ describe('Layout auth guards', () => {
       </QueryClientProvider>
     );
 
-    // AdminLayout will navigate to /login synchronously; confirm login stub exists
-    expect(screen.getByText(/Login page/i)).toBeDefined();
+    // AdminLayout navigates to /login via useEffect; wait for it to happen
+    await waitFor(() => expect(screen.getByText(/Login page/i)).toBeDefined());
   });
 
   it('redirects OrganizationLayout to login when not authenticated', async () => {
@@ -48,6 +48,6 @@ describe('Layout auth guards', () => {
       </QueryClientProvider>
     );
 
-    expect(screen.getByText(/Login page/i)).toBeDefined();
+    await waitFor(() => expect(screen.getByText(/Login page/i)).toBeDefined());
   });
 });
