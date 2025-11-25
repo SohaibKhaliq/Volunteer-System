@@ -145,13 +145,13 @@ export default function AdminLayout() {
       <div className="min-h-screen bg-gray-50">
         <div className="flex">
           {/* Sidebar */}
-          <aside className="w-64 bg-white border-r border-gray-200 h-screen sticky top-0 flex flex-col">
+          <aside className="w-64 bg-white border-r border-gray-200 h-screen sticky top-0 flex flex-col min-h-0">
             <div className="p-6 border-b border-gray-200">
               <h2 className="font-bold text-xl text-gray-800">Admin Panel</h2>
               <p className="text-sm text-gray-500 mt-1">Volunteer Management System</p>
             </div>
 
-            <nav className="flex-1 p-4 space-y-1">
+            <nav className="flex-1 p-4 space-y-1 overflow-y-auto min-h-0">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.path;
