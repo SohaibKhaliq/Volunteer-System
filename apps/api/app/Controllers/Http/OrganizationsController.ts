@@ -17,9 +17,20 @@ export default class OrganizationsController {
     return response.created(org)
   }
 
-  public async show({ auth, response }: HttpContextContract) {
-    const user = auth.user!
+  public async show({ auth, params, response }: HttpContextContract) {
+    // Support two uses:
+    // - GET /organizations/:id -> admin/resource-style lookup by id (params.id)
+    // - GET /organization/profile -> when no id provided, return the current user's organization
 
+    // If an id param is present, return that organization directly
+    if (params?.id) {
+      const org = await Organization.find(params.id)
+      if (!org) return response.notFound()
+      return response.ok(org)
+    }
+
+    // Otherwise, resolve the organization for the authenticated user (org panel)
+    const user = auth.user!
     const memberRecord = await OrganizationTeamMember.query().where('user_id', user.id).first()
     if (!memberRecord) return response.notFound({ message: 'User is not part of any organization' })
 
@@ -28,13 +39,25 @@ export default class OrganizationsController {
     return response.ok(org)
   }
 
-  public async update({ auth, request, response }: HttpContextContract) {
-    const user = auth.user!
-    const memberRecord = await OrganizationTeamMember.query().where('user_id', user.id).first()
-    if (!memberRecord) return response.notFound({ message: 'User is not part of any organization' })
+  public async update({ auth, params, request, response }: HttpContextContract) {
+    // Support two uses:
+    // - PUT /organizations/:id -> resource-style update by id
+    // - PUT /organization/profile -> update the current user's organization
 
-    const org = await Organization.find(memberRecord.organizationId)
-    if (!org) return response.notFound()
+    let org: Organization | null = null
+
+    if (params?.id) {
+      org = await Organization.find(params.id)
+      if (!org) return response.notFound()
+    } else {
+      const user = auth.user!
+      const memberRecord = await OrganizationTeamMember.query().where('user_id', user.id).first()
+      if (!memberRecord)
+        return response.notFound({ message: 'User is not part of any organization' })
+
+      org = await Organization.find(memberRecord.organizationId)
+      if (!org) return response.notFound()
+    }
     org.merge(
       request.only([
         'name',
@@ -110,7 +133,20 @@ export default class OrganizationsController {
     const members = await OrganizationTeamMember.query()
       .where('organization_id', orgId)
       .preload('user')
-    return response.ok(members)
+    // Flatten user fields for frontend convenience
+    const payload = members.map((m) => {
+      const obj: any = m.toJSON()
+      if (obj.user) {
+        obj.name =
+          obj.user.first_name ||
+          obj.user.firstName ||
+          `${obj.user.first_name ?? ''} ${obj.user.last_name ?? ''}`.trim()
+        obj.email = obj.user.email
+      }
+      return obj
+    })
+
+    return response.ok(payload)
   }
 
   public async inviteMember({ auth, request, response }: HttpContextContract) {
