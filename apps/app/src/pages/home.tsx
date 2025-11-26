@@ -2,9 +2,13 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Heart, Users, Calendar, MapPin } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import api from '@/lib/api';
 
 const Home = () => {
   const { t } = useTranslation();
+  const { data: featuredEvents, isLoading } = useQuery(['featured-events'], () => api.listEvents() as unknown as Promise<any[]>);
+  const { data: stats, isLoading: isLoadingStats } = useQuery(['public-stats'], () => api.getReportsOverview() as unknown as Promise<any>);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -43,15 +47,21 @@ const Home = () => {
         <div className="container px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
             <div className="p-6">
-              <div className="text-4xl font-bold text-primary mb-2">5,000+</div>
+              <div className="text-4xl font-bold text-primary mb-2">
+                {isLoadingStats ? '...' : (stats?.volunteers?.total || '5,000+')}
+              </div>
               <div className="text-muted-foreground">{t('Active Volunteers')}</div>
             </div>
             <div className="p-6 border-l-0 md:border-l border-r-0 md:border-r">
-              <div className="text-4xl font-bold text-primary mb-2">12,000+</div>
+              <div className="text-4xl font-bold text-primary mb-2">
+                {isLoadingStats ? '...' : (stats?.hours?.total || '12,000+')}
+              </div>
               <div className="text-muted-foreground">{t('Hours Contributed')}</div>
             </div>
             <div className="p-6">
-              <div className="text-4xl font-bold text-primary mb-2">150+</div>
+              <div className="text-4xl font-bold text-primary mb-2">
+                {isLoadingStats ? '...' : (stats?.organizations?.total || '150+')}
+              </div>
               <div className="text-muted-foreground">{t('Partner Organizations')}</div>
             </div>
           </div>
@@ -118,40 +128,51 @@ const Home = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="group border rounded-lg overflow-hidden hover:shadow-lg transition-all">
-                <div className="h-48 bg-slate-200 relative">
-                  <img 
-                    src={`https://images.unsplash.com/photo-${i === 1 ? '1593113598332-cd288d649433' : i === 2 ? '1559027615-cd4628902d4a' : '1469571486292-0ba58a3f068b'}?q=80&w=800&auto=format&fit=crop`}
-                    alt="Event"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <div className="absolute top-4 right-4 bg-white px-3 py-1 rounded-full text-xs font-medium shadow-sm">
-                    Urgent
+            {isLoading ? (
+              // Loading skeletons
+              [1, 2, 3].map((i) => (
+                <div key={i} className="border rounded-lg overflow-hidden h-[400px] bg-slate-100 animate-pulse" />
+              ))
+            ) : (
+              featuredEvents?.slice(0, 3).map((event: any) => (
+                <div key={event.id} className="group border rounded-lg overflow-hidden hover:shadow-lg transition-all">
+                  <div className="h-48 bg-slate-200 relative">
+                    <img 
+                      src={event.image || `https://images.unsplash.com/photo-${event.id % 2 === 0 ? '1559027615-cd4628902d4a' : '1593113598332-cd288d649433'}?q=80&w=800&auto=format&fit=crop`}
+                      alt={event.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                    {event.isUrgent && (
+                      <div className="absolute top-4 right-4 bg-white px-3 py-1 rounded-full text-xs font-medium shadow-sm">
+                        Urgent
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-6">
+                    <div className="text-sm text-primary font-medium mb-2">{event.type || 'Community Service'}</div>
+                    <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors">
+                      {event.title}
+                    </h3>
+                    <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
+                      {event.description}
+                    </p>
+                    <div className="flex items-center gap-4 text-sm text-slate-500 mb-6">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-4 w-4" />
+                        <span>{new Date(event.startAt || event.date).toLocaleDateString()}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-4 w-4" />
+                        <span>{event.location || 'TBD'}</span>
+                      </div>
+                    </div>
+                    <Link to={`/events/${event.id}`}>
+                      <Button className="w-full">{t('View Details')}</Button>
+                    </Link>
                   </div>
                 </div>
-                <div className="p-6">
-                  <div className="text-sm text-primary font-medium mb-2">Community Service</div>
-                  <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors">
-                    {i === 1 ? 'Food Drive Coordination' : i === 2 ? 'Park Cleanup Day' : 'Senior Companionship'}
-                  </h3>
-                  <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
-                    Join us in making a tangible difference. We need volunteers to help organize and distribute supplies to those in need.
-                  </p>
-                  <div className="flex items-center gap-4 text-sm text-slate-500 mb-6">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
-                      <span>Sat, Nov 25</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <MapPin className="h-4 w-4" />
-                      <span>Downtown</span>
-                    </div>
-                  </div>
-                  <Button className="w-full">{t('View Details')}</Button>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
           
           <div className="mt-8 text-center md:hidden">
