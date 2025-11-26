@@ -4,7 +4,7 @@ import { useTheme } from '@/providers/theme-provider';
 import Language from '../atoms/language';
 import { Button } from '../ui/button';
 import api from '@/lib/api';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useStore } from '@/lib/store';
 import { showApiError } from '@/lib/error-to-toast';
 import { toast } from '@/components/atoms/use-toast';
@@ -15,14 +15,23 @@ import { useTranslation } from 'react-i18next';
 const Header = () => {
   const { authenticated, user } = useApp();
   const { theme } = useTheme();
-  const { setToken } = useStore();
+  const { setToken, setUser } = useStore();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
 
   const logoutMutation = useMutation(api.logout, {
     onSuccess: () => {
+      // Clear user state first
+      setUser(null);
+      
+      // Invalidate queries to ensure fresh state
+      queryClient.invalidateQueries(['me']);
+      
+      // Clear token last
       setToken('');
+      
       try {
         toast({ title: 'Signed out', description: 'You have been logged out.' });
       } catch (e) {}
