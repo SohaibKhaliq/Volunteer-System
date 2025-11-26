@@ -87,6 +87,8 @@ export default function OrganizationEvents() {
     status: 'Upcoming',
     description: '',
     capacity: '',
+    latitude: '',
+    longitude: '',
     skills: ''
   });
 
@@ -97,6 +99,8 @@ export default function OrganizationEvents() {
       date: '',
       time: '',
       location: '',
+      latitude: '',
+      longitude: '',
       type: 'Community',
       status: 'Upcoming',
       description: '',
@@ -117,7 +121,9 @@ export default function OrganizationEvents() {
       status: event.status,
       description: event.description || '',
       capacity: event.capacity ? event.capacity.toString() : '',
-      skills: event.skills ? event.skills.join(', ') : ''
+      skills: event.skills ? event.skills.join(', ') : '',
+      latitude: event.latitude ?? (event.coordinates ? event.coordinates[0] : ''),
+      longitude: event.longitude ?? (event.coordinates ? event.coordinates[1] : '')
     });
     setIsCreateOpen(true);
   };
@@ -126,8 +132,14 @@ export default function OrganizationEvents() {
     const payload = {
       ...formData,
       capacity: parseInt(formData.capacity) || 0,
-      skills: formData.skills.split(',').map((s: string) => s.trim()).filter((s: string) => s)
+      skills: formData.skills
+        .split(',')
+        .map((s: string) => s.trim())
+        .filter((s: string) => s)
     };
+    // include coords if present
+    if (formData.latitude !== '') payload.latitude = parseFloat(String(formData.latitude));
+    if (formData.longitude !== '') payload.longitude = parseFloat(String(formData.longitude));
     saveEventMutation.mutate(payload);
   };
 
@@ -153,10 +165,7 @@ export default function OrganizationEvents() {
       <div className="flex items-center gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search events..."
-            className="pl-8"
-          />
+          <Input placeholder="Search events..." className="pl-8" />
         </div>
         <Button variant="outline">
           <Filter className="h-4 w-4 mr-2" />
@@ -208,19 +217,19 @@ export default function OrganizationEvents() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={event.status === 'Upcoming' ? 'default' : 'secondary'}>
-                        {event.status}
-                      </Badge>
+                      <Badge variant={event.status === 'Upcoming' ? 'default' : 'secondary'}>{event.status}</Badge>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <div className="w-full bg-gray-200 rounded-full h-2 w-24">
-                          <div 
-                            className="bg-blue-600 h-2 rounded-full" 
+                          <div
+                            className="bg-blue-600 h-2 rounded-full"
                             style={{ width: `${(event.registered / event.capacity) * 100}%` }}
                           ></div>
                         </div>
-                        <span className="text-xs text-muted-foreground">{event.registered}/{event.capacity}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {event.registered}/{event.capacity}
+                        </span>
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
@@ -228,7 +237,12 @@ export default function OrganizationEvents() {
                         <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(event)}>
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="text-red-600" onClick={() => deleteEventMutation.mutate(event.id)}>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-red-600"
+                          onClick={() => deleteEventMutation.mutate(event.id)}
+                        >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -246,48 +260,50 @@ export default function OrganizationEvents() {
           <DialogHeader>
             <DialogTitle>{editingEvent ? 'Edit Event' : 'Create New Event'}</DialogTitle>
             <DialogDescription>
-              {editingEvent ? 'Update event details.' : 'Fill in the details to create a new event or task for volunteers.'}
+              {editingEvent
+                ? 'Update event details.'
+                : 'Fill in the details to create a new event or task for volunteers.'}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="title">Event Title</Label>
-                <Input 
-                  id="title" 
-                  placeholder="e.g. Beach Cleanup" 
+                <Input
+                  id="title"
+                  placeholder="e.g. Beach Cleanup"
                   value={formData.title}
-                  onChange={(e) => setFormData({...formData, title: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="type">Type</Label>
-                <Input 
-                  id="type" 
-                  placeholder="e.g. Community, Emergency" 
+                <Input
+                  id="type"
+                  placeholder="e.g. Community, Emergency"
                   value={formData.type}
-                  onChange={(e) => setFormData({...formData, type: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                 />
               </div>
             </div>
-            
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="date">Date</Label>
-                <Input 
-                  id="date" 
-                  type="date" 
+                <Input
+                  id="date"
+                  type="date"
                   value={formData.date}
-                  onChange={(e) => setFormData({...formData, date: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="time">Time</Label>
-                <Input 
-                  id="time" 
-                  type="time" 
+                <Input
+                  id="time"
+                  type="time"
                   value={formData.time}
-                  onChange={(e) => setFormData({...formData, time: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, time: e.target.value })}
                 />
               </div>
             </div>
@@ -296,24 +312,42 @@ export default function OrganizationEvents() {
               <Label htmlFor="location">Location</Label>
               <div className="relative">
                 <MapPin className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  id="location" 
-                  className="pl-8" 
-                  placeholder="Address or venue" 
+                <Input
+                  id="location"
+                  className="pl-8"
+                  placeholder="Address or venue"
                   value={formData.location}
-                  onChange={(e) => setFormData({...formData, location: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4 mt-2">
+                <Input
+                  id="latitude"
+                  type="number"
+                  step="0.000001"
+                  placeholder="Latitude (optional)"
+                  value={String(formData.latitude || '')}
+                  onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
+                />
+                <Input
+                  id="longitude"
+                  type="number"
+                  step="0.000001"
+                  placeholder="Longitude (optional)"
+                  value={String(formData.longitude || '')}
+                  onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
                 />
               </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
-              <Textarea 
-                id="description" 
-                placeholder="Describe the event and what volunteers will do..." 
+              <Textarea
+                id="description"
+                placeholder="Describe the event and what volunteers will do..."
                 className="h-24"
                 value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               />
             </div>
 
@@ -321,12 +355,12 @@ export default function OrganizationEvents() {
               <div className="space-y-2">
                 <Label htmlFor="capacity">Volunteer Capacity</Label>
                 <div className="flex gap-2">
-                  <Input 
-                    id="capacity" 
-                    type="number" 
-                    placeholder="e.g. 50" 
+                  <Input
+                    id="capacity"
+                    type="number"
+                    placeholder="e.g. 50"
                     value={formData.capacity}
-                    onChange={(e) => setFormData({...formData, capacity: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
                   />
                   <Button variant="outline" size="icon" title="Get AI Suggestion">
                     <Sparkles className="h-4 w-4 text-purple-600" />
@@ -335,17 +369,19 @@ export default function OrganizationEvents() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="skills">Required Skills</Label>
-                <Input 
-                  id="skills" 
-                  placeholder="e.g. First Aid, Cooking" 
+                <Input
+                  id="skills"
+                  placeholder="e.g. First Aid, Cooking"
                   value={formData.skills}
-                  onChange={(e) => setFormData({...formData, skills: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
                 />
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
+              Cancel
+            </Button>
             <Button onClick={handleSubmit} disabled={saveEventMutation.isLoading}>
               {saveEventMutation.isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {editingEvent ? 'Update Event' : 'Create Event'}
