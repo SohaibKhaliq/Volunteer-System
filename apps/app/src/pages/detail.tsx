@@ -9,8 +9,11 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { axios } from '@/lib/axios';
+import api from '@/lib/api';
+import { useToast } from '@/components/atoms/use-toast';
+import { useStore } from '@/lib/store';
 
 // Fix for default marker icon
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -29,6 +32,9 @@ const Detail = () => {
   const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const user = useStore((state) => state.user);
 
   const { data: event, isLoading } = useQuery({
     queryKey: ['event', id],
@@ -38,6 +44,38 @@ const Detail = () => {
     },
     enabled: !!id
   });
+
+  const joinMutation = useMutation({
+    mutationFn: () => axios.post(`/events/${id}/join`),
+    onSuccess: () => {
+      toast({
+        title: t('Success!'),
+        description: t('You have successfully joined this event')
+      });
+      queryClient.invalidateQueries({ queryKey: ['event', id] });
+    },
+    onError: (error: any) => {
+      const message = error?.response?.data?.message || t('Failed to join event');
+      toast({
+        title: t('Error'),
+        description: message,
+        variant: 'destructive'
+      });
+    }
+  });
+
+  const handleJoinEvent = () => {
+    if (!user) {
+      toast({
+        title: t('Login Required'),
+        description: t('Please log in to join this event'),
+        variant: 'destructive'
+      });
+      navigate('/login');
+      return;
+    }
+    joinMutation.mutate();
+  };
 
   if (isLoading) {
     return (
@@ -205,8 +243,13 @@ const Detail = () => {
                 </div>
 
                 <div className="flex flex-col gap-3 pt-2">
-                  <Button size="lg" className="w-full font-semibold text-lg h-12">
-                    {t('Join Now')}
+                  <Button 
+                    size="lg" 
+                    className="w-full font-semibold text-lg h-12"
+                    onClick={handleJoinEvent}
+                    disabled={joinMutation.isPending}
+                  >
+                    {joinMutation.isPending ? t('Joining...') : t('Join Now')}
                   </Button>
                   <div className="flex gap-2">
                     <Button variant="outline" className="flex-1">
