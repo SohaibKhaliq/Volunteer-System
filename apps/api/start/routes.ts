@@ -26,6 +26,8 @@ Route.get('/', async () => {
   return { hello: 'world' }
 })
 
+Route.post('/contact', 'ContactController.store')
+
 Route.get('/health', async ({ response }) => {
   const report = await HealthCheck.getReport()
   return report.healthy ? response.ok(report) : response.badRequest(report)
@@ -74,7 +76,11 @@ Route.resource('users', 'UsersController')
   .apiOnly()
 
 Route.resource('organizations', 'OrganizationsController')
-  .middleware({ '*': ['auth'] })
+  .middleware({
+    store: ['auth'],
+    update: ['auth'],
+    destroy: ['auth']
+  })
   .apiOnly()
 
 // Organization volunteer management
@@ -110,7 +116,11 @@ Route.resource('roles', 'RolesController')
   .apiOnly()
 
 Route.resource('events', 'EventsController')
-  .middleware({ '*': ['auth'] })
+  .middleware({
+    store: ['auth'],
+    update: ['auth'],
+    destroy: ['auth']
+  })
   .apiOnly()
 
 Route.resource('tasks', 'TasksController')
