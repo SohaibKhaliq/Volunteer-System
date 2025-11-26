@@ -3,7 +3,7 @@ import api from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/atoms/use-toast';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -12,7 +12,8 @@ import { Loader2 } from 'lucide-react';
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { setToken } = useStore();
+  const { setToken, setUser } = useStore();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const location = useLocation();
   const params = new URLSearchParams(location.search);
@@ -23,6 +24,17 @@ export default function Login() {
       const token = data?.token?.token;
       if (token) {
         setToken(token);
+        
+        // Update user in store if available in response
+        const userData = (data as any)?.user;
+        if (userData) {
+          setUser(userData);
+        }
+        
+        // Invalidate the 'me' query to force AppProvider to refetch user data
+        // This ensures we always have the latest user data with correct roles
+        queryClient.invalidateQueries(['me']);
+        
         try {
           toast({ title: 'Welcome back!', description: 'You have successfully signed in.' });
         } catch (e) {
