@@ -137,7 +137,10 @@ export default class EventsController {
   }
 
   public async show({ params, response }: HttpContextContract) {
-    const event = await AppEvent.query().where('id', params.id).preload('tasks').first()
+    const event = await AppEvent.query()
+      .where('id', params.id)
+      .preload('tasks', (taskQuery) => taskQuery.preload('assignments'))
+      .first()
     if (!event) return response.notFound()
 
     // If user is an org user, ensure the event matches their organization
@@ -145,7 +148,14 @@ export default class EventsController {
     // Public users and other org members should be able to see events.
     // The restriction should only be for update/delete/create which is handled by middleware/other methods.
 
-    return response.ok(event)
+    const evJson: any = event.toJSON()
+    const assigned = (event.tasks || []).reduce(
+      (sum: number, t: any) => sum + (Array.isArray(t.assignments) ? t.assignments.length : 0),
+      0
+    )
+    evJson.spots = { filled: assigned }
+    evJson.capacity = event.capacity ?? event.capacity
+    return response.ok(evJson)
   }
 
   public async update({ auth, params, request, response }: HttpContextContract) {
@@ -230,5 +240,59 @@ export default class EventsController {
     if (!event) return response.notFound()
     // AI matching logic stub
     return response.ok({ message: 'AI matching initiated', matches: [] })
+  }
+
+  /**
+   * Join an event as the current user. This chooses the first available task with an open slot
+   * and creates an assignment. Requires authentication.
+   */
+  public async join({ params, auth, response }: HttpContextContract) {
+    if (!auth.user) return response.unauthorized()
+
+    const event = await AppEvent.find(params.id)
+    if (!event) return response.notFound()
+
+    // load tasks and assignments to find available slot
+    const tasks = await event.related('tasks').query().preload('assignments')
+
+    // find a task with available slots; if slotCount is 0 or undefined treat as no slots
+    let chosenTask = tasks.find((t: any) => {
+      const required = Number(t.slotCount ?? t.slot_count ?? 0) || 0
+      const assigned = Array.isArray(t.assignments) ? t.assignments.length : 0
+      // if slot count is zero, it either means no explicit slots or unlimited — allow signup
+      if (!required) return true
+      return assigned < required
+    })
+
+    // If no tasks exist or none with open slots, fall back to adding a placeholder assignment
+    // by creating a minimal task for this event (so we can track signups)
+    const Assignment = await import('App/Models/Assignment')
+    if (!chosenTask) {
+      // create a lightweight task so we can attach an assignment
+      const Task = await import('App/Models/Task')
+      const t = await Task.default.create({
+        eventId: event.id,
+        title: `Auto-generated signup for ${event.title}`
+      })
+      chosenTask = t
+    }
+
+    // prevent duplicates
+    const existing = await Assignment.default
+      .query()
+      .where('task_id', chosenTask.id)
+      .where('user_id', auth.user.id)
+      .first()
+    if (existing) return response.ok({ message: 'Already joined' })
+
+    // create assignment. Volunteer-initiated signups will be 'approved'
+    const assignment = await Assignment.default.create({
+      taskId: chosenTask.id,
+      userId: auth.user.id,
+      assignedBy: auth.user.id,
+      status: 'approved'
+    })
+
+    return response.created(assignment)
   }
 }
