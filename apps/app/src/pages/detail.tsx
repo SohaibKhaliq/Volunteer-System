@@ -65,9 +65,11 @@ const Detail = () => {
   });
 
   const handleJoinEvent = () => {
-    // Ensure both a user record and a stored auth token exist before attempting to join.
-    // A user object without a token means the client cannot authenticate requests.
-    if (!user || !token) {
+    // Ensure a stored auth token exists before attempting to join. We should
+    // allow joining if a token exists even if the user's profile has not
+    // finished loading into `user` yet (avoids redirecting logged-in users
+    // to login while their profile is still being fetched).
+    if (!token) {
       toast({
         title: t('Login Required'),
         description: t('Please log in to join this event'),
