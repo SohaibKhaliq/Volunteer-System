@@ -40,6 +40,12 @@ export default class Event extends BaseModel {
   @hasMany(() => Task)
   public tasks: HasMany<typeof Task>
 
+  @column({ columnName: 'latitude' })
+  public latitude?: number
+
+  @column({ columnName: 'longitude' })
+  public longitude?: number
+
   @column({ columnName: 'is_published' })
   public isPublished?: boolean
 
@@ -51,4 +57,12 @@ export default class Event extends BaseModel {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   public updatedAt: DateTime
+
+  // convenience getter used by API payload
+  public get coordinates() {
+    if (typeof this.latitude === 'number' && typeof this.longitude === 'number') {
+      return [Number(this.latitude), Number(this.longitude)] as [number, number]
+    }
+    return undefined
+  }
 }
