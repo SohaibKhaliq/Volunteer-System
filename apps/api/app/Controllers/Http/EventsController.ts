@@ -43,7 +43,10 @@ export default class EventsController {
     // add filters
     if (q) {
       query.where((builder) => {
-        builder.where('title', 'like', `%${q}%`).orWhere('description', 'like', `%${q}%`).orWhere('location', 'like', `%${q}%`)
+        builder
+          .where('title', 'like', `%${q}%`)
+          .orWhere('description', 'like', `%${q}%`)
+          .orWhere('location', 'like', `%${q}%`)
       })
     }
     if (type) query.where('type', type)
@@ -103,7 +106,12 @@ export default class EventsController {
       // coordinates: prefer explicit latitude/longitude columns, otherwise check metadata.coordinates
       const latVal = (ev as any).latitude
       const lngVal = (ev as any).longitude
-      if (typeof latVal !== 'undefined' && typeof lngVal !== 'undefined' && latVal !== null && lngVal !== null) {
+      if (
+        typeof latVal !== 'undefined' &&
+        typeof lngVal !== 'undefined' &&
+        latVal !== null &&
+        lngVal !== null
+      ) {
         evJson.coordinates = [Number(latVal), Number(lngVal)]
       } else if (evJson.metadata && evJson.metadata.coordinates) {
         evJson.coordinates = evJson.metadata.coordinates
