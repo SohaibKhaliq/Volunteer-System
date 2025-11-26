@@ -48,9 +48,15 @@ export default class VolunteerAnalyticsController {
     // MySQL-friendly: use DATE_FORMAT to bucket by month
     const volunteerGrowth = await Database.from('organization_volunteers')
       .where('organization_id', orgId)
-      .select(Database.raw("DATE_FORMAT(joined_at, '%Y-%m-01') as month"))
+      .select(
+        Database.raw(
+          "DATE_FORMAT(COALESCE(organization_volunteers.joined_at, organization_volunteers.created_at), '%Y-%m-01') as month"
+        )
+      )
       .count('* as count')
-      .groupByRaw("DATE_FORMAT(joined_at, '%Y-%m-01')")
+      .groupByRaw(
+        "DATE_FORMAT(COALESCE(organization_volunteers.joined_at, organization_volunteers.created_at), '%Y-%m-01')"
+      )
       .orderBy('month', 'desc')
       .limit(12)
 
