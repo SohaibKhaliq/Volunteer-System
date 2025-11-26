@@ -43,6 +43,9 @@ export default class Event extends BaseModel {
   @column({ columnName: 'is_published' })
   public isPublished?: boolean
 
+  @column()
+  public type?: string
+
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
 
