@@ -77,6 +77,8 @@ export default function AdminEvents() {
   const [editStartAt, setEditStartAt] = useState<string | null>(null);
   const [editEndAt, setEditEndAt] = useState<string | null>(null);
   const [editLocation, setEditLocation] = useState('');
+  const [editLatitude, setEditLatitude] = useState<number | ''>('');
+  const [editLongitude, setEditLongitude] = useState<number | ''>('');
   const [editRequiredVolunteers, setEditRequiredVolunteers] = useState<number | ''>('');
   const [editStatus, setEditStatus] = useState<'draft' | 'published'>('draft');
   const [editIsRecurring, setEditIsRecurring] = useState<boolean>(false);
@@ -87,6 +89,8 @@ export default function AdminEvents() {
   const [createStartAt, setCreateStartAt] = useState<string | null>(null);
   const [createEndAt, setCreateEndAt] = useState<string | null>(null);
   const [createLocation, setCreateLocation] = useState('');
+  const [createLatitude, setCreateLatitude] = useState<number | ''>('');
+  const [createLongitude, setCreateLongitude] = useState<number | ''>('');
   const [createCapacity, setCreateCapacity] = useState<number | ''>('');
   const [createOrganizationId, setCreateOrganizationId] = useState<number | ''>('');
 
@@ -97,6 +101,8 @@ export default function AdminEvents() {
       setEditStartAt(editEvent.startAt || null);
       setEditEndAt(editEvent.endAt || null);
       setEditLocation(editEvent.location || '');
+      setEditLatitude((editEvent as any).latitude ?? '');
+      setEditLongitude((editEvent as any).longitude ?? '');
       setEditRequiredVolunteers(editEvent.requiredVolunteers || 0);
       setEditStatus(
         (editEvent.status === 'published' || (editEvent as any).isPublished || (editEvent as any).is_published
@@ -315,6 +321,22 @@ export default function AdminEvents() {
                 <div className="grid grid-cols-2 gap-4">
                   <Input
                     type="number"
+                    step="0.000001"
+                    value={createLatitude === '' ? '' : String(createLatitude)}
+                    onChange={(e) => setCreateLatitude(e.target.value === '' ? '' : Number(e.target.value))}
+                    placeholder="Latitude (optional)"
+                  />
+                  <Input
+                    type="number"
+                    step="0.000001"
+                    value={createLongitude === '' ? '' : String(createLongitude)}
+                    onChange={(e) => setCreateLongitude(e.target.value === '' ? '' : Number(e.target.value))}
+                    placeholder="Longitude (optional)"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    type="number"
                     value={typeof createCapacity === 'number' ? createCapacity : ''}
                     onChange={(e) => setCreateCapacity(e.target.value === '' ? '' : Number(e.target.value))}
                     placeholder="Capacity"
@@ -353,6 +375,8 @@ export default function AdminEvents() {
                       location: createLocation,
                       capacity: createCapacity || 0
                     };
+                    if (typeof createLatitude === 'number') payload.latitude = createLatitude;
+                    if (typeof createLongitude === 'number') payload.longitude = createLongitude;
                     if (createOrganizationId) payload.organization_id = createOrganizationId;
                     createMutation.mutate(payload);
                   }}
@@ -695,6 +719,22 @@ export default function AdminEvents() {
               />
             </div>
             <Input value={editLocation} onChange={(e) => setEditLocation(e.target.value)} placeholder="Location" />
+            <div className="grid grid-cols-2 gap-4">
+              <Input
+                type="number"
+                step="0.000001"
+                value={editLatitude === '' ? '' : String(editLatitude)}
+                onChange={(e) => setEditLatitude(e.target.value === '' ? '' : Number(e.target.value))}
+                placeholder="Latitude (optional)"
+              />
+              <Input
+                type="number"
+                step="0.000001"
+                value={editLongitude === '' ? '' : String(editLongitude)}
+                onChange={(e) => setEditLongitude(e.target.value === '' ? '' : Number(e.target.value))}
+                placeholder="Longitude (optional)"
+              />
+            </div>
             <Input
               type="number"
               value={typeof editRequiredVolunteers === 'number' ? editRequiredVolunteers : ''}
@@ -752,6 +792,8 @@ export default function AdminEvents() {
                   start_at: toSQLDatetime(editStartAt),
                   end_at: toSQLDatetime(editEndAt),
                   location: editLocation,
+                  latitude: typeof editLatitude === 'number' ? editLatitude : undefined,
+                  longitude: typeof editLongitude === 'number' ? editLongitude : undefined,
                   capacity: typeof editRequiredVolunteers === 'number' ? editRequiredVolunteers : 0,
                   is_published: editStatus === 'published'
                 };
