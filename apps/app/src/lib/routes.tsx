@@ -48,6 +48,9 @@ import OrganizationCommunications from '@/pages/organization/communications';
 import OrganizationSettings from '@/pages/organization/settings';
 import About from '@/pages/about';
 import Contact from '@/pages/contact';
+import Privacy from '@/pages/privacy';
+import Terms from '@/pages/terms';
+import Cookies from '@/pages/cookies';
 import OrganizationDetail from '@/pages/organization-detail';
 import VolunteerLayout from '@/components/templates/VolunteerLayout';
 import VolunteerDashboard from '@/pages/volunteer/dashboard';
@@ -144,6 +147,9 @@ const routes: RouteObject[] = [
       { path: 'organizations/register', element: <OrganizationRegister /> },
       { path: 'carpooling', element: <Carpooling /> },
       { path: 'help', element: <Help /> },
+      { path: 'privacy', element: <Privacy /> },
+      { path: 'terms', element: <Terms /> },
+      { path: 'cookies', element: <Cookies /> },
       { path: 'help-request', element: <HelpRequestForm /> },
       { path: 'help-offer', element: <HelpOfferForm /> },
       { path: 'transport-request', element: <TransportRequestForm /> },
