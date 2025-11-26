@@ -129,7 +129,7 @@ export default function OrganizationLayout() {
                     <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full"></span>
                   </Button>
                   <div className="text-sm text-gray-600">
-                    Organization: <span className="font-medium">Eghata Foundation</span>
+                    Organization: <span className="font-medium"></span>
                   </div>
                 </div>
               </div>
