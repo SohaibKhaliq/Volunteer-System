@@ -54,13 +54,6 @@ export default function OrganizationSettings() {
                 <Palette className="h-4 w-4 mr-2" />
                 Appearance
               </TabsTrigger>
-              <TabsTrigger 
-                value="help" 
-                className="w-full justify-start px-4 py-2 data-[state=active]:bg-gray-100 data-[state=active]:text-gray-900"
-              >
-                <HelpCircle className="h-4 w-4 mr-2" />
-                Help & Support
-              </TabsTrigger>
             </TabsList>
           </aside>
 
@@ -200,37 +193,6 @@ export default function OrganizationSettings() {
                       <p className="text-xs text-muted-foreground">Reduce spacing and font size</p>
                     </div>
                     <Switch />
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="help" className="mt-0 space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Help & Support</CardTitle>
-                  <CardDescription>Get help with using the platform.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid gap-4">
-                    <Button variant="outline" className="justify-start h-auto py-4 px-4">
-                      <div className="flex flex-col items-start gap-1">
-                        <span className="font-semibold">Documentation</span>
-                        <span className="text-xs text-muted-foreground">Read guides and tutorials</span>
-                      </div>
-                    </Button>
-                    <Button variant="outline" className="justify-start h-auto py-4 px-4">
-                      <div className="flex flex-col items-start gap-1">
-                        <span className="font-semibold">Contact Support</span>
-                        <span className="text-xs text-muted-foreground">Get in touch with our team</span>
-                      </div>
-                    </Button>
-                    <Button variant="outline" className="justify-start h-auto py-4 px-4">
-                      <div className="flex flex-col items-start gap-1">
-                        <span className="font-semibold">Report a Bug</span>
-                        <span className="text-xs text-muted-foreground">Let us know if something isn't working</span>
-                      </div>
-                    </Button>
                   </div>
                 </CardContent>
               </Card>
