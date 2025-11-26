@@ -43,4 +43,23 @@ describe('Login page redirect behavior', () => {
       expect(screen.getByText(/Admin page/i)).toBeDefined();
     });
   });
+
+  it('redirects away if token already present (user already authenticated)', async () => {
+    // simulate persisted token in localStorage
+    localStorage.setItem('eghata-storage', JSON.stringify({ state: { token: 'abc', user: { id: 1, email: 'a@b' } } }));
+
+    const { container } = render(
+      <MemoryRouter initialEntries={['/login?returnTo=/dashboard']}>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/dashboard" element={<div>Dashboard page</div>} />
+        </Routes>
+      </MemoryRouter>
+    );
+
+    // since token exists and Login has an effect to navigate, we should be redirected
+    await waitFor(() => {
+      expect(screen.getByText(/Dashboard page/i)).toBeDefined();
+    });
+  });
 });
