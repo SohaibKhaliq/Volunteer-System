@@ -13,7 +13,7 @@ export default class EventsController {
       }
     }
     // preload tasks and their assignments so we can compute volunteer counts
-    const { organization_id } = request.qs()
+    const { organization_id, q, type, startDate, endDate, lat, lng, radius } = request.qs()
 
     const query = AppEvent.query().preload('tasks', (taskQuery) => {
       taskQuery.preload('assignments')
@@ -37,6 +37,31 @@ export default class EventsController {
         query.where('organization_id', member.organizationId)
       } else if (member) {
         query.where('organization_id', member.organizationId)
+      }
+    }
+
+    // add filters
+    if (q) {
+      query.where((builder) => {
+        builder.where('title', 'like', `%${q}%`).orWhere('description', 'like', `%${q}%`).orWhere('location', 'like', `%${q}%`)
+      })
+    }
+    if (type) query.where('type', type)
+    if (startDate) query.where('start_at', '>=', startDate)
+    if (endDate) query.where('start_at', '<=', endDate)
+
+    // geospatial filter: accept lat,lng and radius (km) and compute rough bounding box
+    if (lat && lng && radius) {
+      const latNum = parseFloat(lat as any)
+      const lngNum = parseFloat(lng as any)
+      const radiusKm = parseFloat(radius as any)
+      if (!Number.isNaN(latNum) && !Number.isNaN(lngNum) && !Number.isNaN(radiusKm)) {
+        const degDelta = radiusKm / 111 // approx degrees per km
+        const minLat = latNum - degDelta
+        const maxLat = latNum + degDelta
+        const minLng = lngNum - degDelta
+        const maxLng = lngNum + degDelta
+        query.whereBetween('latitude', [minLat, maxLat]).whereBetween('longitude', [minLng, maxLng])
       }
     }
 
@@ -74,6 +99,15 @@ export default class EventsController {
       } catch (e) {
         evJson.status = 'Upcoming'
       }
+
+      // coordinates: prefer explicit latitude/longitude columns, otherwise check metadata.coordinates
+      const latVal = (ev as any).latitude
+      const lngVal = (ev as any).longitude
+      if (typeof latVal !== 'undefined' && typeof lngVal !== 'undefined' && latVal !== null && lngVal !== null) {
+        evJson.coordinates = [Number(latVal), Number(lngVal)]
+      } else if (evJson.metadata && evJson.metadata.coordinates) {
+        evJson.coordinates = evJson.metadata.coordinates
+      }
       return evJson
     })
 
@@ -85,6 +119,8 @@ export default class EventsController {
       'title',
       'description',
       'location',
+      'latitude',
+      'longitude',
       'start_at',
       'end_at',
       'recurring_rule',
@@ -100,6 +136,8 @@ export default class EventsController {
     if (raw.description) payload.description = raw.description
     if (raw.location) payload.location = raw.location
     if (raw.start_at) payload.startAt = raw.start_at
+    if (typeof raw.latitude !== 'undefined') payload.latitude = raw.latitude
+    if (typeof raw.longitude !== 'undefined') payload.longitude = raw.longitude
     if (raw.end_at) payload.endAt = raw.end_at
     if (raw.recurring_rule) payload.recurringRule = raw.recurring_rule
     if (typeof raw.is_recurring !== 'undefined') payload.isRecurring = raw.is_recurring
@@ -179,6 +217,8 @@ export default class EventsController {
       'title',
       'description',
       'location',
+      'latitude',
+      'longitude',
       'start_at',
       'end_at',
       'recurring_rule',
@@ -192,6 +232,8 @@ export default class EventsController {
     if (raw.title) normalized.title = raw.title
     if (raw.description) normalized.description = raw.description
     if (raw.location) normalized.location = raw.location
+    if (typeof raw.latitude !== 'undefined') normalized.latitude = raw.latitude
+    if (typeof raw.longitude !== 'undefined') normalized.longitude = raw.longitude
     if (raw.start_at) normalized.startAt = raw.start_at
     if (raw.end_at) normalized.endAt = raw.end_at
     if (raw.recurring_rule) normalized.recurringRule = raw.recurring_rule
