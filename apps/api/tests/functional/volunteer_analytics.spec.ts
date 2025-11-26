@@ -18,9 +18,9 @@ test.group('Volunteer analytics endpoints', () => {
       user_id: vol.id,
       role: 'volunteer',
       status: 'active',
-      joined_at: DateTime.now().minus({ months: 3 }).toSQL(),
-      created_at: DateTime.now().toSQL(),
-      updated_at: DateTime.now().toSQL()
+      joined_at: DateTime.now().minus({ months: 3 }).toSQL({ includeOffset: false }),
+      created_at: DateTime.now().toSQL({ includeOffset: false }),
+      updated_at: DateTime.now().toSQL({ includeOffset: false })
     })
 
     // insert volunteer hours across the last 6 months
@@ -33,8 +33,8 @@ test.group('Volunteer analytics endpoints', () => {
         date: d.toSQLDate(),
         hours: 2 + i,
         status: 'approved',
-        created_at: DateTime.now().toSQL(),
-        updated_at: DateTime.now().toSQL()
+        created_at: DateTime.now().toSQL({ includeOffset: false }),
+        updated_at: DateTime.now().toSQL({ includeOffset: false })
       })
     }
 
