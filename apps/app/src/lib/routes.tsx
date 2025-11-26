@@ -46,6 +46,14 @@ import OrganizationCompliance from '@/pages/organization/compliance';
 import OrganizationReports from '@/pages/organization/reports';
 import OrganizationCommunications from '@/pages/organization/communications';
 import OrganizationSettings from '@/pages/organization/settings';
+import About from '@/pages/about';
+import Contact from '@/pages/contact';
+import OrganizationDetail from '@/pages/organization-detail';
+import VolunteerLayout from '@/components/templates/VolunteerLayout';
+import VolunteerDashboard from '@/pages/volunteer/dashboard';
+import VolunteerHistory from '@/pages/volunteer/history';
+import VolunteerProfile from '@/pages/volunteer/profile';
+import VolunteerSettings from '@/pages/volunteer/settings';
 
 // Simple wrappers to ensure pages are vertically scrollable
 const ScrollWrapper = ({ children }: any) => (
@@ -140,14 +148,37 @@ const routes: RouteObject[] = [
       { path: 'help-offer', element: <HelpOfferForm /> },
       { path: 'transport-request', element: <TransportRequestForm /> },
       { path: 'transport-offer', element: <TransportOfferForm /> },
-      { path: 'profile', element: <Profile /> }
+      { path: 'profile', element: <Profile /> },
+      { path: 'about', element: <About /> },
+      { path: 'contact', element: <Contact /> },
+      { path: 'organizations/:id', element: <OrganizationDetail /> },
+      { path: 'events/:id', element: <Detail /> }
+    ]
+  },
+  {
+    path: 'volunteer',
+    element: (
+      <ScrollWrapper>
+        <AppProvider>
+          <VolunteerLayout />
+        </AppProvider>
+      </ScrollWrapper>
+    ),
+    errorElement: <ErrorBoundary />,
+    children: [
+      { path: 'dashboard', element: <VolunteerDashboard /> },
+      { path: 'history', element: <VolunteerHistory /> },
+      { path: 'profile', element: <VolunteerProfile /> },
+      { path: 'settings', element: <VolunteerSettings /> }
     ]
   },
   {
     path: 'detail',
     element: (
       <ScrollWrapper>
-        <Layout />
+        <AppProvider>
+          <Layout />
+        </AppProvider>
       </ScrollWrapper>
     ),
     errorElement: <ErrorBoundary />,
@@ -160,7 +191,9 @@ const routes: RouteObject[] = [
     path: '*',
     element: (
       <ScrollWrapper>
-        <Layout />
+        <AppProvider>
+          <Layout />
+        </AppProvider>
       </ScrollWrapper>
     ),
     errorElement: <ErrorBoundary />,
