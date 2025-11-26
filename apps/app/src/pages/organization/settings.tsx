@@ -119,13 +119,6 @@ export default function OrganizationSettings() {
                     </div>
                     <Switch defaultChecked />
                   </div>
-                  <div className="flex items-center justify-between py-2">
-                    <div className="space-y-0.5">
-                      <Label>Marketing Updates</Label>
-                      <p className="text-xs text-muted-foreground">News and feature updates from Eghata</p>
-                    </div>
-                    <Switch />
-                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
