@@ -52,6 +52,12 @@ const Header = () => {
             <Link to="/organizations" className={cn("text-sm font-medium transition-colors hover:text-primary", location.pathname === '/organizations' ? "text-primary" : "text-muted-foreground")}>
               {t('Organizations')}
             </Link>
+            <Link to="/about" className={cn("text-sm font-medium transition-colors hover:text-primary", location.pathname === '/about' ? "text-primary" : "text-muted-foreground")}>
+              {t('About')}
+            </Link>
+            <Link to="/contact" className={cn("text-sm font-medium transition-colors hover:text-primary", location.pathname === '/contact' ? "text-primary" : "text-muted-foreground")}>
+              {t('Contact')}
+            </Link>
           </nav>
         </div>
 
