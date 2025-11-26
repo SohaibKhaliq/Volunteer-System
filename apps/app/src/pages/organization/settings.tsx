@@ -67,7 +67,7 @@ export default function OrganizationSettings() {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="org-name">Display Name</Label>
-                    <Input id="org-name" defaultValue="Eghata Foundation" />
+                    <Input id="org-name" defaultValue="" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="timezone">Timezone</Label>
