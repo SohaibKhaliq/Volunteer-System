@@ -6,6 +6,8 @@ import { DateTime } from 'luxon'
 import OrganizationTeamMember from 'App/Models/OrganizationTeamMember'
 import Event from 'App/Models/Event'
 import Drive from '@ioc:Adonis/Core/Drive'
+import Application from '@ioc:Adonis/Core/Application'
+import fs from 'fs'
 import Logger from '@ioc:Adonis/Core/Logger'
 import OrganizationVolunteer from 'App/Models/OrganizationVolunteer'
 
@@ -67,11 +69,53 @@ export default class OrganizationsController {
       // Try to convert stored disk path into an accessible URL using Drive
       try {
         if (payload.logo) {
-          const maybeUrl = await Drive.getUrl(payload.logo)
-          payload.logo = maybeUrl ?? payload.logo
+          // Normalize common stale values (e.g. 'tmp/uploads/...') into candidates
+          const raw = String(payload.logo)
+          const candidates: string[] = [raw]
+          // strip any leading /tmp/uploads/ or tmp/uploads/
+          candidates.push(raw.replace(/^\/?tmp\/uploads\//, ''))
+          // if stripped contains local or organizations, keep it, else add variants
+          const filename = raw.split('/').pop() || raw
+          candidates.push(`organizations/${filename}`)
+          candidates.push(`local/${filename}`)
+
+          let resolved: string | null = null
+          for (const c of candidates) {
+            try {
+              const maybeUrl = await Drive.getUrl(c)
+              if (maybeUrl) {
+                resolved = maybeUrl
+                break
+              }
+            } catch (e2) {
+              // try next
+            }
+          }
+
+          if (resolved) payload.logo = resolved
+          else payload.logo = `/uploads/${String(payload.logo).replace(/^\//, '')}`
         }
       } catch (e) {
-        // ignore — fallback to the stored path
+        // fallback: if payload.logo contains a file name, try resolving under the local disk
+        try {
+          if (payload.logo && typeof payload.logo === 'string') {
+            const filename = payload.logo.split('/').pop()
+            if (filename) {
+              // try organizations/<filename> first (preferred), then local/<filename>
+              const altOrg = `organizations/${filename}`
+              const maybeUrlOrg = await Drive.getUrl(altOrg).catch(() => null)
+              if (maybeUrlOrg) {
+                payload.logo = maybeUrlOrg
+              } else {
+                const alt = `local/${filename}`
+                const maybeUrl2 = await Drive.getUrl(alt).catch(() => null)
+                payload.logo = maybeUrl2 ?? `/uploads/${alt}`
+              }
+            }
+          }
+        } catch (e2) {
+          // give up and leave the stored value as-is
+        }
       }
       return response.ok(payload)
     }
@@ -108,12 +152,43 @@ export default class OrganizationsController {
     // Try to convert stored disk path into an accessible URL using Drive
     try {
       if (payload.logo) {
-        const maybeUrl = await Drive.getUrl(payload.logo)
-        payload.logo = maybeUrl ?? payload.logo
+        const raw = String(payload.logo)
+        const candidates: string[] = [raw]
+        candidates.push(raw.replace(/^\/?tmp\/uploads\//, ''))
+        const filename = raw.split('/').pop() || raw
+        candidates.push(`organizations/${filename}`)
+        candidates.push(`local/${filename}`)
+
+        let resolved: string | null = null
+        for (const c of candidates) {
+          try {
+            const maybeUrl = await Drive.getUrl(c)
+            if (maybeUrl) {
+              resolved = maybeUrl
+              break
+            }
+          } catch (e2) {
+            // continue
+          }
+        }
+
+        if (resolved) payload.logo = resolved
+        else payload.logo = `/uploads/${String(payload.logo).replace(/^\//, '')}`
       }
     } catch (e) {
-      // ignore — fallback to stored path
-    }
+        try {
+          if (payload.logo && typeof payload.logo === 'string') {
+            const filename = payload.logo.split('/').pop()
+            if (filename) {
+              const alt = `local/${filename}`
+              const maybeUrl2 = await Drive.getUrl(alt)
+              payload.logo = maybeUrl2 ?? `/uploads/${alt}`
+            }
+          }
+        } catch (e2) {
+          // ignore
+        }
+      }
 
     return response.ok(payload)
   }
@@ -175,8 +250,43 @@ export default class OrganizationsController {
       const logoFile = request.file('logo')
       if (logoFile) {
         await logoFile.moveToDisk('local', { dirname: 'organizations' })
-        // prefer the disk path
-        updateData.logo = `organizations/${logoFile.fileName}`
+        // moveToDisk stores the uploaded name in logoFile.fileName.
+        // We try to ensure the file is placed under the API uploads folder as /uploads/organizations/<file>
+        const filename = logoFile.fileName
+        const tmpRoot = Application.tmpPath('uploads')
+        // possible locations where moveToDisk may have placed the file
+        const candidates = [
+          `${tmpRoot}/organizations/${filename}`,
+          `${tmpRoot}/local/organizations/${filename}`,
+          `${tmpRoot}/local/${filename}`,
+          `${tmpRoot}/${filename}`
+        ]
+
+        let found: string | null = null
+        for (const c of candidates) {
+          if (fs.existsSync(c)) {
+            found = c
+            break
+          }
+        }
+
+        // Ensure final destination under tmpRoot/organizations/<filename>
+        const dest = `${tmpRoot}/organizations/${filename}`
+        if (!fs.existsSync(`${tmpRoot}/organizations`)) {
+          fs.mkdirSync(`${tmpRoot}/organizations`, { recursive: true })
+        }
+
+        if (found && found !== dest) {
+          try {
+            fs.renameSync(found, dest)
+          } catch (err) {
+            Logger.warn(`Failed to move uploaded logo from ${found} to ${dest}: ${String(err)}`)
+          }
+        }
+
+        // store path relative to disk root so Drive.getUrl('organizations/<file>') resolves
+        updateData.logo = `organizations/${filename}`
+        Logger.info(`Saved org logo to uploads (local/${logoFile.fileName})`)
       }
     } catch (err) {
       Logger.error('Error saving organization logo: ' + String(err))
