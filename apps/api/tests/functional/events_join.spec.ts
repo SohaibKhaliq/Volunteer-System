@@ -34,5 +34,7 @@ test.group('Event join flow', () => {
     assert.isNotNull(assignment)
     assert.equal(assignment!.taskId, task.id)
     assert.equal(assignment!.userId, user.id)
+    // assignment should use the accepted enum value
+    assert.equal(assignment!.status, 'accepted')
   })
 })
