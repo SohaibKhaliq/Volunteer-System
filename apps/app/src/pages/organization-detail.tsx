@@ -15,7 +15,7 @@ const OrganizationDetail = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const user = useStore((state) => state.user);
+  const { user, token } = useStore((state) => ({ user: state.user, token: state.token }));
 
   const { data: org, isLoading } = useQuery({
     queryKey: ['organization', id],
@@ -55,7 +55,9 @@ const OrganizationDetail = () => {
   });
 
   const handleJoinOrganization = () => {
-    if (!user) {
+    // If we have a stored auth token, allow the action — don't redirect
+    // the user back to login while their profile is still being loaded.
+    if (!user && !token) {
       toast({
         title: t('Login Required'),
         description: t('Please log in to join this organization'),
@@ -89,7 +91,7 @@ const OrganizationDetail = () => {
           {/* Fallback banner or actual banner if available */}
           <div className="absolute inset-0 bg-gradient-to-r from-primary/80 to-primary/40" />
         </div>
-        
+
         <div className="container px-4 relative -mt-16 pb-8">
           <div className="flex flex-col md:flex-row items-start gap-6">
             <div className="w-32 h-32 bg-white rounded-xl shadow-lg p-2 flex items-center justify-center overflow-hidden">
@@ -99,15 +101,13 @@ const OrganizationDetail = () => {
                 <Users className="w-12 h-12 text-slate-300" />
               )}
             </div>
-            
+
             <div className="flex-1 pt-2 md:pt-16">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                   <h1 className="text-3xl font-bold text-slate-900 mb-2">{org.name}</h1>
                   <div className="flex flex-wrap gap-4 text-sm text-slate-600">
-                    {org.type && (
-                      <Badge variant="secondary">{org.type}</Badge>
-                    )}
+                    {org.type && <Badge variant="secondary">{org.type}</Badge>}
                     {org.address && (
                       <div className="flex items-center gap-1">
                         <MapPin className="h-4 w-4" />
@@ -147,13 +147,14 @@ const OrganizationDetail = () => {
               ) : events && events.length > 0 ? (
                 <div className="space-y-4">
                   {events.map((event: any) => (
-                    <div key={event.id} className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow flex flex-col sm:flex-row gap-6">
+                    <div
+                      key={event.id}
+                      className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow flex flex-col sm:flex-row gap-6"
+                    >
                       <div className="flex-1">
                         <div className="flex justify-between items-start mb-2">
                           <h3 className="text-lg font-semibold">{event.title}</h3>
-                          <Badge variant={event.status === 'Upcoming' ? 'default' : 'secondary'}>
-                            {event.status}
-                          </Badge>
+                          <Badge variant={event.status === 'Upcoming' ? 'default' : 'secondary'}>{event.status}</Badge>
                         </div>
                         <p className="text-slate-600 text-sm mb-4 line-clamp-2">{event.description}</p>
                         <div className="flex flex-wrap gap-4 text-sm text-slate-500">
@@ -169,7 +170,9 @@ const OrganizationDetail = () => {
                       </div>
                       <div className="flex items-center">
                         <Link to={`/detail/event/${event.id}`}>
-                          <Button variant="outline">{t('View Details')} <ArrowRight className="ml-2 h-4 w-4" /></Button>
+                          <Button variant="outline">
+                            {t('View Details')} <ArrowRight className="ml-2 h-4 w-4" />
+                          </Button>
                         </Link>
                       </div>
                     </div>
@@ -189,19 +192,30 @@ const OrganizationDetail = () => {
               <h3 className="font-semibold mb-4">{t('Contact Information')}</h3>
               <div className="space-y-4">
                 {org.website && (
-                  <a href={org.website} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-slate-600 hover:text-primary transition-colors">
+                  <a
+                    href={org.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 text-slate-600 hover:text-primary transition-colors"
+                  >
                     <Globe className="h-5 w-5" />
                     <span className="truncate">{org.website.replace(/^https?:\/\//, '')}</span>
                   </a>
                 )}
                 {org.email && (
-                  <a href={`mailto:${org.email}`} className="flex items-center gap-3 text-slate-600 hover:text-primary transition-colors">
+                  <a
+                    href={`mailto:${org.email}`}
+                    className="flex items-center gap-3 text-slate-600 hover:text-primary transition-colors"
+                  >
                     <Mail className="h-5 w-5" />
                     <span className="truncate">{org.email}</span>
                   </a>
                 )}
                 {org.phone && (
-                  <a href={`tel:${org.phone}`} className="flex items-center gap-3 text-slate-600 hover:text-primary transition-colors">
+                  <a
+                    href={`tel:${org.phone}`}
+                    className="flex items-center gap-3 text-slate-600 hover:text-primary transition-colors"
+                  >
                     <Phone className="h-5 w-5" />
                     <span className="truncate">{org.phone}</span>
                   </a>
