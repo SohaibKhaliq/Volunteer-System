@@ -213,7 +213,7 @@ export default class OrganizationsController {
       if (!org) return response.notFound()
     }
     // Accept both camel/cased frontend keys and DB-style keys.
-    const body = request.only([
+    const body: any = request.only([
       'name',
       'description',
       'contact_email',
@@ -655,9 +655,9 @@ export default class OrganizationsController {
     // Get volunteer growth (monthly)
     const volunteerGrowth = await Database.from('organization_volunteers')
       .where('organization_id', org.id)
-      .select(Database.raw("DATE_TRUNC('month', joined_at) as month"))
+      .select(Database.raw("DATE_FORMAT(joined_at, '%Y-%m-01') as month"))
       .count('* as count')
-      .groupByRaw("DATE_TRUNC('month', joined_at)")
+      .groupByRaw("DATE_FORMAT(joined_at, '%Y-%m-01')")
       .orderBy('month', 'desc')
       .limit(12)
 
