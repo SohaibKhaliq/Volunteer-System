@@ -14,6 +14,7 @@ const api = {
   logout: async () => {
     return axios.post('/logout');
   },
+  contact: async (data: any) => axios.post('/contact', data),
 
   /* Help Request endpoints */
   createHelpRequest: async (data: FormData) => {
@@ -36,6 +37,7 @@ const api = {
   getOrganizationVolunteers: async (orgId: number, filters?: any) =>
     axios.get(`/organizations/${orgId}/volunteers`, { params: filters }),
   addOrganizationVolunteer: async (orgId: number, data: any) => axios.post(`/organizations/${orgId}/volunteers`, data),
+  joinOrganization: async (orgId: number) => axios.post(`/organizations/${orgId}/volunteers`, {}),
   updateOrganizationVolunteer: async (orgId: number, userId: number, data: any) =>
     axios.put(`/organizations/${orgId}/volunteers/${userId}`, data),
   removeOrganizationVolunteer: async (orgId: number, userId: number) =>
@@ -253,10 +255,7 @@ const api = {
   deleteOrganizationEvent: async (id: number) => axios.delete(`/organization/events/${id}`),
 
   // Volunteers
-  listOrganizationVolunteers: async () => axios.get('/organization/volunteers'),
-  addOrganizationVolunteer: async (data: any) => axios.post('/organization/volunteers', data),
-  updateOrganizationVolunteer: async (id: number, data: any) => axios.put(`/organization/volunteers/${id}`, data),
-  deleteOrganizationVolunteer: async (id: number) => axios.delete(`/organization/volunteers/${id}`),
+  // listOrganizationVolunteers and addOrganizationVolunteer are already defined above
 
   // Compliance
   listOrganizationDocuments: async () => axios.get('/organization/documents'),
