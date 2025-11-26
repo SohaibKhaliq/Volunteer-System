@@ -71,7 +71,9 @@ const Detail = () => {
         description: t('Please log in to join this event'),
         variant: 'destructive'
       });
-      navigate('/login');
+      // Preserve current URL for redirect after login
+      const returnTo = encodeURIComponent(window.location.pathname + window.location.search + window.location.hash);
+      navigate(`/login?returnTo=${returnTo}`);
       return;
     }
     joinMutation.mutate();
