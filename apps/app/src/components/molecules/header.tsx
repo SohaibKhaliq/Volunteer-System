@@ -52,19 +52,76 @@ const Header = () => {
           </Link>
 
           <nav className="hidden md:flex items-center gap-6">
-            <Link to="/" className={cn("text-sm font-medium transition-colors hover:text-primary", location.pathname === '/' ? "text-primary" : "text-muted-foreground")}>
+            <Link
+              to="/"
+              className={cn(
+                'text-sm font-medium transition-colors hover:text-primary',
+                location.pathname === '/' ? 'text-primary' : 'text-muted-foreground'
+              )}
+            >
               {t('Home')}
             </Link>
-            <Link to="/map" className={cn("text-sm font-medium transition-colors hover:text-primary", location.pathname === '/map' ? "text-primary" : "text-muted-foreground")}>
+            <Link
+              to="/map"
+              className={cn(
+                'text-sm font-medium transition-colors hover:text-primary',
+                location.pathname === '/map' ? 'text-primary' : 'text-muted-foreground'
+              )}
+            >
               {t('Find Opportunities')}
             </Link>
-            <Link to="/organizations" className={cn("text-sm font-medium transition-colors hover:text-primary", location.pathname === '/organizations' ? "text-primary" : "text-muted-foreground")}>
+            <Link
+              to="/organizations"
+              className={cn(
+                'text-sm font-medium transition-colors hover:text-primary',
+                location.pathname === '/organizations' ? 'text-primary' : 'text-muted-foreground'
+              )}
+            >
               {t('Organizations')}
             </Link>
-            <Link to="/about" className={cn("text-sm font-medium transition-colors hover:text-primary", location.pathname === '/about' ? "text-primary" : "text-muted-foreground")}>
+            <Link
+              to="/about"
+              className={cn(
+                'text-sm font-medium transition-colors hover:text-primary',
+                location.pathname === '/about' ? 'text-primary' : 'text-muted-foreground'
+              )}
+            >
               {t('About')}
             </Link>
-            <Link to="/contact" className={cn("text-sm font-medium transition-colors hover:text-primary", location.pathname === '/contact' ? "text-primary" : "text-muted-foreground")}>
+            <Link
+              to="/help"
+              className={cn(
+                'text-sm font-medium transition-colors hover:text-primary',
+                location.pathname === '/help' ? 'text-primary' : 'text-muted-foreground'
+              )}
+            >
+              {t('Help')}
+            </Link>
+            <Link
+              to="/privacy"
+              className={cn(
+                'text-sm font-medium transition-colors hover:text-primary',
+                location.pathname === '/privacy' ? 'text-primary' : 'text-muted-foreground'
+              )}
+            >
+              {t('Privacy')}
+            </Link>
+            <Link
+              to="/terms"
+              className={cn(
+                'text-sm font-medium transition-colors hover:text-primary',
+                location.pathname === '/terms' ? 'text-primary' : 'text-muted-foreground'
+              )}
+            >
+              {t('Terms')}
+            </Link>
+            <Link
+              to="/contact"
+              className={cn(
+                'text-sm font-medium transition-colors hover:text-primary',
+                location.pathname === '/contact' ? 'text-primary' : 'text-muted-foreground'
+              )}
+            >
               {t('Contact')}
             </Link>
           </nav>
@@ -76,16 +133,23 @@ const Header = () => {
           {authenticated ? (
             <div className="flex items-center gap-4">
               {user?.roles?.some((r: any) => r.name === 'admin') && (
-                <Link to="/admin" className="hidden md:block text-sm font-medium text-muted-foreground hover:text-primary">
+                <Link
+                  to="/admin"
+                  className="hidden md:block text-sm font-medium text-muted-foreground hover:text-primary"
+                >
                   Admin
                 </Link>
               )}
-               {(user?.roles?.some((r: any) => r.name === 'organization_admin' || r.name === 'organization_member') || user?.organizationId) && (
-                <Link to="/organization" className="hidden md:block text-sm font-medium text-muted-foreground hover:text-primary">
+              {(user?.roles?.some((r: any) => r.name === 'organization_admin' || r.name === 'organization_member') ||
+                user?.organizationId) && (
+                <Link
+                  to="/organization"
+                  className="hidden md:block text-sm font-medium text-muted-foreground hover:text-primary"
+                >
                   Organization
                 </Link>
               )}
-              
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="gap-2">
@@ -106,7 +170,10 @@ const Header = () => {
                     Offer Help
                   </DropdownMenuItem>
                   <div className="h-px bg-border my-1" />
-                  <DropdownMenuItem onClick={() => logoutMutation.mutate()} className="cursor-pointer text-red-600 focus:text-red-600">
+                  <DropdownMenuItem
+                    onClick={() => logoutMutation.mutate()}
+                    className="cursor-pointer text-red-600 focus:text-red-600"
+                  >
                     Logout
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -115,7 +182,9 @@ const Header = () => {
           ) : (
             <div className="flex items-center gap-2">
               <Link to="/login">
-                <Button variant="ghost" size="sm">{t('Log in')}</Button>
+                <Button variant="ghost" size="sm">
+                  {t('Log in')}
+                </Button>
               </Link>
               <Link to="/register">
                 <Button size="sm">{t('Join Now')}</Button>
