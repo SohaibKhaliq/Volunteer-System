@@ -20,10 +20,10 @@ import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
 let DefaultIcon = L.icon({
-    iconUrl: icon,
-    shadowUrl: iconShadow,
-    iconSize: [25, 41],
-    iconAnchor: [12, 41]
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41]
 });
 
 L.Marker.prototype.options.icon = DefaultIcon;
@@ -34,7 +34,7 @@ const Detail = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const user = useStore((state) => state.user);
+  const { user, token } = useStore((state) => ({ user: state.user, token: state.token }));
 
   const { data: event, isLoading } = useQuery({
     queryKey: ['event', id],
@@ -65,7 +65,9 @@ const Detail = () => {
   });
 
   const handleJoinEvent = () => {
-    if (!user) {
+    // Ensure both a user record and a stored auth token exist before attempting to join.
+    // A user object without a token means the client cannot authenticate requests.
+    if (!user || !token) {
       toast({
         title: t('Login Required'),
         description: t('Please log in to join this event'),
@@ -76,6 +78,7 @@ const Detail = () => {
       navigate(`/login?returnTo=${returnTo}`);
       return;
     }
+    // user and token present — execute join request
     joinMutation.mutate();
   };
 
@@ -119,18 +122,15 @@ const Detail = () => {
     <div className="min-h-screen bg-slate-50 pb-12">
       {/* Hero Image */}
       <div className="relative h-[400px] w-full bg-slate-900">
-        <img 
-          src={event.image || 'https://images.unsplash.com/photo-1559027615-cd4628902d4a?q=80&w=2074&auto=format&fit=crop'} 
-          alt={event.title} 
+        <img
+          src={
+            event.image || 'https://images.unsplash.com/photo-1559027615-cd4628902d4a?q=80&w=2074&auto=format&fit=crop'
+          }
+          alt={event.title}
           className="w-full h-full object-cover opacity-60"
         />
         <div className="absolute top-6 left-6">
-          <Button 
-            variant="secondary" 
-            size="sm" 
-            className="gap-2"
-            onClick={() => navigate(-1)}
-          >
+          <Button variant="secondary" size="sm" className="gap-2" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-4 w-4" /> {t('Back')}
           </Button>
         </div>
@@ -144,7 +144,9 @@ const Detail = () => {
               <CardHeader className="pb-4">
                 <div className="flex flex-wrap gap-2 mb-4">
                   {event.tags?.map((tag: string) => (
-                    <Badge key={tag} variant="secondary">{tag}</Badge>
+                    <Badge key={tag} variant="secondary">
+                      {tag}
+                    </Badge>
                   ))}
                 </div>
                 <h1 className="text-3xl font-bold text-slate-900">{event.title}</h1>
@@ -157,9 +159,7 @@ const Detail = () => {
               <CardContent className="space-y-8">
                 <div>
                   <h3 className="text-xl font-semibold mb-3">{t('About this Opportunity')}</h3>
-                  <p className="text-slate-600 leading-relaxed">
-                    {event.description}
-                  </p>
+                  <p className="text-slate-600 leading-relaxed">{event.description}</p>
                 </div>
 
                 <Separator />
@@ -223,7 +223,9 @@ const Detail = () => {
                   <div className="flex items-start gap-3">
                     <Clock className="h-5 w-5 text-primary shrink-0 mt-0.5" />
                     <div>
-                      <div className="font-medium">{formatTime(event.startAt)} - {formatTime(event.endAt)}</div>
+                      <div className="font-medium">
+                        {formatTime(event.startAt)} - {formatTime(event.endAt)}
+                      </div>
                       <div className="text-sm text-muted-foreground">{t('Duration')}</div>
                     </div>
                   </div>
@@ -233,20 +235,24 @@ const Detail = () => {
 
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm mb-1">
-                    <span>{event.spots?.filled || 0} {t('volunteers signed up')}</span>
-                    <span className="text-muted-foreground">{event.capacity || 0} {t('spots total')}</span>
+                    <span>
+                      {event.spots?.filled || 0} {t('volunteers signed up')}
+                    </span>
+                    <span className="text-muted-foreground">
+                      {event.capacity || 0} {t('spots total')}
+                    </span>
                   </div>
                   <div className="w-full bg-slate-100 rounded-full h-2">
-                    <div 
-                      className="bg-primary h-2 rounded-full transition-all" 
+                    <div
+                      className="bg-primary h-2 rounded-full transition-all"
                       style={{ width: `${((event.spots?.filled || 0) / (event.capacity || 1)) * 100}%` }}
                     />
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-3 pt-2">
-                  <Button 
-                    size="lg" 
+                  <Button
+                    size="lg"
                     className="w-full font-semibold text-lg h-12"
                     onClick={handleJoinEvent}
                     disabled={joinMutation.isPending}
@@ -294,7 +300,11 @@ const Detail = () => {
                       </div>
                     )}
                   </div>
-                  <Button variant="link" className="px-0 mt-2 text-primary" onClick={() => navigate(`/organizations/${event.organization.id}`)}>
+                  <Button
+                    variant="link"
+                    className="px-0 mt-2 text-primary"
+                    onClick={() => navigate(`/organizations/${event.organization.id}`)}
+                  >
                     {t('View Organization Profile')}
                   </Button>
                 </CardContent>
