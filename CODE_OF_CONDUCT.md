@@ -1,4 +1,4 @@
-# Code of Conduct - Eghata
+# Code of Conduct - Local Aid
 
 ## Our Pledge
 
