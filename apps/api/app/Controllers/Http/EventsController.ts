@@ -285,12 +285,12 @@ export default class EventsController {
       .first()
     if (existing) return response.ok({ message: 'Already joined' })
 
-    // create assignment. Volunteer-initiated signups will be 'approved'
+    // create assignment. Volunteer-initiated signups should use the assignments enum 'accepted'
     const assignment = await Assignment.default.create({
       taskId: chosenTask.id,
       userId: auth.user.id,
       assignedBy: auth.user.id,
-      status: 'approved'
+      status: 'accepted'
     })
 
     return response.created(assignment)
