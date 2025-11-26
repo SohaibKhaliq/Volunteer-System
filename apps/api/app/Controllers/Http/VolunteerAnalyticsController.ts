@@ -18,15 +18,13 @@ export default class VolunteerAnalyticsController {
     const orgId = memberRecord.organizationId
 
     // Total volunteers
-    const totalVolunteers = await Database
-      .from('organization_volunteers')
+    const totalVolunteers = await Database.from('organization_volunteers')
       .where('organization_id', orgId)
       .count('* as total')
 
     // Active volunteers (participated in last 30 days)
     const thirtyDaysAgo = DateTime.now().minus({ days: 30 }).toSQLDate()
-    const activeVolunteers = await Database
-      .from('organization_volunteers')
+    const activeVolunteers = await Database.from('organization_volunteers')
       .join('volunteer_hours', 'organization_volunteers.user_id', 'volunteer_hours.user_id')
       .where('organization_volunteers.organization_id', orgId)
       .where('volunteer_hours.date', '>=', thirtyDaysAgo)
@@ -34,31 +32,30 @@ export default class VolunteerAnalyticsController {
       .count('* as total')
 
     // Retention rate
-    const retentionRate = totalVolunteers[0].total > 0 
-      ? Math.round((activeVolunteers[0].total / totalVolunteers[0].total) * 100)
-      : 0
+    const retentionRate =
+      totalVolunteers[0].total > 0
+        ? Math.round((activeVolunteers[0].total / totalVolunteers[0].total) * 100)
+        : 0
 
     // Average hours per volunteer
-    const avgHoursResult = await Database
-      .from('volunteer_hours')
+    const avgHoursResult = await Database.from('volunteer_hours')
       .join('organization_volunteers', 'volunteer_hours.user_id', 'organization_volunteers.user_id')
       .where('organization_volunteers.organization_id', orgId)
       .where('volunteer_hours.status', 'approved')
       .avg('volunteer_hours.hours as avg_hours')
 
     // Volunteer growth over last 12 months
-    const volunteerGrowth = await Database
-      .from('organization_volunteers')
+    // MySQL-friendly: use DATE_FORMAT to bucket by month
+    const volunteerGrowth = await Database.from('organization_volunteers')
       .where('organization_id', orgId)
-      .select(Database.raw("DATE_TRUNC('month', joined_at) as month"))
+      .select(Database.raw("DATE_FORMAT(joined_at, '%Y-%m-01') as month"))
       .count('* as count')
-      .groupByRaw("DATE_TRUNC('month', joined_at)")
+      .groupByRaw("DATE_FORMAT(joined_at, '%Y-%m-01')")
       .orderBy('month', 'desc')
       .limit(12)
 
     // Status distribution
-    const statusDistribution = await Database
-      .from('organization_volunteers')
+    const statusDistribution = await Database.from('organization_volunteers')
       .where('organization_id', orgId)
       .select('status')
       .count('* as count')
@@ -150,19 +147,21 @@ export default class VolunteerAnalyticsController {
       .where('volunteer_hours.status', 'approved')
 
     if (interval === 'month') {
+      // bucket by month using DATE_FORMAT
       hoursTrendQuery = hoursTrendQuery
-        .select(Database.raw("DATE_TRUNC('month', volunteer_hours.date) as period"))
+        .select(Database.raw("DATE_FORMAT(volunteer_hours.date, '%Y-%m-01') as period"))
         .sum('volunteer_hours.hours as total_hours')
         .count('volunteer_hours.id as log_count')
         .countDistinct('volunteer_hours.user_id as volunteer_count')
-        .groupByRaw("DATE_TRUNC('month', volunteer_hours.date)")
+        .groupByRaw("DATE_FORMAT(volunteer_hours.date, '%Y-%m-01')")
     } else if (interval === 'week') {
+      // Use YEAR-WEEK (ISO) representation for week buckets
       hoursTrendQuery = hoursTrendQuery
-        .select(Database.raw("DATE_TRUNC('week', volunteer_hours.date) as period"))
+        .select(Database.raw("DATE_FORMAT(volunteer_hours.date, '%x-Week-%v') as period"))
         .sum('volunteer_hours.hours as total_hours')
         .count('volunteer_hours.id as log_count')
         .countDistinct('volunteer_hours.user_id as volunteer_count')
-        .groupByRaw("DATE_TRUNC('week', volunteer_hours.date)")
+        .groupByRaw("DATE_FORMAT(volunteer_hours.date, '%x-Week-%v')")
     }
 
     hoursTrendQuery = hoursTrendQuery
@@ -173,20 +172,18 @@ export default class VolunteerAnalyticsController {
     const hoursTrend = await hoursTrendQuery
 
     // Events trend
-    let eventsTrendQuery = Database
-      .from('events')
-      .where('organization_id', orgId)
+    let eventsTrendQuery = Database.from('events').where('organization_id', orgId)
 
     if (interval === 'month') {
       eventsTrendQuery = eventsTrendQuery
-        .select(Database.raw("DATE_TRUNC('month', start_at) as period"))
+        .select(Database.raw("DATE_FORMAT(start_at, '%Y-%m-01') as period"))
         .count('* as event_count')
-        .groupByRaw("DATE_TRUNC('month', start_at)")
+        .groupByRaw("DATE_FORMAT(start_at, '%Y-%m-01')")
     } else if (interval === 'week') {
       eventsTrendQuery = eventsTrendQuery
-        .select(Database.raw("DATE_TRUNC('week', start_at) as period"))
+        .select(Database.raw("DATE_FORMAT(start_at, '%x-Week-%v') as period"))
         .count('* as event_count')
-        .groupByRaw("DATE_TRUNC('week', start_at)")
+        .groupByRaw("DATE_FORMAT(start_at, '%x-Week-%v')")
     }
 
     eventsTrendQuery = eventsTrendQuery
