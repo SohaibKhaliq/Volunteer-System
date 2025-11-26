@@ -22,6 +22,7 @@ export default function Profile() {
   const { data: user, isLoading } = useQuery(['me'], api.getCurrentUser);
   const { setToken } = useStore();
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('overview');
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -68,6 +69,15 @@ export default function Profile() {
     </div>
   );
 
+  if (!user) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen gap-4">
+        <h2 className="text-2xl font-bold">Please log in to view your profile</h2>
+        <Button onClick={() => navigate('/login')}>Log In</Button>
+      </div>
+    );
+  }
+
   const userData = (user as any).data || user;
 
   // Mock data for dashboard
@@ -89,31 +99,30 @@ export default function Profile() {
         <div className="container mx-auto max-w-5xl">
           <div className="flex flex-col md:flex-row items-center md:items-end gap-6">
             <Avatar className="h-32 w-32 border-4 border-white shadow-xl">
-              <AvatarImage src={userData.avatar} />
-              <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
+              <AvatarImage src={userData.profileImageUrl} />
+              <AvatarFallback className="bg-primary text-white text-4xl font-bold">
                 {userData.firstName?.[0]}{userData.lastName?.[0]}
               </AvatarFallback>
             </Avatar>
-            <div className="text-center md:text-left mb-2">
-              <h1 className="text-3xl font-bold">{userData.firstName} {userData.lastName}</h1>
-              <p className="text-slate-300 flex items-center justify-center md:justify-start gap-2 mt-1">
-                <Shield className="h-4 w-4" /> {userData.role || 'Volunteer'} 
-                <span className="mx-1">•</span>
-                <MapPin className="h-4 w-4" /> {userData.city || 'Marrakech, Morocco'}
+            <div className="text-center md:text-left flex-1">
+              <h1 className="text-3xl font-bold mb-1">
+                {userData.firstName || userData.first_name} {userData.lastName || userData.last_name}
+              </h1>
+              <p className="text-slate-300 flex items-center gap-2 justify-center md:justify-start">
+                <Shield className="h-4 w-4" /> Verified Volunteer
               </p>
-            </div>
-            <div className="flex-1" />
-            <div className="flex gap-3">
-              <Button variant="secondary" size="sm" onClick={() => navigate('/map')}>
-                Find Opportunities
-              </Button>
+              <div className="flex gap-2 mt-3 justify-center md:justify-start">
+                <Badge variant="secondary" className="bg-white/20 text-white hover:bg-white/30">
+                  <Award className="h-3 w-3 mr-1" /> Top Contributor
+                </Badge>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       <div className="container mx-auto max-w-5xl px-4 -mt-12">
-        <Tabs defaultValue="overview" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="bg-white shadow-sm p-1 h-12 w-full md:w-auto grid grid-cols-4 md:flex">
             <TabsTrigger value="overview" className="flex gap-2"><User className="h-4 w-4" /> <span className="hidden md:inline">Overview</span></TabsTrigger>
             <TabsTrigger value="schedule" className="flex gap-2"><Calendar className="h-4 w-4" /> <span className="hidden md:inline">My Schedule</span></TabsTrigger>
@@ -358,7 +367,7 @@ export default function Profile() {
                   <h4 className="text-red-900 font-medium">Danger Zone</h4>
                   <p className="text-red-700 text-sm">Sign out or delete your account</p>
                 </div>
-                <Button variant="destructive" variant="outline" className="border-red-200 text-red-700 hover:bg-red-100 hover:text-red-900" onClick={handleLogout}>
+                <Button variant="destructive" className="border-red-200 text-red-700 hover:bg-red-100 hover:text-red-900" onClick={handleLogout}>
                   <LogOut className="h-4 w-4 mr-2" /> Sign Out
                 </Button>
               </CardFooter>
