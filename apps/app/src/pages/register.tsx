@@ -3,7 +3,7 @@ import api from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/atoms/use-toast';
 import { Link, useNavigate } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -14,7 +14,8 @@ export default function Register() {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { setToken } = useStore();
+  const { setToken, setUser } = useStore();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   const mutation = useMutation((data: any) => api.register(data), {
@@ -22,6 +23,16 @@ export default function Register() {
       const token = data?.token?.token;
       if (token) {
         setToken(token);
+        
+        // Update user in store if available in response
+        const userData = (data as any)?.user;
+        if (userData) {
+          setUser(userData);
+        }
+        
+        // Invalidate the 'me' query to force AppProvider to refetch user data
+        queryClient.invalidateQueries(['me']);
+        
         try {
           toast({ title: 'Account created!', description: 'Welcome to Eghata.' });
         } catch (e) {}
