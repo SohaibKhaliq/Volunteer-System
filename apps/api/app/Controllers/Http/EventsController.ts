@@ -1,5 +1,5 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import Event from 'App/Models/Event'
+import AppEvent from 'App/Models/Event'
 
 export default class EventsController {
   public async index({ auth, request, response }: HttpContextContract) {
@@ -15,7 +15,7 @@ export default class EventsController {
     // preload tasks and their assignments so we can compute volunteer counts
     const { organization_id } = request.qs()
 
-    const query = Event.query().preload('tasks', (taskQuery) => {
+    const query = AppEvent.query().preload('tasks', (taskQuery) => {
       taskQuery.preload('assignments')
     })
 
@@ -124,39 +124,32 @@ export default class EventsController {
     if (typeof raw.is_published !== 'undefined') payload.isPublished = raw.is_published
 
     // Support frontend sending separate `date` and `time` fields (e.g. from forms)
-    if (!payload.startAt && raw.date && raw.time) {
+    if (!payload.startAt && (raw as any).date && (raw as any).time) {
       try {
-        payload.startAt = new Date(`${raw.date}T${raw.time}`)
+        payload.startAt = new Date(`${(raw as any).date}T${(raw as any).time}`)
       } catch (e) {
         // ignore — leave undefined
       }
     }
 
-    const event = await Event.create(payload)
+    const event = await AppEvent.create(payload)
     return response.created(event)
   }
 
-  public async show({ auth, params, response }: HttpContextContract) {
-    const event = await Event.query().where('id', params.id).preload('tasks').first()
+  public async show({ params, response }: HttpContextContract) {
+    const event = await AppEvent.query().where('id', params.id).preload('tasks').first()
     if (!event) return response.notFound()
 
     // If user is an org user, ensure the event matches their organization
-    if (auth?.user) {
-      const OrganizationTeamMember = await import('App/Models/OrganizationTeamMember')
-      const member = await OrganizationTeamMember.default
-        .query()
-        .where('user_id', auth.user!.id)
-        .first()
-      if (member && event.organizationId !== member.organizationId) {
-        return response.forbidden({ message: 'Event does not belong to your organization' })
-      }
-    }
+    // If user is an org user, we don't need to restrict view access to only their org's events.
+    // Public users and other org members should be able to see events.
+    // The restriction should only be for update/delete/create which is handled by middleware/other methods.
 
     return response.ok(event)
   }
 
   public async update({ auth, params, request, response }: HttpContextContract) {
-    const event = await Event.find(params.id)
+    const event = await AppEvent.find(params.id)
     if (!event) return response.notFound()
     if (auth?.user) {
       const OrganizationTeamMember = await import('App/Models/OrganizationTeamMember')
@@ -169,7 +162,7 @@ export default class EventsController {
       }
 
       if (member && event.organizationId !== member.organizationId) {
-        return response.forbidden({ message: 'Event does not belong to your organization' })
+        return response.forbidden({ message: 'AppEvent does not belong to your organization' })
       }
     }
     const raw = request.only([
@@ -198,9 +191,9 @@ export default class EventsController {
     if (typeof raw.organization_id !== 'undefined') normalized.organizationId = raw.organization_id
 
     // support date/time fields for updates
-    if (!normalized.startAt && raw.date && raw.time) {
+    if (!normalized.startAt && (raw as any).date && (raw as any).time) {
       try {
-        normalized.startAt = new Date(`${raw.date}T${raw.time}`)
+        normalized.startAt = new Date(`${(raw as any).date}T${(raw as any).time}`)
       } catch (e) {
         // ignore
       }
@@ -211,8 +204,8 @@ export default class EventsController {
     return response.ok(event)
   }
 
-  public async destroy({ auth, params, response }: HttpContextContract) {
-    const event = await Event.find(params.id)
+  public async destroy({ auth, params, request, response }: HttpContextContract) {
+    const event = await AppEvent.find(params.id)
     if (!event) return response.notFound()
     if (auth?.user) {
       const OrganizationTeamMember = await import('App/Models/OrganizationTeamMember')
@@ -225,7 +218,7 @@ export default class EventsController {
       }
 
       if (member && event.organizationId !== member.organizationId) {
-        return response.forbidden({ message: 'Event does not belong to your organization' })
+        return response.forbidden({ message: 'AppEvent does not belong to your organization' })
       }
     }
 
@@ -233,7 +226,7 @@ export default class EventsController {
     return response.noContent()
   }
   public async aiMatch({ params, response }: HttpContextContract) {
-    const event = await Event.find(params.id)
+    const event = await AppEvent.find(params.id)
     if (!event) return response.notFound()
     // AI matching logic stub
     return response.ok({ message: 'AI matching initiated', matches: [] })
