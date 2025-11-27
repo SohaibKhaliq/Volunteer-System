@@ -16,7 +16,9 @@ vi.mock('@/lib/api', () => ({
         impactScore: 850,
         impactPercentile: 10,
         hours: 24,
-        hoursChangePercent: 12
+        hoursChangePercent: 12,
+        achievements: [{ id: 1, key: '50-hours', title: '50 Hours Club' }],
+        participationCount: 3
       }
     }),
     getMyAssignments: vi.fn().mockResolvedValue([
