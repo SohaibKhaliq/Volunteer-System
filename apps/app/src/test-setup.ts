@@ -1,5 +1,8 @@
 // Test setup hooks — provide minimal DOM shims and helpers used by tests
 
+// Add jest-dom matchers for better DOM assertions
+import '@testing-library/jest-dom';
+
 // localStorage mock for tests
 class LocalStorageMock {
   private store: Record<string, string> = {};
