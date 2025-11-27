@@ -8,7 +8,7 @@ import Assignment from './Assignment'
 import ComplianceDocument from './ComplianceDocument'
 import Role from './Role'
 import Organization from './Organization'
-
+import UserAchievement from './UserAchievement'
 
 export default class User extends BaseModel {
   @column({ isPrimary: true })
@@ -81,6 +81,9 @@ export default class User extends BaseModel {
     pivotTimestamps: true
   })
   public organizations: ManyToMany<typeof Organization>
+
+  @hasMany(() => UserAchievement)
+  public achievements: HasMany<typeof UserAchievement>
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
