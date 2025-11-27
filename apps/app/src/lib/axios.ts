@@ -17,8 +17,21 @@ const authRequestInterceptor = (config: AxiosRequestConfig) => {
   return config;
 };
 
+// ensure baseURL is a valid URL (tests/env may override API_URL)
+let safeBaseURL: string | undefined = undefined;
+try {
+  if (API_URL) {
+    // will throw on invalid URLs
+    const u = new URL(API_URL);
+    safeBaseURL = u.toString();
+  }
+} catch (e) {
+  // fall through — keep undefined so axios will behave with relative URLs in tests
+  // console.warn('Invalid API_URL, axios will use relative URLs in test env')
+}
+
 export const axios = Axios.create({
-  baseURL: API_URL
+  baseURL: safeBaseURL
 });
 
 axios.interceptors.request.use(authRequestInterceptor as FixType);
