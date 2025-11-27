@@ -2,6 +2,8 @@ import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Logger from '@ioc:Adonis/Core/Logger'
 import Database from '@ioc:Adonis/Lucid/Database'
 import Role from 'App/Models/Role'
+import Achievement from 'App/Models/Achievement'
+import UserAchievement from 'App/Models/UserAchievement'
 import VolunteerHour from 'App/Models/VolunteerHour'
 import User from 'App/Models/User'
 
@@ -146,7 +148,11 @@ export default class UsersController {
   public async me({ auth, response }: HttpContextContract) {
     try {
       await auth.use('api').authenticate()
-      const user = await User.query().where('id', auth.user!.id).preload('roles').firstOrFail()
+      const user = await User.query()
+        .where('id', auth.user!.id)
+        .preload('roles')
+        .preload('organizations')
+        .firstOrFail()
       const { password, ...safeUser } = user.toJSON() as any
       // compute impact score for the user (0-1000)
       try {
@@ -308,6 +314,87 @@ export default class UsersController {
         ;(safeUser as any).hoursLast30 = Number(last30)
         ;(safeUser as any).hoursPrevious30 = Number(prev30)
         ;(safeUser as any).hoursChangePercent = Number(hoursChangePercent)
+
+        // Achievements evaluation -- fetch enabled achievements (global + org-specific)
+        try {
+          const orgIds = (user.organizations || []).map((o: any) => o.id)
+          const query = Achievement.query().where('is_enabled', true)
+          // include global achievements or those for user's organizations
+          query.where((b) => {
+            b.whereNull('organization_id')
+            if (orgIds.length > 0) b.orWhereIn('organization_id', orgIds)
+          })
+
+          const allAchievements = await query
+
+          const earned: any[] = []
+
+          for (const a of allAchievements) {
+            // ensure criteria presence
+            const criteria = a.criteria ?? null
+            let match = false
+
+            if (!criteria) {
+              // no criteria -> automatically awarded
+              match = true
+            } else {
+              // criteria can be { type: 'hours', threshold: number }
+              // or { any: [ ...criteria ] } or { all: [...] }
+              const evaluate = (c: any): boolean => {
+                if (!c || !c.type) return false
+                switch (c.type) {
+                  case 'hours':
+                    return Number(totalHours) >= Number(c.threshold || 0)
+                  case 'events':
+                    return Number(eventsAttended) >= Number(c.threshold || 0)
+                  case 'recent_hours':
+                    return Number(recentHours) >= Number(c.threshold || 0)
+                  case 'combined_score':
+                    return Number(impactScore) >= Number(c.threshold || 0)
+                  default:
+                    return false
+                }
+              }
+
+              if (Array.isArray(criteria.any)) {
+                match = criteria.any.some(evaluate)
+              } else if (Array.isArray(criteria.all)) {
+                match = criteria.all.every(evaluate)
+              } else if (criteria.type) {
+                match = evaluate(criteria)
+              }
+            }
+
+            if (match) {
+              // check if already awarded
+              const existing = await UserAchievement.query()
+                .where('user_id', user.id)
+                .andWhere('achievement_id', a.id)
+                .first()
+
+              if (!existing) {
+                // award
+                await UserAchievement.create({
+                  userId: user.id,
+                  achievementId: a.id,
+                  metadata: { awardedVia: 'auto' }
+                })
+              }
+
+              earned.push({
+                id: a.id,
+                key: a.key,
+                title: a.title,
+                description: a.description,
+                points: a.points
+              })
+            }
+          }
+
+          ;(safeUser as any).achievements = earned
+        } catch (achErr) {
+          ;(safeUser as any).achievements = []
+        }
       } catch (err) {
         // If any of the analytics queries fail, keep impactScore undefined and continue
         ;(safeUser as any).impactScore = undefined
