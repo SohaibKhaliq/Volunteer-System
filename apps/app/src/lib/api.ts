@@ -219,6 +219,8 @@ const api = {
 
   /* Volunteer Hours endpoints */
   listHours: async () => axios.get('/hours'),
+  // Return volunteer hours — frontend may pass params (e.g. user_id) to filter on server
+  getMyVolunteerHours: async (params?: any) => axios.get('/hours', { params }),
   updateHour: async (id: number, data: any) => axios.put(`/hours/${id}`, data),
   bulkUpdateHours: async (ids: number[], status: string) => axios.post('/hours/bulk', { ids, status }),
 
@@ -236,6 +238,8 @@ const api = {
 
   /* Assignment endpoints */
   listAssignments: async () => axios.get('/assignments'),
+  // Convenience: fetch assignments (frontend can request and filter by user/task)
+  getMyAssignments: async (params?: any) => axios.get('/assignments', { params }),
   createAssignment: async (data: any) => axios.post('/assignments', data),
   updateAssignment: async (id: number, data: any) => axios.put(`/assignments/${id}`, data),
   deleteAssignment: async (id: number) => axios.delete(`/assignments/${id}`),
@@ -279,6 +283,17 @@ const api = {
 
   // Dashboard
   getOrganizationDashboardStats: async () => axios.get('/organization/dashboard-stats'),
+
+  /* Achievements */
+  listAchievements: async (params?: any) => axios.get('/achievements', { params }),
+  createAchievement: async (data: any) => axios.post('/achievements', data),
+  updateAchievement: async (id: number, data: any) => axios.put(`/achievements/${id}`, data),
+  deleteAchievement: async (id: number) => axios.delete(`/achievements/${id}`),
+  // Organization-scoped achievement endpoints (organization panel)
+  listOrganizationAchievements: async (params?: any) => axios.get('/organization/achievements', { params }),
+  createOrganizationAchievement: async (data: any) => axios.post('/organization/achievements', data),
+  updateOrganizationAchievement: async (id: number, data: any) => axios.put(`/organization/achievements/${id}`, data),
+  deleteOrganizationAchievement: async (id: number) => axios.delete(`/organization/achievements/${id}`),
 
   // Volunteer Hours Management
   getOrganizationPendingHours: async (filters?: any) => axios.get('/organization/hours/pending', { params: filters }),
