@@ -32,13 +32,13 @@ export default class OrganizationInvitesController {
    */
   public async store({ params, request, response, auth }: HttpContextContract) {
     const { organizationId } = params
-    const  { email, first_name, last_name, role = 'volunteer', message } = request.only([
-      'email',
-      'first_name',
-      'last_name',
-      'role',
-      'message'
-    ])
+    const {
+      email,
+      first_name,
+      last_name,
+      role = 'volunteer',
+      message
+    } = request.only(['email', 'first_name', 'last_name', 'role', 'message'])
 
     const org = await Organization.find(organizationId)
     if (!org) {
@@ -48,8 +48,7 @@ export default class OrganizationInvitesController {
     // Check if user already exists and is already a volunteer
     const existingUser = await User.findBy('email', email)
     if (existingUser) {
-      const existing = await Database
-        .from('organization_volunteers')
+      const existing = await Database.from('organization_volunteers')
         .where('organization_id', organizationId)
         .where('user_id', existingUser.id)
         .first()
@@ -90,7 +89,7 @@ export default class OrganizationInvitesController {
     // TODO: Send email with invitation link
     // await Mail.send((mailer) => {
     //   mailer
-    //     .from('noreply@eghata.com')
+    //     .from('noreply@Local Aid.com')
     //     .to(email)
     //     .subject(`You're invited to join ${org.name}`)
     //     .htmlView('emails/organization_invite', { invite, org, token })

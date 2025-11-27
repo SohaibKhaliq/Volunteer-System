@@ -1,8 +1,8 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'net.thembassy.eghata',
-  appName: 'eghata',
+  appId: 'net.thembassy.Local Aid',
+  appName: 'Local Aid',
   webDir: 'dist',
   server: {
     androidScheme: 'https'

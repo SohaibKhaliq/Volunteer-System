@@ -124,7 +124,17 @@ const api = {
   getUserAnalytics: async () => axios.get('/users/analytics'),
   bulkUpdateUsers: async (ids: number[], action: string) => axios.post('/users/bulk', { ids, action }),
 
-  getReportsOverview: async (params?: Record<string, unknown>) => axios.get('/reports', { params }),
+  getReportsOverview: async (params?: Record<string, unknown>) => {
+    try {
+      // Skip automatic auth redirect for this public-facing request so anonymous users
+      // won't be forced to the /login page if the endpoint requires auth in some deployments.
+      return await axios.get('/reports', { params, _skipAuthRedirect: true });
+    } catch (e) {
+      // If the endpoint requires auth (401) or another error occurs, return null so
+      // public pages can render graceful fallbacks instead of navigating to /login.
+      return null as unknown as any;
+    }
+  },
   getVolunteerStats: async (params?: Record<string, unknown>) => axios.get('/reports/volunteers', { params }),
   getEventStats: async (params?: Record<string, unknown>) => axios.get('/reports/events', { params }),
   getHoursStats: async (params?: Record<string, unknown>) => axios.get('/reports/hours', { params }),
@@ -234,7 +244,10 @@ const api = {
   listCompliance: async () => axios.get('/compliance'),
 
   // return current authenticated user's profile (roles, flags)
-  getCurrentUser: async () => axios.get('/me'),
+  // _skipAuthRedirect true prevents axios interceptor from forcing a navigation
+  // to /login if the token is invalid; AppProvider should decide whether to
+  // redirect based on the current route.
+  getCurrentUser: async () => axios.get('/me', { _skipAuthRedirect: true }),
   getUser: async (id: number) => axios.get(`/users/${id}`),
 
   updateOrganizationProfile: async (data: any) => {

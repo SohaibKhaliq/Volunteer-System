@@ -41,7 +41,7 @@ const Contact = () => {
         <div className="container px-4 text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-6">{t('Contact Us')}</h1>
           <p className="text-xl text-primary-foreground/90 max-w-2xl mx-auto">
-            {t('Have questions or feedback? We\'d love to hear from you.')}
+            {t("Have questions or feedback? We'd love to hear from you.")}
           </p>
         </div>
       </section>
@@ -62,7 +62,7 @@ const Contact = () => {
                     <Mail className="h-6 w-6 text-primary mt-1" />
                     <div>
                       <h3 className="font-semibold mb-1">{t('Email')}</h3>
-                      <p className="text-slate-300">support@eghata.com</p>
+                      <p className="text-slate-300">support@Local Aid.com</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-4">
@@ -77,7 +77,8 @@ const Contact = () => {
                     <div>
                       <h3 className="font-semibold mb-1">{t('Office')}</h3>
                       <p className="text-slate-300">
-                        123 Volunteer Way<br />
+                        123 Volunteer Way
+                        <br />
                         San Francisco, CA 94105
                       </p>
                     </div>
@@ -90,11 +91,15 @@ const Contact = () => {
                   {/* Social icons placeholder */}
                   <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 cursor-pointer transition-colors">
                     <span className="sr-only">Facebook</span>
-                    <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.791-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                    <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.791-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                    </svg>
                   </div>
                   <div className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 cursor-pointer transition-colors">
                     <span className="sr-only">Twitter</span>
-                    <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.84 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/></svg>
+                    <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                      <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.84 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z" />
+                    </svg>
                   </div>
                 </div>
               </div>
@@ -105,37 +110,49 @@ const Contact = () => {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label htmlFor="firstName" className="text-sm font-medium text-slate-700">{t('First Name')}</label>
+                    <label htmlFor="firstName" className="text-sm font-medium text-slate-700">
+                      {t('First Name')}
+                    </label>
                     <Input id="firstName" required placeholder="John" />
                   </div>
                   <div className="space-y-2">
-                    <label htmlFor="lastName" className="text-sm font-medium text-slate-700">{t('Last Name')}</label>
+                    <label htmlFor="lastName" className="text-sm font-medium text-slate-700">
+                      {t('Last Name')}
+                    </label>
                     <Input id="lastName" required placeholder="Doe" />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label htmlFor="email" className="text-sm font-medium text-slate-700">{t('Email Address')}</label>
+                  <label htmlFor="email" className="text-sm font-medium text-slate-700">
+                    {t('Email Address')}
+                  </label>
                   <Input id="email" type="email" required placeholder="john@example.com" />
                 </div>
 
                 <div className="space-y-2">
-                  <label htmlFor="subject" className="text-sm font-medium text-slate-700">{t('Subject')}</label>
+                  <label htmlFor="subject" className="text-sm font-medium text-slate-700">
+                    {t('Subject')}
+                  </label>
                   <Input id="subject" required placeholder={t('How can we help?')} />
                 </div>
 
                 <div className="space-y-2">
-                  <label htmlFor="message" className="text-sm font-medium text-slate-700">{t('Message')}</label>
-                  <Textarea 
-                    id="message" 
-                    required 
-                    placeholder={t('Tell us more about your inquiry...')} 
+                  <label htmlFor="message" className="text-sm font-medium text-slate-700">
+                    {t('Message')}
+                  </label>
+                  <Textarea
+                    id="message"
+                    required
+                    placeholder={t('Tell us more about your inquiry...')}
                     className="min-h-[150px]"
                   />
                 </div>
 
                 <Button type="submit" className="w-full" disabled={isSubmitting}>
-                  {isSubmitting ? t('Sending...') : (
+                  {isSubmitting ? (
+                    t('Sending...')
+                  ) : (
                     <>
                       {t('Send Message')} <Send className="ml-2 h-4 w-4" />
                     </>

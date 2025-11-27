@@ -14,7 +14,7 @@ const Terms = () => {
         <section className="mb-6">
           <h2 className="text-xl font-semibold mb-2">{t('Acceptance of terms')}</h2>
           <p className="text-muted-foreground">
-            {t('By using Eghata you agree to these terms. Please read them carefully.')}
+            {t('By using Local Aid you agree to these terms. Please read them carefully.')}
           </p>
         </section>
 
@@ -40,7 +40,7 @@ const Terms = () => {
           <p>
             {t('If you need clarification on any of the terms, contact')}{' '}
             <Link to="/contact" className="text-primary">
-              contact@eghata.org
+              contact@Local Aid.org
             </Link>
           </p>
         </div>

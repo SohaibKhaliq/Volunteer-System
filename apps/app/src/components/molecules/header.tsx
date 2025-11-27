@@ -48,7 +48,7 @@ const Header = () => {
         <div className="flex items-center gap-8">
           <Link to="/" className="flex items-center gap-2">
             <img src={theme === 'dark' ? '/logo-light.svg' : '/logo.svg'} alt="logo" className="h-8 w-auto" />
-            <span className="text-xl font-bold hidden md:inline-block">Eghata</span>
+            <span className="text-xl font-bold hidden md:inline-block">Local Aid</span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-6">

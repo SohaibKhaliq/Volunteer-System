@@ -1,9 +1,9 @@
 {
 	"folders": [
 		{
-			"name": "✨ eghata",
-			"path": ".."
-		},
+      "name": "✨ Local Aid",
+      "path": ".."
+    },
 		{
 			"name": "⚙️api",
 			"path": "../apps/api"

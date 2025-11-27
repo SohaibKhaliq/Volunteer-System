@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import MapPage from '@/pages/map';
+import Home from '@/pages/home';
 import Detail from '@/pages/detail';
 
 vi.mock('@/lib/api', () => ({
@@ -19,6 +20,7 @@ vi.mock('@/lib/api', () => ({
         coordinates: [31.63, -8.0]
       }
     ]),
+    getReportsOverview: vi.fn().mockResolvedValue(null),
     getEvent: vi.fn().mockResolvedValue({
       id: 99,
       title: 'Mock Event',
@@ -46,6 +48,22 @@ describe('Public pages access', () => {
 
     // page should render and show the available opportunities header
     expect(await screen.findByText(/Available Opportunities/i)).toBeTruthy();
+  });
+
+  it('allows unauthenticated users to view the home page without redirecting to login', async () => {
+    render(
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={[`/`]}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+
+    // Expect hero copy visible and that we didn't navigate to /login
+    expect(await screen.findByText(/Make a Difference in Your Community Today/i)).toBeTruthy();
+    expect(window.location.pathname).not.toContain('/login');
   });
 
   it('allows unauthenticated users to view an event detail page without auto-redirect', async () => {

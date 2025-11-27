@@ -39,14 +39,50 @@ export default function AppProvider({ children }: AppProviderProps) {
 
       if (status === 401) {
         setToken('');
-        toast({
-          title: 'Session expired',
-          description: 'Please sign in again.'
-        });
-
-        const returnTo = encodeURIComponent(window.location.pathname + window.location.search + window.location.hash);
-
-        navigate(`/login?returnTo=${returnTo}`, { replace: true });
+        
+        // List of public routes that don't require authentication
+        const publicRoutes = [
+          '/',
+          '/map',
+          '/organizations',
+          '/about',
+          '/help',
+          '/contact',
+          '/login',
+          '/register',
+          '/privacy',
+          '/terms',
+          '/cookies',
+          '/carpooling',
+          '/help-request',
+          '/help-offer',
+          '/transport-request',
+          '/transport-offer'
+        ];
+        
+        // Check if current route is public or starts with a public route
+        const currentPath = window.location.pathname;
+        const isPublicRoute = publicRoutes.some(route => 
+          currentPath === route || 
+          currentPath.startsWith('/organizations/') ||
+          currentPath.startsWith('/events/') ||
+          currentPath.startsWith('/detail/')
+        );
+        
+        // Only redirect to login from protected routes
+        if (!isPublicRoute) {
+          toast({
+            title: 'Session expired',
+            description: 'Please sign in again.'
+          });
+          
+          const returnTo = encodeURIComponent(window.location.pathname + window.location.search + window.location.hash);
+          navigate(`/login?returnTo=${returnTo}`, { replace: true });
+        } else {
+          // For public routes, just clear the token silently or with a subtle notification
+          // Don't redirect, let the user continue browsing
+          console.log('Invalid token cleared from public route');
+        }
       }
     }
   });

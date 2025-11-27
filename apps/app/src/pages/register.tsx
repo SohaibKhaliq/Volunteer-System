@@ -34,7 +34,7 @@ export default function Register() {
         queryClient.invalidateQueries(['me']);
         
         try {
-          toast({ title: 'Account created!', description: 'Welcome to Eghata.' });
+          toast({ title: 'Account created!', description: 'Welcome to Local Aid.' });
         } catch (e) {}
         navigate('/');
       } else {

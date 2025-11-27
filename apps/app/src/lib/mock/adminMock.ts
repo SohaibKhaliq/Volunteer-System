@@ -118,7 +118,7 @@ export const volunteerProfile = {
 };
 
 export const orgSettings = {
-  name: 'Eghata Volunteer Network',
+  name: 'Local Aid Volunteer Network',
   timezone: 'UTC-5',
   integrations: ['Google Calendar', 'Slack']
 };

@@ -9,7 +9,7 @@ const Cookies = () => {
       <div className="container px-4 mx-auto max-w-3xl">
         <h1 className="text-3xl font-bold mb-4">{t('Cookies & Tracking')}</h1>
         <p className="text-muted-foreground mb-6">
-          {t('This page explains how we use cookies and similar technologies on the Eghata platform.')}
+          {t('This page explains how we use cookies and similar technologies on the Local Aid platform.')}
         </p>
 
         <section className="mb-6">

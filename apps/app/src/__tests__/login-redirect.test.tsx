@@ -46,7 +46,10 @@ describe('Login page redirect behavior', () => {
 
   it('redirects away if token already present (user already authenticated)', async () => {
     // simulate persisted token in localStorage
-    localStorage.setItem('eghata-storage', JSON.stringify({ state: { token: 'abc', user: { id: 1, email: 'a@b' } } }));
+    localStorage.setItem(
+      'Local Aid-storage',
+      JSON.stringify({ state: { token: 'abc', user: { id: 1, email: 'a@b' } } })
+    );
 
     const { container } = render(
       <MemoryRouter initialEntries={['/login?returnTo=/dashboard']}>

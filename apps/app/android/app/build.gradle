@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "net.thembassy.eghata"
+    namespace "net.thembassy.Local Aid"
     compileSdkVersion rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "net.thembassy.eghata"
+        applicationId "net.thembassy.Local Aid"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

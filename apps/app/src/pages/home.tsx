@@ -196,7 +196,7 @@ const Home = () => {
         <div className="container px-4 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">{t('Ready to Start Your Journey?')}</h2>
           <p className="text-lg text-primary-foreground/90 mb-8 max-w-2xl mx-auto">
-            {t('Whether you want to volunteer or need help organizing volunteers, Eghata is the platform for you.')}
+            {t('Whether you want to volunteer or need help organizing volunteers, Local Aid is the platform for you.')}
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link to="/register">

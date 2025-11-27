@@ -44,7 +44,7 @@ const Privacy = () => {
           <p>
             {t('If you have questions about this policy, reach out to us at')}{' '}
             <Link to="/contact" className="text-primary">
-              contact@eghata.org
+              contact@Local Aid.org
             </Link>
           </p>
         </div>

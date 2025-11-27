@@ -1,4 +1,4 @@
-package net.thembassy.eghata;
+package net.thembassy.Local Aid;
 
 import com.getcapacitor.BridgeActivity;
 

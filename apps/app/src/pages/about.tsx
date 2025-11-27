@@ -9,7 +9,7 @@ const About = () => {
       {/* Hero Section */}
       <section className="bg-primary text-white py-20">
         <div className="container px-4 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-6">{t('About Eghata')}</h1>
+          <h1 className="text-4xl md:text-5xl font-bold mb-6">{t('About Local Aid')}</h1>
           <p className="text-xl text-primary-foreground/90 max-w-2xl mx-auto">
             {t('Empowering communities through seamless volunteer management and meaningful connections.')}
           </p>
@@ -23,16 +23,20 @@ const About = () => {
             <div>
               <h2 className="text-3xl font-bold mb-6 text-slate-900">{t('Our Mission')}</h2>
               <p className="text-lg text-slate-600 mb-6 leading-relaxed">
-                {t('At Eghata, we believe that everyone has the power to make a difference. Our platform bridges the gap between passionate volunteers and organizations that need their help.')}
+                {t(
+                  'At Local Aid, we believe that everyone has the power to make a difference. Our platform bridges the gap between passionate volunteers and organizations that need their help.'
+                )}
               </p>
               <p className="text-lg text-slate-600 leading-relaxed">
-                {t('We strive to simplify the volunteering process, making it easier for organizations to manage their workforce and for individuals to find opportunities that align with their values and skills.')}
+                {t(
+                  'We strive to simplify the volunteering process, making it easier for organizations to manage their workforce and for individuals to find opportunities that align with their values and skills.'
+                )}
               </p>
             </div>
             <div className="relative h-[400px] rounded-2xl overflow-hidden shadow-xl">
-              <img 
-                src="https://images.unsplash.com/photo-1559027615-cd4628902d4a?q=80&w=2074&auto=format&fit=crop" 
-                alt="Volunteers working together" 
+              <img
+                src="https://images.unsplash.com/photo-1559027615-cd4628902d4a?q=80&w=2074&auto=format&fit=crop"
+                alt="Volunteers working together"
                 className="absolute inset-0 w-full h-full object-cover"
               />
             </div>
@@ -77,9 +81,9 @@ const About = () => {
             {[1, 2, 3].map((i) => (
               <div key={i} className="group">
                 <div className="w-48 h-48 bg-slate-200 rounded-full mx-auto mb-6 overflow-hidden">
-                  <img 
-                    src={`https://i.pravatar.cc/300?img=${i + 10}`} 
-                    alt="Team Member" 
+                  <img
+                    src={`https://i.pravatar.cc/300?img=${i + 10}`}
+                    alt="Team Member"
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform"
                   />
                 </div>

@@ -32,10 +32,13 @@ axios.interceptors.response.use(
     try {
       // never try to refresh if the failing request was already the authenticate endpoint
       const requestUrl = originalRequest?.url || '';
+      // allow callers to opt-out of automatic auth-redirect behavior
+      const skipAuthRedirect = Boolean(originalRequest?._skipAuthRedirect || originalRequest?.skipAuthRedirect);
       if (
         error?.response?.status === 401 &&
         originalRequest &&
         !originalRequest._retry &&
+        !skipAuthRedirect &&
         !requestUrl.includes('/login') &&
         !requestUrl.includes('/register')
       ) {

@@ -44,27 +44,21 @@ const VolunteerLayout = () => {
     <div className="min-h-screen bg-slate-50 flex">
       {/* Mobile Sidebar Overlay */}
       {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={() => setIsSidebarOpen(false)}
-        />
+        <div className="fixed inset-0 bg-black/50 z-40 lg:hidden" onClick={() => setIsSidebarOpen(false)} />
       )}
 
       {/* Sidebar */}
-      <aside className={`
+      <aside
+        className={`
         fixed inset-y-0 left-0 z-50 w-64 bg-white border-r shadow-sm transform transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-      `}>
+      `}
+      >
         <div className="h-16 flex items-center px-6 border-b">
           <Link to="/" className="flex items-center gap-2 font-bold text-xl text-primary">
-            <span>Eghata</span>
+            <span>Local Aid</span>
           </Link>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="ml-auto lg:hidden"
-            onClick={() => setIsSidebarOpen(false)}
-          >
+          <Button variant="ghost" size="icon" className="ml-auto lg:hidden" onClick={() => setIsSidebarOpen(false)}>
             <X className="h-5 w-5" />
           </Button>
         </div>
@@ -90,9 +84,9 @@ const VolunteerLayout = () => {
                   to={item.href}
                   className={`
                     flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors
-                    ${isActive 
-                      ? 'bg-primary/10 text-primary' 
-                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}
+                    ${
+                      isActive ? 'bg-primary/10 text-primary' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                    }
                   `}
                   onClick={() => setIsSidebarOpen(false)}
                 >
@@ -105,8 +99,8 @@ const VolunteerLayout = () => {
         </div>
 
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t bg-slate-50/50">
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             className="w-full justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
             onClick={logout}
           >
@@ -119,12 +113,7 @@ const VolunteerLayout = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-16 border-b bg-white px-4 flex items-center justify-between lg:justify-end sticky top-0 z-30">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="lg:hidden"
-            onClick={() => setIsSidebarOpen(true)}
-          >
+          <Button variant="ghost" size="icon" className="lg:hidden" onClick={() => setIsSidebarOpen(true)}>
             <Menu className="h-5 w-5" />
           </Button>
 

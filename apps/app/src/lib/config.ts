@@ -5,4 +5,4 @@ export const EARTHQUAKE_EPICENTER = {
 };
 
 export const API_URL = 'http://localhost:3333';
-export const STORAGE_KEY = 'eghata-storage';
+export const STORAGE_KEY = 'Local Aid-storage';
