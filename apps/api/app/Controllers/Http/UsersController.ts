@@ -2,6 +2,7 @@ import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Logger from '@ioc:Adonis/Core/Logger'
 import Database from '@ioc:Adonis/Lucid/Database'
 import Role from 'App/Models/Role'
+import VolunteerHour from 'App/Models/VolunteerHour'
 import User from 'App/Models/User'
 
 export default class UsersController {
@@ -147,6 +148,172 @@ export default class UsersController {
       await auth.use('api').authenticate()
       const user = await User.query().where('id', auth.user!.id).preload('roles').firstOrFail()
       const { password, ...safeUser } = user.toJSON() as any
+      // compute impact score for the user (0-1000)
+      try {
+        // total approved hours
+        const totalHoursRes = await VolunteerHour.query()
+          .where('user_id', user.id)
+          .andWhere('status', 'approved')
+          .sum('hours as total')
+        const totalHours =
+          (Array.isArray(totalHoursRes)
+            ? totalHoursRes[0].$extras?.total
+            : (totalHoursRes as any)?.$extras?.total) || 0
+
+        // unique events attended (from volunteer_hours or assignments)
+        const eventsRes = await VolunteerHour.query()
+          .where('user_id', user.id)
+          .andWhere('status', 'approved')
+          .select(Database.raw('COUNT(DISTINCT event_id) as cnt'))
+        const eventsAttended =
+          eventsRes && eventsRes[0] ? Number((eventsRes[0] as any).$extras?.cnt || 0) : 0
+
+        // recent hours (last 90 days)
+        const since = new Date()
+        since.setDate(since.getDate() - 90)
+        const recentRes = await VolunteerHour.query()
+          .where('user_id', user.id)
+          .andWhere('status', 'approved')
+          .andWhere('date', '>=', since.toISOString())
+          .sum('hours as total')
+        const recentHours =
+          (Array.isArray(recentRes)
+            ? recentRes[0].$extras?.total
+            : (recentRes as any)?.$extras?.total) || 0
+
+        // last 30 days and previous 30-day window (for percent change)
+        const last30Since = new Date()
+        last30Since.setDate(last30Since.getDate() - 30)
+        const last30Res = await VolunteerHour.query()
+          .where('user_id', user.id)
+          .andWhere('status', 'approved')
+          .andWhere('date', '>=', last30Since.toISOString())
+          .sum('hours as total')
+        const last30 =
+          (Array.isArray(last30Res)
+            ? last30Res[0].$extras?.total
+            : (last30Res as any)?.$extras?.total) || 0
+
+        const prev30Start = new Date()
+        prev30Start.setDate(prev30Start.getDate() - 60)
+        const prev30End = new Date()
+        prev30End.setDate(prev30End.getDate() - 30)
+        const prev30Res = await VolunteerHour.query()
+          .where('user_id', user.id)
+          .andWhere('status', 'approved')
+          .andWhere('date', '>=', prev30Start.toISOString())
+          .andWhere('date', '<', prev30End.toISOString())
+          .sum('hours as total')
+        const prev30 =
+          (Array.isArray(prev30Res)
+            ? prev30Res[0].$extras?.total
+            : (prev30Res as any)?.$extras?.total) || 0
+
+        // percent change calculation (last30 vs prev30)
+        let hoursChangePercent = 0
+        if (prev30 === 0) {
+          hoursChangePercent = last30 === 0 ? 0 : 100
+        } else {
+          hoursChangePercent = Math.round(
+            ((Number(last30) - Number(prev30)) / Number(prev30)) * 100
+          )
+        }
+
+        // New combined scoring (scale 0-1000)
+        // Tunable weights / caps:
+        // - hours component: scales totalHours * 6, cap 600
+        // - events component: 15 points per distinct event, cap 300
+        // - recent hours (90 days): scales recentHours * 2, cap 100
+        const hoursScore = Math.min(600, Math.round(Number(totalHours) * 6))
+        const eventsScore = Math.min(300, eventsAttended * 15)
+        const recentScore = Math.min(100, Math.round(Number(recentHours) * 2))
+
+        const impactScore = hoursScore + eventsScore + recentScore
+
+        // Build a combined-impact score distribution across volunteers so percentile
+        // is computed off the same combined metric rather than hours-only.
+        const since90 = new Date()
+        since90.setDate(since90.getDate() - 90)
+
+        // Aggregations per user
+        const totalsRows = await Database.from('volunteer_hours')
+          .where('status', 'approved')
+          .groupBy('user_id')
+          .select('user_id')
+          .select(Database.raw('SUM(hours) as total'))
+
+        const eventsRows = await Database.from('volunteer_hours')
+          .where('status', 'approved')
+          .groupBy('user_id')
+          .select('user_id')
+          .select(Database.raw('COUNT(DISTINCT event_id) as events'))
+
+        const recentRows = await Database.from('volunteer_hours')
+          .where('status', 'approved')
+          .where('date', '>=', since90.toISOString())
+          .groupBy('user_id')
+          .select('user_id')
+          .select(Database.raw('SUM(hours) as recent_total'))
+
+        const totalsMap: Record<number, number> = {}
+        const eventsMap: Record<number, number> = {}
+        const recentMap: Record<number, number> = {}
+
+        totalsRows.forEach((r: any) => {
+          const uid = Number(r.user_id)
+          totalsMap[uid] = Number(r.total || r.$extras?.total || 0)
+        })
+        eventsRows.forEach((r: any) => {
+          const uid = Number(r.user_id)
+          eventsMap[uid] = Number(r.events || r.$extras?.events || 0)
+        })
+        recentRows.forEach((r: any) => {
+          const uid = Number(r.user_id)
+          recentMap[uid] = Number(r.recent_total || r.$extras?.recent_total || 0)
+        })
+
+        const allUserIds = Array.from(
+          new Set([
+            ...Object.keys(totalsMap).map(Number),
+            ...Object.keys(eventsMap).map(Number),
+            ...Object.keys(recentMap).map(Number)
+          ])
+        )
+
+        const scoreList: number[] = allUserIds.map((uid) => {
+          const uTotal = totalsMap[uid] ?? 0
+          const uEvents = eventsMap[uid] ?? 0
+          const uRecent = recentMap[uid] ?? 0
+          const s1 = Math.min(600, Math.round(uTotal * 6))
+          const s2 = Math.min(300, uEvents * 15)
+          const s3 = Math.min(100, Math.round(uRecent * 2))
+          return s1 + s2 + s3
+        })
+
+        const higherCount = scoreList.filter((s) => s > impactScore).length
+        const totalVolunteers = scoreList.length || 1
+        const pct = Math.max(
+          0,
+          Math.min(100, Math.round(100 - (higherCount / totalVolunteers) * 100))
+        )
+
+        ;(safeUser as any).impactScore = impactScore
+        ;(safeUser as any).impactPercentile = pct
+
+        // expose totals for frontend display
+        ;(safeUser as any).hours = Number(totalHours)
+        ;(safeUser as any).totalHours = Number(totalHours)
+        ;(safeUser as any).recentHours = Number(recentHours)
+        ;(safeUser as any).participationCount = Number(eventsAttended)
+        ;(safeUser as any).hoursLast30 = Number(last30)
+        ;(safeUser as any).hoursPrevious30 = Number(prev30)
+        ;(safeUser as any).hoursChangePercent = Number(hoursChangePercent)
+      } catch (err) {
+        // If any of the analytics queries fail, keep impactScore undefined and continue
+        ;(safeUser as any).impactScore = undefined
+        ;(safeUser as any).impactPercentile = undefined
+      }
+
       // normalize camelCase fields
       safeUser.firstName = safeUser.firstName ?? safeUser.first_name ?? ''
       safeUser.lastName = safeUser.lastName ?? safeUser.last_name ?? ''
