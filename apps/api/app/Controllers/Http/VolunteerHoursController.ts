@@ -2,11 +2,15 @@ import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import VolunteerHour from 'App/Models/VolunteerHour'
 
 export default class VolunteerHoursController {
-  public async index({ response }: HttpContextContract) {
-    const hours = await VolunteerHour.query()
-      .preload('user')
-      .preload('event')
-      .orderBy('date', 'desc')
+  public async index({ request, response }: HttpContextContract) {
+    const { user_id } = request.qs()
+
+    let query = VolunteerHour.query().preload('user').preload('event').orderBy('date', 'desc')
+
+    if (user_id) {
+      query = query.where('user_id', Number(user_id))
+    }
+    const hours = await query
 
     // Normalize Lucid models into plain objects for the frontend
     const mapped = hours.map((h) => {
