@@ -1,5 +1,6 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Achievement from 'App/Models/Achievement'
+import Database from '@ioc:Adonis/Lucid/Database'
 import User from 'App/Models/User'
 
 export default class AchievementsController {
@@ -29,8 +30,10 @@ export default class AchievementsController {
 
     // If organizationId is set, ensure user belongs to that organization or is admin
     if (payload.organizationId && !user.isAdmin) {
-      const orgIds = (user as any).organizations?.map((o: any) => o.id) ?? []
-      if (!orgIds.includes(Number(payload.organizationId))) {
+      const exists = await Database.from('organization_volunteers')
+        .where({ user_id: user.id, organization_id: payload.organizationId })
+        .first()
+      if (!exists) {
         return response.unauthorized({
           error: { message: 'Not authorized to manage achievements for this organization' }
         })
@@ -64,8 +67,10 @@ export default class AchievementsController {
     if (!ach) return response.notFound({ error: { message: 'Achievement not found' } })
 
     if (ach.organizationId && !user.isAdmin) {
-      const orgIds = (user as any).organizations?.map((o: any) => o.id) ?? []
-      if (!orgIds.includes(Number(ach.organizationId))) {
+      const exists = await Database.from('organization_volunteers')
+        .where({ user_id: user.id, organization_id: ach.organizationId })
+        .first()
+      if (!exists) {
         return response.unauthorized({
           error: { message: 'Not authorized to manage this achievement' }
         })
@@ -99,8 +104,10 @@ export default class AchievementsController {
     if (!ach) return response.notFound({ error: { message: 'Achievement not found' } })
 
     if (ach.organizationId && !user.isAdmin) {
-      const orgIds = (user as any).organizations?.map((o: any) => o.id) ?? []
-      if (!orgIds.includes(Number(ach.organizationId))) {
+      const exists = await Database.from('organization_volunteers')
+        .where({ user_id: user.id, organization_id: ach.organizationId })
+        .first()
+      if (!exists) {
         return response.unauthorized({
           error: { message: 'Not authorized to manage this achievement' }
         })
