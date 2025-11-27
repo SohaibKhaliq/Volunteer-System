@@ -27,7 +27,8 @@ describe('OrganizationLayout sidebar', () => {
     const nav = container.querySelector('aside nav');
     expect(nav).toBeTruthy();
     // ensure our overflow class is present so the middle area scrolls independently
-    expect(nav).toHaveClass('overflow-y-auto');
+    expect(nav).toBeTruthy();
+    expect(nav?.classList.contains('overflow-y-auto')).toBe(true);
 
     // Exit Portal should be present in the sidebar bottom block
     const exitBtn = await screen.findByText(/Exit Portal/i);
