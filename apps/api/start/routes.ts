@@ -249,6 +249,11 @@ Route.resource('courses', 'CoursesController')
   .middleware({ '*': ['auth'] })
   .apiOnly()
 
+// Achievements (admin-level / general)
+Route.resource('achievements', 'AchievementsController')
+  .middleware({ '*': ['auth'] })
+  .apiOnly()
+
 // scheduled jobs (admin)
 Route.get('/scheduled-jobs', 'ScheduledJobsController.index').middleware(['auth'])
 Route.get('/scheduled-jobs/:id', 'ScheduledJobsController.show').middleware(['auth'])
