@@ -2,8 +2,24 @@ import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Assignment from 'App/Models/Assignment'
 
 export default class AssignmentsController {
-  public async index({ response }: HttpContextContract) {
-    const items = await Assignment.query().preload('task').preload('user')
+  public async index({ request, response }: HttpContextContract) {
+    // Allow filtering by user_id via query string so clients (profile page)
+    // can request only the current user's assignments without extra filtering.
+    const { user_id } = request.qs()
+
+    const q = Assignment.query()
+      .preload('task', (taskQuery) => {
+        // preload the task's event so frontend sees event data directly
+        taskQuery.preload('event')
+      })
+      .preload('user')
+
+    if (user_id) {
+      // support string or numeric user_id values
+      q.where('user_id', Number(user_id))
+    }
+
+    const items = await q
     return response.ok(items)
   }
 
