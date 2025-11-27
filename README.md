@@ -1,4 +1,4 @@
-# Eghata - Moroccan volunteer platform
+# Local Aid - Moroccan volunteer platform
 
 ## Table of Contents
 
@@ -17,7 +17,7 @@
 
 ## Overview
 
-This project is a monorepo containing the source code and documentation for the Eghata plateform. This platform is designed to connect volunteers and individuals in need of assistance across Morocco.
+This project is a monorepo containing the source code and documentation for the Local Aid plateform. This platform is designed to connect volunteers and individuals in need of assistance across Morocco.
 
 P.S: While we are not the first to come up with this idea, our goal is to build upon the existing Nt3awnou نتعاونو platform, and expand its capabilities to make it a versatile hub for connecting volunteers and people in need of help throughout Morocco. We also aim to make the platform more accessible and user-friendly and centralize information from the various existing initiatives.
 
@@ -92,13 +92,13 @@ Before you begin, ensure you have met the following requirements:
 1. Clone the repository:
 
   ```bash
-    git clone https://github.com/The-Embassy-Collective/eghata
-    cd eghata
+    git clone https://github.com/The-Embassy-Collective/Local Aid
+    cd Local Aid
   ```
 2. Run docker containers (optional)
 ```bash
-docker run -d -e POSTGRES_USER=USER -e POSTGRES_PASSWORD=PASS -p 5432:5432 --name eghata-pg postgres
-docker run -d -p 6379:6379 --name eghata-redis redis
+docker run -d -e POSTGRES_USER=USER -e POSTGRES_PASSWORD=PASS -p 5432:5432 --name Local Aid-pg postgres
+docker run -d -p 6379:6379 --name Local Aid-redis redis
 ```
 
 3. Install dependencies
@@ -169,7 +169,7 @@ This project is licensed under the [MIT License](https://choosealicense.com/lice
 
 
 
-## About Eghata
+## About Local Aid
 
 ### Project Overview:
 
@@ -270,5 +270,5 @@ For reference:
 ## Resources
 - Flows: [https://www.figma.com/file/PYlNkCAAsNyiKlG1ZUFm8J/nt3awnou-userflow?type=whiteboard&node-id=0%3A1&t=eYklXE40vfVrRvOq-1](https://www.figma.com/file/PYlNkCAAsNyiKlG1ZUFm8J/nt3awnou-userflow?type=whiteboard&node-id=0%3A1&t=eYklXE40vfVrRvOq-1 "https://www.figma.com/file/PYlNkCAAsNyiKlG1ZUFm8J/nt3awnou-userflow?type=whiteboard&node-id=0%3A1&t=eYklXE40vfVrRvOq-1")
 
-- Wireframe: https://www.figma.com/file/JM6gStruX3ltmkcx5Iuj2z/eghata?type=design&node-id=0%3A1&mode=design&t=qaVnkRPDE78XTJTh-1
+- Wireframe: https://www.figma.com/file/JM6gStruX3ltmkcx5Iuj2z/Local Aid?type=design&node-id=0%3A1&mode=design&t=qaVnkRPDE78XTJTh-1
 
