@@ -21,6 +21,7 @@ import AppProvider from '@/providers/app-provider';
 import AdminDashboard from '@/pages/admin/dashboard';
 import AdminUsers from '@/pages/admin/users';
 import AdminOrganizations from '@/pages/admin/organizations';
+import AdminAchievements from '@/pages/admin/achievements';
 import AdminEvents from '@/pages/admin/events';
 import AdminTasks from '@/pages/admin/tasks';
 import AdminHours from '@/pages/admin/hours'; // Added this import based on the instruction's context
@@ -40,6 +41,7 @@ import OrganizationLayout from '@/components/templates/OrganizationLayout';
 import OrganizationDashboard from '@/pages/organization/dashboard';
 import OrganizationProfile from '@/pages/organization/profile';
 import OrganizationEvents from '@/pages/organization/events';
+import OrganizationAchievements from '@/pages/organization/achievements';
 import OrganizationVolunteers from '@/pages/organization/volunteers';
 import OrganizationHoursApproval from '@/pages/organization/hours-approval';
 import OrganizationCompliance from '@/pages/organization/compliance';
@@ -89,6 +91,7 @@ const routes: RouteObject[] = [
       { index: true, element: <AdminDashboard /> },
       { path: 'users', element: <AdminUsers /> },
       { path: 'organizations', element: <AdminOrganizations /> },
+      { path: 'achievements', element: <AdminAchievements /> },
       { path: 'events', element: <AdminEvents /> },
       { path: 'tasks', element: <AdminTasks /> },
       { path: 'hours', element: <AdminHours /> },
@@ -120,6 +123,7 @@ const routes: RouteObject[] = [
       { index: true, element: <OrganizationDashboard /> },
       { path: 'profile', element: <OrganizationProfile /> },
       { path: 'events', element: <OrganizationEvents /> },
+      { path: 'achievements', element: <OrganizationAchievements /> },
       { path: 'volunteers', element: <OrganizationVolunteers /> },
       { path: 'hours-approval', element: <OrganizationHoursApproval /> },
       { path: 'compliance', element: <OrganizationCompliance /> },
