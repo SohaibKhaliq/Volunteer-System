@@ -15,6 +15,7 @@ import OrganizationRegister from '@/pages/organization-register';
 import TransportOfferForm from '@/pages/transport-offer-form';
 import TransportRequestForm from '@/pages/transport-request-form';
 import Profile from '@/pages/profile';
+import NotificationsPage from '@/pages/notifications';
 import { RouteObject } from 'react-router-dom';
 import AdminLayout from '@/components/templates/AdminLayout';
 import AppProvider from '@/providers/app-provider';
@@ -159,6 +160,7 @@ const routes: RouteObject[] = [
       { path: 'transport-request', element: <TransportRequestForm /> },
       { path: 'transport-offer', element: <TransportOfferForm /> },
       { path: 'profile', element: <Profile /> },
+      { path: 'notifications', element: <NotificationsPage /> },
       { path: 'about', element: <About /> },
       { path: 'contact', element: <Contact /> },
       { path: 'organizations/:id', element: <OrganizationDetail /> },
