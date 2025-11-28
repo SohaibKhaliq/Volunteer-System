@@ -64,6 +64,19 @@ export default class AssignmentsController {
           action: 'assignment_cancelled',
           details: JSON.stringify({ assignmentId: assignment.id, previousStatus: previous })
         })
+
+        // Also create a user notification so volunteers are notified when an assignment is cancelled
+        try {
+          const Notification = await import('App/Models/Notification')
+          await Notification.default.create({
+            userId: assignment.userId,
+            type: 'assignment_cancelled',
+            payload: JSON.stringify({ assignmentId: assignment.id, previousStatus: previous }),
+            read: false
+          })
+        } catch (nerr) {
+          console.warn('Failed to create notification for assignment cancellation', nerr)
+        }
       }
     } catch (e) {
       // Best-effort logging — don't fail the request if audit fails
