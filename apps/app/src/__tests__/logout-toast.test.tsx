@@ -8,6 +8,7 @@ import api from '@/lib/api';
 import { useStore } from '@/lib/store';
 
 vi.mock('@/lib/api');
+vi.mock('socket.io-client', () => ({ io: () => ({ on: () => {}, close: () => {} }) }));
 
 const mockedApi = api as any;
 
@@ -25,6 +26,10 @@ function TestApp() {
 describe('Header logout flow', () => {
   it('shows toast and navigates on logout', async () => {
     mockedApi.logout = vi.fn().mockResolvedValue({ message: 'Logout successful' });
+    // Ensure notifications API calls used by the header are mocked during the test
+    mockedApi.listNotifications = vi.fn().mockResolvedValue([]);
+    mockedApi.markNotificationRead = vi.fn().mockResolvedValue({});
+    mockedApi.markNotificationUnread = vi.fn().mockResolvedValue({});
 
     // Set token in store
     const setToken = useStore.getState().setToken;
