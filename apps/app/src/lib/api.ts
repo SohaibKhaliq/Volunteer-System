@@ -214,8 +214,9 @@ const api = {
   updateSettings: async (data: any) => axios.post('/settings', data),
 
   /* Notifications */
-  listNotifications: async () => axios.get('/notifications'),
+  listNotifications: async (params?: any) => axios.get('/notifications', { params }),
   markNotificationRead: async (id: number) => axios.put(`/notifications/${id}/read`),
+  markNotificationUnread: async (id: number) => axios.put(`/notifications/${id}/unread`),
 
   /* Volunteer Hours endpoints */
   listHours: async () => axios.get('/hours'),
