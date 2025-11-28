@@ -7,6 +7,7 @@
     "build": "node ace build --production",
     "start": "node server.js",
     "test": "node ace test",
+    "socket": "node server-socket.js",
     "lint": "eslint . --ext=.ts",
     "format": "prettier --write ."
   },
@@ -65,12 +66,14 @@
     "@adonisjs/redis": "^7.3.3",
     "@adonisjs/repl": "^3.1.0",
     "@adonisjs/route-model-binding": "^1.0.1",
+    "express": "^5.1.0",
     "luxon": "^3.4.3",
     "mysql2": "^3.3.0",
     "openapi-types": ">=7",
     "proxy-addr": "^2.0.7",
     "reflect-metadata": "^0.1.13",
     "shared": "workspace:*",
+    "socket.io": "^4.8.1",
     "source-map-support": "^0.5.21",
     "zod": "^3.22.2"
   }
