@@ -3,6 +3,7 @@ import User from 'App/Models/User'
 import Achievement from 'App/Models/Achievement'
 import VolunteerHour from 'App/Models/VolunteerHour'
 import { DateTime } from 'luxon'
+import Database from '@ioc:Adonis/Lucid/Database'
 
 test.group('Achievements', () => {
   test('admin can create a global achievement and users can be awarded automatically', async ({
@@ -81,5 +82,32 @@ test.group('Achievements', () => {
     const body = resp.body()
     assert.isArray(body.achievements)
     assert.isTrue(body.achievements.some((a: any) => a.key === '5-events'))
+  })
+
+  test('Early Adopter awarded to users created > 2 years ago', async ({ client, assert }) => {
+    const admin = await User.create({ email: 'admin-old@test', password: 'pass', isAdmin: true })
+
+    const createResp = await client
+      .loginAs(admin)
+      .post('/achievements')
+      .json({
+        key: 'early-adopter',
+        title: 'Early Adopter',
+        description: 'Joined more than two years ago',
+        criteria: { type: 'member_days', threshold: 365 * 2 }
+      })
+    createResp.assertStatus(201)
+
+    const u = await User.create({ email: 'olduser@test', password: 'pass' })
+    // Adjust created_at so user appears older than 2 years
+    await Database.from('users')
+      .where({ id: u.id })
+      .update({ created_at: DateTime.now().minus({ days: 800 }).toSQL() })
+
+    const resp = await client.loginAs(u).get('/me')
+    resp.assertStatus(200)
+    const body = resp.body()
+    assert.isArray(body.achievements)
+    assert.isTrue(body.achievements.some((a: any) => a.key === 'early-adopter'))
   })
 })
