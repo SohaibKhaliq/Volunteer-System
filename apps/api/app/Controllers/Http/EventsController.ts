@@ -317,6 +317,7 @@ export default class EventsController {
     // If no tasks exist or none with open slots, fall back to adding a placeholder assignment
     // by creating a minimal task for this event (so we can track signups)
     const Assignment = await import('App/Models/Assignment')
+    const { AssignmentStatus } = await import('App/Constants/assignmentStatus')
     if (!chosenTask) {
       // create a lightweight task so we can attach an assignment
       const Task = await import('App/Models/Task')
@@ -340,7 +341,7 @@ export default class EventsController {
       taskId: chosenTask.id,
       userId: auth.user.id,
       assignedBy: auth.user.id,
-      status: 'accepted'
+      status: AssignmentStatus.Accepted
     })
 
     return response.created(assignment)
