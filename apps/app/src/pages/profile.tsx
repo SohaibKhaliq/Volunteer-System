@@ -24,6 +24,7 @@ import {
   History
 } from 'lucide-react';
 import { useStore } from '@/lib/store';
+import { AssignmentStatus } from '@/lib/constants/assignmentStatus';
 import { useNavigate } from 'react-router-dom';
 
 export default function Profile() {
@@ -55,6 +56,10 @@ export default function Profile() {
     }
   }, [user]);
 
+  // Normalize user payload early so hooks can be declared in stable order
+  const userDataEarly = (user as any)?.data ?? (user as any) ?? undefined;
+  const userId = userDataEarly?.id ?? (user as any)?.id ?? undefined;
+
   const updateMutation = useMutation({
     mutationFn: (data: any) => api.updateUser((user as any).id, data),
     onSuccess: () => {
@@ -76,6 +81,32 @@ export default function Profile() {
       navigate('/login');
     });
   };
+
+  // Load assignments for the current user (server returns assignment objects with `task` relation)
+  const { data: assignments } = useQuery(
+    ['my-assignments', userId],
+    async () => {
+      if (!userId) return [] as any;
+      const res = await api.getMyAssignments({ user_id: userId });
+      if (!res) return [] as any;
+      const list = Array.isArray(res) ? res : ((res as any).data ?? []);
+      // server should already filter, but be defensive
+      return list.filter((a: any) => (a.userId || a.user?.id) === userId);
+    },
+    { enabled: !!userId }
+  );
+
+  const { data: myHours } = useQuery(
+    ['my-hours', userId],
+    async () => {
+      if (!userId) return [] as any;
+      const res = await api.getMyVolunteerHours({ user_id: userId });
+      if (!res) return [] as any;
+      const list = Array.isArray(res) ? res : ((res as any).data ?? []);
+      return list.filter((h: any) => (h.user?.id || h.userId) === userId);
+    },
+    { enabled: !!userId }
+  );
 
   if (isLoading)
     return (
@@ -102,31 +133,47 @@ export default function Profile() {
 
   const userData = (user as any).data || user;
 
-  // Mock data for dashboard
-  const upcomingShifts = [
-    {
-      id: 1,
-      title: 'Community Park Cleanup',
-      date: 'Nov 25, 2024',
-      time: '09:00 AM',
-      location: 'Central Park',
-      role: 'General Volunteer'
-    },
-    {
-      id: 2,
-      title: 'Food Bank Distribution',
-      date: 'Nov 28, 2024',
-      time: '10:00 AM',
-      location: 'Community Center',
-      role: 'Sorter'
-    }
-  ];
+  // Transform assignments into the UI's expected `upcomingShifts` structure
+  const upcomingShifts = (assignments ?? [])
+    .map((a: any) => {
+      const task = a.task || a.task || {};
+      const start = task?.startAt ? new Date(task.startAt) : null;
+      const date = start ? start.toLocaleDateString() : task?.date || '';
+      const time = start ? start.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) : '';
+      const location = task?.location || a.location || (task?.event && task.event.location) || '';
+      return {
+        id: a.id || task.id,
+        title: task?.title || a.title || (task?.event && task.event.title) || 'Volunteer Shift',
+        date: date,
+        time: time,
+        location: location,
+        role: a.role || task?.role || 'Volunteer',
+        eventId: task?.eventId || task?.event?.id || a.eventId || null,
+        startAt: start
+      };
+    })
+    .filter((s: any) => !s.startAt || s.startAt >= new Date())
+    .sort((a: any, b: any) => {
+      if (!a.startAt) return 1;
+      if (!b.startAt) return -1;
+      return a.startAt.getTime() - b.startAt.getTime();
+    });
 
-  const history = [
-    { id: 101, title: 'Beach Cleanup', date: 'Oct 15, 2024', hours: 4, status: 'Verified' },
-    { id: 102, title: 'Senior Home Visit', date: 'Oct 01, 2024', hours: 2, status: 'Verified' },
-    { id: 103, title: 'Charity Run Support', date: 'Sep 20, 2024', hours: 5, status: 'Pending' }
-  ];
+  // Transform volunteer-hours into history rows
+  const history = (myHours ?? []).map((h: any) => ({
+    id: h.id,
+    title: h.event?.title || h.activity || 'Volunteer Activity',
+    date: h.date ? new Date(h.date).toLocaleDateString() : '',
+    hours: h.hours || 0,
+    status: h.status || 'Verified'
+  }));
+
+  // allow cancelling assignments (mark status cancelled)
+  // NOTE: keep hooks at top-level and in stable order — declare mutations before any early returns
+  const cancelMutation = useMutation({
+    mutationFn: (id: number) => api.updateAssignment(id, { status: AssignmentStatus.Cancelled }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['my-assignments', userId] })
+  });
 
   return (
     <div className="min-h-screen bg-slate-50/50 pb-12">
@@ -149,9 +196,34 @@ export default function Profile() {
                 <Shield className="h-4 w-4" /> Verified Volunteer
               </p>
               <div className="flex gap-2 mt-3 justify-center md:justify-start">
-                <Badge variant="secondary" className="bg-white/20 text-white hover:bg-white/30">
-                  <Award className="h-3 w-3 mr-1" /> Top Contributor
-                </Badge>
+                {(() => {
+                  // compute badges dynamically from available user data
+                  const computed: string[] = [];
+                  const hoursCount = Number(userData.hours || userData.totalHours || 0);
+                  const impact = Number(userData.impactScore || 0);
+                  const joinedAt = userData.createdAt || userData.created_at || userData.joinedAt || null;
+                  if (impact >= 800) computed.push('Top Contributor');
+                  if (hoursCount >= 50) computed.push('50 Hours Club');
+                  if (joinedAt) {
+                    try {
+                      const d = new Date(joinedAt);
+                      if (!isNaN(d.getTime()) && d.getFullYear() <= new Date().getFullYear() - 2) {
+                        computed.push('Early Adopter');
+                      }
+                    } catch (e) {}
+                  } else {
+                    computed.push('Member');
+                  }
+
+                  // ensure at least one badge
+                  if (computed.length === 0) computed.push('Member');
+
+                  return computed.map((b) => (
+                    <Badge key={b} variant="secondary" className="px-3 py-1">
+                      <Award className="h-3 w-3 mr-1 text-yellow-500" /> {b}
+                    </Badge>
+                  ));
+                })()}
               </div>
             </div>
           </div>
@@ -188,7 +260,11 @@ export default function Profile() {
                     {userData.hours || 0}
                     <Clock className="h-5 w-5 text-blue-500" />
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">+12% from last month</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {typeof userData.hoursChangePercent === 'number'
+                      ? `${userData.hoursChangePercent > 0 ? '+' : ''}${userData.hoursChangePercent}% from last month`
+                      : '+0% from last month'}
+                  </p>
                 </CardContent>
               </Card>
               <Card>
@@ -197,10 +273,12 @@ export default function Profile() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold flex items-center gap-2">
-                    {userData.impactScore || 850}
+                    {userData.impactScore}
                     <Heart className="h-5 w-5 text-red-500" />
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">Top 10% of volunteers</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {userData.impactPercentile ? `Top ${userData.impactPercentile}% of volunteers` : 'Top contributors'}
+                  </p>
                 </CardContent>
               </Card>
               <Card>
@@ -212,7 +290,7 @@ export default function Profile() {
                     {userData.participationCount || 0}
                     <CheckCircle2 className="h-5 w-5 text-green-500" />
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">3 upcoming</p>
+                  <p className="text-xs text-muted-foreground mt-1">{upcomingShifts.length} upcoming</p>
                 </CardContent>
               </Card>
 
@@ -239,7 +317,13 @@ export default function Profile() {
                           </p>
                         </div>
                       </div>
-                      <Button variant="outline" size="sm">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          navigate(shift.eventId ? `/detail/event/${shift.eventId}` : `/events/${shift.id}`)
+                        }
+                      >
                         View
                       </Button>
                     </div>
@@ -254,15 +338,25 @@ export default function Profile() {
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
-                    <Badge variant="secondary" className="px-3 py-1">
-                      <Award className="h-3 w-3 mr-1 text-yellow-500" /> Early Adopter
-                    </Badge>
-                    <Badge variant="secondary" className="px-3 py-1">
-                      <Award className="h-3 w-3 mr-1 text-blue-500" /> 50 Hours Club
-                    </Badge>
-                    <Badge variant="secondary" className="px-3 py-1">
-                      <Award className="h-3 w-3 mr-1 text-green-500" /> Eco Warrior
-                    </Badge>
+                    {userData.achievements && userData.achievements.length > 0 ? (
+                      userData.achievements.map((a: any) => (
+                        <Badge key={a.id} variant="secondary" className="px-3 py-1">
+                          <Award className="h-3 w-3 mr-1 text-yellow-500" /> {a.title}
+                        </Badge>
+                      ))
+                    ) : (
+                      <>
+                        <Badge variant="secondary" className="px-3 py-1">
+                          <Award className="h-3 w-3 mr-1 text-yellow-500" /> Early Adopter
+                        </Badge>
+                        <Badge variant="secondary" className="px-3 py-1">
+                          <Award className="h-3 w-3 mr-1 text-blue-500" /> 50 Hours Club
+                        </Badge>
+                        <Badge variant="secondary" className="px-3 py-1">
+                          <Award className="h-3 w-3 mr-1 text-green-500" /> Eco Warrior
+                        </Badge>
+                      </>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -307,10 +401,27 @@ export default function Profile() {
                           </div>
                         </div>
                         <div className="flex gap-2 w-full md:w-auto">
-                          <Button variant="outline" className="flex-1 md:flex-none">
-                            Cancel
+                          <Button
+                            variant="outline"
+                            className="flex-1 md:flex-none"
+                            onClick={() => {
+                              const confirmed = window.confirm(
+                                'Cancel this signup? This will mark your assignment as cancelled.'
+                              );
+                              if (confirmed) cancelMutation.mutate(shift.id);
+                            }}
+                            disabled={cancelMutation.isLoading}
+                          >
+                            {cancelMutation.isLoading ? 'Cancelling...' : 'Cancel'}
                           </Button>
-                          <Button className="flex-1 md:flex-none">Details</Button>
+                          <Button
+                            className="flex-1 md:flex-none"
+                            onClick={() =>
+                              navigate(shift.eventId ? `/detail/event/${shift.eventId}` : `/events/${shift.id}`)
+                            }
+                          >
+                            Details
+                          </Button>
                         </div>
                       </div>
                     ))
