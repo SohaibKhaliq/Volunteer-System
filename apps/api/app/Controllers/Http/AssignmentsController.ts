@@ -1,5 +1,7 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Assignment from 'App/Models/Assignment'
+import AuditLog from 'App/Models/AuditLog'
+import { AssignmentStatus, ALL_ASSIGNMENT_STATUSES } from 'App/Constants/assignmentStatus'
 
 export default class AssignmentsController {
   public async index({ request, response }: HttpContextContract) {
@@ -27,7 +29,7 @@ export default class AssignmentsController {
     const payload = request.only(['task_id', 'user_id'])
     // assigned_by should be the auth user if available
     if (auth.user) payload['assigned_by'] = auth.user.id
-    const assignment = await Assignment.create({ ...payload, status: 'pending' })
+    const assignment = await Assignment.create({ ...payload, status: AssignmentStatus.Pending })
     return response.created(assignment)
   }
 
@@ -41,18 +43,32 @@ export default class AssignmentsController {
     return response.ok(assignment)
   }
 
-  public async update({ params, request, response }: HttpContextContract) {
+  public async update({ params, request, response, auth }: HttpContextContract) {
     const assignment = await Assignment.find(params.id)
     if (!assignment) return response.notFound()
     const { status } = request.only(['status'])
-    const allowed = ['pending', 'accepted', 'rejected', 'completed', 'cancelled']
-    if (status && !allowed.includes(status)) {
+    if (status && !ALL_ASSIGNMENT_STATUSES.includes(status)) {
       return response.badRequest({
-        error: { message: `Invalid status. Allowed: ${allowed.join(', ')}` }
+        error: { message: `Invalid status. Allowed: ${ALL_ASSIGNMENT_STATUSES.join(', ')}` }
       })
     }
+    const previous = assignment.status
     assignment.merge({ status })
     await assignment.save()
+
+    // If the assignment was cancelled, add an audit log entry for traceability
+    try {
+      if (status === AssignmentStatus.Cancelled) {
+        await AuditLog.create({
+          userId: auth.user ? auth.user.id : null,
+          action: 'assignment_cancelled',
+          details: JSON.stringify({ assignmentId: assignment.id, previousStatus: previous })
+        })
+      }
+    } catch (e) {
+      // Best-effort logging — don't fail the request if audit fails
+      console.error('Failed to create audit log for assignment cancellation', e)
+    }
     return response.ok(assignment)
   }
 
