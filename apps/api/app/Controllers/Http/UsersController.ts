@@ -351,6 +351,17 @@ export default class UsersController {
                     return Number(recentHours) >= Number(c.threshold || 0)
                   case 'combined_score':
                     return Number(impactScore) >= Number(c.threshold || 0)
+                  case 'member_days': {
+                    // user.createdAt may be a DateTime object or string from JSON
+                    const createdAtVal = (user as any).createdAt ?? (safeUser as any).createdAt
+                    if (!createdAtVal) return false
+                    const createdDate = new Date(createdAtVal)
+                    if (isNaN(createdDate.getTime())) return false
+                    const days = Math.floor(
+                      (Date.now() - createdDate.getTime()) / (1000 * 60 * 60 * 24)
+                    )
+                    return days >= Number(c.threshold || 0)
+                  }
                   default:
                     return false
                 }
@@ -410,7 +421,11 @@ export default class UsersController {
       safeUser.lastLoginAt = safeUser.lastLoginAt ?? safeUser.last_active_at
       return response.ok(safeUser)
     } catch (error) {
-      return response.badRequest({ error: { message: 'Unable to fetch current user' } })
+      // Log the error and provide a helpful server-side message. Use 500 for unexpected errors.
+      Logger.error('Failed to fetch /me: %o', error)
+      return response.internalServerError({
+        error: { message: 'Unable to fetch current user', details: String(error?.message ?? error) }
+      })
     }
   }
 
