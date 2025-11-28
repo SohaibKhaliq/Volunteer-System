@@ -2,6 +2,7 @@ import { test } from '@japa/runner'
 import User from 'App/Models/User'
 import Achievement from 'App/Models/Achievement'
 import VolunteerHour from 'App/Models/VolunteerHour'
+import Notification from 'App/Models/Notification'
 import { DateTime } from 'luxon'
 import Database from '@ioc:Adonis/Lucid/Database'
 
@@ -48,6 +49,13 @@ test.group('Achievements', () => {
     const body = resp.body()
     assert.isArray(body.achievements)
     assert.isTrue(body.achievements.some((a: any) => a.key === '50-hours'))
+
+    // a notification should have been created for this achievement
+    const notes = await Notification.query()
+      .where('user_id', u.id)
+      .andWhere('type', 'achievement_awarded')
+      .andWhere('payload', 'like', `%\"key\": \"50-hours\"%`)
+    assert.isTrue(notes.length > 0)
   })
 
   test('achievements with events criteria are awarded', async ({ client, assert }) => {
