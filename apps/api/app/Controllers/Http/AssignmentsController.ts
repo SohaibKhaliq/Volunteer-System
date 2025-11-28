@@ -44,7 +44,14 @@ export default class AssignmentsController {
   public async update({ params, request, response }: HttpContextContract) {
     const assignment = await Assignment.find(params.id)
     if (!assignment) return response.notFound()
-    assignment.merge(request.only(['status']))
+    const { status } = request.only(['status'])
+    const allowed = ['pending', 'accepted', 'rejected', 'completed', 'cancelled']
+    if (status && !allowed.includes(status)) {
+      return response.badRequest({
+        error: { message: `Invalid status. Allowed: ${allowed.join(', ')}` }
+      })
+    }
+    assignment.merge({ status })
     await assignment.save()
     return response.ok(assignment)
   }
