@@ -1,6 +1,7 @@
 import { test } from '@japa/runner'
 import User from 'App/Models/User'
 import AuditLog from 'App/Models/AuditLog'
+import Notification from 'App/Models/Notification'
 import { AssignmentStatus } from 'App/Constants/assignmentStatus'
 import Event from 'App/Models/Event'
 import Task from 'App/Models/Task'
@@ -64,5 +65,12 @@ test.group('Assignments endpoints', () => {
       .where('action', 'assignment_cancelled')
       .andWhere('details', 'like', `%\"assignmentId\": ${a.id}%`)
     assert.isTrue(logs.length > 0)
+
+    // a notification should have been created for the assignment's user
+    const notes = await Notification.query()
+      .where('user_id', user.id)
+      .andWhere('type', 'assignment_cancelled')
+      .andWhere('payload', 'like', `%\"assignmentId\": ${a.id}%`)
+    assert.isTrue(notes.length > 0)
   })
 })
