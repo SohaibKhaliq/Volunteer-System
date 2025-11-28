@@ -12,6 +12,7 @@ import {
   Bell
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import NotificationBell from '@/components/molecules/notification-bell';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useStore } from '@/lib/store';
 import api from '@/lib/api';
@@ -37,7 +38,7 @@ const VolunteerLayout = () => {
     { name: 'Dashboard', href: '/volunteer/dashboard', icon: LayoutDashboard },
     { name: 'History', href: '/volunteer/history', icon: History },
     { name: 'Profile', href: '/volunteer/profile', icon: User },
-    { name: 'Settings', href: '/volunteer/settings', icon: Settings },
+    { name: 'Settings', href: '/volunteer/settings', icon: Settings }
   ];
 
   return (
@@ -118,10 +119,7 @@ const VolunteerLayout = () => {
           </Button>
 
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5 text-slate-500" />
-              <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full" />
-            </Button>
+            <NotificationBell />
           </div>
         </header>
 
