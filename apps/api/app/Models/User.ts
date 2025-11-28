@@ -1,4 +1,12 @@
-import { BaseModel, column, HasMany, hasMany, ManyToMany, manyToMany, beforeSave } from '@ioc:Adonis/Lucid/Orm'
+import {
+  BaseModel,
+  column,
+  HasMany,
+  hasMany,
+  ManyToMany,
+  manyToMany,
+  beforeSave
+} from '@ioc:Adonis/Lucid/Orm'
 import { DateTime } from 'luxon'
 import Hash from '@ioc:Adonis/Core/Hash'
 import CarpoolingAd from './CarpoolingAd'
@@ -77,7 +85,8 @@ export default class User extends BaseModel {
     pivotForeignKey: 'user_id',
     relatedKey: 'id',
     pivotRelatedForeignKey: 'organization_id',
-    pivotColumns: ['role', 'status', 'joined_at', 'notes'],
+    // `notes` may not exist in all environments/migrations. keep common fields only.
+    pivotColumns: ['role', 'status', 'joined_at'],
     pivotTimestamps: true
   })
   public organizations: ManyToMany<typeof Organization>
