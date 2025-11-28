@@ -64,3 +64,24 @@ try {
   // eslint-disable-next-line no-console
   console.error('Failed to start scheduler', e)
 }
+
+// Start local socket server when API starts in dev mode (best-effort, non-blocking)
+try {
+  // Only when running as a development server; avoid starting during tests or in production
+  if (process.env.NODE_ENV !== 'test') {
+    // spawn server-socket.js in a detached process so it lives independently
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { spawn } = require('child_process')
+    const path = require('path')
+    const socketScript = path.join(__dirname, '..', '..', 'server-socket.js')
+    const child = spawn(process.execPath, [socketScript], {
+      detached: true,
+      stdio: 'ignore'
+    })
+    // detach the child so it does not keep the parent process alive
+    child.unref()
+  }
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error('Failed to start socket server:', e)
+}
