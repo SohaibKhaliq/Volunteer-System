@@ -390,6 +390,18 @@ export default class UsersController {
                   achievementId: a.id,
                   metadata: { awardedVia: 'auto' }
                 })
+                // Create a user notification so volunteers are notified when they earn an achievement
+                try {
+                  const Notification = await import('App/Models/Notification')
+                  await Notification.default.create({
+                    userId: user.id,
+                    type: 'achievement_awarded',
+                    payload: JSON.stringify({ achievementId: a.id, key: a.key, title: a.title }),
+                    read: false
+                  })
+                } catch (e) {
+                  Logger.warn('Failed to create notification for achievement award: %o', e)
+                }
               }
 
               earned.push({
