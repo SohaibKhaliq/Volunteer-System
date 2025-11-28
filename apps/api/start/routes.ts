@@ -202,6 +202,11 @@ Route.post('/communications/logs/bulk-retry', 'CommunicationsController.bulkRetr
 // Notifications (admin) - expose recent notifications for UI
 Route.get('/notifications', 'NotificationsController.index').middleware(['auth'])
 Route.put('/notifications/:id/read', 'NotificationsController.markRead').middleware(['auth'])
+Route.put('/notifications/:id/unread', 'NotificationsController.markUnread').middleware(['auth'])
+// NOTE: SSE streaming has been removed. The /notifications/stream route now returns 501
+// and clients should use the Socket.IO-based realtime endpoint instead. The API
+// also posts new notifications to the socket server internal endpoint `/_internal/notify`.
+Route.get('/notifications/stream', 'NotificationsController.stream')
 
 // Surveys (feedback)
 Route.resource('surveys', 'SurveysController')
