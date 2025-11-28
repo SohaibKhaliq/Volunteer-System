@@ -50,3 +50,6 @@ beforeEach(() => {
     localStorage.clear();
   } catch (e) {}
 });
+
+// Mock socket.io-client globally so tests don't attempt real connections
+vi.mock('socket.io-client', () => ({ io: () => ({ on: () => {}, close: () => {} }) }));
