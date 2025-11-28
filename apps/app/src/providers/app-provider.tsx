@@ -1,6 +1,6 @@
 import api from '@/lib/api';
 import { useStore } from '@/lib/store';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createContext, useContext, useEffect, useState } from 'react';
 import { toast } from '@/components/atoms/use-toast';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -29,17 +29,26 @@ export default function AppProvider({ children }: AppProviderProps) {
 
   const { token, setToken } = useStore();
 
+  const queryClient = useQueryClient();
+
   const { data: me, isLoading: isLoadingMe } = useQuery({
     queryKey: ['me'],
     queryFn: api.getCurrentUser,
     enabled: !!token, // only run when token exists
     retry: false,
+    onSuccess: () => {
+      // Refresh notification list after retrieving /me — this ensures
+      // any achievements auto-awarded by the backend show up in the UI quickly.
+      try {
+        queryClient.invalidateQueries(['notifications']);
+      } catch (e) {}
+    },
     onError: (error: any) => {
       const status = error?.response?.status;
 
       if (status === 401) {
         setToken('');
-        
+
         // List of public routes that don't require authentication
         const publicRoutes = [
           '/',
@@ -59,23 +68,24 @@ export default function AppProvider({ children }: AppProviderProps) {
           '/transport-request',
           '/transport-offer'
         ];
-        
+
         // Check if current route is public or starts with a public route
         const currentPath = window.location.pathname;
-        const isPublicRoute = publicRoutes.some(route => 
-          currentPath === route || 
-          currentPath.startsWith('/organizations/') ||
-          currentPath.startsWith('/events/') ||
-          currentPath.startsWith('/detail/')
+        const isPublicRoute = publicRoutes.some(
+          (route) =>
+            currentPath === route ||
+            currentPath.startsWith('/organizations/') ||
+            currentPath.startsWith('/events/') ||
+            currentPath.startsWith('/detail/')
         );
-        
+
         // Only redirect to login from protected routes
         if (!isPublicRoute) {
           toast({
             title: 'Session expired',
             description: 'Please sign in again.'
           });
-          
+
           const returnTo = encodeURIComponent(window.location.pathname + window.location.search + window.location.hash);
           navigate(`/login?returnTo=${returnTo}`, { replace: true });
         } else {
