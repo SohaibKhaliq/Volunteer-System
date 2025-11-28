@@ -10,6 +10,7 @@ import { showApiError } from '@/lib/error-to-toast';
 import { toast } from '@/components/atoms/use-toast';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
+import NotificationBell from './notification-bell';
 import { useTranslation } from 'react-i18next';
 
 const Header = () => {
@@ -25,13 +26,13 @@ const Header = () => {
     onSuccess: () => {
       // Clear user state first
       setUser(null);
-      
+
       // Invalidate queries to ensure fresh state
       queryClient.invalidateQueries(['me']);
-      
+
       // Clear token last
       setToken('');
-      
+
       try {
         toast({ title: 'Signed out', description: 'You have been logged out.' });
       } catch (e) {}
@@ -150,6 +151,7 @@ const Header = () => {
                 </Link>
               )}
 
+              <NotificationBell />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="gap-2">
