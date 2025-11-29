@@ -66,28 +66,33 @@ export default function AdminOrganizations() {
   const [showAnalyticsDialog, setShowAnalyticsDialog] = useState(false);
   const [analyticsOrgId, setAnalyticsOrgId] = useState<number | null>(null);
   const [analyticsOrgName, setAnalyticsOrgName] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
 
-  const { data: orgs, isLoading } = useQuery<Organization[]>(['organizations'], api.listOrganizations, {
-    select: (data: any) => {
-      // Normalize backend snake_case to camelCase for the UI
-      if (!data) return [] as Organization[];
-      const list: any[] = Array.isArray(data) ? data : data.data || [];
-      return list.map((o) => ({
-        id: o.id,
-        name: o.name,
-        description: o.description,
-        logo: o.logo ?? null,
-        logoThumb: o.logo_thumb ?? null,
-        isApproved: o.is_approved ?? o.isApproved ?? false,
-        isActive: o.is_active ?? o.isActive ?? true,
-        createdAt: o.created_at ?? o.createdAt ?? new Date().toISOString(),
-        volunteerCount: o.volunteer_count ?? o.volunteerCount ?? 0,
-        eventCount: o.event_count ?? o.eventCount ?? 0,
-        complianceScore: o.compliance_score ?? o.complianceScore ?? 100,
-        performanceScore: o.performance_score ?? o.performanceScore ?? undefined
-      })) as Organization[];
+  const { data: orgs, isLoading } = useQuery<Organization[]>(
+    ['organizations'],
+    () => api.listOrganizations({ withCompliance: 'true' }),
+    {
+      select: (data: any) => {
+        // Normalize backend snake_case to camelCase for the UI
+        if (!data) return [] as Organization[];
+        const list: any[] = Array.isArray(data) ? data : data.data || [];
+        return list.map((o) => ({
+          id: o.id,
+          name: o.name,
+          description: o.description,
+          logo: o.logo ?? null,
+          logoThumb: o.logo_thumb ?? null,
+          isApproved: o.is_approved ?? o.isApproved ?? false,
+          isActive: o.is_active ?? o.isActive ?? true,
+          createdAt: o.created_at ?? o.createdAt ?? new Date().toISOString(),
+          volunteerCount: o.volunteer_count ?? o.volunteerCount ?? 0,
+          eventCount: o.event_count ?? o.eventCount ?? 0,
+          complianceScore: o.compliance_score ?? o.complianceScore ?? null,
+          performanceScore: o.performance_score ?? o.performanceScore ?? undefined
+        })) as Organization[];
+      }
     }
-  });
+  );
 
   // Mutations
   const approveMutation = useMutation({
@@ -163,9 +168,88 @@ export default function AdminOrganizations() {
           <p className="text-muted-foreground"> Approve, monitor, and manage volunteer organizations</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            <Download className="h-4 w-4 mr-2" />
-            Export
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={async () => {
+              setExporting(true);
+              try {
+                const res: any = await api.listOrganizations({ withCompliance: 'true' });
+                // normalize backend response which may be array or paginated object
+                const rawList: any[] = Array.isArray(res) ? res : (res?.data ?? res);
+                const list: any[] = Array.isArray(rawList) ? rawList : (rawList?.data ?? []);
+
+                if (!Array.isArray(list) || list.length === 0) {
+                  toast({ title: 'No organizations to export', variant: 'info' });
+                  setExporting(false);
+                  return;
+                }
+
+                const headers = [
+                  'id',
+                  'name',
+                  'description',
+                  'is_approved',
+                  'is_active',
+                  'volunteer_count',
+                  'event_count',
+                  'performance_score',
+                  'compliance_score',
+                  'created_at',
+                  'logo'
+                ];
+                const rows: string[] = [];
+                rows.push(headers.join(','));
+                const quote = (v: any) => {
+                  if (v === null || v === undefined) return '';
+                  return `"${String(v).replace(/"/g, '""')}"`;
+                };
+
+                for (const o of list) {
+                  rows.push(
+                    [
+                      o.id,
+                      quote(o.name),
+                      quote(o.description),
+                      o.is_approved ?? o.isApproved ?? false,
+                      o.is_active ?? o.isActive ?? false,
+                      o.volunteer_count ?? o.volunteerCount ?? 0,
+                      o.event_count ?? o.eventCount ?? 0,
+                      o.performance_score ?? o.performanceScore ?? '',
+                      o.compliance_score ?? o.complianceScore ?? '',
+                      quote(o.created_at ?? o.createdAt ?? ''),
+                      quote(o.logo ?? '')
+                    ].join(',')
+                  );
+                }
+
+                const csv = rows.join('\n');
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `organizations-export.csv`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(url);
+                toast({ title: 'Export ready', variant: 'success' });
+              } catch (err) {
+                console.error(err);
+                toast({ title: 'Export failed', description: String(err), variant: 'destructive' });
+              } finally {
+                setExporting(false);
+              }
+            }}
+          >
+            {exporting ? (
+              <span className="text-sm">Exporting...</span>
+            ) : (
+              <>
+                <Download className="h-4 w-4 mr-2" />
+                Export
+              </>
+            )}
           </Button>
 
           <Button size="sm" onClick={() => setShowOrgModal(true)}>
