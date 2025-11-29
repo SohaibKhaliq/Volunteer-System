@@ -26,7 +26,7 @@ export default function OrganizationAnalytics({ orgId, open, onClose }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="max-w-6xl w-full">
         <DialogHeader>
           <DialogTitle>Organization Analytics</DialogTitle>
         </DialogHeader>
@@ -37,15 +37,17 @@ export default function OrganizationAnalytics({ orgId, open, onClose }: Props) {
           </div>
         ) : (
           <div className="space-y-6 py-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card>
                 <CardHeader>
                   <CardTitle>Total Volunteers</CardTitle>
                   <CardDescription>All-time volunteers</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{data?.volunteerCount ?? 0}</div>
-                  <div className="text-sm text-muted-foreground">Retention: {data?.retentionRate ?? 0}%</div>
+                  <div className="text-3xl lg:text-4xl font-extrabold">{data?.volunteerCount ?? 0}</div>
+                  <div className="text-sm text-muted-foreground mt-2">
+                    Retention: {Number(data?.retentionRate ?? 0).toFixed(0)}%
+                  </div>
                 </CardContent>
               </Card>
 
@@ -55,8 +57,8 @@ export default function OrganizationAnalytics({ orgId, open, onClose }: Props) {
                   <CardDescription>Volunteers in recent period</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{data?.activeVolunteerCount ?? 0}</div>
-                  <div className="text-sm text-muted-foreground">Events: {data?.eventCount ?? 0}</div>
+                  <div className="text-3xl lg:text-4xl font-extrabold">{data?.activeVolunteerCount ?? 0}</div>
+                  <div className="text-sm text-muted-foreground mt-2">Events: {data?.eventCount ?? 0}</div>
                 </CardContent>
               </Card>
 
@@ -66,8 +68,8 @@ export default function OrganizationAnalytics({ orgId, open, onClose }: Props) {
                   <CardDescription>Hours contributed</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{data?.totalHours ?? 0}</div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-3xl lg:text-4xl font-extrabold">{data?.totalHours ?? 0}</div>
+                  <div className="text-sm text-muted-foreground mt-2">
                     Avg per volunteer: {data?.avgHoursPerVolunteer ?? 0}
                   </div>
                 </CardContent>
@@ -81,7 +83,7 @@ export default function OrganizationAnalytics({ orgId, open, onClose }: Props) {
                   <CardDescription>New volunteers by period</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-64">
+                  <div className="h-72">
                     {Array.isArray(data?.volunteer_growth) && data.volunteer_growth.length > 0 ? (
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart
@@ -110,7 +112,7 @@ export default function OrganizationAnalytics({ orgId, open, onClose }: Props) {
                   <CardDescription>Leaderboard by hours</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-64">
+                  <div className="h-72">
                     {Array.isArray(data?.top_volunteers) && data.top_volunteers.length > 0 ? (
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart layout="vertical" data={data.top_volunteers}>
@@ -132,9 +134,11 @@ export default function OrganizationAnalytics({ orgId, open, onClose }: Props) {
         )}
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>
-            Close
-          </Button>
+          <div className="w-full flex justify-end">
+            <Button variant="outline" onClick={onClose}>
+              Close
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
