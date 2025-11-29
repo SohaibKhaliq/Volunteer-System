@@ -28,7 +28,7 @@ const api = {
     return axios.post('/carpooling-ads', data);
   },
   /* Admin / management endpoints */
-  listOrganizations: async () => axios.get('/organizations'),
+  listOrganizations: async (params?: Record<string, unknown>) => axios.get('/organizations', { params }),
   createOrganization: async (payload: any) => axios.post('/organizations', payload),
   updateOrganization: async (id: number, data: any) => axios.put(`/organizations/${id}`, data),
   deleteOrganization: async (id: number) => axios.delete(`/organizations/${id}`),
