@@ -5,11 +5,11 @@ import Database from '@ioc:Adonis/Lucid/Database'
 import { DateTime } from 'luxon'
 import OrganizationTeamMember from 'App/Models/OrganizationTeamMember'
 import Event from 'App/Models/Event'
-import Drive from '@ioc:Adonis/Core/Drive'
 import Application from '@ioc:Adonis/Core/Application'
 import fs from 'fs'
 import Logger from '@ioc:Adonis/Core/Logger'
 import OrganizationVolunteer from 'App/Models/OrganizationVolunteer'
+import CreateOrganizationValidator from 'App/Validators/CreateOrganizationValidator'
 
 export default class OrganizationsController {
   public async index({ response, request }: HttpContextContract) {
@@ -17,31 +17,117 @@ export default class OrganizationsController {
 
     const query = Organization.query()
 
-    if (withCounts === 'true') {
-      // Load counts for frontend
-      const orgs = await query
-      const orgsWithCounts = await Promise.all(
-        orgs.map(async (org) => {
-          const volunteerCount = await org.getVolunteerCount()
-          const eventCount = await org.getEventCount()
-          return {
-            ...org.toJSON(),
-            volunteer_count: volunteerCount,
-            event_count: eventCount
-          }
-        })
-      )
-      return response.ok(orgsWithCounts)
+    const orgs = await query
+
+    const mapOrg = async (org: Organization) => {
+      const payload: any = org.toJSON()
+      if (payload.logo) {
+        const urls = await org.resolveLogoUrls()
+        payload.logo = urls.logo
+        payload.logo_thumb = urls.logo_thumb
+      }
+      if (withCounts === 'true') {
+        payload.volunteer_count = await org.getVolunteerCount()
+        payload.event_count = await org.getEventCount()
+      }
+      return payload
     }
 
-    const list = await query
-    return response.ok(list)
+    // support both array results and paginator objects
+    if (Array.isArray(orgs)) {
+      const mapped = await Promise.all(orgs.map(mapOrg))
+      return response.ok(mapped)
+    }
+
+    // assume paginator-like object { data: [...], meta: {...} }
+    if (orgs && (orgs as any).data) {
+      const data = await Promise.all((orgs as any).data.map(mapOrg))
+      const out = { ...(orgs as any), data }
+      return response.ok(out)
+    }
+
+    // fallback
+    return response.ok(orgs)
   }
 
   public async store({ request, response }: HttpContextContract) {
-    const payload = request.only(['name', 'description', 'contact_email', 'contact_phone'])
+    await request.validate(CreateOrganizationValidator)
+
+    const payload: any = request.only(['name', 'description', 'contact_email', 'contact_phone'])
+
+    // handle optional logo upload similar to update()
+    try {
+      const logoFile = request.file('logo')
+      if (logoFile) {
+        await logoFile.moveToDisk('local', { dirname: 'organizations' })
+        const filename = logoFile.fileName
+        const tmpRoot = Application.tmpPath('uploads')
+        const candidates = [
+          `${tmpRoot}/organizations/${filename}`,
+          `${tmpRoot}/local/organizations/${filename}`,
+          `${tmpRoot}/local/${filename}`,
+          `${tmpRoot}/${filename}`
+        ]
+
+        let found: string | null = null
+        for (const c of candidates) {
+          if (fs.existsSync(c)) {
+            found = c
+            break
+          }
+        }
+
+        const dest = `${tmpRoot}/organizations/${filename}`
+        if (!fs.existsSync(`${tmpRoot}/organizations`)) {
+          fs.mkdirSync(`${tmpRoot}/organizations`, { recursive: true })
+        }
+
+        if (found && found !== dest) {
+          try {
+            fs.renameSync(found, dest)
+          } catch (err) {
+            Logger.warn(`Failed to move uploaded logo from ${found} to ${dest}: ${String(err)}`)
+          }
+        }
+
+        payload.logo = `organizations/${filename}`
+        Logger.info(`Saved org logo to uploads (local/${logoFile.fileName})`)
+
+        // Attempt to generate a thumbnail (200x200) next to original
+        try {
+          const dest = `${tmpRoot}/organizations/${filename}`
+          const thumbDir = `${tmpRoot}/organizations/thumbs`
+          if (!fs.existsSync(thumbDir)) fs.mkdirSync(thumbDir, { recursive: true })
+          const thumbPath = `${thumbDir}/${filename}`
+          const maybeSharp = await import('sharp').catch(() => null)
+          const sharpLib = maybeSharp ? (maybeSharp.default ?? maybeSharp) : null
+          if (sharpLib) {
+            await sharpLib(dest).resize(200, 200, { fit: 'cover' }).toFile(thumbPath)
+            Logger.info(`Generated thumbnail for org logo: ${thumbPath}`)
+          } else {
+            Logger.info('Skipping thumbnail generation: sharp not available')
+          }
+        } catch (err) {
+          Logger.warn(`Failed to generate thumbnail for org logo: ${String(err)}`)
+        }
+      }
+    } catch (err) {
+      Logger.error('Error saving organization logo: ' + String(err))
+    }
+
     const org = await Organization.create(payload)
-    return response.created(org)
+
+    // prepare payload with logo urls using model helper
+    const out: any = org.toJSON()
+    try {
+      const urls = await org.resolveLogoUrls()
+      out.logo = urls.logo
+      out.logo_thumb = urls.logo_thumb
+    } catch (e) {
+      out.logo_thumb = null
+    }
+
+    return response.created(out)
   }
 
   public async show({ auth, params, response }: HttpContextContract) {
@@ -66,56 +152,13 @@ export default class OrganizationsController {
       payload.auto_approve_volunteers =
         payload.auto_approve_volunteers ?? payload.autoApproveVolunteers ?? false
       payload.autoApproveVolunteers = payload.auto_approve_volunteers
-      // Try to convert stored disk path into an accessible URL using Drive
+      // Resolve logo and thumbnail URLs via model helper
       try {
-        if (payload.logo) {
-          // Normalize common stale values (e.g. 'tmp/uploads/...') into candidates
-          const raw = String(payload.logo)
-          const candidates: string[] = [raw]
-          // strip any leading /tmp/uploads/ or tmp/uploads/
-          candidates.push(raw.replace(/^\/?tmp\/uploads\//, ''))
-          // if stripped contains local or organizations, keep it, else add variants
-          const filename = raw.split('/').pop() || raw
-          candidates.push(`organizations/${filename}`)
-          candidates.push(`local/${filename}`)
-
-          let resolved: string | null = null
-          for (const c of candidates) {
-            try {
-              const maybeUrl = await Drive.getUrl(c)
-              if (maybeUrl) {
-                resolved = maybeUrl
-                break
-              }
-            } catch (e2) {
-              // try next
-            }
-          }
-
-          if (resolved) payload.logo = resolved
-          else payload.logo = `/uploads/${String(payload.logo).replace(/^\//, '')}`
-        }
+        const urls = await org.resolveLogoUrls()
+        payload.logo = urls.logo
+        payload.logo_thumb = urls.logo_thumb
       } catch (e) {
-        // fallback: if payload.logo contains a file name, try resolving under the local disk
-        try {
-          if (payload.logo && typeof payload.logo === 'string') {
-            const filename = payload.logo.split('/').pop()
-            if (filename) {
-              // try organizations/<filename> first (preferred), then local/<filename>
-              const altOrg = `organizations/${filename}`
-              const maybeUrlOrg = await Drive.getUrl(altOrg).catch(() => null)
-              if (maybeUrlOrg) {
-                payload.logo = maybeUrlOrg
-              } else {
-                const alt = `local/${filename}`
-                const maybeUrl2 = await Drive.getUrl(alt).catch(() => null)
-                payload.logo = maybeUrl2 ?? `/uploads/${alt}`
-              }
-            }
-          }
-        } catch (e2) {
-          // give up and leave the stored value as-is
-        }
+        // ignore and return stored values
       }
       return response.ok(payload)
     }
@@ -149,46 +192,14 @@ export default class OrganizationsController {
     payload.auto_approve_volunteers =
       payload.auto_approve_volunteers ?? payload.autoApproveVolunteers ?? false
     payload.autoApproveVolunteers = payload.auto_approve_volunteers
-    // Try to convert stored disk path into an accessible URL using Drive
+    // Resolve logo and thumbnail URLs via model helper
     try {
-      if (payload.logo) {
-        const raw = String(payload.logo)
-        const candidates: string[] = [raw]
-        candidates.push(raw.replace(/^\/?tmp\/uploads\//, ''))
-        const filename = raw.split('/').pop() || raw
-        candidates.push(`organizations/${filename}`)
-        candidates.push(`local/${filename}`)
-
-        let resolved: string | null = null
-        for (const c of candidates) {
-          try {
-            const maybeUrl = await Drive.getUrl(c)
-            if (maybeUrl) {
-              resolved = maybeUrl
-              break
-            }
-          } catch (e2) {
-            // continue
-          }
-        }
-
-        if (resolved) payload.logo = resolved
-        else payload.logo = `/uploads/${String(payload.logo).replace(/^\//, '')}`
-      }
+      const urls = await org.resolveLogoUrls()
+      payload.logo = urls.logo
+      payload.logo_thumb = urls.logo_thumb
     } catch (e) {
-        try {
-          if (payload.logo && typeof payload.logo === 'string') {
-            const filename = payload.logo.split('/').pop()
-            if (filename) {
-              const alt = `local/${filename}`
-              const maybeUrl2 = await Drive.getUrl(alt)
-              payload.logo = maybeUrl2 ?? `/uploads/${alt}`
-            }
-          }
-        } catch (e2) {
-          // ignore
-        }
-      }
+      // ignore
+    }
 
     return response.ok(payload)
   }
@@ -247,6 +258,8 @@ export default class OrganizationsController {
     // if a file was uploaded, handle saving it first
     const updateData: any = {}
     try {
+      // capture previous logo so we can remove files when replaced
+      const previousLogo = org?.logo
       const logoFile = request.file('logo')
       if (logoFile) {
         await logoFile.moveToDisk('local', { dirname: 'organizations' })
@@ -287,6 +300,33 @@ export default class OrganizationsController {
         // store path relative to disk root so Drive.getUrl('organizations/<file>') resolves
         updateData.logo = `organizations/${filename}`
         Logger.info(`Saved org logo to uploads (local/${logoFile.fileName})`)
+
+        // Generate thumbnail for updated logo as well
+        try {
+          const destPath = `${tmpRoot}/organizations/${filename}`
+          const thumbDir = `${tmpRoot}/organizations/thumbs`
+          if (!fs.existsSync(thumbDir)) fs.mkdirSync(thumbDir, { recursive: true })
+          const thumbPath = `${thumbDir}/${filename}`
+          const maybeSharp = await import('sharp').catch(() => null)
+          const sharpLib = maybeSharp ? (maybeSharp.default ?? maybeSharp) : null
+          if (sharpLib) {
+            await sharpLib(destPath).resize(200, 200, { fit: 'cover' }).toFile(thumbPath)
+            Logger.info(`Generated thumbnail for updated org logo: ${thumbPath}`)
+          } else {
+            Logger.info('Skipping thumbnail generation for update: sharp not available')
+          }
+        } catch (err) {
+          Logger.warn(`Failed to generate thumbnail for updated org logo: ${String(err)}`)
+        }
+
+        // delete previous logo files if they differ
+        try {
+          if (previousLogo && previousLogo !== updateData.logo) {
+            await Organization.deleteLogoFilesFor(previousLogo)
+          }
+        } catch (e) {
+          Logger.warn(`Failed to delete previous org logo files: ${String(e)}`)
+        }
       }
     } catch (err) {
       Logger.error('Error saving organization logo: ' + String(err))
@@ -361,14 +401,13 @@ export default class OrganizationsController {
     payload.auto_approve_volunteers =
       payload.auto_approve_volunteers ?? payload.autoApproveVolunteers ?? false
     payload.autoApproveVolunteers = payload.auto_approve_volunteers
-    // convert logo path to a usable URL if possible
+    // Resolve logo and thumbnail using model helper
     try {
-      if (payload.logo) {
-        const url = await Drive.getUrl(payload.logo)
-        payload.logo = url ?? payload.logo
-      }
+      const urls = await org.resolveLogoUrls()
+      payload.logo = urls.logo
+      payload.logo_thumb = urls.logo_thumb
     } catch (e) {
-      // ignore errors - just return stored path
+      // ignore errors
     }
 
     return response.ok(payload)
