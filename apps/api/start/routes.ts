@@ -77,9 +77,9 @@ Route.resource('users', 'UsersController')
 
 Route.resource('organizations', 'OrganizationsController')
   .middleware({
-    store: ['auth'],
-    update: ['auth'],
-    destroy: ['auth']
+    store: ['auth', 'admin'],
+    update: ['auth', 'admin'],
+    destroy: ['auth', 'admin']
   })
   .apiOnly()
 
