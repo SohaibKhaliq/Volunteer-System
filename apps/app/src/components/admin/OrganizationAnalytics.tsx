@@ -49,7 +49,7 @@ export default function OrganizationAnalytics({ orgId, orgName, open, onClose }:
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl w-full p-6">
+      <DialogContent className="max-w-5xl w-full p-6 max-h-[85vh] overflow-auto">
         <DialogHeader className="p-0 mb-4">
           <div className="flex items-start justify-between w-full gap-4">
             <div>
@@ -57,7 +57,7 @@ export default function OrganizationAnalytics({ orgId, orgName, open, onClose }:
               {orgName ? <div className="text-base font-medium text-muted-foreground mt-1">{orgName}</div> : null}
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <Select
                 value={selectedRange}
                 onValueChange={(v) => {
@@ -167,7 +167,7 @@ export default function OrganizationAnalytics({ orgId, orgName, open, onClose }:
           </div>
         ) : (
           <div className="space-y-6 py-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card>
                 <CardHeader>
                   <CardTitle>Total Volunteers</CardTitle>
@@ -206,7 +206,7 @@ export default function OrganizationAnalytics({ orgId, orgName, open, onClose }:
               </Card>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <Card>
                 <CardHeader>
                   <CardTitle>Volunteer Growth</CardTitle>
