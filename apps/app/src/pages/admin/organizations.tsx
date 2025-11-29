@@ -50,6 +50,8 @@ interface Organization {
   eventCount?: number;
   complianceScore?: number;
   performanceScore?: number;
+  logo?: string;
+  logoThumb?: string | null;
 }
 
 export default function AdminOrganizations() {
@@ -70,6 +72,8 @@ export default function AdminOrganizations() {
         id: o.id,
         name: o.name,
         description: o.description,
+        logo: o.logo ?? null,
+        logoThumb: o.logo_thumb ?? null,
         isApproved: o.is_approved ?? o.isApproved ?? false,
         isActive: o.is_active ?? o.isActive ?? true,
         createdAt: o.created_at ?? o.createdAt ?? new Date().toISOString(),
@@ -234,9 +238,18 @@ export default function AdminOrganizations() {
               filteredOrgs.map((org) => (
                 <TableRow key={org.id}>
                   <TableCell>
-                    <div>
-                      <div className="font-medium">{org.name}</div>
-                      <div className="text-sm text-muted-foreground line-clamp-1">{org.description}</div>
+                    <div className="flex items-center gap-3">
+                      {org.logoThumb ? (
+                        <img src={org.logoThumb} alt={`${org.name} logo`} className="h-10 w-10 rounded object-cover" />
+                      ) : (
+                        <div className="h-10 w-10 rounded bg-muted-foreground/10 flex items-center justify-center text-sm text-muted-foreground">
+                          {org.name?.slice(0, 1)}
+                        </div>
+                      )}
+                      <div>
+                        <div className="font-medium">{org.name}</div>
+                        <div className="text-sm text-muted-foreground line-clamp-1">{org.description}</div>
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell>
