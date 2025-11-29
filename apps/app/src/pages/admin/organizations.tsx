@@ -138,7 +138,8 @@ export default function AdminOrganizations() {
   });
 
   const getPerformanceBadge = (score?: number) => {
-    if (!score) return <Badge variant="outline">N/A</Badge>;
+    // treat only null/undefined as missing; allow 0 to be a valid score
+    if (score === undefined || score === null) return <Badge variant="outline">N/A</Badge>;
     if (score >= 80) return <Badge className="bg-green-500">Excellent</Badge>;
     if (score >= 60) return <Badge className="bg-blue-500">Good</Badge>;
     if (score >= 40) return <Badge className="bg-yellow-500">Fair</Badge>;
