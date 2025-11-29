@@ -33,6 +33,8 @@ export default function OrganizationModal({ open, onClose, organization, onSucce
   const [description, setDescription] = useState('');
   const [contactEmail, setContactEmail] = useState('');
   const [contactPhone, setContactPhone] = useState('');
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
   useEffect(() => {
     if (open && organization) {
@@ -51,20 +53,38 @@ export default function OrganizationModal({ open, onClose, organization, onSucce
 
   const handleSubmit = async () => {
     try {
-      const payload = {
-        name: name.trim(),
-        description: description.trim(),
-        contact_email: contactEmail.trim(),
-        contact_phone: contactPhone.trim()
-      } as any;
-
+      // Build payload or FormData if a logo file is present
       let res;
-      if (isEdit && organization) {
-        res = await api.updateOrganization(organization.id, payload);
-        toast({ title: 'Organization updated', variant: 'success' });
+      if (logoFile) {
+        const fd = new FormData();
+        fd.append('name', name.trim());
+        fd.append('description', description.trim());
+        fd.append('contact_email', contactEmail.trim());
+        fd.append('contact_phone', contactPhone.trim());
+        fd.append('logo', logoFile);
+
+        if (isEdit && organization) {
+          res = await api.updateOrganization(organization.id, fd);
+          toast({ title: 'Organization updated', variant: 'success' });
+        } else {
+          res = await api.createOrganization(fd);
+          toast({ title: 'Organization created', variant: 'success' });
+        }
       } else {
-        res = await api.createOrganization(payload);
-        toast({ title: 'Organization created', variant: 'success' });
+        const payload = {
+          name: name.trim(),
+          description: description.trim(),
+          contact_email: contactEmail.trim(),
+          contact_phone: contactPhone.trim()
+        } as any;
+
+        if (isEdit && organization) {
+          res = await api.updateOrganization(organization.id, payload);
+          toast({ title: 'Organization updated', variant: 'success' });
+        } else {
+          res = await api.createOrganization(payload);
+          toast({ title: 'Organization created', variant: 'success' });
+        }
       }
 
       onSuccess(res);
@@ -86,6 +106,25 @@ export default function OrganizationModal({ open, onClose, organization, onSucce
           <Input placeholder="Description" value={description} onChange={(e) => setDescription(e.target.value)} />
           <Input placeholder="Contact email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} />
           <Input placeholder="Contact phone" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Logo (optional)</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const f = e.target.files && e.target.files[0];
+                setLogoFile(f ?? null);
+                if (f) {
+                  const reader = new FileReader();
+                  reader.onload = () => setLogoPreview(String(reader.result));
+                  reader.readAsDataURL(f);
+                } else setLogoPreview(null);
+              }}
+            />
+            {logoPreview && (
+              <img src={logoPreview} alt="logo preview" className="mt-2 h-20 w-20 object-cover rounded" />
+            )}
+          </div>
         </div>
 
         <DialogFooter className="flex justify-between">
