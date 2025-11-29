@@ -65,6 +65,7 @@ export default function AdminOrganizations() {
   const [editOrg, setEditOrg] = useState<Organization | null>(null);
   const [showAnalyticsDialog, setShowAnalyticsDialog] = useState(false);
   const [analyticsOrgId, setAnalyticsOrgId] = useState<number | null>(null);
+  const [analyticsOrgName, setAnalyticsOrgName] = useState<string | null>(null);
 
   const { data: orgs, isLoading } = useQuery<Organization[]>(['organizations'], api.listOrganizations, {
     select: (data: any) => {
@@ -329,6 +330,7 @@ export default function AdminOrganizations() {
                         <DropdownMenuItem
                           onClick={() => {
                             setAnalyticsOrgId(org.id);
+                            setAnalyticsOrgName(org.name || null);
                             setShowAnalyticsDialog(true);
                           }}
                         >
@@ -456,6 +458,7 @@ export default function AdminOrganizations() {
       />
       <OrganizationAnalytics
         orgId={analyticsOrgId}
+        orgName={analyticsOrgName}
         open={showAnalyticsDialog}
         onClose={() => setShowAnalyticsDialog(false)}
       />
