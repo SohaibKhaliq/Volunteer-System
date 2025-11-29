@@ -73,6 +73,7 @@
     "proxy-addr": "^2.0.7",
     "reflect-metadata": "^0.1.13",
     "shared": "workspace:*",
+    "sharp": "^0.34.5",
     "socket.io": "^4.8.1",
     "source-map-support": "^0.5.21",
     "zod": "^3.22.2"
