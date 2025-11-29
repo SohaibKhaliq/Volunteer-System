@@ -1,9 +1,19 @@
-import { BaseModel, column, hasMany, HasMany, manyToMany, ManyToMany } from '@ioc:Adonis/Lucid/Orm'
+import {
+  BaseModel,
+  column,
+  hasMany,
+  HasMany,
+  manyToMany,
+  ManyToMany,
+  beforeDelete
+} from '@ioc:Adonis/Lucid/Orm'
 import { DateTime } from 'luxon'
 import Event from './Event'
 import User from './User'
 import OrganizationInvite from './OrganizationInvite'
 import Database from '@ioc:Adonis/Lucid/Database'
+import Drive from '@ioc:Adonis/Core/Drive'
+import Logger from '@ioc:Adonis/Core/Logger'
 
 export default class Organization extends BaseModel {
   @column({ isPrimary: true })
@@ -148,6 +158,123 @@ export default class Organization extends BaseModel {
       eventCount,
       totalHours,
       retentionRate: volunteerCount > 0 ? (activeVolunteerCount / volunteerCount) * 100 : 0
+    }
+  }
+
+  @beforeDelete()
+  public static async deleteFiles(org: Organization) {
+    try {
+      if (org.logo) {
+        const raw = String(org.logo)
+        const filename = raw.split('/').pop()
+        const candidates = [raw]
+        if (filename) {
+          candidates.push(`organizations/${filename}`)
+          candidates.push(`local/${filename}`)
+          candidates.push(filename)
+        }
+
+        for (const c of candidates) {
+          try {
+            await Drive.delete(c)
+          } catch (e) {
+            // ignore missing files
+          }
+        }
+
+        // also delete thumbnail
+        if (filename) {
+          const thumb = `organizations/thumbs/${filename}`
+          try {
+            await Drive.delete(thumb)
+          } catch (e) {
+            // ignore
+          }
+        }
+      }
+    } catch (err) {
+      Logger.warn(`Failed to cleanup organization files: ${String(err)}`)
+    }
+  }
+
+  /**
+   * Resolve public URLs for stored logo and its thumbnail.
+   */
+  public async resolveLogoUrls(): Promise<{ logo: string | null; logo_thumb: string | null }> {
+    try {
+      if (!this.logo) return { logo: null, logo_thumb: null }
+      const raw = String(this.logo)
+      const filename = raw.split('/').pop() || raw
+      const candidates = [
+        raw,
+        raw.replace(/^\/?tmp\/uploads\//, ''),
+        `organizations/${filename}`,
+        `local/${filename}`
+      ]
+
+      let resolved: string | null = null
+      for (const c of candidates) {
+        try {
+          const maybe = await Drive.getUrl(c)
+          if (maybe) {
+            resolved = maybe
+            break
+          }
+        } catch (e) {
+          // continue
+        }
+      }
+
+      const logoUrl = resolved ?? `/uploads/${String(this.logo).replace(/^\//, '')}`
+
+      const thumbCandidate = `organizations/thumbs/${filename}`
+      let thumbUrl: string | null = null
+      try {
+        thumbUrl = (await Drive.getUrl(thumbCandidate).catch(() => null)) ?? null
+      } catch (e) {
+        thumbUrl = null
+      }
+
+      return { logo: logoUrl, logo_thumb: thumbUrl }
+    } catch (err) {
+      Logger.warn(`resolveLogoUrls failed: ${String(err)}`)
+      return { logo: null, logo_thumb: null }
+    }
+  }
+
+  /**
+   * Delete a given stored logo path and its thumbnail (best-effort).
+   * Accepts either stored DB value or a filename.
+   */
+  public static async deleteLogoFilesFor(rawLogo?: string | null) {
+    try {
+      if (!rawLogo) return
+      const raw = String(rawLogo)
+      const filename = raw.split('/').pop()
+      const candidates = [raw]
+      if (filename) {
+        candidates.push(`organizations/${filename}`)
+        candidates.push(`local/${filename}`)
+        candidates.push(filename)
+      }
+
+      for (const c of candidates) {
+        try {
+          await Drive.delete(c)
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      if (filename) {
+        try {
+          await Drive.delete(`organizations/thumbs/${filename}`)
+        } catch (e) {
+          // ignore
+        }
+      }
+    } catch (err) {
+      Logger.warn(`deleteLogoFilesFor failed: ${String(err)}`)
     }
   }
 }
