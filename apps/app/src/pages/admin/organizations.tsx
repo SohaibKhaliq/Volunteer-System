@@ -38,6 +38,7 @@ import {
 } from 'lucide-react';
 import { toast } from '@/components/atoms/use-toast';
 import OrganizationModal from '@/components/admin/OrganizationModal';
+import OrganizationAnalytics from '@/components/admin/OrganizationAnalytics';
 
 interface Organization {
   id: number;
@@ -62,6 +63,8 @@ export default function AdminOrganizations() {
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [showOrgModal, setShowOrgModal] = useState(false);
   const [editOrg, setEditOrg] = useState<Organization | null>(null);
+  const [showAnalyticsDialog, setShowAnalyticsDialog] = useState(false);
+  const [analyticsOrgId, setAnalyticsOrgId] = useState<number | null>(null);
 
   const { data: orgs, isLoading } = useQuery<Organization[]>(['organizations'], api.listOrganizations, {
     select: (data: any) => {
@@ -323,7 +326,12 @@ export default function AdminOrganizations() {
                           <Edit className="h-4 w-4 mr-2" />
                           Edit Organization
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setAnalyticsOrgId(org.id);
+                            setShowAnalyticsDialog(true);
+                          }}
+                        >
                           <TrendingUp className="h-4 w-4 mr-2" />
                           View Analytics
                         </DropdownMenuItem>
@@ -445,6 +453,11 @@ export default function AdminOrganizations() {
           setShowOrgModal(false);
           setEditOrg(null);
         }}
+      />
+      <OrganizationAnalytics
+        orgId={analyticsOrgId}
+        open={showAnalyticsDialog}
+        onClose={() => setShowAnalyticsDialog(false)}
       />
     </div>
   );
