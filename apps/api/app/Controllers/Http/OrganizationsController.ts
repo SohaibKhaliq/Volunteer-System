@@ -13,7 +13,7 @@ import CreateOrganizationValidator from 'App/Validators/CreateOrganizationValida
 
 export default class OrganizationsController {
   public async index({ response, request }: HttpContextContract) {
-    const { withCounts } = request.qs()
+    const { withCounts, withCompliance } = request.qs()
 
     const query = Organization.query()
 
@@ -29,6 +29,32 @@ export default class OrganizationsController {
       if (withCounts === 'true') {
         payload.volunteer_count = await org.getVolunteerCount()
         payload.event_count = await org.getEventCount()
+      }
+      // optionally include a precomputed compliance score (percentage)
+      if (withCompliance === 'true') {
+        try {
+          // best-effort: compute compliant docs vs total docs for this org
+          const now = new Date().toISOString()
+          const rows: any = await Database.from('compliance_documents as cd')
+            .join('organization_volunteers as ov', 'cd.user_id', 'ov.user_id')
+            .where('ov.organization_id', org.id)
+            .groupBy('ov.organization_id')
+            .select('ov.organization_id')
+            .count('cd.id as total')
+            .select(
+              Database.raw(
+                "SUM(CASE WHEN cd.status = 'approved' AND (cd.expires_at IS NULL OR cd.expires_at > ?) THEN 1 ELSE 0 END) as valid",
+                [now]
+              )
+            )
+
+          const info = Array.isArray(rows) && rows[0] ? rows[0] : null
+          const total = info ? Number(info.total || 0) : 0
+          const valid = info ? Number(info.valid || 0) : 0
+          payload.compliance_score = total > 0 ? Math.round((valid / total) * 100) : null
+        } catch (e) {
+          payload.compliance_score = null
+        }
       }
       return payload
     }
@@ -740,7 +766,7 @@ export default class OrganizationsController {
       .join('users', 'users.id', 'compliance_documents.user_id')
       .where('organization_volunteers.organization_id', org.id)
       .select('compliance_documents.*', 'users.first_name', 'users.last_name', 'users.email')
-      .orderBy('compliance_documents.expiration_date', 'asc')
+      .orderBy('compliance_documents.expires_at', 'asc')
 
     // Categorize by status
     const now = DateTime.now()
@@ -748,19 +774,17 @@ export default class OrganizationsController {
       valid: compliance.filter(
         (doc) =>
           doc.status === 'approved' &&
-          (!doc.expiration_date || DateTime.fromJSDate(doc.expiration_date) > now)
+          (!doc.expires_at || DateTime.fromJSDate(doc.expires_at) > now)
       ),
       expiring_soon: compliance.filter(
         (doc) =>
           doc.status === 'approved' &&
-          doc.expiration_date &&
-          DateTime.fromJSDate(doc.expiration_date).diff(now, 'days').days <= 30
+          doc.expires_at &&
+          DateTime.fromJSDate(doc.expires_at).diff(now, 'days').days <= 30
       ),
       expired: compliance.filter(
         (doc) =>
-          doc.status === 'approved' &&
-          doc.expiration_date &&
-          DateTime.fromJSDate(doc.expiration_date) < now
+          doc.status === 'approved' && doc.expires_at && DateTime.fromJSDate(doc.expires_at) < now
       ),
       pending: compliance.filter((doc) => doc.status === 'pending'),
       rejected: compliance.filter((doc) => doc.status === 'rejected')
