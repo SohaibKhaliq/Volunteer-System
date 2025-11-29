@@ -149,7 +149,7 @@ export default class Organization extends BaseModel {
       hoursQuery = hoursQuery.where('volunteer_hours.date', '<=', endDate.toSQLDate())
     }
 
-    const hoursResult = await hoursQuery.sum('hours as total_hours')
+    const hoursResult = await hoursQuery.sum('volunteer_hours.hours as total_hours')
     const totalHours = hoursResult[0]?.total_hours || 0
 
     return {
