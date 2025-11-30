@@ -1,17 +1,17 @@
 import BaseSchema from '@ioc:Adonis/Lucid/Schema'
+import Database from '@ioc:Adonis/Lucid/Database'
 
 export default class AddQuantityToAssignments extends BaseSchema {
   protected tableName = 'resource_assignments'
 
   public async up() {
+    const conn = Database.connection()
     try {
-      if (!(await this.schema.hasColumn(this.tableName, 'quantity'))) {
-        await this.schema.alterTable(this.tableName, (table) => {
-          table.integer('quantity').defaultTo(1)
-        })
-      }
+      await conn.raw(
+        `ALTER TABLE \`${this.tableName}\` ADD COLUMN IF NOT EXISTS \`quantity\` INT DEFAULT 1`
+      )
     } catch (e) {
-      // ignore
+      // ignore to keep migration idempotent
     }
   }
 
