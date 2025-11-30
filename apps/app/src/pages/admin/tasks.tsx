@@ -129,8 +129,56 @@ export default function AdminTasks() {
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: Partial<Task> }) => api.update('tasks', id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['tasks']);
+    onMutate: async ({ id, data }: { id: number; data: Partial<Task> }) => {
+      await queryClient.cancelQueries(['tasks']);
+      // Snapshot previous values for rollback
+      const previousAll = queryClient.getQueryData<any>(['tasks']);
+      const previousByEvent = queryClient.getQueryData<any>(['tasks', eventIdParam]);
+
+      const applyOptimistic = (prev: any) => {
+        if (!prev) return prev;
+        const list: any[] = Array.isArray(prev) ? prev : (prev.data ?? []);
+        const newList = list.map((item) => {
+          if (item.id !== id) return item;
+          // shallow merge updated fields into the item
+          return { ...item, ...data };
+        });
+        if (Array.isArray(prev)) return newList;
+        return { ...prev, data: newList };
+      };
+
+      try {
+        queryClient.setQueryData(['tasks'], applyOptimistic(previousAll));
+        queryClient.setQueryData(['tasks', eventIdParam], applyOptimistic(previousByEvent));
+      } catch (e) {
+        // ignore
+      }
+
+      return { previousAll, previousByEvent };
+    },
+    onError: (err, variables, context: any) => {
+      // rollback
+      if (context?.previousAll) queryClient.setQueryData(['tasks'], context.previousAll);
+      if (context?.previousByEvent) queryClient.setQueryData(['tasks', eventIdParam], context.previousByEvent);
+      toast({ title: 'Failed to update task', variant: 'destructive' });
+    },
+    onSuccess: (updated: any) => {
+      // Update cached lists with server response so UI reflects persisted shape
+      const applyServerUpdate = (prev: any) => {
+        if (!prev) return prev;
+        const list: any[] = Array.isArray(prev) ? prev : (prev.data ?? []);
+        const newList = list.map((item) => (item.id === updated?.id ? { ...item, ...(updated ?? {}) } : item));
+        return Array.isArray(prev) ? newList : { ...prev, data: newList };
+      };
+
+      try {
+        queryClient.setQueryData(['tasks'], (prev) => applyServerUpdate(prev));
+        queryClient.setQueryData(['tasks', eventIdParam], (prev) => applyServerUpdate(prev));
+      } catch (e) {
+        // fallback to invalidation if applying update fails
+        queryClient.invalidateQueries(['tasks']);
+      }
+
       toast({ title: 'Task updated', variant: 'success' });
     }
   });
