@@ -131,4 +131,95 @@ export default class ResourcesController {
     await resource.save()
     return resource
   }
+
+  // Create a maintenance assignment (take units out of service)
+  public async maintenance({ params, request, auth }: HttpContextContract) {
+    const resource = await Resource.findOrFail(params.id)
+    const schema = z.object({
+      quantity: z.number().int().min(1).optional(),
+      expectedReturnAt: z.string().nullable().optional(),
+      notes: z.string().nullable().optional()
+    })
+    const payload = schema.parse(request.only(['quantity', 'expectedReturnAt', 'notes']))
+
+    const qty = payload.quantity ?? resource.quantityTotal ?? 1
+
+    // create maintenance assignment record
+    const assignment = await ResourceAssignment.create({
+      resourceId: resource.id,
+      assignmentType: 'maintenance',
+      relatedId: null,
+      assignedAt: new Date(),
+      expectedReturnAt: payload.expectedReturnAt ?? null,
+      status: 'assigned',
+      notes: payload.notes || null,
+      quantity: qty
+    } as any)
+
+    // decrement available units and lock resource status
+    resource.quantityAvailable = Math.max(0, (resource.quantityAvailable ?? 0) - qty)
+    resource.status = 'maintenance'
+    await resource.save()
+
+    // Notify technician/owner if present
+    try {
+      const Notification = await import('App/Models/Notification')
+      const notifPayload = {
+        userId: resource.assignedTechnicianId || null,
+        type: 'resource.maintenance.created',
+        payload: JSON.stringify({
+          resourceId: resource.id,
+          assignmentId: assignment.id,
+          quantity: qty
+        })
+      }
+      // @ts-ignore
+      await Notification.default.create(notifPayload)
+    } catch (e) {
+      // ignore notification errors
+    }
+
+    return assignment
+  }
+
+  public async retire({ params }: HttpContextContract) {
+    const resource = await Resource.findOrFail(params.id)
+    resource.status = 'retired'
+    // Optionally set quantityAvailable to zero so it's not assignable
+    resource.quantityAvailable = 0
+    await resource.save()
+    // best-effort notification
+    try {
+      const Notification = await import('App/Models/Notification')
+      const notifPayload = {
+        userId: resource.createdById || null,
+        type: 'resource.retired',
+        payload: JSON.stringify({ resourceId: resource.id })
+      }
+      // @ts-ignore
+      await Notification.default.create(notifPayload)
+    } catch (e) {}
+    return resource
+  }
+
+  public async reactivate({ params }: HttpContextContract) {
+    const resource = await Resource.findOrFail(params.id)
+    resource.status = 'available'
+    // if available count is zero, restore to total
+    if (!resource.quantityAvailable || resource.quantityAvailable <= 0) {
+      resource.quantityAvailable = resource.quantityTotal ?? 0
+    }
+    await resource.save()
+    try {
+      const Notification = await import('App/Models/Notification')
+      const notifPayload = {
+        userId: resource.createdById || null,
+        type: 'resource.reactivated',
+        payload: JSON.stringify({ resourceId: resource.id })
+      }
+      // @ts-ignore
+      await Notification.default.create(notifPayload)
+    } catch (e) {}
+    return resource
+  }
 }
