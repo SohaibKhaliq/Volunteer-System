@@ -9,6 +9,7 @@ import Application from '@ioc:Adonis/Core/Application'
 import fs from 'fs'
 import Logger from '@ioc:Adonis/Core/Logger'
 import OrganizationVolunteer from 'App/Models/OrganizationVolunteer'
+import Resource from 'App/Models/Resource'
 import CreateOrganizationValidator from 'App/Validators/CreateOrganizationValidator'
 
 export default class OrganizationsController {
@@ -74,6 +75,39 @@ export default class OrganizationsController {
 
     // fallback
     return response.ok(orgs)
+  }
+
+  /**
+   * Return resources for a specific organization (admin view)
+   */
+  public async getResources({ params, request, response }: HttpContextContract) {
+    const page = Number(request.qs().page || 1)
+    const perPage = Number(request.qs().perPage || 20)
+    const orgId = params.id
+    const org = await Organization.find(orgId)
+    if (!org) return response.notFound()
+
+    const query = Resource.query().where('organization_id', org.id).whereNull('deleted_at')
+    const pag = await query.paginate(page, perPage)
+    return response.ok(pag)
+  }
+
+  /**
+   * Return resources for the current user's organization (org panel)
+   */
+  public async organizationResources({ auth, request, response }: HttpContextContract) {
+    const user = auth.user!
+    const memberRecord = await OrganizationTeamMember.query().where('user_id', user.id).first()
+    if (!memberRecord) return response.notFound({ message: 'User is not part of any organization' })
+    const org = await Organization.find(memberRecord.organizationId)
+    if (!org) return response.notFound()
+
+    const page = Number(request.qs().page || 1)
+    const perPage = Number(request.qs().perPage || 20)
+
+    const query = Resource.query().where('organization_id', org.id).whereNull('deleted_at')
+    const pag = await query.paginate(page, perPage)
+    return response.ok(pag)
   }
 
   public async store({ request, response }: HttpContextContract) {
