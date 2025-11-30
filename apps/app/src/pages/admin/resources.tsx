@@ -164,6 +164,12 @@ export default function AdminResources() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyResource, setHistoryResource] = useState<any | null>(null);
   const [relatedNames, setRelatedNames] = useState<Record<string, string>>({});
+  // Maintenance / Retire UI state
+  const [maintenanceOpen, setMaintenanceOpen] = useState(false);
+  const [maintenanceResource, setMaintenanceResource] = useState<any | null>(null);
+  const [maintenanceQuantity, setMaintenanceQuantity] = useState<number | undefined>(undefined);
+  const [maintenanceExpectedAt, setMaintenanceExpectedAt] = useState<string | null>(null);
+  const [maintenanceNotes, setMaintenanceNotes] = useState<string | null>(null);
   // Use organization-scoped events and resources, but gracefully fall back to global lists
   const { data: eventsRaw } = useQuery(
     ['organization-events'],
@@ -353,6 +359,53 @@ export default function AdminResources() {
                             }}
                           >
                             Quick Assign
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setMaintenanceResource(r);
+                            setMaintenanceQuantity(undefined);
+                            setMaintenanceExpectedAt(null);
+                            setMaintenanceNotes(null);
+                            setMaintenanceOpen(true);
+                          }}
+                        >
+                          Maintenance
+                        </Button>
+                        {r.status === 'retired' ? (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={async () => {
+                              try {
+                                await api.reactivateResource(r.id);
+                                queryClient.invalidateQueries({ queryKey: ['resources'] });
+                                toast.success('Resource reactivated');
+                              } catch (e) {
+                                toast.error('Failed to reactivate resource');
+                              }
+                            }}
+                          >
+                            Reactivate
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={async () => {
+                              if (!confirm('Retire this resource?')) return;
+                              try {
+                                await api.retireResource(r.id);
+                                queryClient.invalidateQueries({ queryKey: ['resources'] });
+                                toast.success('Resource retired');
+                              } catch (e) {
+                                toast.error('Failed to retire resource');
+                              }
+                            }}
+                          >
+                            Retire
                           </Button>
                         )}
                         <Button
@@ -645,6 +698,66 @@ export default function AdminResources() {
           </div>
           <DialogFooter>
             <Button onClick={() => setHistoryOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Maintenance dialog */}
+      <Dialog open={maintenanceOpen} onOpenChange={setMaintenanceOpen}>
+        <DialogContent aria-labelledby="maintenance-title">
+          <DialogHeader>
+            <DialogTitle id="maintenance-title">Create Maintenance</DialogTitle>
+          </DialogHeader>
+          <div className="p-4 space-y-3">
+            <div>
+              <div className="text-sm text-muted-foreground">Resource</div>
+              <div className="font-medium">{maintenanceResource?.name ?? '—'}</div>
+            </div>
+            <div>
+              <label className="text-sm block mb-1">Quantity to take out</label>
+              <Input
+                type="number"
+                value={maintenanceQuantity ?? ''}
+                onChange={(e) => setMaintenanceQuantity(Number(e.target.value) || undefined)}
+              />
+            </div>
+            <div>
+              <label className="text-sm block mb-1">Expected return (ISO)</label>
+              <Input
+                value={maintenanceExpectedAt ?? ''}
+                onChange={(e) => setMaintenanceExpectedAt(e.target.value || null)}
+              />
+            </div>
+            <div>
+              <label className="text-sm block mb-1">Notes</label>
+              <Input value={maintenanceNotes ?? ''} onChange={(e) => setMaintenanceNotes(e.target.value || null)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setMaintenanceOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={async () => {
+                  if (!maintenanceResource) return;
+                  try {
+                    await api.createMaintenance(maintenanceResource.id, {
+                      quantity: maintenanceQuantity,
+                      expectedReturnAt: maintenanceExpectedAt,
+                      notes: maintenanceNotes
+                    });
+                    queryClient.invalidateQueries({ queryKey: ['resources'] });
+                    queryClient.invalidateQueries({ queryKey: ['resource-assignments', maintenanceResource.id] });
+                    toast.success('Maintenance created');
+                    setMaintenanceOpen(false);
+                  } catch (e) {
+                    toast.error('Failed to create maintenance');
+                  }
+                }}
+              >
+                Create
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
