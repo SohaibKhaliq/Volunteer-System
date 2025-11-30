@@ -12,7 +12,7 @@ export default class ResourcesController {
     const status = request.input('status')
     const category = request.input('category')
 
-    const query = Resource.query().preload('organization')
+    const query = Resource.query().preload('organization').whereNull('deleted_at')
 
     if (search) {
       query.where('name', 'like', `%${search}%`)
@@ -28,13 +28,19 @@ export default class ResourcesController {
   }
 
   public async dashboard({}: HttpContextContract) {
-    const total = await Resource.query().count('* as total').first()
+    const total = await Resource.query().whereNull('deleted_at').count('* as total').first()
     const available = await Resource.query()
+      .whereNull('deleted_at')
       .where('status', 'available')
       .count('* as total')
       .first()
-    const inUse = await Resource.query().where('status', 'in_use').count('* as total').first()
+    const inUse = await Resource.query()
+      .whereNull('deleted_at')
+      .where('status', 'in_use')
+      .count('* as total')
+      .first()
     const maintenance = await Resource.query()
+      .whereNull('deleted_at')
       .where('status', 'maintenance')
       .count('* as total')
       .first()
@@ -49,9 +55,9 @@ export default class ResourcesController {
 
   public async lowStock({}: HttpContextContract) {
     // resources where available < 10% of total
-    const resources = await Resource.query().whereRaw(
-      'quantity_total > 0 AND (quantity_available / quantity_total) < 0.1'
-    )
+    const resources = await Resource.query()
+      .whereNull('deleted_at')
+      .whereRaw('quantity_total > 0 AND (quantity_available / quantity_total) < 0.1')
     return resources
   }
 
@@ -59,13 +65,15 @@ export default class ResourcesController {
     const now = new Date()
     const soon = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7) // next 7 days
     const resources = await Resource.query()
+      .whereNull('deleted_at')
       .whereNotNull('maintenance_due')
       .whereBetween('maintenance_due', [now.toISOString(), soon.toISOString()])
     return resources
   }
 
-  public async store({ request }: HttpContextContract) {
+  public async store({ request, auth }: HttpContextContract) {
     const payload = createResourceSchema.parse(request.only(Object.keys(request.body()) as any))
+    const user = auth.user
 
     const data = {
       name: payload.name,
@@ -81,18 +89,25 @@ export default class ResourcesController {
       organizationId: payload.organizationId || null
     }
 
+    if (user && user.id) data['createdById'] = (user as any).id
     const resource = await Resource.create(data)
     return resource
   }
 
   public async show({ params }: HttpContextContract) {
-    const resource = await Resource.findOrFail(params.id)
+    const resource = await Resource.query()
+      .where('id', params.id)
+      .whereNull('deleted_at')
+      .firstOrFail()
     await resource.load('assignments')
     return resource
   }
 
   public async update({ params, request }: HttpContextContract) {
-    const resource = await Resource.findOrFail(params.id)
+    const resource = await Resource.query()
+      .where('id', params.id)
+      .whereNull('deleted_at')
+      .firstOrFail()
     const payload = updateResourceSchema.parse(request.only(Object.keys(request.body()) as any))
     resource.merge(payload as any)
     await resource.save()
@@ -101,7 +116,9 @@ export default class ResourcesController {
 
   public async destroy({ params }: HttpContextContract) {
     const resource = await Resource.findOrFail(params.id)
-    await resource.delete()
+    // Soft-delete: set deleted_at timestamp
+    resource.deletedAt = new Date()
+    await resource.save()
   }
 
   public async patchStatus({ params, request }: HttpContextContract) {
