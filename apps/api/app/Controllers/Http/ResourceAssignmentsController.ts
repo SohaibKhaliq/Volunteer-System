@@ -1,6 +1,7 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Resource from 'App/Models/Resource'
 import ResourceAssignment from 'App/Models/ResourceAssignment'
+import { DateTime } from 'luxon'
 import { assignResourceSchema, returnResourceSchema } from 'App/Validators/assignmentValidator'
 
 export default class ResourceAssignmentsController {
@@ -11,7 +12,13 @@ export default class ResourceAssignmentsController {
   }
 
   public async store({ params, request }: HttpContextContract) {
-    const payload = assignResourceSchema.parse(request.body())
+    // Parse and normalize payload. Allow frontend to send either { event_id } or
+    // explicit { assignmentType, relatedId }.
+    const raw = request.body()
+    const payload = assignResourceSchema.parse(raw)
+
+    // Expect `assignmentType` and `relatedId` to be provided by the frontend.
+    // Legacy `event_id` fallback has been removed to keep server-side validation strict.
 
     const resource = await Resource.findOrFail(params.id)
     const qty = payload.quantity ?? 1
@@ -27,18 +34,16 @@ export default class ResourceAssignmentsController {
     }
 
     // Conflict check: overlapping active assignments
-    const overlapping = await ResourceAssignment.query()
+    const overlapping = ResourceAssignment.query()
       .where('resource_id', resource.id)
       .where('status', 'assigned')
       .whereNull('returned_at')
 
     // If expectedReturnAt provided, check overlaps by time
     if (payload.expectedReturnAt) {
-      const expected = new Date(payload.expectedReturnAt)
+      const expectedISO = DateTime.fromISO(payload.expectedReturnAt).toISO()
       overlapping.where((builder) => {
-        builder
-          .whereNull('expected_return_at')
-          .orWhere('expected_return_at', '>', new Date().toISOString())
+        builder.whereNull('expected_return_at').orWhere('expected_return_at', '>', expectedISO)
       })
     }
 
@@ -57,8 +62,10 @@ export default class ResourceAssignmentsController {
       resourceId: resource.id,
       assignmentType: payload.assignmentType,
       relatedId: payload.relatedId || null,
-      assignedAt: new Date(),
-      expectedReturnAt: payload.expectedReturnAt || null,
+      assignedAt: DateTime.local(),
+      expectedReturnAt: payload.expectedReturnAt
+        ? DateTime.fromISO(payload.expectedReturnAt)
+        : null,
       status: 'assigned',
       notes: payload.notes || null,
       quantity: qty
@@ -107,7 +114,9 @@ export default class ResourceAssignmentsController {
       return { error: 'Already returned' }
     }
 
-    assignment.returnedAt = payload.returnedAt ? new Date(payload.returnedAt) : new Date()
+    assignment.returnedAt = payload.returnedAt
+      ? DateTime.fromISO(payload.returnedAt)
+      : DateTime.local()
     assignment.status = 'returned'
     assignment.notes =
       [assignment.notes, payload.notes].filter(Boolean).join('\n') || assignment.notes
@@ -115,7 +124,7 @@ export default class ResourceAssignmentsController {
 
     const resource = await Resource.find(assignment.resourceId)
     if (resource) {
-      resource.quantityAvailable = (resource.quantityAvailable ?? 0) + 1
+      resource.quantityAvailable = (resource.quantityAvailable ?? 0) + (assignment.quantity ?? 1)
       await resource.save()
     }
 
