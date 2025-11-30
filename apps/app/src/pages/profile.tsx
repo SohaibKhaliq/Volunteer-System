@@ -245,6 +245,9 @@ export default function Profile() {
             <TabsTrigger value="settings" className="flex gap-2">
               <Settings className="h-4 w-4" /> <span className="hidden md:inline">Settings</span>
             </TabsTrigger>
+            <TabsTrigger value="resources" className="flex gap-2">
+              <Award className="h-4 w-4" /> <span className="hidden md:inline">Resources</span>
+            </TabsTrigger>
           </TabsList>
 
           {/* OVERVIEW TAB */}
@@ -480,6 +483,43 @@ export default function Profile() {
                       ))}
                     </tbody>
                   </table>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* SETTINGS TAB */}
+          {/* RESOURCES TAB */}
+          <TabsContent value="resources">
+            <Card>
+              <CardHeader>
+                <CardTitle>My Resource Assignments</CardTitle>
+                <CardDescription>Items currently assigned to you</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {(assignments ?? []).filter((a: any) => a.resourceId || a.resource).length === 0 ? (
+                    <div className="text-center text-muted-foreground py-8">No resource assignments</div>
+                  ) : (
+                    <div className="space-y-2">
+                      {(assignments ?? [])
+                        .filter((a: any) => a.resourceId || a.resource)
+                        .map((a: any) => (
+                          <div key={a.id} className="p-4 border rounded flex items-center justify-between">
+                            <div>
+                              <div className="font-medium">{a.resource?.name ?? a.resourceName ?? 'Resource'}</div>
+                              <div className="text-sm text-muted-foreground">
+                                Assigned: {a.assignedAt ? new Date(a.assignedAt).toLocaleString() : '-'}
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-sm">Qty: {a.quantity ?? 1}</div>
+                              <div className="text-sm text-muted-foreground">Status: {a.status}</div>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
