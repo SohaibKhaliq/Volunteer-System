@@ -13,16 +13,28 @@ export const bulkAssignSchema = z.object({
   user_ids: z.array(z.number()),
   assigned_by: z.number().optional()
 })
-import { z } from 'zod'
 
-export const assignResourceSchema = z.object({
-  resourceId: z.number().int(),
-  quantity: z.number().int().min(1).optional().default(1),
-  assignmentType: z.enum(['event', 'volunteer', 'maintenance']),
-  relatedId: z.number().int().optional(),
-  expectedReturnAt: z.string().nullable().optional(),
-  notes: z.string().nullable().optional()
-})
+export const assignResourceSchema = z
+  .object({
+    // resourceId may be provided in body or inferred from URL params
+    resourceId: z.number().int().optional(),
+    quantity: z.number().int().min(1).optional().default(1),
+    // assignmentType is required (frontend must supply it)
+    assignmentType: z.enum(['event', 'volunteer', 'maintenance']),
+    relatedId: z.number().int().optional(),
+    expectedReturnAt: z.string().nullable().optional(),
+    notes: z.string().nullable().optional()
+  })
+  .superRefine((val, ctx) => {
+    // For event or volunteer assignments, a relatedId must be provided
+    if ((val.assignmentType === 'event' || val.assignmentType === 'volunteer') && !val.relatedId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'relatedId is required for event or volunteer assignments',
+        path: ['relatedId']
+      })
+    }
+  })
 
 export const returnResourceSchema = z.object({
   condition: z.string().nullable().optional(),
