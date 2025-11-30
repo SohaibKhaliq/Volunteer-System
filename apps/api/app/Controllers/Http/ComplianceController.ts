@@ -1,5 +1,6 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import ComplianceDocument from 'App/Models/ComplianceDocument'
+import { DateTime } from 'luxon'
 import Drive from '@ioc:Adonis/Core/Drive'
 import Logger from '@ioc:Adonis/Core/Logger'
 
@@ -12,6 +13,18 @@ export default class ComplianceController {
   public async store({ request, response }: HttpContextContract) {
     try {
       const payload = request.only(['user_id', 'doc_type', 'issued_at', 'expires_at'])
+
+      // Normalize incoming ISO date strings to Luxon DateTime so Lucid converts them
+      if (payload.issued_at) {
+        const dt = DateTime.fromISO(String(payload.issued_at))
+        if (dt.isValid) payload.issued_at = dt
+        else delete payload.issued_at
+      }
+      if (payload.expires_at) {
+        const dt2 = DateTime.fromISO(String(payload.expires_at))
+        if (dt2.isValid) payload.expires_at = dt2
+        else delete payload.expires_at
+      }
 
       // handle optional file upload
       const file = request.file('file')
@@ -49,6 +62,18 @@ export default class ComplianceController {
       if (!doc) return response.notFound()
 
       const incoming = request.only(['doc_type', 'issued_at', 'expires_at', 'status'])
+
+      // Normalize incoming ISO date strings to Luxon DateTime objects
+      if (incoming.issued_at) {
+        const dt = DateTime.fromISO(String(incoming.issued_at))
+        if (dt.isValid) incoming.issued_at = dt
+        else delete incoming.issued_at
+      }
+      if (incoming.expires_at) {
+        const dt2 = DateTime.fromISO(String(incoming.expires_at))
+        if (dt2.isValid) incoming.expires_at = dt2
+        else delete incoming.expires_at
+      }
 
       // handle optional file upload
       const file = request.file('file')
