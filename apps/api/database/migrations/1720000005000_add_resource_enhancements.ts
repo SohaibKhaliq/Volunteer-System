@@ -1,49 +1,49 @@
 import BaseSchema from '@ioc:Adonis/Lucid/Schema'
+import Database from '@ioc:Adonis/Lucid/Database'
 
 export default class AddResourceEnhancements extends BaseSchema {
   protected tableName = 'resources'
 
   public async up() {
-    // Add soft delete and location + maintenance metadata
-    await this.schema.alterTable(this.tableName, (table) => {
-      if (!this.schema.hasColumn) {
-        // older Adonis/Lucid versions expose helpers differently; proceed optimistically
-      }
-    })
+    const conn = Database.connection()
 
-    // Use defensive checks where possible
-    try {
-      if (!(await this.schema.hasColumn(this.tableName, 'deleted_at'))) {
-        await this.schema.alterTable(this.tableName, (table) => {
-          table.timestamp('deleted_at', { useTz: true }).nullable()
-        })
+    const addIfNotExists = async (sql: string) => {
+      try {
+        await conn.raw(sql)
+      } catch (e) {
+        // best-effort: continue on error to keep migration idempotent
       }
-    } catch (e) {}
+    }
 
-    try {
-      if (!(await this.schema.hasColumn(this.tableName, 'location_room'))) {
-        await this.schema.alterTable(this.tableName, (table) => {
-          table.string('location_room').nullable()
-          table.string('location_shelf').nullable()
-          table.string('location_building').nullable()
-        })
-      }
-    } catch (e) {}
+    await addIfNotExists(
+      `ALTER TABLE \`${this.tableName}\` ADD COLUMN IF NOT EXISTS \`deleted_at\` TIMESTAMP NULL`
+    )
 
+    await addIfNotExists(
+      `ALTER TABLE \`${this.tableName}\` ADD COLUMN IF NOT EXISTS \`location_room\` VARCHAR(255) NULL`
+    )
+    await addIfNotExists(
+      `ALTER TABLE \`${this.tableName}\` ADD COLUMN IF NOT EXISTS \`location_shelf\` VARCHAR(255) NULL`
+    )
+    await addIfNotExists(
+      `ALTER TABLE \`${this.tableName}\` ADD COLUMN IF NOT EXISTS \`location_building\` VARCHAR(255) NULL`
+    )
+
+    await addIfNotExists(
+      `ALTER TABLE \`${this.tableName}\` ADD COLUMN IF NOT EXISTS \`last_maintenance_at\` TIMESTAMP NULL`
+    )
+    await addIfNotExists(
+      `ALTER TABLE \`${this.tableName}\` ADD COLUMN IF NOT EXISTS \`next_maintenance_at\` TIMESTAMP NULL`
+    )
+    await addIfNotExists(
+      `ALTER TABLE \`${this.tableName}\` ADD COLUMN IF NOT EXISTS \`assigned_technician_id\` INT NULL`
+    )
+
+    // Best-effort: try to add FK; ignore errors if it already exists or cannot be created
     try {
-      if (!(await this.schema.hasColumn(this.tableName, 'last_maintenance_at'))) {
-        await this.schema.alterTable(this.tableName, (table) => {
-          table.timestamp('last_maintenance_at', { useTz: true }).nullable()
-          table.timestamp('next_maintenance_at', { useTz: true }).nullable()
-          table
-            .integer('assigned_technician_id')
-            .unsigned()
-            .nullable()
-            .references('id')
-            .inTable('users')
-            .onDelete('SET NULL')
-        })
-      }
+      await conn.raw(
+        `ALTER TABLE \`${this.tableName}\` ADD CONSTRAINT fk_resources_assigned_technician FOREIGN KEY (assigned_technician_id) REFERENCES users(id) ON DELETE SET NULL`
+      )
     } catch (e) {}
   }
 
