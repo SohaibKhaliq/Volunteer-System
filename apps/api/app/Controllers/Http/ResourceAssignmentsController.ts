@@ -74,10 +74,19 @@ export default class ResourceAssignmentsController {
     // Update resource availability
     resource.quantityAvailable = (resource.quantityAvailable ?? 0) - qty
     if (resource.quantityAvailable < 0) resource.quantityAvailable = 0
-
     // If this is a maintenance assignment, lock the resource status
     if (payload.assignmentType === 'maintenance') {
       resource.status = 'maintenance'
+    }
+
+    // Automatic status toggle: if not maintenance/retired, mark `in_use` when no available units,
+    // or `available` when fully restored.
+    if (resource.status !== 'maintenance' && resource.status !== 'retired') {
+      if ((resource.quantityAvailable ?? 0) <= 0) {
+        resource.status = 'in_use'
+      } else if ((resource.quantityAvailable ?? 0) >= (resource.quantityTotal ?? 0)) {
+        resource.status = 'available'
+      }
     }
 
     await resource.save()
@@ -125,6 +134,16 @@ export default class ResourceAssignmentsController {
     const resource = await Resource.find(assignment.resourceId)
     if (resource) {
       resource.quantityAvailable = (resource.quantityAvailable ?? 0) + (assignment.quantity ?? 1)
+
+      // After return, toggle status back to available if fully restored (unless retired/maintenance)
+      if (resource.status !== 'maintenance' && resource.status !== 'retired') {
+        if ((resource.quantityAvailable ?? 0) >= (resource.quantityTotal ?? 0)) {
+          resource.status = 'available'
+        } else if ((resource.quantityAvailable ?? 0) <= 0) {
+          resource.status = 'in_use'
+        }
+      }
+
       await resource.save()
     }
 
