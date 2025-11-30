@@ -125,6 +125,9 @@ export default function AdminResources() {
   const [assigningResource, setAssigningResource] = useState<any | null>(null);
   const [assignEventId, setAssignEventId] = useState<number | null>(null);
   const [assignQuantity, setAssignQuantity] = useState<number>(1);
+  // Assignment history dialog
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyResource, setHistoryResource] = useState<any | null>(null);
   // Use organization-scoped events and resources, but gracefully fall back to global lists
   const { data: eventsRaw } = useQuery(
     ['organization-events'],
@@ -168,6 +171,14 @@ export default function AdminResources() {
     },
     onError: () => toast.error('Failed to assign resource')
   });
+
+  // Fetch assignment history when dialog is open
+  const { data: historyRaw, refetch: refetchHistory } = useQuery(
+    ['resource-assignments', historyResource?.id],
+    () => (historyResource ? api.listResourceAssignments(historyResource.id) : Promise.resolve([])),
+    { enabled: !!historyOpen && !!historyResource }
+  );
+  const history: any[] = Array.isArray(historyRaw) ? historyRaw : historyRaw?.data ?? [];
 
   return (
     <div className="space-y-6" aria-busy={isLoading}>
@@ -278,6 +289,18 @@ export default function AdminResources() {
                             Quick Assign
                           </Button>
                         )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setHistoryResource(r);
+                            setHistoryOpen(true);
+                            // trigger fetch
+                            setTimeout(() => refetchHistory(), 10);
+                          }}
+                        >
+                          History
+                        </Button>
                         <Button
                           variant="ghost"
                           onClick={() => {
@@ -502,6 +525,47 @@ export default function AdminResources() {
           </DialogContent>
         </Dialog>
       )}
+      {/* Assignment History dialog */}
+      <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
+        <DialogContent aria-labelledby="assignment-history-title">
+          <DialogHeader>
+            <DialogTitle id="assignment-history-title">Assignment History</DialogTitle>
+          </DialogHeader>
+          <div className="p-4">
+            <div className="mb-3">
+              <div className="text-sm text-muted-foreground">Resource</div>
+              <div className="font-medium">{historyResource?.name ?? '—'}</div>
+            </div>
+            <div className="space-y-2">
+              {history.length === 0 ? (
+                <div className="text-sm text-muted-foreground">No assignments found</div>
+              ) : (
+                <div className="grid grid-cols-6 gap-2 text-sm">
+                  <div className="font-medium">Assigned At</div>
+                  <div className="font-medium">Type</div>
+                  <div className="font-medium">Related Id</div>
+                  <div className="font-medium">Quantity</div>
+                  <div className="font-medium">Status</div>
+                  <div className="font-medium">Returned At</div>
+                  {history.map((h: any) => (
+                    <React.Fragment key={h.id ?? `${h.assignedAt}-${h.relatedId || h.related_id || Math.random()}`}>
+                      <div>{h.assignedAt ? new Date(h.assignedAt).toLocaleString() : ''}</div>
+                      <div>{h.assignmentType}</div>
+                      <div>{h.relatedId ?? h.related_id ?? '—'}</div>
+                      <div>{h.quantity ?? 1}</div>
+                      <div>{h.status}</div>
+                      <div>{h.returnedAt ? new Date(h.returnedAt).toLocaleString() : h.returned_at ? new Date(h.returned_at).toLocaleString() : '—'}</div>
+                    </React.Fragment>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setHistoryOpen(false)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
