@@ -15,6 +15,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApp } from '@/providers/app-provider';
 import api from '@/lib/api';
 import { axios } from '@/lib/axios';
+import { DayPicker } from 'react-day-picker';
+import 'react-day-picker/dist/style.css';
 import { toast } from '@/components/atoms/use-toast';
 
 export default function AdminResources() {
@@ -168,7 +170,8 @@ export default function AdminResources() {
   const [maintenanceOpen, setMaintenanceOpen] = useState(false);
   const [maintenanceResource, setMaintenanceResource] = useState<any | null>(null);
   const [maintenanceQuantity, setMaintenanceQuantity] = useState<number | undefined>(undefined);
-  const [maintenanceExpectedAt, setMaintenanceExpectedAt] = useState<string | null>(null);
+  const [maintenanceDate, setMaintenanceDate] = useState<Date | null>(null);
+  const [maintenanceTime, setMaintenanceTime] = useState<string>('09:00');
   const [maintenanceNotes, setMaintenanceNotes] = useState<string | null>(null);
   // Use organization-scoped events and resources, but gracefully fall back to global lists
   const { data: eventsRaw } = useQuery(
@@ -249,7 +252,7 @@ export default function AdminResources() {
             map[`event:${item.id}`] = ev?.title ?? ev?.name ?? `event:${item.id}`;
           } else if (item.type === 'volunteer' || item.type === 'user') {
             // fetch user
-            const u: any = await axios.get(`/users/${item.id}`);
+            const u: any = await api.getUser(item.id);
             map[`${item.type}:${item.id}`] = u?.firstName || u?.first_name || u?.name || `user:${item.id}`;
           } else {
             // fallback: just show id
@@ -348,92 +351,95 @@ export default function AdminResources() {
                       })()}
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        {canQuickAssign && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setAssigningResource(r);
-                              setAssignOpen(true);
-                            }}
-                          >
-                            Quick Assign
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            Actions
                           </Button>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setMaintenanceResource(r);
-                            setMaintenanceQuantity(undefined);
-                            setMaintenanceExpectedAt(null);
-                            setMaintenanceNotes(null);
-                            setMaintenanceOpen(true);
-                          }}
-                        >
-                          Maintenance
-                        </Button>
-                        {r.status === 'retired' ? (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={async () => {
-                              try {
-                                await api.reactivateResource(r.id);
-                                queryClient.invalidateQueries({ queryKey: ['resources'] });
-                                toast.success('Resource reactivated');
-                              } catch (e) {
-                                toast.error('Failed to reactivate resource');
-                              }
-                            }}
-                          >
-                            Reactivate
-                          </Button>
-                        ) : (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={async () => {
-                              if (!confirm('Retire this resource?')) return;
-                              try {
-                                await api.retireResource(r.id);
-                                queryClient.invalidateQueries({ queryKey: ['resources'] });
-                                toast.success('Resource retired');
-                              } catch (e) {
-                                toast.error('Failed to retire resource');
-                              }
-                            }}
-                          >
-                            Retire
-                          </Button>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setHistoryResource(r);
-                            setHistoryOpen(true);
-                            // trigger fetch
-                            setTimeout(() => refetchHistory(), 10);
-                          }}
-                        >
-                          History
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          onClick={() => {
-                            setEditing(r);
-                            setEditOpen(true);
-                          }}
-                          aria-label={`Edit ${r.id}`}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" onClick={() => confirmDelete(r.id)} aria-label={`Delete ${r.id}`}>
-                          <Trash2 className="h-4 w-4 text-red-600" />
-                        </Button>
-                      </div>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-48 p-2">
+                          <div className="flex flex-col">
+                            {canQuickAssign && (
+                              <Button
+                                variant="ghost"
+                                onClick={() => {
+                                  setAssigningResource(r);
+                                  setAssignOpen(true);
+                                }}
+                              >
+                                Quick Assign
+                              </Button>
+                            )}
+                            <Button
+                              variant="ghost"
+                              onClick={() => {
+                                setMaintenanceResource(r);
+                                setMaintenanceQuantity(1);
+                                setMaintenanceDate(null);
+                                setMaintenanceTime('09:00');
+                                setMaintenanceNotes(null);
+                                setMaintenanceOpen(true);
+                              }}
+                            >
+                              Maintenance
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              onClick={() => {
+                                setHistoryResource(r);
+                                setHistoryOpen(true);
+                                setTimeout(() => refetchHistory(), 10);
+                              }}
+                            >
+                              History
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              onClick={() => {
+                                setEditing(r);
+                                setEditOpen(true);
+                              }}
+                            >
+                              Edit
+                            </Button>
+                            {r.status === 'retired' ? (
+                              <Button
+                                variant="ghost"
+                                onClick={async () => {
+                                  try {
+                                    await api.reactivateResource(r.id);
+                                    queryClient.invalidateQueries({ queryKey: ['resources'] });
+                                    toast.success('Resource reactivated');
+                                  } catch (e) {
+                                    toast.error('Failed to reactivate resource');
+                                  }
+                                }}
+                              >
+                                Reactivate
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                onClick={async () => {
+                                  if (!confirm('Retire this resource?')) return;
+                                  try {
+                                    await api.retireResource(r.id);
+                                    queryClient.invalidateQueries({ queryKey: ['resources'] });
+                                    toast.success('Resource retired');
+                                  } catch (e) {
+                                    toast.error('Failed to retire resource');
+                                  }
+                                }}
+                              >
+                                Retire
+                              </Button>
+                            )}
+                            <Button variant="ghost" className="text-red-600" onClick={() => confirmDelete(r.id)}>
+                              Delete
+                            </Button>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
                     </TableCell>
                   </TableRow>
                 ))
@@ -621,8 +627,14 @@ export default function AdminResources() {
                       toast.error('Choose an event');
                       return;
                     }
+                    const available =
+                      assigningResource?.quantityAvailable ?? assigningResource?.quantity_available ?? 0;
                     if (!assignQuantity || assignQuantity <= 0) {
                       toast.error('Enter a positive quantity');
+                      return;
+                    }
+                    if (assignQuantity > available) {
+                      toast.error('Insufficient quantity available');
                       return;
                     }
                     // Send explicit assignmentType and relatedId to match backend validation
@@ -721,11 +733,16 @@ export default function AdminResources() {
               />
             </div>
             <div>
-              <label className="text-sm block mb-1">Expected return (ISO)</label>
-              <Input
-                value={maintenanceExpectedAt ?? ''}
-                onChange={(e) => setMaintenanceExpectedAt(e.target.value || null)}
+              <label className="text-sm block mb-1">Expected return date</label>
+              <DayPicker
+                mode="single"
+                selected={maintenanceDate ?? undefined}
+                onSelect={(d) => setMaintenanceDate(d ?? null)}
               />
+              <div className="mt-2">
+                <label className="text-sm block mb-1">Time</label>
+                <Input type="time" value={maintenanceTime} onChange={(e) => setMaintenanceTime(e.target.value)} />
+              </div>
             </div>
             <div>
               <label className="text-sm block mb-1">Notes</label>
@@ -740,6 +757,28 @@ export default function AdminResources() {
               <Button
                 onClick={async () => {
                   if (!maintenanceResource) return;
+
+                  // Validate quantity
+                  const available =
+                    maintenanceResource?.quantityAvailable ?? maintenanceResource?.quantity_available ?? 0;
+                  if (!maintenanceQuantity || maintenanceQuantity <= 0) {
+                    toast.error('Enter a positive quantity');
+                    return;
+                  }
+                  if (maintenanceQuantity > available) {
+                    toast.error('Insufficient quantity available');
+                    return;
+                  }
+
+                  // Combine selected date and time into a single ISO string (local time -> ISO)
+                  let maintenanceExpectedAt: string | undefined = undefined;
+                  if (maintenanceDate) {
+                    const [hh = '09', mm = '00'] = (maintenanceTime || '09:00').split(':');
+                    const d = new Date(maintenanceDate);
+                    d.setHours(Number(hh), Number(mm), 0, 0);
+                    maintenanceExpectedAt = d.toISOString();
+                  }
+
                   try {
                     await api.createMaintenance(maintenanceResource.id, {
                       quantity: maintenanceQuantity,
