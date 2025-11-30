@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -7,6 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2, Plus, Edit, Trash2 } from 'lucide-react';
 import { toast } from '@/components/atoms/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { useApp } from '@/providers/app-provider';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/atoms/popover';
+import { Command, CommandGroup, CommandInput, CommandItem } from '@/components/atoms/command';
 
 export default function AdminShifts() {
   const queryClient = useQueryClient();
@@ -20,6 +24,60 @@ export default function AdminShifts() {
     mutationFn: api.deleteShift,
     onSuccess: () => queryClient.invalidateQueries(['shifts'])
   });
+
+  // Quick assign volunteer
+  const [assignOpen, setAssignOpen] = React.useState(false);
+  const [assignShift, setAssignShift] = React.useState<any | null>(null);
+  const [userQuery, setUserQuery] = React.useState('');
+  const [debouncedUserQuery, setDebouncedUserQuery] = React.useState('');
+
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedUserQuery(userQuery), 250);
+    return () => clearTimeout(t);
+  }, [userQuery]);
+
+  const { data: orgProfile } = useQuery(['organization-profile'], () => api.getOrganizationProfile(), {
+    staleTime: 1000 * 60 * 5
+  });
+
+  const { data: possibleUsersRaw = [] } = useQuery(
+    ['organization-volunteers', orgProfile?.data?.id ?? orgProfile?.id, debouncedUserQuery],
+    async () => {
+      if (!orgProfile) return [] as const;
+      const orgId = orgProfile?.data?.id ?? orgProfile?.id;
+      const res = await api.getOrganizationVolunteers(orgId, { search: debouncedUserQuery });
+      if (Array.isArray(res)) return res;
+      if (res && Array.isArray((res as any).data)) return (res as any).data;
+      return [] as const;
+    },
+    { enabled: !!orgProfile }
+  );
+
+  const possibleUsers: any[] = Array.isArray(possibleUsersRaw) ? possibleUsersRaw : (possibleUsersRaw?.data ?? []);
+
+  const assignMutation = useMutation({
+    mutationFn: (data: any) => api.assignToShift(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['shifts']);
+      toast.success('Volunteer assigned');
+      setAssignOpen(false);
+      setAssignShift(null);
+      setUserQuery('');
+    },
+    onError: () => toast.error('Failed to assign volunteer')
+  });
+
+  const { user } = useApp();
+  const canQuickAssign = !!(
+    user?.isAdmin ||
+    user?.is_admin ||
+    (user?.roles &&
+      Array.isArray(user.roles) &&
+      user.roles.some((r: any) => {
+        const n = (r?.name || r?.role || '').toLowerCase();
+        return n === 'admin' || n === 'organization_admin' || n === 'organization_manager';
+      }))
+  );
 
   return (
     <div className="space-y-6">
@@ -76,6 +134,18 @@ export default function AdminShifts() {
                     <TableCell>{s.capacity ?? 0}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
+                        {canQuickAssign && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setAssignShift(s);
+                              setAssignOpen(true);
+                            }}
+                          >
+                            Quick Assign
+                          </Button>
+                        )}
                         <Button
                           size="sm"
                           variant="ghost"
@@ -95,6 +165,62 @@ export default function AdminShifts() {
           </Table>
         </CardContent>
       </Card>
+
+      {canQuickAssign && (
+        <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
+          <DialogContent aria-labelledby="assign-volunteer-title">
+            <DialogHeader>
+              <DialogTitle id="assign-volunteer-title">Quick Assign Volunteer</DialogTitle>
+            </DialogHeader>
+            <div className="p-4 space-y-3">
+              <div>
+                <div className="text-sm text-muted-foreground">Shift</div>
+                <div className="font-medium">{assignShift?.title ?? '—'}</div>
+              </div>
+              <div>
+                <label className="text-sm block mb-1">Search volunteer</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start">
+                      {userQuery || 'Search users...'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[320px] p-0">
+                    <Command>
+                      <CommandInput
+                        placeholder="Search users..."
+                        value={userQuery}
+                        onValueChange={(v) => setUserQuery(v)}
+                      />
+                      <CommandGroup>
+                        {possibleUsers.map((u: any) => (
+                          <CommandItem
+                            key={u.id}
+                            onSelect={() => {
+                              setUserQuery(`${u.firstName ?? u.name} ${u.lastName ?? ''}`);
+                              // immediately assign
+                              if (assignShift) assignMutation.mutate({ shift_id: assignShift.id, user_id: u.id });
+                            }}
+                          >
+                            {u.firstName ?? u.name} {u.lastName ?? ''} {u.email ? `(${u.email})` : ''}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+            <DialogFooter>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setAssignOpen(false)}>
+                  Close
+                </Button>
+              </div>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
