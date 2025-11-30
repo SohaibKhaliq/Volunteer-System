@@ -180,6 +180,10 @@ const api = {
   listResourceAssignments: async (resourceId: number) => axios.get(`/resources/${resourceId}/assignments`),
   assignResource: async (resourceId: number, data: any) => axios.post(`/resources/${resourceId}/assign`, data),
   returnAssignment: async (assignmentId: number, data: any) => axios.post(`/assignments/${assignmentId}/return`, data),
+  // Organization-scoped resources
+  listOrganizationResources: async (orgId: number, params?: any) =>
+    axios.get(`/organizations/${orgId}/resources`, { params }),
+  listMyOrganizationResources: async (params?: any) => axios.get('/organization/resources', { params }),
 
   /* Audit Logs endpoints */
   listAuditLogs: async () => axios.get('/audit-logs'),
