@@ -82,6 +82,8 @@ Route.resource('organizations', 'OrganizationsController')
     destroy: ['auth', 'admin']
   })
   .apiOnly()
+// Admin: list resources for a given organization
+Route.get('/organizations/:id/resources', 'OrganizationsController.getResources').middleware(['auth'])
 
 // Organization volunteer management
 Route.get('/organizations/:id/volunteers', 'OrganizationsController.getVolunteers').middleware([
