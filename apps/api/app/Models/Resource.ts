@@ -34,11 +34,35 @@ export default class Resource extends BaseModel {
   @column.dateTime()
   public maintenanceDue?: DateTime | null
 
+  @column.dateTime()
+  public lastMaintenanceAt?: DateTime | null
+
+  @column.dateTime()
+  public nextMaintenanceAt?: DateTime | null
+
+  @column()
+  public assignedTechnicianId?: number
+
+  @column()
+  public locationRoom?: string
+
+  @column()
+  public locationShelf?: string
+
+  @column()
+  public locationBuilding?: string
+
   @column()
   public attributes?: any
 
+  @column.dateTime()
+  public deletedAt?: DateTime | null
+
   @column()
   public organizationId?: number
+
+  @column()
+  public createdById?: number
 
   @belongsTo(() => Organization)
   public organization: BelongsTo<typeof Organization>
