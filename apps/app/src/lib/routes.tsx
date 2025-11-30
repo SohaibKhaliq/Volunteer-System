@@ -35,6 +35,7 @@ import AdminResources from '@/pages/admin/resources';
 import AdminScheduling from '@/pages/admin/scheduling';
 import AdminMonitoring from '@/pages/admin/monitoring';
 import AdminFeedback from '@/pages/admin/feedback';
+import AdminShifts from '@/pages/admin/shifts';
 import AdminAuditLogs from '@/pages/admin/audit-logs';
 import AdminSettings from '@/pages/admin/settings';
 import AdminVolunteerProfile from '@/pages/admin/volunteer-profile';
@@ -95,6 +96,7 @@ const routes: RouteObject[] = [
       { path: 'organizations', element: <AdminOrganizations /> },
       { path: 'achievements', element: <AdminAchievements /> },
       { path: 'events', element: <AdminEvents /> },
+      { path: 'shifts', element: <AdminShifts /> },
       { path: 'tasks', element: <AdminTasks /> },
       { path: 'hours', element: <AdminHours /> },
       { path: 'compliance', element: <AdminCompliance /> },
