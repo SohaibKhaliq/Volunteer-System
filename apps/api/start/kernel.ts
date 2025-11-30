@@ -12,6 +12,7 @@
 import Server from '@ioc:Adonis/Core/Server'
 import { initCommunicationSender } from 'App/Services/CommunicationSender'
 import { initScheduler } from 'App/Services/SchedulerService'
+import { initResourceNotifier } from 'App/Services/ResourceNotifier'
 
 /*
 |--------------------------------------------------------------------------
@@ -64,6 +65,13 @@ try {
 } catch (e) {
   // eslint-disable-next-line no-console
   console.error('Failed to start scheduler', e)
+}
+
+try {
+  initResourceNotifier()
+} catch (e) {
+  // eslint-disable-next-line no-console
+  console.error('Failed to start resource notifier', e)
 }
 
 // Start local socket server when API starts in dev mode (best-effort, non-blocking)
