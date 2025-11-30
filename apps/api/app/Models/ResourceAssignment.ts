@@ -24,6 +24,9 @@ export default class ResourceAssignment extends BaseModel {
   @column.dateTime()
   public expectedReturnAt?: DateTime | null
 
+  @column()
+  public quantity?: number
+
   @column.dateTime()
   public returnedAt?: DateTime | null
 
