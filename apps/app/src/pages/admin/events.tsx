@@ -584,12 +584,21 @@ export default function AdminEvents() {
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
                           <DropdownMenuItem
                             onClick={() => {
+                              // Open the public-facing event detail page so admins can view the full detail view
+                              navigate(`/events/${event.id}`);
+                            }}
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            Open Public Page
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
                               setSelectedEvent(event);
                               setShowDetailsDialog(true);
                             }}
                           >
-                            <Eye className="h-4 w-4 mr-2" />
-                            View Details
+                            <Edit className="h-4 w-4 mr-2" />
+                            Quick Details (Dialog)
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => {
