@@ -69,6 +69,8 @@ Route.group(() => {
   Route.post('/achievements', 'AchievementsController.store').middleware(['auth'])
   Route.put('/achievements/:id', 'AchievementsController.update').middleware(['auth'])
   Route.delete('/achievements/:id', 'AchievementsController.destroy').middleware(['auth'])
+  // Organization resources (current org)
+  Route.get('/resources', 'OrganizationsController.organizationResources').middleware(['auth'])
 }).prefix('/organization') // 🏆 New: Apply the prefix once here
 // Note: If you were getting a double slash before, try prefix('organization') instead of '/organization'
 // But since you were using .prefix(''), this full path is likely what's missing.
