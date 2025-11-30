@@ -2,6 +2,7 @@ import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Resource from 'App/Models/Resource'
 import ResourceAssignment from 'App/Models/ResourceAssignment'
 import { createResourceSchema, updateResourceSchema } from 'App/Validators/resourceValidator'
+import { DateTime } from 'luxon'
 import { z } from 'zod'
 
 export default class ResourcesController {
@@ -149,8 +150,10 @@ export default class ResourcesController {
       resourceId: resource.id,
       assignmentType: 'maintenance',
       relatedId: null,
-      assignedAt: new Date(),
-      expectedReturnAt: payload.expectedReturnAt ?? null,
+      assignedAt: DateTime.local(),
+      expectedReturnAt: payload.expectedReturnAt
+        ? DateTime.fromISO(payload.expectedReturnAt)
+        : null,
       status: 'assigned',
       notes: payload.notes || null,
       quantity: qty
