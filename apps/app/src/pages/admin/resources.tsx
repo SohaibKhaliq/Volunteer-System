@@ -102,6 +102,41 @@ export default function AdminResources() {
     return true;
   });
 
+  // Helpers for displaying quantity and status
+  const formatQuantity = (r: any) => {
+    const available = Number(r.quantityAvailable ?? r.quantity_available ?? 0) || 0;
+    const total = Number(r.quantityTotal ?? r.quantity_total ?? 0) || 0;
+    return `${available}/${total}`;
+  };
+
+  const getStatusInfo = (r: any) => {
+    const raw = (r.status ?? r.state ?? '').toString().toLowerCase();
+    const available = Number(r.quantityAvailable ?? r.quantity_available ?? 0) || 0;
+    const total = Number(r.quantityTotal ?? r.quantity_total ?? 0) || 0;
+
+    // Preserve explicit statuses like maintenance/retired/in_use
+    if (raw === 'maintenance' || raw === 'retired' || raw === 'in_use') {
+      const label = raw === 'in_use' ? 'In Use' : raw.charAt(0).toUpperCase() + raw.slice(1);
+      const variant = raw === 'maintenance' ? 'destructive' : raw === 'in_use' ? 'secondary' : 'outline';
+      return { label, variant };
+    }
+
+    // Derive status from quantities
+    if (total === 0) {
+      return { label: 'No Stock', variant: 'outline' };
+    }
+    if (available <= 0) {
+      return { label: 'Out of Stock', variant: 'destructive' };
+    }
+    // low stock threshold: 20% of total, at least 1
+    const lowThreshold = Math.max(1, Math.ceil(total * 0.2));
+    if (available <= lowThreshold) {
+      return { label: 'Low Stock', variant: 'secondary' };
+    }
+
+    return { label: 'Available', variant: 'default' };
+  };
+
   const saveResource = (payload: any) => {
     if (payload.id) {
       updateMutation.mutate({ id: payload.id, data: payload });
@@ -299,23 +334,12 @@ export default function AdminResources() {
                         <span className="text-muted-foreground">—</span>
                       )}
                     </TableCell>
+                    <TableCell>{formatQuantity(r)}</TableCell>
                     <TableCell>
-                      {r.quantityAvailable ?? r.quantity_available ?? 0}/{r.quantityTotal ?? r.quantity_total ?? 0}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          r.status === 'available'
-                            ? 'default'
-                            : r.status === 'maintenance'
-                              ? 'destructive'
-                              : r.status === 'in_use'
-                                ? 'secondary'
-                                : 'outline'
-                        }
-                      >
-                        {r.status}
-                      </Badge>
+                      {(() => {
+                        const s = getStatusInfo(r);
+                        return <Badge variant={s.variant as any}>{s.label}</Badge>;
+                      })()}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
