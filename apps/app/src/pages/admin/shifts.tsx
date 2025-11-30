@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
+import { axios } from '@/lib/axios';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -36,9 +37,18 @@ export default function AdminShifts() {
     return () => clearTimeout(t);
   }, [userQuery]);
 
-  const { data: orgProfile } = useQuery(['organization-profile'], () => api.getOrganizationProfile(), {
-    staleTime: 1000 * 60 * 5
-  });
+  const { data: orgProfile } = useQuery(
+    ['organization-profile'],
+    async () => {
+      try {
+        // suppress error toast for users not in an org
+        return await axios.get('/organization/profile', { _suppressError: true });
+      } catch (e) {
+        return null;
+      }
+    },
+    { staleTime: 1000 * 60 * 5 }
+  );
 
   const { data: possibleUsersRaw = [] } = useQuery(
     ['organization-volunteers', orgProfile?.data?.id ?? orgProfile?.id, debouncedUserQuery],
