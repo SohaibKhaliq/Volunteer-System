@@ -210,6 +210,20 @@ export default function AdminCertifications() {
     setCourseDeleteOpen(toDeleteCourse != null);
   }, [toDeleteCourse]);
 
+  // helper: selected users for course assignment
+  const ensureAssigned = (c: any) => {
+    if (!c) return [] as number[];
+    if (Array.isArray(c.assigned_user_ids)) return c.assigned_user_ids;
+    if (c.assigned_user_ids && typeof c.assigned_user_ids === 'string') {
+      try {
+        return JSON.parse(c.assigned_user_ids);
+      } catch (e) {
+        return [];
+      }
+    }
+    return [] as number[];
+  };
+
   return (
     <div className="space-y-6" aria-busy={isLoading}>
       {/* top-level tabs */}
@@ -272,7 +286,14 @@ export default function AdminCertifications() {
                   <div key={course.id} className="flex items-center p-3 rounded border">
                     <div>
                       <div className="font-medium">{course.title || course.name}</div>
-                      {course.description && <div className="text-sm text-muted-foreground">{course.description}</div>}
+                      {course.description_html ? (
+                        <div
+                          className="text-sm text-muted-foreground"
+                          dangerouslySetInnerHTML={{ __html: course.description_html }}
+                        />
+                      ) : (
+                        course.description && <div className="text-sm text-muted-foreground">{course.description}</div>
+                      )}
                     </div>
                     <div className="ml-auto flex items-center gap-2">
                       <Button
@@ -628,12 +649,79 @@ export default function AdminCertifications() {
                 }
               />
             </div>
+
             <div>
-              <label className="text-sm block mb-1">Description</label>
-              <Input
-                value={courseEditing?.description || ''}
-                onChange={(e) => setCourseEditing((s) => ({ ...(s || {}), description: e.target.value }))}
+              <label className="text-sm block mb-1">Description (rich text)</label>
+              <div
+                contentEditable
+                suppressContentEditableWarning
+                className="min-h-[120px] border rounded p-2 bg-white/5"
+                onInput={(e) =>
+                  setCourseEditing((s) => ({ ...(s || {}), description_html: (e.target as HTMLElement).innerHTML }))
+                }
+                dangerouslySetInnerHTML={{
+                  __html: courseEditing?.description_html || courseEditing?.description || ''
+                }}
               />
+              <div className="text-xs text-muted-foreground mt-1">
+                You can paste formatted text; HTML will be saved.
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm block mb-1">Assign To</label>
+              <div className="flex items-center gap-3">
+                <label className="inline-flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={!!courseEditing?.assign_all}
+                    onChange={(e) => setCourseEditing((s) => ({ ...(s || {}), assign_all: e.target.checked }))}
+                  />
+                  <span className="text-sm">Assign to all volunteers</span>
+                </label>
+
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline">Select volunteers</Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[320px] p-0">
+                    <Command>
+                      <CommandInput
+                        placeholder="Search users..."
+                        value={userQuery}
+                        onValueChange={(v) => React.startTransition(() => setUserQuery(v))}
+                      />
+                      <CommandGroup>
+                        {users.map((u) => {
+                          const assigned = (courseEditing && ensureAssigned(courseEditing).includes(u.id)) || false;
+                          return (
+                            <CommandItem
+                              key={u.id}
+                              onSelect={() => {
+                                setCourseEditing((s: any) => {
+                                  const cur = ensureAssigned(s);
+                                  const idx = cur.indexOf(u.id);
+                                  if (idx === -1) cur.push(u.id);
+                                  else cur.splice(idx, 1);
+                                  return { ...(s || {}), assigned_user_ids: cur };
+                                });
+                              }}
+                            >
+                              <div className="flex items-center justify-between w-full">
+                                <div>
+                                  {u.firstName || u.name} {u.lastName || ''}
+                                </div>
+                                <div>{assigned ? '✓' : ''}</div>
+                              </div>
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="text-xs text-muted-foreground mt-1">Choose specific volunteers or assign to all.</div>
             </div>
           </div>
           <DialogFooter>
@@ -649,7 +737,17 @@ export default function AdminCertifications() {
               </Button>
               <Button
                 onClick={() => {
-                  const payload = { ...(courseEditing || {}) };
+                  const payload = { ...(courseEditing || {}) } as any;
+                  // prefer description_html if present
+                  if (payload.description_html) payload.description = payload.description_html;
+                  // ensure assigned_user_ids is an array
+                  if (payload.assigned_user_ids && typeof payload.assigned_user_ids === 'string') {
+                    try {
+                      payload.assigned_user_ids = JSON.parse(payload.assigned_user_ids);
+                    } catch (e) {
+                      payload.assigned_user_ids = [];
+                    }
+                  }
                   if (!payload.title && !payload.name) {
                     toast.error('Title is required');
                     return;
