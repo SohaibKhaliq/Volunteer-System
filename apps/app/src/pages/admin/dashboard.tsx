@@ -40,6 +40,10 @@ export default function AdminDashboard() {
   });
 
   const [topVols, setTopVols] = useState<Array<{ name: string; hours: number }>>([]);
+  const { data: shiftsRaw } = useQuery(['shifts-overview'], () => api.listShifts(), { staleTime: 60 * 1000 });
+  const { data: shiftAssignmentsRaw } = useQuery(['shift-assignments-overview'], () => api.listShiftAssignments(), {
+    staleTime: 60 * 1000
+  });
 
   useEffect(() => {
     const resolve = async () => {
@@ -78,6 +82,12 @@ export default function AdminDashboard() {
       : 0,
     compliance: o?.complianceAdherence?.adherenceRate ?? 0
   };
+
+  // Shift metrics
+  const totalShifts = Array.isArray(shiftsRaw) ? shiftsRaw.length : (shiftsRaw?.data?.length ?? 0);
+  const totalAssignments = Array.isArray(shiftAssignmentsRaw)
+    ? shiftAssignmentsRaw.length
+    : (shiftAssignmentsRaw?.data?.length ?? 0);
 
   const loading = loadingOverview || loadingHours || loadingEvents || loadingChart;
 
@@ -147,6 +157,28 @@ export default function AdminDashboard() {
             <Badge variant="outline">Compliance</Badge>
           </CardHeader>
           <CardContent className="text-3xl font-bold">{loading ? '—' : `${stats.compliance}%`}</CardContent>
+        </Card>
+      </div>
+
+      {/* Shift metrics */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-3">
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Shifts</CardTitle>
+          </CardHeader>
+          <CardContent className="text-3xl font-bold">{totalShifts ?? '—'}</CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Shift Assignments</CardTitle>
+          </CardHeader>
+          <CardContent className="text-3xl font-bold">{totalAssignments ?? '—'}</CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Assigned vs Unassigned</CardTitle>
+          </CardHeader>
+          <CardContent className="text-lg">{totalAssignments ?? 0} assigned</CardContent>
         </Card>
       </div>
 
