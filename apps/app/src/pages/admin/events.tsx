@@ -218,6 +218,43 @@ export default function AdminEvents() {
     orgMap[e?.organizationId ?? e?.organization_id] ||
     '';
 
+  // Compute event counts on the client using start/end times (no API calls)
+  const eventCounts = useMemo(() => {
+    const total = events?.length || 0;
+    const now = new Date().getTime();
+    let upcoming = 0;
+    let ongoing = 0;
+    let completed = 0;
+
+    (events || []).forEach((e) => {
+      const s = e.startAt ? new Date(e.startAt).getTime() : null;
+      const en = e.endAt ? new Date(e.endAt).getTime() : null;
+
+      if (s !== null && en !== null) {
+        if (en < now) {
+          completed += 1;
+        } else if (s <= now && now <= en) {
+          ongoing += 1;
+        } else if (s > now) {
+          upcoming += 1;
+        }
+      } else if (s !== null && en === null) {
+        // Has start but no end: if start in future -> upcoming, else ongoing
+        if (s > now) upcoming += 1;
+        else ongoing += 1;
+      } else if (s === null && en !== null) {
+        // Has end but no start: if end in past -> completed, else ongoing
+        if (en < now) completed += 1;
+        else ongoing += 1;
+      } else {
+        // No dates: count as upcoming by default
+        upcoming += 1;
+      }
+    });
+
+    return { total, upcoming, ongoing, completed };
+  }, [events]);
+
   // Filter events
   const filteredEvents = events?.filter((event) => {
     const matchesSearch =
@@ -446,29 +483,23 @@ export default function AdminEvents() {
         </DropdownMenu>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards (computed client-side from event start/end times) */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white p-6 rounded-lg shadow-sm">
           <div className="text-sm font-medium text-muted-foreground">Total Events</div>
-          <div className="text-2xl font-bold">{events?.length || 0}</div>
+          <div className="text-2xl font-bold">{eventCounts.total}</div>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm">
           <div className="text-sm font-medium text-muted-foreground">Upcoming</div>
-          <div className="text-2xl font-bold text-blue-600">
-            {events?.filter((e) => e.status === 'published').length || 0}
-          </div>
+          <div className="text-2xl font-bold text-blue-600">{eventCounts.upcoming}</div>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm">
           <div className="text-sm font-medium text-muted-foreground">Ongoing</div>
-          <div className="text-2xl font-bold text-green-600">
-            {events?.filter((e) => e.status === 'ongoing').length || 0}
-          </div>
+          <div className="text-2xl font-bold text-green-600">{eventCounts.ongoing}</div>
         </div>
         <div className="bg-white p-6 rounded-lg shadow-sm">
           <div className="text-sm font-medium text-muted-foreground">Completed</div>
-          <div className="text-2xl font-bold text-purple-600">
-            {events?.filter((e) => e.status === 'completed').length || 0}
-          </div>
+          <div className="text-2xl font-bold text-purple-600">{eventCounts.completed}</div>
         </div>
       </div>
 
