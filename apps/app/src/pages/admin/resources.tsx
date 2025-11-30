@@ -14,6 +14,7 @@ import SkeletonCard from '@/components/atoms/skeleton-card';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApp } from '@/providers/app-provider';
 import api from '@/lib/api';
+import { axios } from '@/lib/axios';
 import { toast } from '@/components/atoms/use-toast';
 
 export default function AdminResources() {
@@ -124,16 +125,32 @@ export default function AdminResources() {
   const [assigningResource, setAssigningResource] = useState<any | null>(null);
   const [assignEventId, setAssignEventId] = useState<number | null>(null);
   const [assignQuantity, setAssignQuantity] = useState<number>(1);
-
-  // Use organization-scoped events and resources
-  const { data: eventsRaw } = useQuery(['organization-events'], () => api.listOrganizationEvents(), {
-    staleTime: 1000 * 60 * 2
-  });
+  // Use organization-scoped events and resources, but gracefully fall back to global lists
+  const { data: eventsRaw } = useQuery(
+    ['organization-events'],
+    async () => {
+      try {
+        // suppress backend error toast if user isn't in an org
+        return await axios.get('/organization/events', { _suppressError: true });
+      } catch (e) {
+        return await api.listEvents();
+      }
+    },
+    { staleTime: 1000 * 60 * 2 }
+  );
   const events: any[] = Array.isArray(eventsRaw) ? eventsRaw : (eventsRaw?.data ?? []);
-  const { data: orgResourcesRaw } = useQuery(['organization-resources'], () => api.listMyOrganizationResources(), {
-    staleTime: 1000 * 60 * 2
-  });
-  // prefer organization-scoped resources for selection/filtering, but keep the global resources list for admin view
+
+  const { data: orgResourcesRaw } = useQuery(
+    ['organization-resources'],
+    async () => {
+      try {
+        return await axios.get('/organization/resources', { _suppressError: true });
+      } catch (e) {
+        return await api.listResources();
+      }
+    },
+    { staleTime: 1000 * 60 * 2 }
+  );
   const orgResources: any[] = Array.isArray(orgResourcesRaw)
     ? orgResourcesRaw
     : (orgResourcesRaw?.data ?? orgResourcesRaw?.resources ?? []);
