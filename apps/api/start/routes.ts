@@ -183,6 +183,16 @@ Route.get('/me', 'UsersController.me').middleware(['auth'])
 Route.resource('resources', 'ResourcesController')
   .middleware({ '*': ['auth'] })
   .apiOnly()
+// Resource management extra endpoints
+Route.get('/resources/dashboard', 'ResourcesController.dashboard').middleware(['auth'])
+Route.get('/resources/low-stock', 'ResourcesController.lowStock').middleware(['auth'])
+Route.get('/resources/maintenance', 'ResourcesController.maintenanceDue').middleware(['auth'])
+Route.get('/resources/:id/assignments', 'ResourceAssignmentsController.index').middleware(['auth'])
+Route.post('/resources/:id/assign', 'ResourceAssignmentsController.store').middleware(['auth'])
+Route.post('/assignments/:id/return', 'ResourceAssignmentsController.markReturned').middleware([
+  'auth'
+])
+Route.patch('/resources/:id/status', 'ResourcesController.patchStatus').middleware(['auth'])
 Route.resource('audit-logs', 'AuditLogsController')
   .middleware({ '*': ['auth'] })
   .only(['index', 'show'])
