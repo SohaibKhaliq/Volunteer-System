@@ -195,6 +195,10 @@ Route.post('/assignments/:id/return', 'ResourceAssignmentsController.markReturne
   'auth'
 ])
 Route.patch('/resources/:id/status', 'ResourcesController.patchStatus').middleware(['auth'])
+// Admin: maintenance, retire, reactivate
+Route.post('/resources/:id/maintenance', 'ResourcesController.maintenance').middleware(['auth'])
+Route.post('/resources/:id/retire', 'ResourcesController.retire').middleware(['auth'])
+Route.post('/resources/:id/reactivate', 'ResourcesController.reactivate').middleware(['auth'])
 Route.resource('audit-logs', 'AuditLogsController')
   .middleware({ '*': ['auth'] })
   .only(['index', 'show'])
