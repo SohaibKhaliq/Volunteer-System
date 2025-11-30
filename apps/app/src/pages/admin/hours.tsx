@@ -25,6 +25,8 @@ export default function AdminHours() {
   const [bulkComment, setBulkComment] = useState('');
   const [filterStatus, setFilterStatus] = useState<'All' | 'Approved' | 'Pending' | 'Rejected'>('All');
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
   const [volunteerQuery, setVolunteerQuery] = useState('');
   const [debouncedVolunteerQuery, setDebouncedVolunteerQuery] = useState('');
   const [selectedVolunteer, setSelectedVolunteer] = useState<any | null>(null);
@@ -40,11 +42,29 @@ export default function AdminHours() {
   );
 
   const { data, isLoading } = useQuery({
-    queryKey: ['hours'],
-    queryFn: api.listHours
+    queryKey: ['hours', page, perPage, filterStatus, debouncedVolunteerQuery, search],
+    queryFn: () =>
+      api.list('hours', {
+        page,
+        per_page: perPage,
+        status: filterStatus !== 'All' ? filterStatus : undefined,
+        user_id: selectedVolunteer?.id ?? undefined,
+        search: search || undefined
+      })
   });
 
-  const hours = Array.isArray(data) ? data : [];
+  // normalize response: support plain array or paginated { data, meta }
+  const normalized = React.useMemo(() => {
+    if (!data) return { data: [], total: 0 };
+    if (Array.isArray(data)) return { data, total: data.length };
+    // common shapes: { data: [], meta: { total } } or { data: [], total }
+    const list = data.data ?? data.items ?? [];
+    const total = data.total ?? data.meta?.total ?? list.length;
+    return { data: list, total };
+  }, [data]);
+
+  const hours = normalized.data || [];
+  const totalFromServer = normalized.total || 0;
 
   const bulkUpdateMutation = useMutation({
     mutationFn: ({ ids, status }: { ids: number[]; status: string }) => api.bulkUpdateHours(ids, status),
@@ -62,7 +82,8 @@ export default function AdminHours() {
     setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
   };
 
-  const selectAll = () => setSelected(hours.map((h: any) => h.id));
+  // selectAll should select currently visible page items
+  const selectAll = () => setSelected(paged.map((h: any) => h.id));
   const clearSelection = () => setSelected([]);
 
   const handleBulkAction = (mode: 'approve' | 'reject') => {
@@ -78,26 +99,77 @@ export default function AdminHours() {
   };
 
   const handleExport = () => {
-    exportToCsv(
-      'hours.csv',
-      hours.map((h: any) => ({
-        id: h.id,
-        volunteer: `${h.user?.firstName || ''} ${h.user?.lastName || ''}`.trim(),
-        event: h.event?.title || 'N/A',
-        date: h.date,
-        hours: h.hours,
-        status: h.status
-      }))
-    );
+    (async () => {
+      try {
+        // If server supports pagination, request all filtered rows from server
+        if (serverPaginated) {
+          const params: any = {
+            page: 1,
+            per_page: total || 0,
+            status: filterStatus !== 'All' ? filterStatus : undefined,
+            user_id: selectedVolunteer?.id ?? undefined,
+            search: search || undefined
+          };
+          const allResp: any = await api.list('hours', params);
+          const list = Array.isArray(allResp) ? allResp : (allResp.data ?? allResp.items ?? []);
+          exportToCsv(
+            'hours.csv',
+            list.map((h: any) => ({
+              id: h.id,
+              volunteer: `${h.user?.firstName || ''} ${h.user?.lastName || ''}`.trim(),
+              event: h.event?.title || 'N/A',
+              date: h.date,
+              hours: h.hours,
+              status: h.status
+            }))
+          );
+        } else {
+          // client-side: export all filtered results
+          exportToCsv(
+            'hours.csv',
+            allFiltered.map((h: any) => ({
+              id: h.id,
+              volunteer: `${h.user?.firstName || ''} ${h.user?.lastName || ''}`.trim(),
+              event: h.event?.title || 'N/A',
+              date: h.date,
+              hours: h.hours,
+              status: h.status
+            }))
+          );
+        }
+        toast.success('Export started');
+      } catch (err) {
+        toast.error('Failed to export');
+      }
+    })();
   };
 
-  const filtered = hours.filter((e: any) => {
-    if (filterStatus !== 'All' && e.status !== filterStatus) return false;
-    if (selectedVolunteer && e.user?.id !== selectedVolunteer.id) return false;
-    const searchText = `${e.user?.firstName || ''} ${e.user?.lastName || ''} ${e.event?.title || ''}`.toLowerCase();
-    if (search && !searchText.includes(search.toLowerCase())) return false;
-    return true;
-  });
+  // Determine whether the server returned a paginated response or a full array
+  const serverPaginated = !Array.isArray(data) && data && (data.total || data.meta || data.items);
+
+  // Apply client-side filtering only if the server returned a full array
+  const allFiltered = !serverPaginated
+    ? hours.filter((e: any) => {
+        if (filterStatus !== 'All' && e.status !== filterStatus) return false;
+        if (selectedVolunteer && e.user?.id !== selectedVolunteer.id) return false;
+        if (search) {
+          const searchText =
+            `${e.user?.firstName || ''} ${e.user?.lastName || ''} ${e.event?.title || ''}`.toLowerCase();
+          if (!searchText.includes(search.toLowerCase())) return false;
+        }
+        return true;
+      })
+    : hours;
+
+  // If server returned paginated data, `hours` represents the current page and `totalFromServer` is authoritative.
+  // Otherwise, paginate client-side from `allFiltered`.
+  const total = serverPaginated ? totalFromServer : allFiltered.length;
+  const paged = serverPaginated ? allFiltered : allFiltered.slice((page - 1) * perPage, page * perPage);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [filterStatus, selectedVolunteer?.id, search]);
 
   return (
     <div className="space-y-6" aria-busy={isLoading}>
@@ -152,7 +224,44 @@ export default function AdminHours() {
                 <SelectItem value="Rejected">Rejected</SelectItem>
               </SelectContent>
             </Select>
+            <div className="ml-auto flex items-center gap-2">
+              <div className="text-sm text-muted-foreground">Per page</div>
+              <Select
+                value={String(perPage)}
+                onValueChange={(v) => {
+                  setPerPage(Number(v));
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger className="w-24">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">5</SelectItem>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="25">25</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
+
+          {/* Bulk actions moved to top for easier access */}
+          <Card className="mb-4">
+            <div className="p-4 flex items-center gap-4">
+              <Button variant="outline" onClick={() => handleBulkAction('approve')} disabled={selected.length === 0}>
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Approve Selected ({selected.length})
+              </Button>
+              <Button variant="destructive" onClick={() => handleBulkAction('reject')} disabled={selected.length === 0}>
+                <XCircle className="h-4 w-4 mr-2" />
+                Reject Selected ({selected.length})
+              </Button>
+              <Button variant="outline" onClick={handleExport} className="ml-auto">
+                Export CSV
+              </Button>
+            </div>
+          </Card>
 
           <Table>
             <TableHeader>
@@ -161,7 +270,7 @@ export default function AdminHours() {
                   <input
                     aria-label="Select all hours"
                     type="checkbox"
-                    checked={selected.length === filtered.length && filtered.length > 0}
+                    checked={selected.length === paged.length && paged.length > 0}
                     onChange={(e) => {
                       if (e.target.checked) selectAll();
                       else clearSelection();
@@ -182,14 +291,14 @@ export default function AdminHours() {
                     <SkeletonCard />
                   </TableCell>
                 </TableRow>
-              ) : filtered.length === 0 ? (
+              ) : paged.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center text-muted-foreground">
                     No hours entries found
                   </TableCell>
                 </TableRow>
               ) : (
-                filtered.map((h: any) => (
+                paged.map((h: any) => (
                   <TableRow key={h.id}>
                     <TableCell>
                       <input
@@ -219,28 +328,36 @@ export default function AdminHours() {
               )}
             </TableBody>
           </Table>
-        </CardContent>
-      </Card>
 
-      {/* Bulk actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5" />
-            Bulk Actions
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex space-x-4">
-          <Button variant="outline" onClick={() => handleBulkAction('approve')} disabled={selected.length === 0}>
-            Approve Selected ({selected.length})
-          </Button>
-          <Button variant="destructive" onClick={() => handleBulkAction('reject')} disabled={selected.length === 0}>
-            <XCircle className="h-4 w-4 mr-2" />
-            Reject Selected ({selected.length})
-          </Button>
-          <Button variant="outline" onClick={handleExport} className="ml-auto">
-            Export CSV
-          </Button>
+          {/* Pagination controls */}
+          <div className="flex items-center justify-between mt-4">
+            <div className="text-sm text-muted-foreground">
+              {total === 0
+                ? 'No entries'
+                : `Showing ${(page - 1) * perPage + 1} - ${(page - 1) * perPage + paged.length} of ${total}`}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+              >
+                Prev
+              </Button>
+              <div className="text-sm">
+                Page {page} / {Math.max(1, Math.ceil(total / perPage))}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage((p) => Math.min(Math.max(1, Math.ceil(total / perPage)), p + 1))}
+                disabled={page >= Math.max(1, Math.ceil(total / perPage))}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
