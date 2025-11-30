@@ -275,6 +275,7 @@ Route.resource('achievements', 'AchievementsController')
 Route.get('/shifts', 'ShiftsController.index').middleware(['auth'])
 Route.post('/shifts', 'ShiftsController.store').middleware(['auth'])
 Route.get('/shifts/:id', 'ShiftsController.show').middleware(['auth'])
+Route.get('/shifts/:id/suggestions', 'ShiftsController.suggest').middleware(['auth'])
 Route.put('/shifts/:id', 'ShiftsController.update').middleware(['auth'])
 Route.delete('/shifts/:id', 'ShiftsController.destroy').middleware(['auth'])
 
