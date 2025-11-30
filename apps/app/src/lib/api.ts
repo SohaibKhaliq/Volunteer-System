@@ -174,6 +174,14 @@ const api = {
   updateResource: async (id: number, data: any) => axios.put(`/resources/${id}`, data),
   deleteResource: async (id: number) => axios.delete(`/resources/${id}`),
   getResource: async (id: number) => axios.get(`/resources/${id}`),
+  getEvent: async (id: number) => {
+    const res = await axios.get(`/events/${id}`);
+    return (res && (res.data ?? res)) || res;
+  },
+  getUser: async (id: number) => {
+    const res = await axios.get(`/users/${id}`);
+    return (res && (res.data ?? res)) || res;
+  },
   getResourcesDashboard: async () => axios.get('/resources/dashboard'),
   getLowStockResources: async () => axios.get('/resources/low-stock'),
   getMaintenanceDueResources: async () => axios.get('/resources/maintenance'),
@@ -265,9 +273,8 @@ const api = {
   // return current authenticated user's profile (roles, flags)
   // _skipAuthRedirect true prevents axios interceptor from forcing a navigation
   // to /login if the token is invalid; AppProvider should decide whether to
-  // redirect based on the current route.
-  getCurrentUser: async () => axios.get('/me', { _skipAuthRedirect: true }),
-  getUser: async (id: number) => axios.get(`/users/${id}`),
+  // redirect based on the current route. Cast to any to allow our custom flag.
+  getCurrentUser: async () => axios.get('/me', { _skipAuthRedirect: true } as any),
 
   updateOrganizationProfile: async (data: any) => {
     // If FormData, let axios/browser set the Content-Type (with boundary) so server can parse multipart
