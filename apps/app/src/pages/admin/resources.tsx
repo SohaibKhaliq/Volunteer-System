@@ -173,11 +173,19 @@ export default function AdminResources() {
                 filtered.map((r: any) => (
                   <TableRow key={r.id}>
                     <TableCell>{r.name}</TableCell>
-                    <TableCell>{r.quantity}</TableCell>
+                    <TableCell>
+                      {r.quantityAvailable ?? 0}/{r.quantityTotal ?? 0}
+                    </TableCell>
                     <TableCell>
                       <Badge
                         variant={
-                          r.status === 'Available' ? 'default' : r.status === 'Low Stock' ? 'secondary' : 'destructive'
+                          r.status === 'available'
+                            ? 'default'
+                            : r.status === 'maintenance'
+                              ? 'destructive'
+                              : r.status === 'in_use'
+                                ? 'secondary'
+                                : 'outline'
                         }
                       >
                         {r.status}
@@ -254,11 +262,19 @@ export default function AdminResources() {
               </Popover>
             </div>
             <div>
-              <label className="text-sm block mb-1">Quantity</label>
+              <label className="text-sm block mb-1">Quantity Total</label>
               <Input
                 type="number"
-                value={editing?.quantity || ''}
-                onChange={(e) => setEditing((s: any) => ({ ...(s || {}), quantity: Number(e.target.value) }))}
+                value={editing?.quantityTotal ?? ''}
+                onChange={(e) => setEditing((s: any) => ({ ...(s || {}), quantityTotal: Number(e.target.value) }))}
+              />
+            </div>
+            <div>
+              <label className="text-sm block mb-1">Quantity Available</label>
+              <Input
+                type="number"
+                value={editing?.quantityAvailable ?? ''}
+                onChange={(e) => setEditing((s: any) => ({ ...(s || {}), quantityAvailable: Number(e.target.value) }))}
               />
             </div>
             <div>
@@ -295,7 +311,12 @@ export default function AdminResources() {
                     toast.error('Name is required');
                     return;
                   }
-                  saveResource(editing || {});
+                  // normalize status to expected backend values
+                  const payload = {
+                    ...editing,
+                    status: (editing?.status || 'available').toString().toLowerCase()
+                  };
+                  saveResource(payload || {});
                 }}
               >
                 {editing?.id ? 'Save' : 'Create'}
