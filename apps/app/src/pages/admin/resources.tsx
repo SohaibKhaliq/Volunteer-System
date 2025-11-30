@@ -151,6 +151,7 @@ export default function AdminResources() {
             <TableHeader>
               <TableRow>
                 <TableHead>Resource</TableHead>
+                <TableHead>Organization</TableHead>
                 <TableHead>Quantity</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
@@ -174,7 +175,16 @@ export default function AdminResources() {
                   <TableRow key={r.id}>
                     <TableCell>{r.name}</TableCell>
                     <TableCell>
-                      {r.quantityAvailable ?? 0}/{r.quantityTotal ?? 0}
+                      {r.organization ? (
+                        <a href={`/organizations/${r.organization.id}`} className="text-primary hover:underline">
+                          {r.organization.name}
+                        </a>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {r.quantityAvailable ?? r.quantity_available ?? 0}/{r.quantityTotal ?? r.quantity_total ?? 0}
                     </TableCell>
                     <TableCell>
                       <Badge
@@ -265,7 +275,7 @@ export default function AdminResources() {
               <label className="text-sm block mb-1">Quantity Total</label>
               <Input
                 type="number"
-                value={editing?.quantityTotal ?? ''}
+                value={editing?.quantityTotal ?? editing?.quantity_total ?? ''}
                 onChange={(e) => setEditing((s: any) => ({ ...(s || {}), quantityTotal: Number(e.target.value) }))}
               />
             </div>
@@ -273,7 +283,7 @@ export default function AdminResources() {
               <label className="text-sm block mb-1">Quantity Available</label>
               <Input
                 type="number"
-                value={editing?.quantityAvailable ?? ''}
+                value={editing?.quantityAvailable ?? editing?.quantity_available ?? ''}
                 onChange={(e) => setEditing((s: any) => ({ ...(s || {}), quantityAvailable: Number(e.target.value) }))}
               />
             </div>
