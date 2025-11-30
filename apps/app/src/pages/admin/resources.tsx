@@ -128,6 +128,7 @@ export default function AdminResources() {
   // Assignment history dialog
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyResource, setHistoryResource] = useState<any | null>(null);
+  const [relatedNames, setRelatedNames] = useState<Record<string, string>>({});
   // Use organization-scoped events and resources, but gracefully fall back to global lists
   const { data: eventsRaw } = useQuery(
     ['organization-events'],
@@ -178,7 +179,48 @@ export default function AdminResources() {
     () => (historyResource ? api.listResourceAssignments(historyResource.id) : Promise.resolve([])),
     { enabled: !!historyOpen && !!historyResource }
   );
-  const history: any[] = Array.isArray(historyRaw) ? historyRaw : historyRaw?.data ?? [];
+  const history: any[] = Array.isArray(historyRaw) ? historyRaw : (historyRaw?.data ?? []);
+
+  // When history is loaded, resolve relatedIds to friendly names (event title or volunteer name)
+  useEffect(() => {
+    if (!history || history.length === 0) return;
+
+    const toFetch: Array<{ type: string; id: number }> = [];
+    const seen = new Set<string>();
+    for (const h of history) {
+      const type = h.assignmentType ?? h.assignment_type ?? '';
+      const id = h.relatedId ?? h.related_id ?? null;
+      if (!id) continue;
+      const key = `${type}:${id}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      toFetch.push({ type, id });
+    }
+
+    if (toFetch.length === 0) return;
+
+    (async () => {
+      const map: Record<string, string> = {};
+      for (const item of toFetch) {
+        try {
+          if (item.type === 'event') {
+            const ev: any = await api.getEvent(item.id);
+            map[`event:${item.id}`] = ev?.title ?? ev?.name ?? `event:${item.id}`;
+          } else if (item.type === 'volunteer' || item.type === 'user') {
+            // fetch user
+            const u: any = await axios.get(`/users/${item.id}`);
+            map[`${item.type}:${item.id}`] = u?.firstName || u?.first_name || u?.name || `user:${item.id}`;
+          } else {
+            // fallback: just show id
+            map[`${item.type}:${item.id}`] = `${item.type}:${item.id}`;
+          }
+        } catch (e) {
+          map[`${item.type}:${item.id}`] = `${item.type}:${item.id}`;
+        }
+      }
+      setRelatedNames((s) => ({ ...(s || {}), ...map }));
+    })();
+  }, [history]);
 
   return (
     <div className="space-y-6" aria-busy={isLoading}>
@@ -549,12 +591,28 @@ export default function AdminResources() {
                   <div className="font-medium">Returned At</div>
                   {history.map((h: any) => (
                     <React.Fragment key={h.id ?? `${h.assignedAt}-${h.relatedId || h.related_id || Math.random()}`}>
-                      <div>{h.assignedAt ? new Date(h.assignedAt).toLocaleString() : ''}</div>
-                      <div>{h.assignmentType}</div>
-                      <div>{h.relatedId ?? h.related_id ?? '—'}</div>
-                      <div>{h.quantity ?? 1}</div>
-                      <div>{h.status}</div>
-                      <div>{h.returnedAt ? new Date(h.returnedAt).toLocaleString() : h.returned_at ? new Date(h.returned_at).toLocaleString() : '—'}</div>
+                      <div>
+                        {h.assignedAt || h.assigned_at || h.createdAt || h.created_at || ''
+                          ? new Date(h.assignedAt ?? h.assigned_at ?? h.createdAt ?? h.created_at).toLocaleString()
+                          : '—'}
+                      </div>
+                      <div>{h.assignmentType ?? h.assignment_type ?? '—'}</div>
+                      <div>
+                        {(() => {
+                          const type = h.assignmentType ?? h.assignment_type ?? '';
+                          const id = h.relatedId ?? h.related_id ?? null;
+                          if (!id) return '—';
+                          const key = `${type}:${id}`;
+                          return relatedNames[key] ?? id;
+                        })()}
+                      </div>
+                      <div>{h.quantity ?? h.qty ?? 1}</div>
+                      <div>{h.status ?? h.state ?? '—'}</div>
+                      <div>
+                        {h.returnedAt || h.returned_at || null
+                          ? new Date(h.returnedAt ?? h.returned_at).toLocaleString()
+                          : '—'}
+                      </div>
                     </React.Fragment>
                   ))}
                 </div>
