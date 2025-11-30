@@ -12,6 +12,11 @@ import L from 'leaflet';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { axios } from '@/lib/axios';
 import api from '@/lib/api';
+import { useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/atoms/use-toast';
 import { useStore } from '@/lib/store';
 
@@ -43,6 +48,34 @@ const Detail = () => {
       return res as any;
     },
     enabled: !!id
+  });
+
+  // Assigned resources for this event
+  const { data: eventAssignments } = useQuery({
+    queryKey: ['event-assignments', id],
+    queryFn: async () => {
+      if (!id) return [] as any;
+      const res = await axios.get(`/assignments?event_id=${id}`);
+      return res as any;
+    },
+    enabled: !!id
+  });
+
+  const [assignOpen, setAssignOpen] = useState(false);
+  const { data: orgResources } = useQuery({
+    queryKey: ['org-resources-for-assign'],
+    queryFn: () => api.listMyOrganizationResources(),
+    enabled: assignOpen
+  });
+
+  const assignMutation = useMutation({
+    mutationFn: ({ resourceId, qty }: any) =>
+      api.assignResource(resourceId, { assignmentType: 'event', relatedId: Number(id), quantity: qty || 1 }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['event-assignments', id] });
+      queryClient.invalidateQueries({ queryKey: ['org-resources-for-assign'] });
+      setAssignOpen(false);
+    }
   });
 
   const joinMutation = useMutation({
@@ -100,6 +133,50 @@ const Detail = () => {
       </div>
     );
   }
+
+  // Quick assign dialog content
+  const AssignDialog = () => (
+    <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Assign Resource to Event</DialogTitle>
+        </DialogHeader>
+        <div className="py-4">
+          <div className="space-y-4">
+            <div>
+              <Input placeholder="Search resources..." />
+            </div>
+            <div className="space-y-2 max-h-64 overflow-auto">
+              {(Array.isArray(orgResources) ? orgResources : (orgResources?.data ?? [])).map((r: any) => (
+                <div key={r.id} className="flex items-center justify-between p-2 border rounded">
+                  <div>
+                    <div className="font-medium">{r.name}</div>
+                    <div className="text-sm text-muted-foreground">
+                      Available: {r.quantityAvailable ?? r.quantity_available ?? 0}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Input type="number" placeholder="Qty" defaultValue={1} className="w-20" />
+                    <Button
+                      onClick={() => assignMutation.mutate({ resourceId: r.id, qty: 1 })}
+                      disabled={assignMutation.isLoading}
+                    >
+                      Assign
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setAssignOpen(false)}>
+            Close
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 
   // Helper to format date/time
   const formatDate = (dateStr: string) => {
@@ -202,6 +279,49 @@ const Detail = () => {
                     </div>
                   )}
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Resources assigned to this event */}
+            <Card className="mt-6">
+              <CardHeader>
+                <CardTitle>Assigned Resources</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="mb-4 flex justify-between">
+                  <div />
+                  <Button onClick={() => setAssignOpen(true)}>Quick Assign</Button>
+                </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Resource</TableHead>
+                      <TableHead>Quantity</TableHead>
+                      <TableHead>Assigned At</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {!eventAssignments || (Array.isArray(eventAssignments) && eventAssignments.length === 0) ? (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center py-6 text-muted-foreground">
+                          No resources assigned
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      (Array.isArray(eventAssignments) ? eventAssignments : (eventAssignments?.data ?? [])).map(
+                        (a: any) => (
+                          <TableRow key={a.id}>
+                            <TableCell>{a.resource?.name ?? a.resourceName ?? 'Resource'}</TableCell>
+                            <TableCell>{a.quantity ?? 1}</TableCell>
+                            <TableCell>{a.assignedAt ? new Date(a.assignedAt).toLocaleString() : '-'}</TableCell>
+                            <TableCell>{a.status}</TableCell>
+                          </TableRow>
+                        )
+                      )
+                    )}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           </div>
@@ -315,6 +435,7 @@ const Detail = () => {
           </div>
         </div>
       </div>
+      <AssignDialog />
     </div>
   );
 };
