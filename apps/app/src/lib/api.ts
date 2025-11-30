@@ -296,6 +296,18 @@ const api = {
   // Dashboard
   getOrganizationDashboardStats: async () => axios.get('/organization/dashboard-stats'),
 
+  /* Shift scheduling endpoints */
+  listShifts: async (params?: any) => axios.get('/shifts', { params }),
+  getShift: async (id: number) => axios.get(`/shifts/${id}`),
+  createShift: async (data: any) => axios.post('/shifts', data),
+  updateShift: async (id: number, data: any) => axios.put(`/shifts/${id}`, data),
+  deleteShift: async (id: number) => axios.delete(`/shifts/${id}`),
+  listShiftAssignments: async (params?: any) => axios.get('/shift-assignments', { params }),
+  assignToShift: async (data: any) => axios.post('/shift-assignments', data),
+  bulkAssignToShift: async (data: any) => axios.post('/shift-assignments/bulk', data),
+  updateShiftAssignment: async (id: number, data: any) => axios.put(`/shift-assignments/${id}`, data),
+  deleteShiftAssignment: async (id: number) => axios.delete(`/shift-assignments/${id}`),
+
   /* Achievements */
   listAchievements: async (params?: any) => axios.get('/achievements', { params }),
   createAchievement: async (data: any) => axios.post('/achievements', data),
