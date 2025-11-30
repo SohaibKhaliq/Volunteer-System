@@ -1,5 +1,20 @@
 import { z } from 'zod'
 
+export const createAssignmentSchema = z.object({
+  shift_id: z.number(),
+  task_id: z.number().optional(),
+  user_id: z.number(),
+  assigned_by: z.number().optional()
+})
+
+export const bulkAssignSchema = z.object({
+  shift_id: z.number(),
+  task_id: z.number().optional(),
+  user_ids: z.array(z.number()),
+  assigned_by: z.number().optional()
+})
+import { z } from 'zod'
+
 export const assignResourceSchema = z.object({
   resourceId: z.number().int(),
   quantity: z.number().int().min(1).optional().default(1),
