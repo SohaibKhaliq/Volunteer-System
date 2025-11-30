@@ -12,11 +12,24 @@ import { Command, CommandGroup, CommandInput, CommandItem } from '@/components/a
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import SkeletonCard from '@/components/atoms/skeleton-card';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useApp } from '@/providers/app-provider';
 import api from '@/lib/api';
 import { toast } from '@/components/atoms/use-toast';
 
 export default function AdminResources() {
   const queryClient = useQueryClient();
+  const { user } = useApp();
+
+  const canQuickAssign = !!(
+    user?.isAdmin ||
+    user?.is_admin ||
+    (user?.roles &&
+      Array.isArray(user.roles) &&
+      user.roles.some((r: any) => {
+        const n = (r?.name || r?.role || '').toLowerCase();
+        return n === 'admin' || n === 'organization_admin' || n === 'organization_manager';
+      }))
+  );
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<'All' | 'Available' | 'Low Stock' | 'Out of Stock'>('All');
   const [editOpen, setEditOpen] = useState(false);
@@ -105,6 +118,39 @@ export default function AdminResources() {
     if (toDelete == null) return;
     deleteMutation.mutate(toDelete);
   };
+
+  // Quick assign resource
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [assigningResource, setAssigningResource] = useState<any | null>(null);
+  const [assignEventId, setAssignEventId] = useState<number | null>(null);
+  const [assignQuantity, setAssignQuantity] = useState<number>(1);
+
+  // Use organization-scoped events and resources
+  const { data: eventsRaw } = useQuery(['organization-events'], () => api.listOrganizationEvents(), {
+    staleTime: 1000 * 60 * 2
+  });
+  const events: any[] = Array.isArray(eventsRaw) ? eventsRaw : (eventsRaw?.data ?? []);
+  const { data: orgResourcesRaw } = useQuery(['organization-resources'], () => api.listMyOrganizationResources(), {
+    staleTime: 1000 * 60 * 2
+  });
+  // prefer organization-scoped resources for selection/filtering, but keep the global resources list for admin view
+  const orgResources: any[] = Array.isArray(orgResourcesRaw)
+    ? orgResourcesRaw
+    : (orgResourcesRaw?.data ?? orgResourcesRaw?.resources ?? []);
+
+  const assignMutation = useMutation({
+    mutationFn: ({ resourceId, payload }: { resourceId: number; payload: any }) =>
+      api.assignResource(resourceId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['resources'] });
+      toast.success('Resource assigned');
+      setAssignOpen(false);
+      setAssigningResource(null);
+      setAssignEventId(null);
+      setAssignQuantity(1);
+    },
+    onError: () => toast.error('Failed to assign resource')
+  });
 
   return (
     <div className="space-y-6" aria-busy={isLoading}>
@@ -203,6 +249,18 @@ export default function AdminResources() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
+                        {canQuickAssign && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setAssigningResource(r);
+                              setAssignOpen(true);
+                            }}
+                          >
+                            Quick Assign
+                          </Button>
+                        )}
                         <Button
                           variant="ghost"
                           onClick={() => {
@@ -355,6 +413,72 @@ export default function AdminResources() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Quick Assign Resource dialog */}
+      {canQuickAssign && (
+        <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
+          <DialogContent aria-labelledby="assign-resource-title">
+            <DialogHeader>
+              <DialogTitle id="assign-resource-title">Quick Assign Resource</DialogTitle>
+            </DialogHeader>
+            <div className="p-4 space-y-3">
+              <div>
+                <div className="text-sm text-muted-foreground">Resource</div>
+                <div className="font-medium">{assigningResource?.name ?? '—'}</div>
+              </div>
+              <div>
+                <label className="text-sm block mb-1">Event</label>
+                <select
+                  className="w-full border rounded px-2 py-1"
+                  value={assignEventId ?? ''}
+                  onChange={(e) => setAssignEventId(Number(e.target.value) || null)}
+                >
+                  <option value="">Select event</option>
+                  {events.map((ev: any) => (
+                    <option key={ev.id} value={ev.id}>
+                      {ev.name ?? ev.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm block mb-1">Quantity</label>
+                <Input
+                  type="number"
+                  value={assignQuantity}
+                  onChange={(e) => setAssignQuantity(Number(e.target.value))}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setAssignOpen(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => {
+                    if (!assigningResource) return;
+                    if (!assignEventId) {
+                      toast.error('Choose an event');
+                      return;
+                    }
+                    if (!assignQuantity || assignQuantity <= 0) {
+                      toast.error('Enter a positive quantity');
+                      return;
+                    }
+                    assignMutation.mutate({
+                      resourceId: assigningResource.id,
+                      payload: { event_id: assignEventId, quantity: assignQuantity }
+                    });
+                  }}
+                >
+                  Assign
+                </Button>
+              </div>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
