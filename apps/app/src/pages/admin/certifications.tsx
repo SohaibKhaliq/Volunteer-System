@@ -1,6 +1,8 @@
 // src/pages/admin/certifications.tsx
 // src/pages/admin/certifications.tsx
 import React, { useMemo, useState, useEffect } from 'react';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -295,26 +297,47 @@ export default function AdminCertifications() {
                         course.description && <div className="text-sm text-muted-foreground">{course.description}</div>
                       )}
                     </div>
-                    <div className="ml-auto flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        onClick={() => {
-                          setCourseEditing(course);
-                          setCourseOpen(true);
-                        }}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        onClick={() => (window.location.href = `/admin/volunteer-profile?id=${course.id}`)}
-                        title="Manage volunteers for this course"
-                      >
-                        <Award className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" onClick={() => confirmCourseDelete(course.id)}>
-                        <Trash2 className="h-4 w-4 text-red-600" />
-                      </Button>
+                    <div className="ml-auto flex items-center gap-4">
+                      <div className="text-sm text-muted-foreground">
+                        {course.assign_all ? (
+                          <span>Assigned to all volunteers</span>
+                        ) : (course.assigned_count ?? (course.enrollments?.length || 0)) === 1 &&
+                          course.enrollments &&
+                          course.enrollments[0]?.user ? (
+                          <div className="flex items-center gap-2">
+                            <span>
+                              {(course.enrollments[0].user.firstName || course.enrollments[0].user.name) +
+                                (course.enrollments[0].user.lastName ? ` ${course.enrollments[0].user.lastName}` : '')}
+                            </span>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() =>
+                                (window.location.href = `/admin/volunteer-profile?id=${course.enrollments[0].user.id}`)
+                              }
+                            >
+                              View
+                            </Button>
+                          </div>
+                        ) : (
+                          <span>{course.assigned_count ?? (course.enrollments?.length || 0)} volunteers</span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            setCourseEditing(course);
+                            setCourseOpen(true);
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" onClick={() => confirmCourseDelete(course.id)}>
+                          <Trash2 className="h-4 w-4 text-red-600" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -652,17 +675,10 @@ export default function AdminCertifications() {
 
             <div>
               <label className="text-sm block mb-1">Description (rich text)</label>
-              <div
-                contentEditable
-                suppressContentEditableWarning
-                className="min-h-[120px] border rounded p-2 bg-white/5"
-                onInput={(e) =>
-                  setCourseEditing((s) => ({ ...(s || {}), description_html: (e.target as HTMLElement).innerHTML }))
-                }
-                dangerouslySetInnerHTML={{
-                  __html: courseEditing?.description_html || courseEditing?.description || ''
-                }}
-              />
+              {
+                // TipTap editor
+              }
+              <TipTapEditor courseEditing={courseEditing} setCourseEditing={setCourseEditing} />
               <div className="text-xs text-muted-foreground mt-1">
                 You can paste formatted text; HTML will be saved.
               </div>
@@ -799,4 +815,24 @@ export default function AdminCertifications() {
       </Dialog>
     </div>
   );
+}
+
+// Small wrapper component to use TipTap editor and sync HTML back to parent state
+function TipTapEditor({ courseEditing, setCourseEditing }: any) {
+  const editor = useEditor({
+    extensions: [StarterKit],
+    content: (courseEditing && (courseEditing.description_html || courseEditing.description)) || '',
+    onUpdate: ({ editor }) => {
+      const html = editor.getHTML();
+      setCourseEditing((s: any) => ({ ...(s || {}), description_html: html }));
+    }
+  });
+
+  useEffect(() => {
+    if (!editor) return
+    const html = (courseEditing && (courseEditing.description_html || courseEditing.description)) || ''
+    if (editor.getHTML() !== html) editor.commands.setContent(html, false)
+  }, [courseEditing, editor])
+
+  return <div className="min-h-[120px] border rounded bg-white/5 p-2">{editor && <EditorContent editor={editor} />}</div>
 }
