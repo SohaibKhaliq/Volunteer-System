@@ -76,7 +76,11 @@ axios.interceptors.response.use(
     const message = error?.response?.data?.message || error?.message;
     // Map API errors to toast UI as a best-effort
     try {
-      showApiError(error, 'Request failed');
+      // Allow callers to suppress error-toasts by setting `_suppressError` on the request config
+      const suppress = Boolean(originalRequest?._suppressError || originalRequest?.headers?.['x-suppress-error']);
+      if (!suppress) {
+        showApiError(error, 'Request failed');
+      }
     } catch (e) {
       // fallback to console
       console.error(message);
