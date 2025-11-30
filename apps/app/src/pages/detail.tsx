@@ -13,10 +13,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { axios } from '@/lib/axios';
 import api from '@/lib/api';
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/atoms/use-toast';
 import { useStore } from '@/lib/store';
 
@@ -61,40 +58,11 @@ const Detail = () => {
     enabled: !!id
   });
 
-  const [assignOpen, setAssignOpen] = useState(false);
-  const { data: orgResources } = useQuery({
-    queryKey: ['org-resources-for-assign'],
-    queryFn: () => api.listMyOrganizationResources(),
-    enabled: assignOpen
-  });
-
   // Shifts for this event
   const { data: eventShifts } = useQuery({
     queryKey: ['event-shifts', id],
     queryFn: () => (id ? api.listShifts({ event_id: Number(id) }) : Promise.resolve([])),
     enabled: !!id
-  });
-
-  const [assignVolunteerOpen, setAssignVolunteerOpen] = useState(false);
-  const [selectedShiftId, setSelectedShiftId] = useState<number | null>(null);
-
-  const assignVolunteerMutation = useMutation({
-    mutationFn: (data: any) => api.assignToShift(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['event-shifts', id] });
-      queryClient.invalidateQueries({ queryKey: ['event-assignments', id] });
-      setAssignVolunteerOpen(false);
-    }
-  });
-
-  const assignMutation = useMutation({
-    mutationFn: ({ resourceId, qty }: any) =>
-      api.assignResource(resourceId, { assignmentType: 'event', relatedId: Number(id), quantity: qty || 1 }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['event-assignments', id] });
-      queryClient.invalidateQueries({ queryKey: ['org-resources-for-assign'] });
-      setAssignOpen(false);
-    }
   });
 
   const joinMutation = useMutation({
@@ -154,99 +122,7 @@ const Detail = () => {
   }
 
   // Quick assign dialog content
-  const AssignDialog = () => (
-    <Dialog open={assignOpen} onOpenChange={setAssignOpen}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Assign Resource to Event</DialogTitle>
-        </DialogHeader>
-        <div className="py-4">
-          <div className="space-y-4">
-            <div>
-              <Input placeholder="Search resources..." />
-            </div>
-            <div className="space-y-2 max-h-64 overflow-auto">
-              {(Array.isArray(orgResources) ? orgResources : (orgResources?.data ?? [])).map((r: any) => (
-                <div key={r.id} className="flex items-center justify-between p-2 border rounded">
-                  <div>
-                    <div className="font-medium">{r.name}</div>
-                    <div className="text-sm text-muted-foreground">
-                      Available: {r.quantityAvailable ?? r.quantity_available ?? 0}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Input type="number" placeholder="Qty" defaultValue={1} className="w-20" />
-                    <Button
-                      onClick={() => assignMutation.mutate({ resourceId: r.id, qty: 1 })}
-                      disabled={assignMutation.isLoading}
-                    >
-                      Assign
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setAssignOpen(false)}>
-            Close
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
 
-  const AssignVolunteerDialog = () => (
-    <Dialog open={assignVolunteerOpen} onOpenChange={setAssignVolunteerOpen}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Assign Volunteer to Shift</DialogTitle>
-        </DialogHeader>
-        <div className="py-4">
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm block mb-1">Select Shift</label>
-              <select
-                className="w-full p-2 border rounded"
-                value={selectedShiftId ?? ''}
-                onChange={(e) => setSelectedShiftId(e.target.value === '' ? null : Number(e.target.value))}
-              >
-                <option value="">Select shift</option>
-                {(Array.isArray(eventShifts) ? eventShifts : (eventShifts?.data ?? [])).map((s: any) => (
-                  <option key={s.id} value={s.id}>
-                    {s.title} — {s.start_at ?? s.startAt}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-sm block mb-1">Volunteer (user id)</label>
-              <Input type="number" id="assign-user-id" placeholder="User ID" />
-            </div>
-            <div className="flex gap-2">
-              <Button
-                onClick={() => {
-                  const el: any = document.getElementById('assign-user-id');
-                  const uid = Number(el?.value);
-                  if (!selectedShiftId || !uid) {
-                    toast({ title: 'Please select shift and volunteer', variant: 'destructive' });
-                    return;
-                  }
-                  assignVolunteerMutation.mutate({ shift_id: selectedShiftId, user_id: uid });
-                }}
-              >
-                Assign
-              </Button>
-              <Button variant="outline" onClick={() => setAssignVolunteerOpen(false)}>
-                Cancel
-              </Button>
-            </div>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
   // Helper to format date/time
   const formatDate = (dateStr: string) => {
     if (!dateStr) return '';
@@ -359,10 +235,6 @@ const Detail = () => {
               <CardContent>
                 <div className="mb-4 flex justify-between">
                   <div />
-                  <div className="flex gap-2">
-                    <Button onClick={() => setAssignOpen(true)}>Quick Assign Resource</Button>
-                    <Button onClick={() => setAssignVolunteerOpen(true)}>Quick Assign Volunteer</Button>
-                  </div>
                 </div>
                 <Table>
                   <TableHeader>
