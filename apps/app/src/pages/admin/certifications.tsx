@@ -40,13 +40,13 @@ interface ComplianceDoc {
 
 export default function AdminCertifications() {
   const queryClient = useQueryClient();
+  const [activeTab, setActiveTab] = useState<'courses' | 'certifications'>('courses');
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<'All' | 'Valid' | 'Expiring' | 'Expired'>('All');
   const [editOpen, setEditOpen] = useState(false);
   const [editing, setEditing] = useState<Partial<ComplianceDoc> | null>(null);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [toDelete, setToDelete] = useState<number | null>(null);
-  
 
   const { data: items = [], isLoading } = useQuery<ComplianceDoc[]>({
     queryKey: ['compliance'],
@@ -111,6 +111,14 @@ export default function AdminCertifications() {
       return false;
     return true;
   });
+
+  // simple client-side pagination for certifications list
+  const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
+  useEffect(() => setPage(1), [search, filterStatus]);
+  const total = filtered.length;
+  const totalPages = Math.max(1, Math.ceil(total / perPage));
+  const paged = filtered.slice((page - 1) * perPage, page * perPage);
 
   const saveCert = (payload: Partial<ComplianceDoc>) => {
     // If a file is attached, send as FormData so backend can process multipart upload
@@ -204,183 +212,252 @@ export default function AdminCertifications() {
 
   return (
     <div className="space-y-6" aria-busy={isLoading}>
-      {/* Courses summary (read-only) */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Award className="h-5 w-5" />
+      {/* top-level tabs */}
+      <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
+          <Button variant={activeTab === 'courses' ? 'default' : 'ghost'} onClick={() => setActiveTab('courses')}>
             Training Courses
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {/* Courses list and CRUD */}
-          <div className="flex items-center mb-4">
-            <div className="text-sm text-muted-foreground">Manage training courses offered to volunteers.</div>
-            <div className="ml-auto">
-              <Button
-                onClick={() => {
-                  setCourseEditing(null);
-                  setCourseOpen(true);
-                }}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                New Course
-              </Button>
-            </div>
-          </div>
+          </Button>
+          <Button
+            variant={activeTab === 'certifications' ? 'default' : 'ghost'}
+            onClick={() => setActiveTab('certifications')}
+          >
+            Volunteer Certifications
+          </Button>
+        </div>
+      </div>
 
-          {coursesLoading ? (
-            <SkeletonCard />
-          ) : courses.length === 0 ? (
-            <div className="text-sm text-muted-foreground">No courses found. Add a new course to get started.</div>
-          ) : (
-            <div className="space-y-3">
-              {courses.map((course: any) => (
-                <div key={course.id} className="flex items-center p-3 rounded border">
-                  <div>
-                    <div className="font-medium">{course.title || course.name}</div>
-                    {course.description && <div className="text-sm text-muted-foreground">{course.description}</div>}
-                  </div>
-                  <div className="ml-auto flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      onClick={() => {
-                        setCourseEditing(course);
-                        setCourseOpen(true);
-                      }}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" onClick={() => confirmCourseDelete(course.id)}>
-                      <Trash2 className="h-4 w-4 text-red-600" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+      {/* Courses summary (read-only) */}
+      {activeTab === 'courses' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Award className="h-5 w-5" />
+              Training Courses
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {/* Courses list and CRUD */}
+            <div className="flex items-center mb-4">
+              <div className="text-sm text-muted-foreground">Manage training courses offered to volunteers.</div>
+              <div className="ml-auto flex items-center gap-2">
+                <Button
+                  onClick={() => {
+                    setCourseEditing(null);
+                    setCourseOpen(true);
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Course
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    // quick link to volunteer management/profile
+                    window.location.href = '/admin/volunteer-profile';
+                  }}
+                >
+                  Volunteer Management
+                </Button>
+              </div>
             </div>
-          )}
-        </CardContent>
-      </Card>
+
+            {coursesLoading ? (
+              <SkeletonCard />
+            ) : courses.length === 0 ? (
+              <div className="text-sm text-muted-foreground">No courses found. Add a new course to get started.</div>
+            ) : (
+              <div className="space-y-3">
+                {courses.map((course: any) => (
+                  <div key={course.id} className="flex items-center p-3 rounded border">
+                    <div>
+                      <div className="font-medium">{course.title || course.name}</div>
+                      {course.description && <div className="text-sm text-muted-foreground">{course.description}</div>}
+                    </div>
+                    <div className="ml-auto flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
+                          setCourseEditing(course);
+                          setCourseOpen(true);
+                        }}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        onClick={() => (window.location.href = `/admin/volunteer-profile?id=${course.id}`)}
+                        title="Manage volunteers for this course"
+                      >
+                        <Award className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" onClick={() => confirmCourseDelete(course.id)}>
+                        <Trash2 className="h-4 w-4 text-red-600" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Certifications with CRUD (backed by API) */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Award className="h-5 w-5" />
-            Volunteer Certifications
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-3 mb-4">
-            <Input
-              placeholder="Search volunteer"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-64"
-            />
-            <Select
-              value={filterStatus}
-              onValueChange={(v) => setFilterStatus(v as 'All' | 'Valid' | 'Expiring' | 'Expired')}
-            >
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="All">All</SelectItem>
-                <SelectItem value="Valid">Valid</SelectItem>
-                <SelectItem value="Expiring">Expiring</SelectItem>
-                <SelectItem value="Expired">Expired</SelectItem>
-              </SelectContent>
-            </Select>
-            <div className="ml-auto">
-              <Button
-                onClick={() => {
-                  setEditing(null);
-                  setEditOpen(true);
-                }}
+      {activeTab === 'certifications' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Award className="h-5 w-5" />
+              Volunteer Certifications
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-3 mb-4">
+              <Input
+                placeholder="Search volunteer"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-64"
+              />
+              <Select
+                value={filterStatus}
+                onValueChange={(v) => setFilterStatus(v as 'All' | 'Valid' | 'Expiring' | 'Expired')}
               >
-                <Plus className="h-4 w-4 mr-2" />
-                New Certification
-              </Button>
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All</SelectItem>
+                  <SelectItem value="Valid">Valid</SelectItem>
+                  <SelectItem value="Expiring">Expiring</SelectItem>
+                  <SelectItem value="Expired">Expired</SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="ml-auto flex items-center gap-2">
+                <div className="text-sm text-muted-foreground">Per page:</div>
+                <Select value={String(perPage)} onValueChange={(v) => setPerPage(Number(v))}>
+                  <SelectTrigger className="w-28">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5</SelectItem>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="25">25</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  onClick={() => {
+                    setEditing(null);
+                    setEditOpen(true);
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Certification
+                </Button>
+              </div>
             </div>
-          </div>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Volunteer</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Issued</TableHead>
-                <TableHead>Expires</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
+            <Table>
+              <TableHeader>
                 <TableRow>
-                  <TableCell colSpan={6}>
-                    <SkeletonCard />
-                  </TableCell>
+                  <TableHead>Volunteer</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Issued</TableHead>
+                  <TableHead>Expires</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ) : filtered.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground">
-                    No certifications found
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filtered.map((c: ComplianceDoc) => (
-                  <TableRow key={c.id}>
-                    <TableCell>
-                      {c.user?.firstName ? `${c.user.firstName} ${c.user.lastName || ''}` : c.user?.name || c.user_id}
-                    </TableCell>
-                    <TableCell>{c.doc_type || c.type}</TableCell>
-                    <TableCell>{c.issued_at ? new Date(c.issued_at).toLocaleDateString() : '-'}</TableCell>
-                    <TableCell>
-                      {c.expires_at ? new Date(c.expires_at).toLocaleDateString() : c.expires || '-'}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          c.status === 'Valid' ? 'default' : c.status === 'Expiring' ? 'secondary' : 'destructive'
-                        }
-                      >
-                        {c.status || 'Unknown'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          onClick={() => {
-                            setEditing(c);
-                            setEditOpen(true);
-                          }}
-                          aria-label={`Edit ${c.id}`}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        {c.metadata?.file?.path && (
-                          <Button
-                            variant="ghost"
-                            onClick={() => window.open(`${API_URL}/compliance/${c.id}/file`, '_blank')}
-                            aria-label={`Download file for ${c.id}`}
-                          >
-                            <Download className="h-4 w-4" />
-                          </Button>
-                        )}
-                        <Button variant="ghost" onClick={() => confirmDelete(c.id)} aria-label={`Delete ${c.id}`}>
-                          <Trash2 className="h-4 w-4 text-red-600" />
-                        </Button>
-                      </div>
+              </TableHeader>
+              <TableBody>
+                {isLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={6}>
+                      <SkeletonCard />
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                ) : paged.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground">
+                      No certifications found
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  paged.map((c: ComplianceDoc) => (
+                    <TableRow key={c.id}>
+                      <TableCell>
+                        {c.user?.firstName ? `${c.user.firstName} ${c.user.lastName || ''}` : c.user?.name || c.user_id}
+                      </TableCell>
+                      <TableCell>{c.doc_type || c.type}</TableCell>
+                      <TableCell>{c.issued_at ? new Date(c.issued_at).toLocaleDateString() : '-'}</TableCell>
+                      <TableCell>
+                        {c.expires_at ? new Date(c.expires_at).toLocaleDateString() : c.expires || '-'}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            c.status === 'Valid' ? 'default' : c.status === 'Expiring' ? 'secondary' : 'destructive'
+                          }
+                        >
+                          {c.status || 'Unknown'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            onClick={() => {
+                              setEditing(c);
+                              setEditOpen(true);
+                            }}
+                            aria-label={`Edit ${c.id}`}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          {c.metadata?.file?.path && (
+                            <Button
+                              variant="ghost"
+                              onClick={() => window.open(`${API_URL}/compliance/${c.id}/file`, '_blank')}
+                              aria-label={`Download file for ${c.id}`}
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          )}
+                          <Button variant="ghost" onClick={() => confirmDelete(c.id)} aria-label={`Delete ${c.id}`}>
+                            <Trash2 className="h-4 w-4 text-red-600" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+
+            {/* Pagination controls */}
+            <div className="mt-3 flex items-center justify-between">
+              <div className="text-sm text-muted-foreground">
+                Showing {paged.length} of {total} results
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page <= 1}>
+                  Prev
+                </Button>
+                <div className="text-sm">
+                  Page {page} / {totalPages}
+                </div>
+                <Button
+                  variant="ghost"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page >= totalPages}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Edit / New dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
