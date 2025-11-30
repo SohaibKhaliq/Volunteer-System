@@ -12,6 +12,9 @@ export default class Course extends BaseModel {
   @column()
   public description?: string
 
+  @column({ columnName: 'description_html' })
+  public descriptionHtml?: string
+
   @column()
   public instructor?: string
 
@@ -29,6 +32,9 @@ export default class Course extends BaseModel {
 
   @hasMany(() => CourseEnrollment)
   public enrollments: HasMany<typeof CourseEnrollment>
+
+  @column({ columnName: 'assign_all' })
+  public assignAll?: boolean
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
