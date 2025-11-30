@@ -483,9 +483,15 @@ export default function AdminResources() {
                       toast.error('Enter a positive quantity');
                       return;
                     }
+                    // Send explicit assignmentType and relatedId to match backend validation
                     assignMutation.mutate({
                       resourceId: assigningResource.id,
-                      payload: { event_id: assignEventId, quantity: assignQuantity }
+                      payload: {
+                        resourceId: assigningResource.id,
+                        assignmentType: 'event',
+                        relatedId: assignEventId,
+                        quantity: assignQuantity
+                      }
                     });
                   }}
                 >
