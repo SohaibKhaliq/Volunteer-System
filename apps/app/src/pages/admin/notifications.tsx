@@ -2,7 +2,16 @@ import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Bell, Check } from 'lucide-react';
+import { Bell, Check, Eye, Link as LinkIcon } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter
+} from '@/components/ui/dialog';
+import { useNavigate } from 'react-router-dom';
 import SkeletonCard from '@/components/atoms/skeleton-card';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
@@ -52,10 +61,53 @@ export default function AdminNotifications() {
 
   const token = useStore((s) => s.token);
 
+  const navigate = useNavigate();
+
+  const [viewOpen, setViewOpen] = React.useState(false);
+  const [viewing, setViewing] = React.useState<any | null>(null);
+
   const [selected, setSelected] = React.useState<number[]>([]);
 
   const toggleSelect = (id: number) => {
     setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : prev.concat([id])));
+  };
+
+  const renderPayload = (payload: any) => {
+    if (!payload) return null;
+    const p =
+      typeof payload === 'string'
+        ? (() => {
+            try {
+              return JSON.parse(payload);
+            } catch (e) {
+              return payload;
+            }
+          })()
+        : payload;
+
+    // If it's a plain object with primitive values, render key: value lines
+    if (p && typeof p === 'object' && !Array.isArray(p)) {
+      const keys = Object.keys(p);
+      const simple = keys.every((k) => {
+        const v = p[k];
+        return v == null || ['string', 'number', 'boolean'].includes(typeof v);
+      });
+      if (simple && keys.length > 0) {
+        return (
+          <div className="space-y-1 text-sm">
+            {keys.map((k) => (
+              <div key={k} className="flex items-start gap-2">
+                <div className="font-medium text-xs text-muted-foreground w-28">{k}</div>
+                <div className="text-xs break-words">{String((p as any)[k] ?? '')}</div>
+              </div>
+            ))}
+          </div>
+        );
+      }
+    }
+
+    // fallback: pretty JSON
+    return <pre className="bg-muted p-2 rounded text-xs overflow-auto max-h-40">{JSON.stringify(p, null, 2)}</pre>;
   };
 
   const markSelected = async (markRead = true) => {
@@ -145,21 +197,28 @@ export default function AdminNotifications() {
                       {(() => {
                         try {
                           const p = typeof n.payload === 'string' ? JSON.parse(n.payload) : n.payload || {};
+                          // Prefer friendly rendering for communications payloads
+                          const isComm = p.communicationId || p.subject || p.type === 'communication';
                           return (
                             <div className="flex items-start gap-3">
                               {p.image && <img src={p.image} className="h-12 w-12 rounded-md object-cover" alt="" />}
                               <div>
-                                <div className="font-medium">{p.title ?? n.type}</div>
-                                <div className="text-xs text-muted-foreground">
-                                  {p.message ??
-                                    p.description ??
-                                    (typeof n.payload === 'string' ? n.payload : JSON.stringify(n.payload))}
-                                </div>
-                                {p.url && (
-                                  <div className="mt-1">
-                                    <a href={p.url} target="_blank" rel="noreferrer" className="text-primary text-sm">
-                                      {p.cta ?? 'Open'}
-                                    </a>
+                                <div className="font-medium">{p.subject ?? p.title ?? n.type}</div>
+                                <div className="text-xs text-muted-foreground">{renderPayload(p)}</div>
+                                {isComm && (
+                                  <div className="mt-1 flex items-center gap-2">
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => {
+                                        // if communication id present, navigate to admin communication editor
+                                        const cid = p.communicationId ?? p.communication_id ?? p.id;
+                                        if (cid) navigate(`/admin/communications?edit=${cid}`);
+                                      }}
+                                    >
+                                      <LinkIcon className="h-4 w-4 mr-1" />
+                                      Open Communication
+                                    </Button>
                                   </div>
                                 )}
                               </div>
@@ -172,6 +231,16 @@ export default function AdminNotifications() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={async () => {
+                            setViewing(n);
+                            setViewOpen(true);
+                          }}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
                         {!n.read ? (
                           <Button
                             size="sm"
@@ -205,6 +274,28 @@ export default function AdminNotifications() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={viewOpen} onOpenChange={setViewOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Notification</DialogTitle>
+            <DialogDescription>Details for this notification</DialogDescription>
+          </DialogHeader>
+          <div className="p-4 space-y-3">
+            <div className="text-sm text-muted-foreground">When</div>
+            <div>{viewing ? new Date(viewing.createdAt || viewing.created_at).toLocaleString() : ''}</div>
+            <div className="text-sm text-muted-foreground">Type</div>
+            <div>{viewing?.type}</div>
+            <div className="text-sm text-muted-foreground">Payload</div>
+            <div>{viewing ? renderPayload(viewing.payload) : ''}</div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setViewOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
