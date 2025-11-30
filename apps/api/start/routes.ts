@@ -271,6 +271,19 @@ Route.resource('achievements', 'AchievementsController')
   .middleware({ '*': ['auth'] })
   .apiOnly()
 
+// Shift scheduling routes
+Route.get('/shifts', 'ShiftsController.index').middleware(['auth'])
+Route.post('/shifts', 'ShiftsController.store').middleware(['auth'])
+Route.get('/shifts/:id', 'ShiftsController.show').middleware(['auth'])
+Route.put('/shifts/:id', 'ShiftsController.update').middleware(['auth'])
+Route.delete('/shifts/:id', 'ShiftsController.destroy').middleware(['auth'])
+
+Route.get('/shift-assignments', 'ShiftAssignmentsController.index').middleware(['auth'])
+Route.post('/shift-assignments', 'ShiftAssignmentsController.store').middleware(['auth'])
+Route.post('/shift-assignments/bulk', 'ShiftAssignmentsController.bulk').middleware(['auth'])
+Route.put('/shift-assignments/:id', 'ShiftAssignmentsController.update').middleware(['auth'])
+Route.delete('/shift-assignments/:id', 'ShiftAssignmentsController.destroy').middleware(['auth'])
+
 // scheduled jobs (admin)
 Route.get('/scheduled-jobs', 'ScheduledJobsController.index').middleware(['auth'])
 Route.get('/scheduled-jobs/:id', 'ScheduledJobsController.show').middleware(['auth'])
