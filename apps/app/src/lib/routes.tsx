@@ -44,6 +44,7 @@ import OrganizationProfile from '@/pages/organization/profile';
 import OrganizationEvents from '@/pages/organization/events';
 import OrganizationAchievements from '@/pages/organization/achievements';
 import OrganizationVolunteers from '@/pages/organization/volunteers';
+import OrganizationResources from '@/pages/organization/resources';
 import OrganizationHoursApproval from '@/pages/organization/hours-approval';
 import OrganizationCompliance from '@/pages/organization/compliance';
 import OrganizationReports from '@/pages/organization/reports';
@@ -124,6 +125,7 @@ const routes: RouteObject[] = [
       { index: true, element: <OrganizationDashboard /> },
       { path: 'profile', element: <OrganizationProfile /> },
       { path: 'events', element: <OrganizationEvents /> },
+      { path: 'resources', element: <OrganizationResources /> },
       { path: 'achievements', element: <OrganizationAchievements /> },
       { path: 'volunteers', element: <OrganizationVolunteers /> },
       { path: 'hours-approval', element: <OrganizationHoursApproval /> },
