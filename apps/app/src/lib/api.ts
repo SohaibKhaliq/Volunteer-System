@@ -299,6 +299,7 @@ const api = {
   /* Shift scheduling endpoints */
   listShifts: async (params?: any) => axios.get('/shifts', { params }),
   getShift: async (id: number) => axios.get(`/shifts/${id}`),
+  getShiftSuggestions: async (id: number, limit = 10) => axios.get(`/shifts/${id}/suggestions`, { params: { limit } }),
   createShift: async (data: any) => axios.post('/shifts', data),
   updateShift: async (id: number, data: any) => axios.put(`/shifts/${id}`, data),
   deleteShift: async (id: number) => axios.delete(`/shifts/${id}`),
