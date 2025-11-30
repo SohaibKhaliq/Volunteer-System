@@ -173,6 +173,13 @@ const api = {
   createResource: async (data: any) => axios.post('/resources', data),
   updateResource: async (id: number, data: any) => axios.put(`/resources/${id}`, data),
   deleteResource: async (id: number) => axios.delete(`/resources/${id}`),
+  getResource: async (id: number) => axios.get(`/resources/${id}`),
+  getResourcesDashboard: async () => axios.get('/resources/dashboard'),
+  getLowStockResources: async () => axios.get('/resources/low-stock'),
+  getMaintenanceDueResources: async () => axios.get('/resources/maintenance'),
+  listResourceAssignments: async (resourceId: number) => axios.get(`/resources/${resourceId}/assignments`),
+  assignResource: async (resourceId: number, data: any) => axios.post(`/resources/${resourceId}/assign`, data),
+  returnAssignment: async (assignmentId: number, data: any) => axios.post(`/assignments/${assignmentId}/return`, data),
 
   /* Audit Logs endpoints */
   listAuditLogs: async () => axios.get('/audit-logs'),
