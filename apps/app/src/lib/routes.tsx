@@ -35,6 +35,8 @@ import AdminResources from '@/pages/admin/resources';
 import AdminScheduling from '@/pages/admin/scheduling';
 import AdminMonitoring from '@/pages/admin/monitoring';
 import AdminFeedback from '@/pages/admin/feedback';
+import AdminFeedbackCreate from '@/pages/admin/feedback/create';
+import AdminFeedbackResults from '@/pages/admin/feedback/[id]/results';
 import AdminShifts from '@/pages/admin/shifts';
 import AdminAuditLogs from '@/pages/admin/audit-logs';
 import AdminSettings from '@/pages/admin/settings';
@@ -62,6 +64,8 @@ import VolunteerDashboard from '@/pages/volunteer/dashboard';
 import VolunteerHistory from '@/pages/volunteer/history';
 import VolunteerProfile from '@/pages/volunteer/profile';
 import VolunteerSettings from '@/pages/volunteer/settings';
+import FeedbackDashboard from '@/pages/feedback';
+import TakeSurvey from '@/pages/feedback/[id]/take';
 
 // Simple wrappers to ensure pages are vertically scrollable
 const ScrollWrapper = ({ children }: any) => (
@@ -108,6 +112,8 @@ const routes: RouteObject[] = [
       { path: 'resources', element: <AdminResources /> },
       { path: 'scheduling', element: <AdminScheduling /> },
       { path: 'feedback', element: <AdminFeedback /> },
+      { path: 'feedback/create', element: <AdminFeedbackCreate /> },
+      { path: 'feedback/:id/results', element: <AdminFeedbackResults /> },
       { path: 'audit-logs', element: <AdminAuditLogs /> },
       { path: 'settings', element: <AdminSettings /> },
       { path: 'volunteer-profile', element: <AdminVolunteerProfile /> }
@@ -166,6 +172,8 @@ const routes: RouteObject[] = [
       { path: 'profile', element: <Profile /> },
       { path: 'notifications', element: <NotificationsPage /> },
       { path: 'about', element: <About /> },
+      { path: 'feedback', element: <FeedbackDashboard /> },
+      { path: 'feedback/:id/take', element: <TakeSurvey /> },
       { path: 'contact', element: <Contact /> },
       { path: 'organizations/:id', element: <OrganizationDetail /> },
       { path: 'events/:id', element: <Detail /> }
