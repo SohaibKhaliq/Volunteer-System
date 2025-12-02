@@ -55,7 +55,46 @@ export default function AdminCompliance() {
   const { data: usersRaw } = useQuery(['users', 'all'], () => api.listUsers());
   const { data: checksRaw } = useQuery(['backgroundChecks'], () => api.listBackgroundChecks());
 
-  const docs = Array.isArray(docsRaw) ? docsRaw : ((docsRaw as any)?.data ?? []);
+  const rawDocs = Array.isArray(docsRaw) ? docsRaw : ((docsRaw as any)?.data ?? []);
+  // normalize documents to expected UI shape
+  const docs = (rawDocs || []).map((d: any) => {
+    const user = d.user || d.user_data || (d.user_id ? users.find((u: any) => u.id === d.user_id) : null) || {};
+    // metadata may be json string
+    let metadata: any = d.metadata || {};
+    try {
+      if (typeof metadata === 'string' && metadata.trim()) metadata = JSON.parse(metadata);
+    } catch (e) {
+      metadata = d.metadata;
+    }
+
+    // map backend doc types and statuses to UI-friendly values
+    const docType = d.doc_type || d.docType || d.docTypeName || d.docType || 'other';
+    // normalize status values
+    let status = (d.status || '').toString().toLowerCase();
+    if (status === 'valid') status = 'approved';
+    if (status === 'invalid' || status === 'rejected') status = 'rejected';
+    if (status === 'pending' || status === '') status = 'pending';
+
+    return {
+      id: d.id,
+      userId: d.user_id || d.userId || (user && user.id),
+      userName:
+        (user && ((user.first_name || user.firstName) + ' ' + (user.last_name || user.lastName)).trim()) ||
+        d.userName ||
+        d.name ||
+        '',
+      userEmail: (user && (user.email || user.email_address)) || d.userEmail || d.email || '',
+      docType: docType,
+      status: status,
+      uploadedAt: d.issued_at || d.created_at || d.uploaded_at || d.createdAt || null,
+      expiresAt: d.expires_at || d.expiresAt || d.expires || null,
+      verifiedAt: d.verified_at || d.verifiedAt || null,
+      verifiedBy: metadata?.verifiedBy || metadata?.verified_by || d.verified_by || d.verifiedBy || null,
+      notes: d.notes || metadata?.notes || null,
+      riskLevel: d.risk_level || d.riskLevel || metadata?.riskLevel || null,
+      file: metadata?.file || null
+    } as ComplianceDocument;
+  });
   const users = Array.isArray(usersRaw) ? usersRaw : ((usersRaw as any)?.data ?? []);
   const checks = Array.isArray(checksRaw) ? checksRaw : ((checksRaw as any)?.data ?? []);
 
