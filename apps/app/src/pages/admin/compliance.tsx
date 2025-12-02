@@ -29,6 +29,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { toast } from '@/components/atoms/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
 interface ComplianceDocument {
   id: number;
@@ -132,6 +133,33 @@ export default function AdminCompliance() {
       queryClient.invalidateQueries(['backgroundChecks']);
       toast({ title: 'Background check requested', variant: 'success' });
     }
+  });
+
+  // details modal state
+  const [detailsOpen, setDetailsOpen] = React.useState(false);
+  const [selectedDoc, setSelectedDoc] = React.useState<any | null>(null);
+
+  const openDocument = (doc: any) => {
+    // open file route served by API
+    try {
+      window.open(`/compliance/${doc.id}/file`, '_blank');
+    } catch (e) {
+      toast.error('Unable to open document');
+    }
+  };
+
+  const openDetails = (doc: any) => {
+    setSelectedDoc(doc);
+    setDetailsOpen(true);
+  };
+
+  const riskMutation = useMutation({
+    mutationFn: ({ id, risk }: { id: number; risk: string }) => api.updateComplianceDoc(id, { risk_level: risk }),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['compliance']);
+      toast({ title: 'Risk level updated', variant: 'success' });
+    },
+    onError: () => toast.error('Failed to update risk level')
   });
 
   // Filter documents
@@ -358,15 +386,16 @@ export default function AdminCompliance() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openDocument(doc)}>
                           <Eye className="h-4 w-4 mr-2" />
                           View Document
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openDetails(doc)}>
                           <FileText className="h-4 w-4 mr-2" />
                           View Details
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
+                        {/* show approve/reject for pending, and always allow verify via details modal */}
                         {doc.status === 'pending' && (
                           <>
                             <DropdownMenuItem onClick={() => approveMutation.mutate(doc.id)} className="text-green-600">
@@ -385,6 +414,11 @@ export default function AdminCompliance() {
                             </DropdownMenuItem>
                           </>
                         )}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => openDetails(doc)}>
+                          <Shield className="h-4 w-4 mr-2" />
+                          Verify / Edit Risk
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => sendReminderMutation.mutate(doc.userId)}>
                           <Mail className="h-4 w-4 mr-2" />
@@ -405,6 +439,114 @@ export default function AdminCompliance() {
           </TableBody>
         </Table>
       </div>
+      {/* Details Dialog */}
+      <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Document Details</DialogTitle>
+          </DialogHeader>
+          <div className="p-4 space-y-3">
+            {!selectedDoc ? (
+              <div>No document selected</div>
+            ) : (
+              <div className="space-y-2">
+                <div>
+                  <div className="text-sm font-medium">Volunteer</div>
+                  <div>{selectedDoc.userName}</div>
+                  <div className="text-sm text-muted-foreground">{selectedDoc.userEmail}</div>
+                </div>
+                <div>
+                  <div className="text-sm font-medium">Document Type</div>
+                  <div>{getDocTypeLabel(selectedDoc.docType)}</div>
+                </div>
+                <div>
+                  <div className="text-sm font-medium">Uploaded</div>
+                  <div>{selectedDoc.uploadedAt ? new Date(selectedDoc.uploadedAt).toLocaleString() : 'N/A'}</div>
+                </div>
+                <div>
+                  <div className="text-sm font-medium">Expires</div>
+                  <div>{selectedDoc.expiresAt ? new Date(selectedDoc.expiresAt).toLocaleDateString() : 'N/A'}</div>
+                </div>
+                <div>
+                  <div className="text-sm font-medium">Status</div>
+                  <div>{selectedDoc.status}</div>
+                </div>
+                <div>
+                  <div className="text-sm font-medium">Verified By</div>
+                  <div>{selectedDoc.verifiedBy || 'Not verified'}</div>
+                </div>
+                <div>
+                  <div className="text-sm font-medium">Risk Level</div>
+                  <div className="mt-1">
+                    <select
+                      value={selectedDoc.riskLevel || ''}
+                      onChange={(e) => setSelectedDoc({ ...selectedDoc, riskLevel: e.target.value })}
+                      className="border rounded p-1"
+                    >
+                      <option value="">(none)</option>
+                      <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High</option>
+                    </select>
+                    <Button
+                      size="sm"
+                      className="ml-2"
+                      onClick={() => {
+                        if (!selectedDoc) return;
+                        riskMutation.mutate({ id: selectedDoc.id, risk: selectedDoc.riskLevel });
+                      }}
+                    >
+                      Save Risk
+                    </Button>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm font-medium">Notes</div>
+                  <div className="text-sm">{selectedDoc.notes || '—'}</div>
+                </div>
+                <div>
+                  <div className="text-sm font-medium">File</div>
+                  <div>
+                    {selectedDoc.file ? (
+                      <a
+                        href={`/compliance/${selectedDoc.id}/file`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-blue-600"
+                      >
+                        {selectedDoc.file.originalName || 'Download file'}
+                      </a>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">No file attached</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <div className="flex gap-2">
+              {selectedDoc && selectedDoc.status === 'pending' && (
+                <>
+                  <Button onClick={() => selectedDoc && approveMutation.mutate(selectedDoc.id)}>Approve</Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => {
+                      const notes = prompt('Rejection reason:');
+                      if (notes && selectedDoc) rejectMutation.mutate({ docId: selectedDoc.id, notes });
+                    }}
+                  >
+                    Reject
+                  </Button>
+                </>
+              )}
+              <Button variant="outline" onClick={() => setDetailsOpen(false)}>
+                Close
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
