@@ -9,7 +9,12 @@ export default class extends BaseSchema {
       table.string('name').notNullable()
       table.integer('quantity').defaultTo(0)
       table.string('status').defaultTo('Available')
-      table.integer('organization_id').unsigned().references('id').inTable('organizations').onDelete('CASCADE')
+      table
+        .integer('organization_id')
+        .unsigned()
+        .references('id')
+        .inTable('organizations')
+        .onDelete('CASCADE')
       table.timestamp('created_at', { useTz: true })
       table.timestamp('updated_at', { useTz: true })
     })

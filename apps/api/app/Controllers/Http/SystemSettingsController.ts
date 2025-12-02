@@ -5,10 +5,13 @@ export default class SystemSettingsController {
   public async index({ response }: HttpContextContract) {
     const settings = await SystemSetting.all()
     // Convert to key-value pair object for easier frontend consumption
-    const settingsMap = settings.reduce((acc, curr) => {
-      acc[curr.key] = curr.value
-      return acc
-    }, {} as Record<string, any>)
+    const settingsMap = settings.reduce(
+      (acc, curr) => {
+        acc[curr.key] = curr.value
+        return acc
+      },
+      {} as Record<string, any>
+    )
     return response.ok(settingsMap)
   }
 

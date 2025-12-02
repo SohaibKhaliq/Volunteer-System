@@ -1,7 +1,7 @@
 import BaseSchema from '@ioc:Adonis/Lucid/Schema'
 
-export default class extends BaseSchema {
-  protected tableName = 'organization_team_members'
+export default class CreateTeams extends BaseSchema {
+  protected tableName = 'teams'
 
   public async up() {
     this.schema.createTable(this.tableName, (table) => {
@@ -12,14 +12,20 @@ export default class extends BaseSchema {
         .references('id')
         .inTable('organizations')
         .onDelete('CASCADE')
-      table.integer('user_id').unsigned().references('id').inTable('users').onDelete('CASCADE')
-      table.string('role').defaultTo('Member')
-
-      /**
-       * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL
-       */
+      table.string('name').notNullable()
+      table.text('description').nullable()
+      table
+        .integer('lead_user_id')
+        .unsigned()
+        .references('id')
+        .inTable('users')
+        .onDelete('SET NULL')
+        .nullable()
       table.timestamp('created_at', { useTz: true })
       table.timestamp('updated_at', { useTz: true })
+
+      // Indexes
+      table.index(['organization_id'])
     })
   }
 

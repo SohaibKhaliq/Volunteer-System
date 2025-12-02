@@ -7,7 +7,9 @@ export default class AddCreatedByToResources extends BaseSchema {
   public async up() {
     const conn = Database.connection()
     try {
-      await conn.raw(`ALTER TABLE \`${this.tableName}\` ADD COLUMN IF NOT EXISTS \`created_by_id\` INT UNSIGNED NULL`)
+      await conn.raw(
+        `ALTER TABLE \`${this.tableName}\` ADD COLUMN IF NOT EXISTS \`created_by_id\` INT UNSIGNED NULL`
+      )
     } catch (e) {
       // ignore
     }

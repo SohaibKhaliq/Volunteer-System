@@ -14,7 +14,7 @@ export default class ContactController {
     Logger.info('Contact form submission:', data)
 
     // Simulate processing delay
-    await new Promise(resolve => setTimeout(resolve, 500))
+    await new Promise((resolve) => setTimeout(resolve, 500))
 
     return response.ok({ message: 'Message sent successfully' })
   }

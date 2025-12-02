@@ -281,6 +281,8 @@ const api = {
     return axios.put('/organization/profile', data);
   },
   getOrganizationProfile: async () => axios.get('/organization/profile'),
+  getOrganizationSettings: async () => axios.get('/organization/settings'),
+  updateOrganizationSettings: async (data: any) => axios.patch('/organization/settings', data),
 
   // Team
   listOrganizationTeam: async () => axios.get('/organization/team'),
@@ -288,14 +290,59 @@ const api = {
   updateTeamMember: async (id: number, data: any) => axios.put(`/organization/team/${id}`, data),
   deleteTeamMember: async (id: number) => axios.delete(`/organization/team/${id}`),
 
+  // Teams/Departments
+  listOrganizationTeams: async (params?: any) => axios.get('/organization/teams', { params }),
+  createOrganizationTeam: async (data: any) => axios.post('/organization/teams', data),
+  getOrganizationTeam: async (id: number) => axios.get(`/organization/teams/${id}`),
+  updateOrganizationTeam: async (id: number, data: any) => axios.put(`/organization/teams/${id}`, data),
+  deleteOrganizationTeam: async (id: number) => axios.delete(`/organization/teams/${id}`),
+
   // Events
   listOrganizationEvents: async () => axios.get('/organization/events'),
   createOrganizationEvent: async (data: any) => axios.post('/organization/events', data),
   updateOrganizationEvent: async (id: number, data: any) => axios.put(`/organization/events/${id}`, data),
   deleteOrganizationEvent: async (id: number) => axios.delete(`/organization/events/${id}`),
 
-  // Volunteers
-  // listOrganizationVolunteers and addOrganizationVolunteer are already defined above
+  // Opportunities (enhanced events/shifts)
+  listOrganizationOpportunities: async (params?: any) => axios.get('/organization/opportunities', { params }),
+  createOrganizationOpportunity: async (data: any) => axios.post('/organization/opportunities', data),
+  getOpportunity: async (id: number) => axios.get(`/opportunities/${id}`),
+  updateOrganizationOpportunity: async (id: number, data: any) =>
+    axios.put(`/organization/opportunities/${id}`, data),
+  deleteOrganizationOpportunity: async (id: number) => axios.delete(`/organization/opportunities/${id}`),
+  publishOpportunity: async (id: number, publish = true) =>
+    axios.post(`/organization/opportunities/${id}/publish`, { publish }),
+
+  // Applications for opportunities
+  listOrganizationApplications: async (params?: any) => axios.get('/organization/applications', { params }),
+  getOpportunityApplications: async (opportunityId: number, params?: any) =>
+    axios.get(`/organization/opportunities/${opportunityId}/applications`, { params }),
+  updateApplication: async (id: number, data: any) => axios.patch(`/organization/applications/${id}`, data),
+  bulkUpdateApplications: async (ids: number[], status: string, notes?: string) =>
+    axios.post('/organization/applications/bulk', { ids, status, notes }),
+  applyToOpportunity: async (opportunityId: number, notes?: string) =>
+    axios.post(`/opportunities/${opportunityId}/apply`, { notes }),
+  withdrawApplication: async (id: number) => axios.delete(`/applications/${id}`),
+
+  // Attendances
+  listOrganizationAttendances: async (params?: any) => axios.get('/organization/attendances', { params }),
+  getOpportunityAttendances: async (opportunityId: number, params?: any) =>
+    axios.get(`/organization/opportunities/${opportunityId}/attendances`, { params }),
+  manualCheckIn: async (opportunityId: number, data: any) =>
+    axios.post(`/organization/opportunities/${opportunityId}/manual-checkin`, data),
+  getAttendanceSummary: async (opportunityId: number) =>
+    axios.get(`/organization/opportunities/${opportunityId}/attendance-summary`),
+  updateAttendance: async (id: number, data: any) => axios.put(`/organization/attendances/${id}`, data),
+  deleteAttendance: async (id: number) => axios.delete(`/organization/attendances/${id}`),
+  checkInToOpportunity: async (opportunityId: number, method?: string, metadata?: any) =>
+    axios.post(`/opportunities/${opportunityId}/checkin`, { method, metadata }),
+  checkOutFromOpportunity: async (opportunityId: number) => axios.post(`/opportunities/${opportunityId}/checkout`),
+
+  // Volunteers (organization panel)
+  listOrganizationVolunteers: async (params?: any) => axios.get('/organization/volunteers', { params }),
+  addOrganizationVolunteer: async (data: any) => axios.post('/organization/volunteers', data),
+  updateOrganizationVolunteer: async (id: number, data: any) => axios.put(`/organization/volunteers/${id}`, data),
+  deleteOrganizationVolunteer: async (id: number) => axios.delete(`/organization/volunteers/${id}`),
 
   // Compliance
   listOrganizationDocuments: async () => axios.get('/organization/documents'),

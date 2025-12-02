@@ -36,9 +36,9 @@ kernel
       ...{
         importer: (filePath) => import(filePath),
         setup: app.concat(runnerHooks.setup),
-        teardown: runnerHooks.teardown,
+        teardown: runnerHooks.teardown
       },
-      cwd: kernel.application.appRoot,
+      cwd: kernel.application.appRoot
     })
 
     run()

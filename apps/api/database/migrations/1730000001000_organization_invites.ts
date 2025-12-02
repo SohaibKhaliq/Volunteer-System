@@ -8,8 +8,19 @@ export default class extends BaseSchema {
       table.increments('id')
 
       // Foreign keys
-      table.integer('organization_id').unsigned().references('id').inTable('organizations').onDelete('CASCADE')
-      table.integer('invited_by').unsigned().references('id').inTable('users').onDelete('SET NULL').nullable()
+      table
+        .integer('organization_id')
+        .unsigned()
+        .references('id')
+        .inTable('organizations')
+        .onDelete('CASCADE')
+      table
+        .integer('invited_by')
+        .unsigned()
+        .references('id')
+        .inTable('users')
+        .onDelete('SET NULL')
+        .nullable()
 
       // Invitee information
       table.string('email', 255).notNullable()
@@ -20,13 +31,13 @@ export default class extends BaseSchema {
       table.string('role', 50).defaultTo('volunteer')
       table.string('status', 50).defaultTo('pending') // pending, accepted, rejected, expired, cancelled
       table.string('token', 255).notNullable().unique()
-      
+
       // Optional message
       table.text('message').nullable()
 
       // Expiration
       table.timestamp('expires_at').notNullable()
-      
+
       // When invitation was accepted/rejected
       table.timestamp('responded_at').nullable()
 

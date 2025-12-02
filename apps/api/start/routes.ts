@@ -83,7 +83,9 @@ Route.resource('organizations', 'OrganizationsController')
   })
   .apiOnly()
 // Admin: list resources for a given organization
-Route.get('/organizations/:id/resources', 'OrganizationsController.getResources').middleware(['auth'])
+Route.get('/organizations/:id/resources', 'OrganizationsController.getResources').middleware([
+  'auth'
+])
 
 // Organization volunteer management
 Route.get('/organizations/:id/volunteers', 'OrganizationsController.getVolunteers').middleware([

@@ -4,10 +4,7 @@ import Task from 'App/Models/Task'
 export default class TasksController {
   public async index({ request, response }: HttpContextContract) {
     const { event_id } = request.qs()
-    const query = Task.query()
-      .preload('assignments')
-      .preload('event')
-      .orderBy('start_at', 'asc')
+    const query = Task.query().preload('assignments').preload('event').orderBy('start_at', 'asc')
 
     if (event_id) {
       query.where('event_id', event_id)

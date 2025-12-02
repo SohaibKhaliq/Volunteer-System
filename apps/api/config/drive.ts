@@ -77,7 +77,7 @@ export default driveConfig({
       | you are not registering routes with this prefix.
       |
       */
-      basePath: '/uploads',
+      basePath: '/uploads'
     },
 
     /*
@@ -100,11 +100,11 @@ export default driveConfig({
       secret: Env.get('S3_SECRET'),
       region: Env.get('S3_REGION'),
       bucket: Env.get('S3_BUCKET'),
-      endpoint: Env.get('S3_ENDPOINT'),
+      endpoint: Env.get('S3_ENDPOINT')
 
       // For minio to work
       // forcePathStyle: true,
-    },
+    }
 
     /*
     |--------------------------------------------------------------------------
@@ -145,5 +145,5 @@ export default driveConfig({
       */
     //   usingUniformAcl: false,
     // },
-  },
+  }
 })
