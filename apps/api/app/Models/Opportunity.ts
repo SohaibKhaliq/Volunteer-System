@@ -71,14 +71,16 @@ export default class Opportunity extends BaseModel {
   public updatedAt: DateTime
 
   /**
-   * Generate a unique slug from title
+   * Generate a unique slug from title using crypto for better uniqueness
    */
   public static generateSlug(title: string): string {
     const base = title
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '')
-    const random = Math.random().toString(36).substring(2, 8)
-    return `${base}-${random}`
+    // Use crypto for better uniqueness
+    const { randomBytes } = require('crypto')
+    const uniqueId = randomBytes(4).toString('hex')
+    return `${base}-${uniqueId}`
   }
 }

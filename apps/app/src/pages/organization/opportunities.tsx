@@ -6,42 +6,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle,
+  DialogTitle
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Plus,
-  Loader2,
-  Pencil,
-  Trash2,
-  Calendar,
-  Users,
-  Eye,
-  CheckCircle,
-  XCircle
-} from 'lucide-react';
+import { Plus, Loader2, Pencil, Trash2, Calendar, Users, Eye, CheckCircle, XCircle } from 'lucide-react';
 
 interface Opportunity {
   id: number;
@@ -110,9 +87,7 @@ export default function OrganizationOpportunities() {
       queryClient.invalidateQueries({ queryKey: ['organizationOpportunities'] });
       setIsDialogOpen(false);
       setEditingOpportunity(null);
-      toast.success(
-        editingOpportunity ? 'Opportunity updated successfully' : 'Opportunity created successfully'
-      );
+      toast.success(editingOpportunity ? 'Opportunity updated successfully' : 'Opportunity created successfully');
     },
     onError: () => {
       toast.error('Failed to save opportunity');
@@ -133,8 +108,7 @@ export default function OrganizationOpportunities() {
 
   // Publish/Unpublish Mutation
   const publishMutation = useMutation({
-    mutationFn: ({ id, publish }: { id: number; publish: boolean }) =>
-      api.publishOpportunity(id, publish),
+    mutationFn: ({ id, publish }: { id: number; publish: boolean }) => api.publishOpportunity(id, publish),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organizationOpportunities'] });
       toast.success('Status updated successfully');
@@ -181,7 +155,7 @@ export default function OrganizationOpportunities() {
       title: formData.title,
       description: formData.description || undefined,
       location: formData.location || undefined,
-      capacity: formData.capacity ? parseInt(formData.capacity) : 0,
+      capacity: formData.capacity ? parseInt(formData.capacity, 10) : 0,
       type: formData.type,
       start_at: formData.start_at,
       end_at: formData.end_at || undefined,
@@ -235,18 +209,14 @@ export default function OrganizationOpportunities() {
     );
   }
 
-  const opportunitiesList = Array.isArray(opportunities)
-    ? opportunities
-    : (opportunities as any)?.data || [];
+  const opportunitiesList = Array.isArray(opportunities) ? opportunities : (opportunities as any)?.data || [];
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Opportunities</h2>
-          <p className="text-muted-foreground">
-            Create and manage volunteer opportunities, events, and shifts.
-          </p>
+          <p className="text-muted-foreground">Create and manage volunteer opportunities, events, and shifts.</p>
         </div>
         <Button onClick={handleOpenCreate}>
           <Plus className="h-4 w-4 mr-2" />
@@ -274,9 +244,7 @@ export default function OrganizationOpportunities() {
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">No Opportunities Yet</h3>
-            <p className="text-muted-foreground mb-4">
-              Create your first opportunity for volunteers.
-            </p>
+            <p className="text-muted-foreground mb-4">Create your first opportunity for volunteers.</p>
             <Button onClick={handleOpenCreate}>
               <Plus className="h-4 w-4 mr-2" />
               Create Opportunity
@@ -308,9 +276,7 @@ export default function OrganizationOpportunities() {
                     <TableCell>
                       <div>
                         <div className="font-medium">{opportunity.title}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {opportunity.type}
-                        </div>
+                        <div className="text-xs text-muted-foreground">{opportunity.type}</div>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -348,12 +314,8 @@ export default function OrganizationOpportunities() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() =>
-                            handlePublish(opportunity.id, opportunity.status)
-                          }
-                          title={
-                            opportunity.status === 'published' ? 'Unpublish' : 'Publish'
-                          }
+                          onClick={() => handlePublish(opportunity.id, opportunity.status)}
+                          title={opportunity.status === 'published' ? 'Unpublish' : 'Publish'}
                         >
                           {opportunity.status === 'published' ? (
                             <XCircle className="h-4 w-4 text-orange-500" />
@@ -361,11 +323,7 @@ export default function OrganizationOpportunities() {
                             <CheckCircle className="h-4 w-4 text-green-500" />
                           )}
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleOpenEdit(opportunity)}
-                        >
+                        <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(opportunity)}>
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <Button
@@ -390,13 +348,9 @@ export default function OrganizationOpportunities() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>
-              {editingOpportunity ? 'Edit Opportunity' : 'Create Opportunity'}
-            </DialogTitle>
+            <DialogTitle>{editingOpportunity ? 'Edit Opportunity' : 'Create Opportunity'}</DialogTitle>
             <DialogDescription>
-              {editingOpportunity
-                ? 'Update the opportunity details below.'
-                : 'Create a new volunteer opportunity.'}
+              {editingOpportunity ? 'Update the opportunity details below.' : 'Create a new volunteer opportunity.'}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -477,10 +431,7 @@ export default function OrganizationOpportunities() {
               <Label htmlFor="type" className="text-right">
                 Type
               </Label>
-              <Select
-                value={formData.type}
-                onValueChange={(value) => setFormData({ ...formData, type: value })}
-              >
+              <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
@@ -513,10 +464,7 @@ export default function OrganizationOpportunities() {
               <Label htmlFor="status" className="text-right">
                 Status
               </Label>
-              <Select
-                value={formData.status}
-                onValueChange={(value) => setFormData({ ...formData, status: value })}
-              >
+              <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
                 <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
@@ -534,13 +482,9 @@ export default function OrganizationOpportunities() {
             </Button>
             <Button
               onClick={handleSubmit}
-              disabled={
-                !formData.title || !formData.start_at || saveOpportunityMutation.isPending
-              }
+              disabled={!formData.title || !formData.start_at || saveOpportunityMutation.isPending}
             >
-              {saveOpportunityMutation.isPending && (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              )}
+              {saveOpportunityMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               {editingOpportunity ? 'Update' : 'Create'}
             </Button>
           </DialogFooter>

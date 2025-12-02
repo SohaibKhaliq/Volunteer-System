@@ -59,22 +59,14 @@ export default class ApplicationsController {
       return response.conflict({ message: 'You have already applied to this opportunity' })
     }
 
-    // Check capacity
-    if (opportunity.capacity > 0) {
-      const acceptedCount = await Application.query()
-        .where('opportunity_id', opportunityId)
-        .where('status', 'accepted')
-        .count('* as count')
-
-      if (Number(acceptedCount[0].$extras.count) >= opportunity.capacity) {
-        return response.badRequest({ message: 'Opportunity is at full capacity' })
-      }
-    }
+    // Note: Capacity check happens on acceptance, not on application
+    // Applications are just requests; the capacity limit applies to accepted applications
+    // This avoids race conditions on application creation
 
     const { notes } = request.only(['notes'])
 
     const application = await Application.create({
-      opportunityId: parseInt(opportunityId),
+      opportunityId: parseInt(opportunityId, 10),
       userId: user.id,
       status: 'applied',
       appliedAt: DateTime.now(),

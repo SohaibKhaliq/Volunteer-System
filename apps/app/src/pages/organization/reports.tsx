@@ -53,9 +53,9 @@ export default function OrganizationReports() {
   const analytics = analyticsData || {};
   const leaderboard = Array.isArray(leaderboardData) ? leaderboardData : [];
   const trends = trendsData || {};
-  
+
   // Transform hours trend for chart
-  const hoursTrendData = Array.isArray(trends.hours_trend) 
+  const hoursTrendData = Array.isArray(trends.hours_trend)
     ? trends.hours_trend.map((item: any) => ({
         month: new Date(item.period).toLocaleDateString('en-US', { month: 'short' }),
         volunteers: item.volunteer_count || 0,
@@ -109,10 +109,7 @@ export default function OrganizationReports() {
             <div className="h-[300px]">
               {hoursTrendData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={hoursTrendData}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                  >
+                  <LineChart data={hoursTrendData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="month" />
                     <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
@@ -124,9 +121,7 @@ export default function OrganizationReports() {
                   </LineChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex items-center justify-center h-full text-muted-foreground">
-                  No data available
-                </div>
+                <div className="flex items-center justify-center h-full text-muted-foreground">No data available</div>
               )}
             </div>
           </CardContent>
@@ -141,16 +136,12 @@ export default function OrganizationReports() {
             <div className="h-[300px]">
               {leaderboard.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    layout="vertical"
-                    data={leaderboard}
-                    margin={{ top: 20, right: 30, left: 80, bottom: 5 }}
-                  >
+                  <BarChart layout="vertical" data={leaderboard} margin={{ top: 20, right: 30, left: 80, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis type="number" />
-                    <YAxis 
-                      dataKey="first_name" 
-                      type="category" 
+                    <YAxis
+                      dataKey="first_name"
+                      type="category"
                       width={80}
                       tickFormatter={(value, index) => {
                         const item = leaderboard[index];
@@ -162,9 +153,7 @@ export default function OrganizationReports() {
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex items-center justify-center h-full text-muted-foreground">
-                  No volunteers yet
-                </div>
+                <div className="flex items-center justify-center h-full text-muted-foreground">No volunteers yet</div>
               )}
             </div>
           </CardContent>
@@ -198,9 +187,7 @@ export default function OrganizationReports() {
                   </PieChart>
                 </ResponsiveContainer>
               ) : (
-                <div className="flex items-center justify-center h-full text-muted-foreground">
-                  No status data
-                </div>
+                <div className="flex items-center justify-center h-full text-muted-foreground">No status data</div>
               )}
             </div>
           </CardContent>
@@ -230,9 +217,7 @@ export default function OrganizationReports() {
               </div>
               <div className="p-4 bg-orange-50 rounded-lg">
                 <p className="text-sm font-medium text-orange-600">Growth</p>
-                <h3 className="text-2xl font-bold text-orange-900">
-                  {analytics.volunteer_growth?.[0]?.count || 0}
-                </h3>
+                <h3 className="text-2xl font-bold text-orange-900">{analytics.volunteer_growth?.[0]?.count || 0}</h3>
                 <p className="text-xs text-orange-500">New this month</p>
               </div>
             </div>

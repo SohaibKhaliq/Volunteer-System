@@ -6,25 +6,31 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle,
+  DialogTitle
 } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Plus, Loader2, Pencil, Trash2, Users } from 'lucide-react';
+
+interface TeamMember {
+  id: number;
+  userId: number;
+  role: string;
+  user?: {
+    id: number;
+    firstName?: string;
+    lastName?: string;
+    email: string;
+  };
+}
 
 interface Team {
   id: number;
@@ -54,6 +60,12 @@ export default function OrganizationTeams() {
   const { data: teams, isLoading } = useQuery({
     queryKey: ['organizationTeams'],
     queryFn: () => api.listOrganizationTeams()
+  });
+
+  // Fetch Organization Team Members for lead selection
+  const { data: teamMembers } = useQuery({
+    queryKey: ['organizationTeam'],
+    queryFn: () => api.listOrganizationTeam()
   });
 
   // Create/Update Team Mutation
@@ -110,7 +122,7 @@ export default function OrganizationTeams() {
   const handleSubmit = () => {
     const payload: any = {
       name: formData.name,
-      description: formData.description || undefined,
+      description: formData.description || undefined
     };
     if (formData.lead_user_id) {
       payload.lead_user_id = parseInt(formData.lead_user_id);
@@ -139,9 +151,7 @@ export default function OrganizationTeams() {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Teams / Departments</h2>
-          <p className="text-muted-foreground">
-            Organize your volunteers into teams for better management.
-          </p>
+          <p className="text-muted-foreground">Organize your volunteers into teams for better management.</p>
         </div>
         <Button onClick={handleOpenCreate}>
           <Plus className="h-4 w-4 mr-2" />
@@ -154,9 +164,7 @@ export default function OrganizationTeams() {
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Users className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">No Teams Yet</h3>
-            <p className="text-muted-foreground mb-4">
-              Create your first team to organize volunteers.
-            </p>
+            <p className="text-muted-foreground mb-4">Create your first team to organize volunteers.</p>
             <Button onClick={handleOpenCreate}>
               <Plus className="h-4 w-4 mr-2" />
               Create Team
@@ -183,9 +191,7 @@ export default function OrganizationTeams() {
                 {teamsList.map((team: Team) => (
                   <TableRow key={team.id}>
                     <TableCell className="font-medium">{team.name}</TableCell>
-                    <TableCell className="max-w-xs truncate">
-                      {team.description || '-'}
-                    </TableCell>
+                    <TableCell className="max-w-xs truncate">{team.description || '-'}</TableCell>
                     <TableCell>
                       {team.lead ? (
                         <div>
@@ -202,16 +208,10 @@ export default function OrganizationTeams() {
                         <Badge variant="outline">No Lead</Badge>
                       )}
                     </TableCell>
-                    <TableCell>
-                      {new Date(team.createdAt).toLocaleDateString()}
-                    </TableCell>
+                    <TableCell>{new Date(team.createdAt).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleOpenEdit(team)}
-                        >
+                        <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(team)}>
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <Button
@@ -238,9 +238,7 @@ export default function OrganizationTeams() {
           <DialogHeader>
             <DialogTitle>{editingTeam ? 'Edit Team' : 'Create Team'}</DialogTitle>
             <DialogDescription>
-              {editingTeam
-                ? 'Update the team details below.'
-                : 'Create a new team to organize your volunteers.'}
+              {editingTeam ? 'Update the team details below.' : 'Create a new team to organize your volunteers.'}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -270,29 +268,34 @@ export default function OrganizationTeams() {
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="lead_user_id" className="text-right">
-                Team Lead ID
+                Team Lead
               </Label>
-              <Input
-                id="lead_user_id"
-                type="number"
-                className="col-span-3"
+              <Select
                 value={formData.lead_user_id}
-                onChange={(e) => setFormData({ ...formData, lead_user_id: e.target.value })}
-                placeholder="User ID of the team lead (optional)"
-              />
+                onValueChange={(value) => setFormData({ ...formData, lead_user_id: value })}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select a team lead (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">No lead assigned</SelectItem>
+                  {(Array.isArray(teamMembers) ? teamMembers : []).map((member: TeamMember) => (
+                    <SelectItem key={member.userId} value={member.userId.toString()}>
+                      {member.user?.firstName || member.user?.lastName
+                        ? `${member.user.firstName || ''} ${member.user.lastName || ''}`.trim()
+                        : member.user?.email || `User #${member.userId}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
               Cancel
             </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={!formData.name || saveTeamMutation.isPending}
-            >
-              {saveTeamMutation.isPending && (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              )}
+            <Button onClick={handleSubmit} disabled={!formData.name || saveTeamMutation.isPending}>
+              {saveTeamMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               {editingTeam ? 'Update' : 'Create'}
             </Button>
           </DialogFooter>

@@ -6,21 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, CheckCircle, XCircle, FileText, Users } from 'lucide-react';
 
 interface Application {
@@ -53,14 +40,12 @@ export default function OrganizationApplications() {
   // Fetch Applications
   const { data: applications, isLoading } = useQuery({
     queryKey: ['organizationApplications', filterStatus],
-    queryFn: () =>
-      api.listOrganizationApplications({ status: filterStatus || undefined })
+    queryFn: () => api.listOrganizationApplications({ status: filterStatus || undefined })
   });
 
   // Update Application Mutation
   const updateMutation = useMutation({
-    mutationFn: ({ id, status }: { id: number; status: string }) =>
-      api.updateApplication(id, { status }),
+    mutationFn: ({ id, status }: { id: number; status: string }) => api.updateApplication(id, { status }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organizationApplications'] });
       toast.success('Application updated');
@@ -72,8 +57,7 @@ export default function OrganizationApplications() {
 
   // Bulk Update Mutation
   const bulkUpdateMutation = useMutation({
-    mutationFn: ({ ids, status }: { ids: number[]; status: string }) =>
-      api.bulkUpdateApplications(ids, status),
+    mutationFn: ({ ids, status }: { ids: number[]; status: string }) => api.bulkUpdateApplications(ids, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organizationApplications'] });
       setSelectedIds([]);
@@ -101,15 +85,11 @@ export default function OrganizationApplications() {
   };
 
   const toggleSelection = (id: number) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
-    );
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
   };
 
   const toggleSelectAll = () => {
-    const applicationsList = Array.isArray(applications)
-      ? applications
-      : (applications as any)?.data || [];
+    const applicationsList = Array.isArray(applications) ? applications : (applications as any)?.data || [];
     if (selectedIds.length === applicationsList.length) {
       setSelectedIds([]);
     } else {
@@ -140,18 +120,14 @@ export default function OrganizationApplications() {
     );
   }
 
-  const applicationsList = Array.isArray(applications)
-    ? applications
-    : (applications as any)?.data || [];
+  const applicationsList = Array.isArray(applications) ? applications : (applications as any)?.data || [];
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Applications</h2>
-          <p className="text-muted-foreground">
-            Review and manage volunteer applications for your opportunities.
-          </p>
+          <p className="text-muted-foreground">Review and manage volunteer applications for your opportunities.</p>
         </div>
       </div>
 
@@ -172,9 +148,7 @@ export default function OrganizationApplications() {
 
         {selectedIds.length > 0 && (
           <div className="flex gap-2 items-center">
-            <span className="text-sm text-muted-foreground">
-              {selectedIds.length} selected
-            </span>
+            <span className="text-sm text-muted-foreground">{selectedIds.length} selected</span>
             <Button
               size="sm"
               variant="outline"
@@ -205,9 +179,7 @@ export default function OrganizationApplications() {
             <FileText className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">No Applications</h3>
             <p className="text-muted-foreground mb-4">
-              {filterStatus
-                ? `No ${filterStatus} applications found.`
-                : 'No applications received yet.'}
+              {filterStatus ? `No ${filterStatus} applications found.` : 'No applications received yet.'}
             </p>
           </CardContent>
         </Card>
@@ -252,8 +224,7 @@ export default function OrganizationApplications() {
                         <Avatar>
                           <AvatarImage src={application.user?.avatar} />
                           <AvatarFallback>
-                            {application.user?.firstName?.[0] ||
-                              application.user?.email?.[0]?.toUpperCase()}
+                            {application.user?.firstName?.[0] || application.user?.email?.[0]?.toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                         <div>
@@ -263,18 +234,14 @@ export default function OrganizationApplications() {
                               : application.user?.email}
                           </div>
                           {application.user?.firstName && (
-                            <div className="text-xs text-muted-foreground">
-                              {application.user.email}
-                            </div>
+                            <div className="text-xs text-muted-foreground">{application.user.email}</div>
                           )}
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div>
-                        <div className="font-medium">
-                          {application.opportunity?.title || 'Unknown'}
-                        </div>
+                        <div className="font-medium">{application.opportunity?.title || 'Unknown'}</div>
                         {application.opportunity?.startAt && (
                           <div className="text-xs text-muted-foreground">
                             {new Date(application.opportunity.startAt).toLocaleDateString()}
@@ -283,9 +250,7 @@ export default function OrganizationApplications() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="text-sm">
-                        {new Date(application.appliedAt).toLocaleDateString()}
-                      </div>
+                      <div className="text-sm">{new Date(application.appliedAt).toLocaleDateString()}</div>
                       <div className="text-xs text-muted-foreground">
                         {new Date(application.appliedAt).toLocaleTimeString([], {
                           hour: '2-digit',
@@ -294,9 +259,7 @@ export default function OrganizationApplications() {
                       </div>
                     </TableCell>
                     <TableCell>{getStatusBadge(application.status)}</TableCell>
-                    <TableCell className="max-w-xs truncate">
-                      {application.notes || '-'}
-                    </TableCell>
+                    <TableCell className="max-w-xs truncate">{application.notes || '-'}</TableCell>
                     <TableCell className="text-right">
                       {application.status === 'applied' && (
                         <div className="flex justify-end gap-1">

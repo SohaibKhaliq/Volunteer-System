@@ -144,17 +144,14 @@ test.group('Organization Opportunities', () => {
 
     const startAt = DateTime.now().plus({ days: 7 }).toISO()
 
-    const resp = await client
-      .loginAs(user)
-      .post('/organization/opportunities')
-      .json({
-        title: 'New Opportunity',
-        description: 'Test opportunity',
-        start_at: startAt,
-        capacity: 20,
-        type: 'event',
-        visibility: 'public'
-      })
+    const resp = await client.loginAs(user).post('/organization/opportunities').json({
+      title: 'New Opportunity',
+      description: 'Test opportunity',
+      start_at: startAt,
+      capacity: 20,
+      type: 'event',
+      visibility: 'public'
+    })
 
     resp.assertStatus(201)
     resp.assertBodyContains({ title: 'New Opportunity', organizationId: org.id })
@@ -511,13 +508,10 @@ test.group('Organization Settings', () => {
       role: 'Admin'
     })
 
-    const resp = await client
-      .loginAs(user)
-      .patch('/organization/settings')
-      .json({
-        timezone: 'Europe/London',
-        auto_approve_volunteers: true
-      })
+    const resp = await client.loginAs(user).patch('/organization/settings').json({
+      timezone: 'Europe/London',
+      auto_approve_volunteers: true
+    })
 
     resp.assertStatus(200)
     resp.assertBodyContains({

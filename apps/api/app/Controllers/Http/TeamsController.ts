@@ -57,8 +57,25 @@ export default class TeamsController {
       return response.notFound({ message: 'Organization not found' })
     }
 
+    // Validate name is provided
+    if (!body.name || body.name.trim().length === 0) {
+      return response.badRequest({ message: 'Team name is required' })
+    }
+
+    // If lead_user_id is provided, validate that the user belongs to the organization
+    if (body.lead_user_id) {
+      const leadMember = await OrganizationTeamMember.query()
+        .where('organization_id', organizationId)
+        .where('user_id', body.lead_user_id)
+        .first()
+
+      if (!leadMember) {
+        return response.badRequest({ message: 'Team lead must be a member of the organization' })
+      }
+    }
+
     const team = await Team.create({
-      organizationId: parseInt(organizationId),
+      organizationId: parseInt(organizationId, 10),
       name: body.name,
       description: body.description,
       leadUserId: body.lead_user_id
@@ -81,6 +98,23 @@ export default class TeamsController {
     }
 
     const body = request.only(['name', 'description', 'lead_user_id'])
+
+    // Validate name is provided
+    if (!body.name || body.name.trim().length === 0) {
+      return response.badRequest({ message: 'Team name is required' })
+    }
+
+    // If lead_user_id is provided, validate that the user belongs to the organization
+    if (body.lead_user_id) {
+      const leadMember = await OrganizationTeamMember.query()
+        .where('organization_id', memberRecord.organizationId)
+        .where('user_id', body.lead_user_id)
+        .first()
+
+      if (!leadMember) {
+        return response.badRequest({ message: 'Team lead must be a member of the organization' })
+      }
+    }
 
     const team = await Team.create({
       organizationId: memberRecord.organizationId,
