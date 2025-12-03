@@ -3,6 +3,7 @@ import { DateTime } from 'luxon'
 import Organization from './Organization'
 import Team from './Team'
 import User from './User'
+import crypto from 'crypto'
 
 export default class Opportunity extends BaseModel {
   @column({ isPrimary: true })
@@ -53,6 +54,9 @@ export default class Opportunity extends BaseModel {
   @column({ columnName: 'created_by' })
   public createdBy?: number
 
+  @column({ columnName: 'checkin_code' })
+  public checkinCode?: string
+
   @belongsTo(() => Organization)
   public organization: BelongsTo<typeof Organization>
 
@@ -78,9 +82,25 @@ export default class Opportunity extends BaseModel {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-|-$/g, '')
-    // Use crypto for better uniqueness
-    const { randomBytes } = require('crypto')
-    const uniqueId = randomBytes(4).toString('hex')
+    const uniqueId = crypto.randomBytes(4).toString('hex')
     return `${base}-${uniqueId}`
+  }
+
+  /**
+   * Generate a unique check-in code for QR code scanning
+   */
+  public static generateCheckinCode(): string {
+    return crypto.randomBytes(16).toString('hex')
+  }
+
+  /**
+   * Get QR code data for this opportunity
+   */
+  public getQRData(): object {
+    return {
+      opportunityId: this.id,
+      code: this.checkinCode,
+      title: this.title
+    }
   }
 }

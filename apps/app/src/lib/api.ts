@@ -307,8 +307,7 @@ const api = {
   listOrganizationOpportunities: async (params?: any) => axios.get('/organization/opportunities', { params }),
   createOrganizationOpportunity: async (data: any) => axios.post('/organization/opportunities', data),
   getOpportunity: async (id: number) => axios.get(`/opportunities/${id}`),
-  updateOrganizationOpportunity: async (id: number, data: any) =>
-    axios.put(`/organization/opportunities/${id}`, data),
+  updateOrganizationOpportunity: async (id: number, data: any) => axios.put(`/organization/opportunities/${id}`, data),
   deleteOrganizationOpportunity: async (id: number) => axios.delete(`/organization/opportunities/${id}`),
   publishOpportunity: async (id: number, publish = true) =>
     axios.post(`/organization/opportunities/${id}/publish`, { publish }),
@@ -337,6 +336,30 @@ const api = {
   checkInToOpportunity: async (opportunityId: number, method?: string, metadata?: any) =>
     axios.post(`/opportunities/${opportunityId}/checkin`, { method, metadata }),
   checkOutFromOpportunity: async (opportunityId: number) => axios.post(`/opportunities/${opportunityId}/checkout`),
+  // QR Code check-in
+  qrCheckIn: async (code: string) => axios.post('/checkin/qr', { code }),
+  getOpportunityCheckinCode: async (opportunityId: number) =>
+    axios.get(`/organization/opportunities/${opportunityId}/checkin-code`),
+  regenerateOpportunityCheckinCode: async (opportunityId: number) =>
+    axios.post(`/organization/opportunities/${opportunityId}/generate-checkin-code`),
+
+  // CSV Import
+  importVolunteers: async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return axios.post('/organization/import/volunteers', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
+  importOpportunities: async (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return axios.post('/organization/import/opportunities', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
+  getVolunteersTemplate: async () => axios.get('/organization/import/volunteers/template'),
+  getOpportunitiesTemplate: async () => axios.get('/organization/import/opportunities/template'),
 
   // Volunteers (organization panel)
   listOrganizationVolunteers: async (params?: any) => axios.get('/organization/volunteers', { params }),

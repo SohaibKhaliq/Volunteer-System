@@ -292,4 +292,117 @@ export default class AttendancesController {
       total_hours: stats?.total_hours || 0
     })
   }
+
+  /**
+   * QR Code check-in - Check in using the opportunity's QR code
+   */
+  public async qrCheckIn({ request, response, auth }: HttpContextContract) {
+    const user = auth.user!
+    const { code } = request.only(['code'])
+
+    if (!code) {
+      return response.badRequest({ message: 'Check-in code is required' })
+    }
+
+    // Find opportunity by check-in code
+    const opportunity = await Opportunity.query().where('checkin_code', code).first()
+
+    if (!opportunity) {
+      return response.notFound({ message: 'Invalid check-in code' })
+    }
+
+    // Check if opportunity is published
+    if (opportunity.status !== 'published') {
+      return response.badRequest({ message: 'This opportunity is not currently active' })
+    }
+
+    // Check if user has an accepted application
+    const application = await Application.query()
+      .where('opportunity_id', opportunity.id)
+      .where('user_id', user.id)
+      .where('status', 'accepted')
+      .first()
+
+    if (!application) {
+      return response.forbidden({
+        message: 'You must have an accepted application to check in'
+      })
+    }
+
+    // Check if already checked in
+    const existingCheckin = await Attendance.query()
+      .where('opportunity_id', opportunity.id)
+      .where('user_id', user.id)
+      .whereNull('check_out_at')
+      .first()
+
+    if (existingCheckin) {
+      return response.conflict({ message: 'You are already checked in to this opportunity' })
+    }
+
+    const attendance = await Attendance.create({
+      opportunityId: opportunity.id,
+      userId: user.id,
+      checkInAt: DateTime.now(),
+      method: 'qr'
+    })
+
+    await attendance.load('user')
+    await attendance.load('opportunity')
+
+    return response.created({
+      message: 'Checked in successfully via QR code',
+      attendance,
+      opportunity: {
+        id: opportunity.id,
+        title: opportunity.title,
+        location: opportunity.location
+      }
+    })
+  }
+
+  /**
+   * Generate or regenerate check-in code for an opportunity
+   */
+  public async generateCheckinCode({ params, response }: HttpContextContract) {
+    const { id: opportunityId } = params
+
+    const opportunity = await Opportunity.find(opportunityId)
+    if (!opportunity) {
+      return response.notFound({ message: 'Opportunity not found' })
+    }
+
+    // Generate new check-in code
+    opportunity.checkinCode = Opportunity.generateCheckinCode()
+    await opportunity.save()
+
+    return response.ok({
+      message: 'Check-in code generated successfully',
+      checkinCode: opportunity.checkinCode,
+      qrData: opportunity.getQRData()
+    })
+  }
+
+  /**
+   * Get check-in code for an opportunity
+   */
+  public async getCheckinCode({ params, response }: HttpContextContract) {
+    const { id: opportunityId } = params
+
+    const opportunity = await Opportunity.find(opportunityId)
+    if (!opportunity) {
+      return response.notFound({ message: 'Opportunity not found' })
+    }
+
+    // Generate code if not exists
+    if (!opportunity.checkinCode) {
+      opportunity.checkinCode = Opportunity.generateCheckinCode()
+      await opportunity.save()
+    }
+
+    return response.ok({
+      checkinCode: opportunity.checkinCode,
+      qrData: opportunity.getQRData()
+    })
+  }
 }

@@ -541,3 +541,71 @@ test.group('Organization Settings', () => {
     resp.assertBodyContains({ message: 'You do not have permission to update settings' })
   })
 })
+
+test.group('Phase 2 - QR Code Check-in', () => {
+  test('can generate check-in code for opportunity', async ({ client }) => {
+    const org = await Organization.create({ name: 'QR Code Org' })
+    const admin = await User.create({ email: 'qradmin@test', password: 'pass' })
+    await OrganizationTeamMember.create({
+      organizationId: org.id,
+      userId: admin.id,
+      role: 'Admin'
+    })
+
+    const opp = await Opportunity.create({
+      organizationId: org.id,
+      title: 'QR Test Opportunity',
+      startAt: DateTime.now().plus({ days: 1 }),
+      status: 'published',
+      visibility: 'public',
+      type: 'event',
+      capacity: 10
+    })
+
+    const resp = await client
+      .loginAs(admin)
+      .post(`/organization/opportunities/${opp.id}/generate-checkin-code`)
+
+    resp.assertStatus(200)
+    resp.assertBodyContains({ message: 'Check-in code generated successfully' })
+    const body = resp.body()
+    test.assert(body.checkinCode && body.checkinCode.length > 0)
+    test.assert(body.qrData && body.qrData.opportunityId === opp.id)
+  })
+
+  test('volunteer can check in via QR code', async ({ client }) => {
+    const org = await Organization.create({ name: 'QR Checkin Org' })
+    const admin = await User.create({ email: 'qrcheckinadmin@test', password: 'pass' })
+    await OrganizationTeamMember.create({
+      organizationId: org.id,
+      userId: admin.id,
+      role: 'Admin'
+    })
+
+    const checkinCode = 'unique-qr-code-' + Date.now()
+    const opp = await Opportunity.create({
+      organizationId: org.id,
+      title: 'QR Checkin Opportunity',
+      startAt: DateTime.now().plus({ days: 1 }),
+      status: 'published',
+      visibility: 'public',
+      type: 'event',
+      capacity: 10,
+      checkinCode
+    })
+
+    const volunteer = await User.create({ email: 'qrvolunteer@test', password: 'pass' })
+
+    await Application.create({
+      opportunityId: opp.id,
+      userId: volunteer.id,
+      status: 'accepted',
+      appliedAt: DateTime.now()
+    })
+
+    const resp = await client.loginAs(volunteer).post('/checkin/qr').json({ code: checkinCode })
+
+    resp.assertStatus(201)
+    resp.assertBodyContains({ message: 'Checked in successfully via QR code' })
+  })
+})

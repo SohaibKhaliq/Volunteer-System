@@ -64,6 +64,13 @@ Route.group(() => {
   Route.get('/opportunities/:id/attendance-summary', 'AttendancesController.summary').middleware([
     'auth'
   ])
+  Route.get('/opportunities/:id/checkin-code', 'AttendancesController.getCheckinCode').middleware([
+    'auth'
+  ])
+  Route.post(
+    '/opportunities/:id/generate-checkin-code',
+    'AttendancesController.generateCheckinCode'
+  ).middleware(['auth'])
   Route.put('/attendances/:id', 'AttendancesController.update').middleware(['auth'])
   Route.delete('/attendances/:id', 'AttendancesController.destroy').middleware(['auth'])
 
@@ -118,6 +125,16 @@ Route.group(() => {
   Route.delete('/achievements/:id', 'AchievementsController.destroy').middleware(['auth'])
   // Organization resources (current org)
   Route.get('/resources', 'OrganizationsController.organizationResources').middleware(['auth'])
+
+  // CSV Import endpoints
+  Route.post('/import/volunteers', 'ImportController.importVolunteers').middleware(['auth'])
+  Route.post('/import/opportunities', 'ImportController.importOpportunities').middleware(['auth'])
+  Route.get('/import/volunteers/template', 'ImportController.volunteersTemplate').middleware([
+    'auth'
+  ])
+  Route.get('/import/opportunities/template', 'ImportController.opportunitiesTemplate').middleware([
+    'auth'
+  ])
 }).prefix('/organization')
 
 // Public opportunity endpoints (for volunteers to apply)
@@ -125,6 +142,9 @@ Route.get('/opportunities/:id', 'OpportunitiesController.show')
 Route.post('/opportunities/:id/apply', 'ApplicationsController.apply').middleware(['auth'])
 Route.post('/opportunities/:id/checkin', 'AttendancesController.checkIn').middleware(['auth'])
 Route.post('/opportunities/:id/checkout', 'AttendancesController.checkOut').middleware(['auth'])
+
+// QR Code check-in (uses code instead of opportunity ID)
+Route.post('/checkin/qr', 'AttendancesController.qrCheckIn').middleware(['auth'])
 
 // Application management for volunteers
 Route.delete('/applications/:id', 'ApplicationsController.withdraw').middleware(['auth'])
