@@ -609,3 +609,197 @@ test.group('Phase 2 - QR Code Check-in', () => {
     resp.assertBodyContains({ message: 'Checked in successfully via QR code' })
   })
 })
+
+test.group('Phase 3 - CSV Export', () => {
+  test('admin can export volunteers as CSV', async ({ client }) => {
+    const org = await Organization.create({ name: 'Export Test Org' })
+    const admin = await User.create({ email: 'exportadmin@test', password: 'pass' })
+    await OrganizationTeamMember.create({
+      organizationId: org.id,
+      userId: admin.id,
+      role: 'Admin'
+    })
+
+    const resp = await client.loginAs(admin).get('/organization/export/volunteers')
+
+    resp.assertStatus(200)
+    resp.assertHeader('content-type', /text\/csv/)
+    const body = resp.text()
+    test.assert(body.includes('ID'))
+    test.assert(body.includes('Email'))
+  })
+
+  test('admin can export opportunities as CSV', async ({ client }) => {
+    const org = await Organization.create({ name: 'Opp Export Org' })
+    const admin = await User.create({ email: 'oppexportadmin@test', password: 'pass' })
+    await OrganizationTeamMember.create({
+      organizationId: org.id,
+      userId: admin.id,
+      role: 'Admin'
+    })
+
+    await Opportunity.create({
+      organizationId: org.id,
+      title: 'Export Test Opp',
+      startAt: DateTime.now().plus({ days: 1 }),
+      status: 'published',
+      visibility: 'public',
+      type: 'event',
+      capacity: 10
+    })
+
+    const resp = await client.loginAs(admin).get('/organization/export/opportunities')
+
+    resp.assertStatus(200)
+    resp.assertHeader('content-type', /text\/csv/)
+    const body = resp.text()
+    test.assert(body.includes('Title'))
+    test.assert(body.includes('Export Test Opp'))
+  })
+
+  test('non-admin cannot export data', async ({ client }) => {
+    const org = await Organization.create({ name: 'No Export Org' })
+    const member = await User.create({ email: 'noexport@test', password: 'pass' })
+    await OrganizationTeamMember.create({
+      organizationId: org.id,
+      userId: member.id,
+      role: 'Member'
+    })
+
+    const resp = await client.loginAs(member).get('/organization/export/volunteers')
+
+    resp.assertStatus(403)
+  })
+})
+
+test.group('Phase 3 - Reports & Analytics', () => {
+  test('can get reports summary', async ({ client }) => {
+    const org = await Organization.create({ name: 'Reports Org' })
+    const admin = await User.create({ email: 'reportsadmin@test', password: 'pass' })
+    await OrganizationTeamMember.create({
+      organizationId: org.id,
+      userId: admin.id,
+      role: 'Admin'
+    })
+
+    const resp = await client.loginAs(admin).get('/organization/reports/summary')
+
+    resp.assertStatus(200)
+    const body = resp.body()
+    test.assert('volunteers' in body)
+    test.assert('hours' in body)
+    test.assert('opportunities' in body)
+  })
+
+  test('can get volunteer hours report', async ({ client }) => {
+    const org = await Organization.create({ name: 'Hours Report Org' })
+    const admin = await User.create({ email: 'hoursreportadmin@test', password: 'pass' })
+    await OrganizationTeamMember.create({
+      organizationId: org.id,
+      userId: admin.id,
+      role: 'Admin'
+    })
+
+    const resp = await client.loginAs(admin).get('/organization/reports/volunteer-hours')
+
+    resp.assertStatus(200)
+    const body = resp.body()
+    test.assert('trend' in body)
+    test.assert('topVolunteers' in body)
+  })
+
+  test('can get opportunity performance report', async ({ client }) => {
+    const org = await Organization.create({ name: 'Perf Report Org' })
+    const admin = await User.create({ email: 'perfreportadmin@test', password: 'pass' })
+    await OrganizationTeamMember.create({
+      organizationId: org.id,
+      userId: admin.id,
+      role: 'Admin'
+    })
+
+    const resp = await client.loginAs(admin).get('/organization/reports/opportunity-performance')
+
+    resp.assertStatus(200)
+    const body = resp.body()
+    test.assert('opportunities' in body)
+  })
+})
+
+test.group('Phase 3 - Public Organization Pages', () => {
+  test('can list public organizations', async ({ client }) => {
+    await Organization.create({
+      name: 'Public Org',
+      slug: 'public-org-' + Date.now(),
+      status: 'active',
+      publicProfile: true
+    })
+
+    const resp = await client.get('/public/organizations')
+
+    resp.assertStatus(200)
+    const body = resp.body()
+    test.assert('data' in body)
+    test.assert(Array.isArray(body.data))
+  })
+
+  test('can get public organization by slug', async ({ client }) => {
+    const slug = 'public-detail-org-' + Date.now()
+    await Organization.create({
+      name: 'Public Detail Org',
+      slug,
+      status: 'active',
+      publicProfile: true,
+      description: 'A test organization'
+    })
+
+    const resp = await client.get(`/public/organizations/${slug}`)
+
+    resp.assertStatus(200)
+    const body = resp.body()
+    test.assert(body.name === 'Public Detail Org')
+    test.assert(body.slug === slug)
+    test.assert('stats' in body)
+  })
+
+  test('private organization returns 404', async ({ client }) => {
+    const slug = 'private-org-' + Date.now()
+    await Organization.create({
+      name: 'Private Org',
+      slug,
+      status: 'active',
+      publicProfile: false
+    })
+
+    const resp = await client.get(`/public/organizations/${slug}`)
+
+    resp.assertStatus(404)
+  })
+
+  test('can get public opportunities for organization', async ({ client }) => {
+    const slug = 'opp-org-' + Date.now()
+    const org = await Organization.create({
+      name: 'Opp Org',
+      slug,
+      status: 'active',
+      publicProfile: true
+    })
+
+    await Opportunity.create({
+      organizationId: org.id,
+      title: 'Public Opportunity',
+      startAt: DateTime.now().plus({ days: 1 }),
+      status: 'published',
+      visibility: 'public',
+      type: 'event',
+      capacity: 10
+    })
+
+    const resp = await client.get(`/public/organizations/${slug}/opportunities`)
+
+    resp.assertStatus(200)
+    const body = resp.body()
+    test.assert('data' in body)
+    test.assert(body.data.length > 0)
+    test.assert(body.data[0].title === 'Public Opportunity')
+  })
+})

@@ -361,6 +361,44 @@ const api = {
   getVolunteersTemplate: async () => axios.get('/organization/import/volunteers/template'),
   getOpportunitiesTemplate: async () => axios.get('/organization/import/opportunities/template'),
 
+  // CSV Export endpoints
+  exportVolunteers: async (params?: any) =>
+    axios.get('/organization/export/volunteers', { params, responseType: 'blob' }),
+  exportOpportunities: async (params?: any) =>
+    axios.get('/organization/export/opportunities', { params, responseType: 'blob' }),
+  exportApplications: async (params?: any) =>
+    axios.get('/organization/export/applications', { params, responseType: 'blob' }),
+  exportAttendances: async (params?: any) =>
+    axios.get('/organization/export/attendances', { params, responseType: 'blob' }),
+  exportHours: async (params?: any) =>
+    axios.get('/organization/export/hours', { params, responseType: 'blob' }),
+
+  // Organization Reports & Analytics
+  getReportsSummary: async (params?: any) =>
+    axios.get('/organization/reports/summary', { params }),
+  getVolunteerHoursReport: async (params?: any) =>
+    axios.get('/organization/reports/volunteer-hours', { params }),
+  getOpportunityPerformanceReport: async (params?: any) =>
+    axios.get('/organization/reports/opportunity-performance', { params }),
+  getVolunteerRetentionReport: async () =>
+    axios.get('/organization/reports/volunteer-retention'),
+
+  // Public Organization Pages
+  getPublicOrganizations: async (params?: any) =>
+    axios.get('/public/organizations', { params }),
+  getPublicOrganization: async (slug: string) =>
+    axios.get(`/public/organizations/${slug}`),
+  getPublicOrganizationOpportunities: async (slug: string, params?: any) =>
+    axios.get(`/public/organizations/${slug}/opportunities`, { params }),
+  getPublicOrganizationOpportunity: async (slug: string, opportunityId: number) =>
+    axios.get(`/public/organizations/${slug}/opportunities/${opportunityId}`),
+  getPublicOrganizationCities: async () =>
+    axios.get('/public/organizations/cities'),
+  getPublicOrganizationCountries: async () =>
+    axios.get('/public/organizations/countries'),
+  getPublicOrganizationTypes: async () =>
+    axios.get('/public/organizations/types'),
+
   // Volunteers (organization panel)
   listOrganizationVolunteers: async (params?: any) => axios.get('/organization/volunteers', { params }),
   addOrganizationVolunteer: async (data: any) => axios.post('/organization/volunteers', data),

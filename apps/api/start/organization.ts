@@ -135,7 +135,39 @@ Route.group(() => {
   Route.get('/import/opportunities/template', 'ImportController.opportunitiesTemplate').middleware([
     'auth'
   ])
+
+  // CSV Export endpoints
+  Route.get('/export/volunteers', 'ExportController.exportVolunteers').middleware(['auth'])
+  Route.get('/export/opportunities', 'ExportController.exportOpportunities').middleware(['auth'])
+  Route.get('/export/applications', 'ExportController.exportApplications').middleware(['auth'])
+  Route.get('/export/attendances', 'ExportController.exportAttendances').middleware(['auth'])
+  Route.get('/export/hours', 'ExportController.exportHours').middleware(['auth'])
+
+  // Organization Reports & Analytics
+  Route.get('/reports/summary', 'OrganizationReportsController.summary').middleware(['auth'])
+  Route.get('/reports/volunteer-hours', 'OrganizationReportsController.volunteerHours').middleware([
+    'auth'
+  ])
+  Route.get(
+    '/reports/opportunity-performance',
+    'OrganizationReportsController.opportunityPerformance'
+  ).middleware(['auth'])
+  Route.get(
+    '/reports/volunteer-retention',
+    'OrganizationReportsController.volunteerRetention'
+  ).middleware(['auth'])
 }).prefix('/organization')
+
+// Public organization pages (no auth required)
+Route.group(() => {
+  Route.get('/', 'PublicOrganizationController.index')
+  Route.get('/cities', 'PublicOrganizationController.cities')
+  Route.get('/countries', 'PublicOrganizationController.countries')
+  Route.get('/types', 'PublicOrganizationController.types')
+  Route.get('/:slug', 'PublicOrganizationController.show')
+  Route.get('/:slug/opportunities', 'PublicOrganizationController.opportunities')
+  Route.get('/:slug/opportunities/:opportunityId', 'PublicOrganizationController.opportunity')
+}).prefix('/public/organizations')
 
 // Public opportunity endpoints (for volunteers to apply)
 Route.get('/opportunities/:id', 'OpportunitiesController.show')
