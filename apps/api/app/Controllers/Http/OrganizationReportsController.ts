@@ -103,9 +103,10 @@ export default class OrganizationReportsController {
         total: totalVolunteers[0]?.total || 0,
         active: activeVolunteers[0]?.total || 0,
         newInPeriod: newVolunteers[0]?.total || 0,
-        retentionRate: totalVolunteers[0]?.total > 0
-          ? Math.round((activeVolunteers[0]?.total / totalVolunteers[0]?.total) * 100)
-          : 0
+        retentionRate:
+          totalVolunteers[0]?.total > 0
+            ? Math.round((activeVolunteers[0]?.total / totalVolunteers[0]?.total) * 100)
+            : 0
       },
       hours: {
         total: Math.round(totalHours[0]?.total || 0),
@@ -229,10 +230,24 @@ export default class OrganizationReportsController {
         'opportunities.start_at',
         'opportunities.status'
       )
-      .count('DISTINCT applications.id as application_count')
-      .count('DISTINCT CASE WHEN applications.status = \'accepted\' THEN applications.id END as accepted_count')
-      .count('DISTINCT attendances.id as attendance_count')
-      .groupBy('opportunities.id', 'opportunities.title', 'opportunities.capacity', 'opportunities.start_at', 'opportunities.status')
+      // Use countDistinct to avoid the query builder wrapping the whole
+      // expression in backticks (which causes `DISTINCT applications.id` to
+      // be treated as an identifier). For the CASE WHEN expression we use
+      // a raw select so the SQL is emitted verbatim.
+      .countDistinct('applications.id as application_count')
+      .select(
+        Database.raw(
+          "count(DISTINCT CASE WHEN applications.status = 'accepted' THEN applications.id END) as accepted_count"
+        )
+      )
+      .countDistinct('attendances.id as attendance_count')
+      .groupBy(
+        'opportunities.id',
+        'opportunities.title',
+        'opportunities.capacity',
+        'opportunities.start_at',
+        'opportunities.status'
+      )
       .orderBy('opportunities.start_at', 'desc')
       .limit(limit)
 
@@ -244,7 +259,8 @@ export default class OrganizationReportsController {
       opportunities: opportunities.map((o) => ({
         ...o,
         fillRate: o.capacity > 0 ? Math.round((o.accepted_count / o.capacity) * 100) : 0,
-        showUpRate: o.accepted_count > 0 ? Math.round((o.attendance_count / o.accepted_count) * 100) : 0
+        showUpRate:
+          o.accepted_count > 0 ? Math.round((o.attendance_count / o.accepted_count) * 100) : 0
       }))
     })
   }
@@ -265,7 +281,9 @@ export default class OrganizationReportsController {
     // Volunteers by join month (cohort analysis)
     const cohorts = await Database.from('organization_volunteers')
       .where('organization_id', orgId)
-      .select(Database.raw("DATE_FORMAT(COALESCE(joined_at, created_at), '%Y-%m-01') as cohort_month"))
+      .select(
+        Database.raw("DATE_FORMAT(COALESCE(joined_at, created_at), '%Y-%m-01') as cohort_month")
+      )
       .count('* as cohort_size')
       .groupByRaw("DATE_FORMAT(COALESCE(joined_at, created_at), '%Y-%m-01')")
       .orderBy('cohort_month', 'desc')
@@ -277,9 +295,15 @@ export default class OrganizationReportsController {
       .join('volunteer_hours', 'organization_volunteers.user_id', 'volunteer_hours.user_id')
       .where('organization_volunteers.organization_id', orgId)
       .where('volunteer_hours.date', '>=', thirtyDaysAgo)
-      .select(Database.raw("DATE_FORMAT(COALESCE(organization_volunteers.joined_at, organization_volunteers.created_at), '%Y-%m-01') as cohort_month"))
+      .select(
+        Database.raw(
+          "DATE_FORMAT(COALESCE(organization_volunteers.joined_at, organization_volunteers.created_at), '%Y-%m-01') as cohort_month"
+        )
+      )
       .countDistinct('organization_volunteers.user_id as active_count')
-      .groupByRaw("DATE_FORMAT(COALESCE(organization_volunteers.joined_at, organization_volunteers.created_at), '%Y-%m-01')")
+      .groupByRaw(
+        "DATE_FORMAT(COALESCE(organization_volunteers.joined_at, organization_volunteers.created_at), '%Y-%m-01')"
+      )
 
     const activeMap = activeByCohort.reduce((acc, c) => {
       acc[c.cohort_month] = c.active_count
@@ -291,9 +315,10 @@ export default class OrganizationReportsController {
         month: c.cohort_month,
         cohortSize: c.cohort_size,
         stillActive: activeMap[c.cohort_month] || 0,
-        retentionRate: c.cohort_size > 0
-          ? Math.round(((activeMap[c.cohort_month] || 0) / c.cohort_size) * 100)
-          : 0
+        retentionRate:
+          c.cohort_size > 0
+            ? Math.round(((activeMap[c.cohort_month] || 0) / c.cohort_size) * 100)
+            : 0
       }))
     })
   }
