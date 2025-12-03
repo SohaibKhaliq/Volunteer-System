@@ -459,7 +459,57 @@ const api = {
     axios.get('/organization/communications', { params: filters }),
   sendOrganizationMessage: async (data: any) => axios.post('/organization/communications/send', data),
   getOrganizationCommunication: async (id: number) => axios.get(`/organization/communications/${id}`),
-  broadcastOrganizationMessage: async (data: any) => axios.post('/organization/communications/broadcast', data)
+  broadcastOrganizationMessage: async (data: any) => axios.post('/organization/communications/broadcast', data),
+
+  // ==========================================
+  // ADMIN PANEL API ENDPOINTS
+  // ==========================================
+  getAdminDashboard: async () => axios.get('/admin/dashboard'),
+  getAdminAnalytics: async (params?: any) => axios.get('/admin/analytics', { params }),
+  getAdminActivity: async (params?: any) => axios.get('/admin/activity', { params }),
+  exportAdminSummary: async (format?: string) => axios.get('/admin/export', { params: { format } }),
+  
+  // Admin Organization Management
+  getAdminOrganizations: async (params?: any) => axios.get('/admin/organizations', { params }),
+  approveOrganization: async (id: number) => axios.post(`/admin/organizations/${id}/approve`),
+  suspendOrganization: async (id: number, reason?: string) => 
+    axios.post(`/admin/organizations/${id}/suspend`, { reason }),
+  reactivateOrganization: async (id: number) => axios.post(`/admin/organizations/${id}/reactivate`),
+  archiveOrganization: async (id: number) => axios.post(`/admin/organizations/${id}/archive`),
+  
+  // Admin User Management
+  getAdminUsers: async (params?: any) => axios.get('/admin/users', { params }),
+  disableUser: async (id: number, reason?: string) => axios.post(`/admin/users/${id}/disable`, { reason }),
+  enableUser: async (id: number) => axios.post(`/admin/users/${id}/enable`),
+
+  // ==========================================
+  // VOLUNTEER PANEL API ENDPOINTS
+  // ==========================================
+  getVolunteerDashboard: async () => axios.get('/volunteer/dashboard'),
+  getVolunteerProfile: async () => axios.get('/volunteer/profile'),
+  updateVolunteerProfile: async (data: any) => axios.put('/volunteer/profile', data),
+  
+  // Volunteer Opportunities
+  browseOpportunities: async (params?: any) => axios.get('/volunteer/opportunities', { params }),
+  getVolunteerOpportunityDetail: async (id: number) => axios.get(`/volunteer/opportunities/${id}`),
+  bookmarkOpportunity: async (id: number) => axios.post(`/volunteer/opportunities/${id}/bookmark`),
+  unbookmarkOpportunity: async (id: number) => axios.delete(`/volunteer/opportunities/${id}/bookmark`),
+  getBookmarkedOpportunities: async () => axios.get('/volunteer/bookmarks'),
+  
+  // Volunteer Applications
+  getVolunteerApplications: async (params?: any) => axios.get('/volunteer/applications', { params }),
+  
+  // Volunteer Attendance & Hours
+  getVolunteerAttendance: async (params?: any) => axios.get('/volunteer/attendance', { params }),
+  getVolunteerHours: async (params?: any) => axios.get('/volunteer/hours', { params }),
+  
+  // Volunteer Organizations
+  getVolunteerOrganizations: async () => axios.get('/volunteer/organizations'),
+  joinVolunteerOrganization: async (id: number) => axios.post(`/volunteer/organizations/${id}/join`),
+  leaveVolunteerOrganization: async (id: number) => axios.delete(`/volunteer/organizations/${id}/leave`),
+  
+  // Volunteer Achievements
+  getVolunteerAchievements: async () => axios.get('/volunteer/achievements')
 } as const;
 
 export const useLazyQuery = (key: QueryKey, fn: QueryFunction, options = {}) => {

@@ -298,3 +298,62 @@ Route.post('/scheduled-jobs', 'ScheduledJobsController.store').middleware(['auth
 Route.post('/scheduled-jobs/:id/retry', 'ScheduledJobsController.retry').middleware(['auth'])
 
 // Organization routes are defined in start/organization.ts
+
+// ==========================================
+// ADMIN PANEL ROUTES (Platform Super Admin)
+// ==========================================
+Route.group(() => {
+  // Dashboard
+  Route.get('/dashboard', 'AdminController.dashboard')
+  Route.get('/analytics', 'AdminController.systemAnalytics')
+  Route.get('/activity', 'AdminController.recentActivity')
+  Route.get('/export', 'AdminController.exportSummary')
+
+  // Organization Management
+  Route.get('/organizations', 'AdminController.listOrganizations')
+  Route.post('/organizations/:id/approve', 'AdminController.approveOrganization')
+  Route.post('/organizations/:id/suspend', 'AdminController.suspendOrganization')
+  Route.post('/organizations/:id/reactivate', 'AdminController.reactivateOrganization')
+  Route.post('/organizations/:id/archive', 'AdminController.archiveOrganization')
+
+  // User Management
+  Route.get('/users', 'AdminController.listUsers')
+  Route.post('/users/:id/disable', 'AdminController.disableUser')
+  Route.post('/users/:id/enable', 'AdminController.enableUser')
+})
+  .prefix('/admin')
+  .middleware(['auth'])
+
+// ==========================================
+// VOLUNTEER PANEL ROUTES (End-user Portal)
+// ==========================================
+Route.group(() => {
+  // Dashboard & Profile
+  Route.get('/dashboard', 'VolunteerController.dashboard')
+  Route.get('/profile', 'VolunteerController.profile')
+  Route.put('/profile', 'VolunteerController.updateProfile')
+
+  // Opportunities
+  Route.get('/opportunities', 'VolunteerController.browseOpportunities')
+  Route.get('/opportunities/:id', 'VolunteerController.opportunityDetail')
+  Route.post('/opportunities/:id/bookmark', 'VolunteerController.bookmarkOpportunity')
+  Route.delete('/opportunities/:id/bookmark', 'VolunteerController.unbookmarkOpportunity')
+  Route.get('/bookmarks', 'VolunteerController.bookmarkedOpportunities')
+
+  // Applications
+  Route.get('/applications', 'VolunteerController.myApplications')
+
+  // Attendance & Hours
+  Route.get('/attendance', 'VolunteerController.myAttendance')
+  Route.get('/hours', 'VolunteerController.myHours')
+
+  // Organizations
+  Route.get('/organizations', 'VolunteerController.myOrganizations')
+  Route.post('/organizations/:id/join', 'VolunteerController.joinOrganization')
+  Route.delete('/organizations/:id/leave', 'VolunteerController.leaveOrganization')
+
+  // Achievements
+  Route.get('/achievements', 'VolunteerController.myAchievements')
+})
+  .prefix('/volunteer')
+  .middleware(['auth'])
