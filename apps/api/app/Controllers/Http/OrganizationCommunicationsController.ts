@@ -18,9 +18,7 @@ export default class OrganizationCommunicationsController {
     const orgId = memberRecord.organizationId
     const { page = 1, limit = 20, type, status } = request.qs()
 
-    let query = Communication.query()
-      .where('organization_id', orgId)
-      .orderBy('created_at', 'desc')
+    let query = Communication.query().where('organization_id', orgId).orderBy('created_at', 'desc')
 
     if (type) {
       query = query.where('type', type)
@@ -43,30 +41,29 @@ export default class OrganizationCommunicationsController {
 
     if (!memberRecord) {
       return response.notFound({ message: 'User is not part of any organization' })
-   }
+    }
 
     const orgId = memberRecord.organizationId
-    const { recipients, subject, message, type = 'email', metadata } = request.only([
-      'recipients',
-      'subject',
-      'message',
-      'type',
-      'metadata'
-    ])
+    const {
+      recipients,
+      subject,
+      message,
+      type = 'email',
+      metadata
+    } = request.only(['recipients', 'subject', 'message', 'type', 'metadata'])
 
     if (!Array.isArray(recipients) || recipients.length === 0) {
       return response.badRequest({ message: 'recipients must be a non-empty array' })
     }
 
     // Verify all recipients belong to the organization
-    const validRecipients = await Database
-      .from('organization_volunteers')
+    const validRecipients = await Database.from('organization_volunteers')
       .where('organization_id', orgId)
       .whereIn('user_id', recipients)
       .select('user_id')
 
     if (validRecipients.length !== recipients.length) {
-      return response.badRequest({ 
+      return response.badRequest({
         message: 'Some recipients do not belong to your organization',
         valid_count: validRecipients.length,
         requested_count: recipients.length
@@ -131,24 +128,22 @@ export default class OrganizationCommunicationsController {
     }
 
     const orgId = memberRecord.organizationId
-    const { subject, message, type = 'notification', filter } = request.only([
-      'subject',
-      'message',
-      'type',
-      'filter'
-    ])
+    const {
+      subject,
+      message,
+      type = 'notification',
+      filter
+    } = request.only(['subject', 'message', 'type', 'filter'])
 
     // Get all volunteers (or filtered subset)
-    let query = Database
-      .from('organization_volunteers')
-      .where('organization_id', orgId)
+    let query = Database.from('organization_volunteers').where('organization_id', orgId)
 
     if (filter?.status) {
       query = query.where('status', filter.status)
     }
 
     const volunteers = await query.select('user_id')
-    const recipientIds = volunteers.map(v => v.user_id)
+    const recipientIds = volunteers.map((v) => v.user_id)
 
     if (recipientIds.length === 0) {
       return response.badRequest({ message: 'No volunteers match the specified filter' })

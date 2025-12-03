@@ -8,32 +8,18 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle,
+  DialogTitle
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  CheckCircle, 
-  XCircle, 
-  Clock, 
-  Loader2,
-  Search,
-  Filter
-} from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Loader2, Search, Filter } from 'lucide-react';
 
 export default function HoursApproval() {
   const queryClient = useQueryClient();
@@ -51,8 +37,7 @@ export default function HoursApproval() {
 
   // Approve mutation
   const approveMutation = useMutation({
-    mutationFn: ({ id, notes }: { id: number; notes?: string }) => 
-      api.approveVolunteerHour(id, notes),
+    mutationFn: ({ id, notes }: { id: number; notes?: string }) => api.approveVolunteerHour(id, notes),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organizationPendingHours'] });
       toast({ title: 'Success', description: 'Hour log approved successfully' });
@@ -64,8 +49,7 @@ export default function HoursApproval() {
 
   // Reject mutation
   const rejectMutation = useMutation({
-    mutationFn: ({ id, reason }: { id: number; reason: string }) => 
-      api.rejectVolunteerHour(id, reason),
+    mutationFn: ({ id, reason }: { id: number; reason: string }) => api.rejectVolunteerHour(id, reason),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organizationPendingHours'] });
       setIsRejectDialogOpen(false);
@@ -112,11 +96,7 @@ export default function HoursApproval() {
   };
 
   const toggleHourSelection = (hourId: number) => {
-    setSelectedHours(prev => 
-      prev.includes(hourId) 
-        ? prev.filter(id => id !== hourId)
-        : [...prev, hourId]
-    );
+    setSelectedHours((prev) => (prev.includes(hourId) ? prev.filter((id) => id !== hourId) : [...prev, hourId]));
   };
 
   const toggleSelectAll = () => {
@@ -135,11 +115,11 @@ export default function HoursApproval() {
     );
   }
 
-  const pendingHours = Array.isArray(pendingHoursData?.data) 
-    ? pendingHoursData.data 
-    : Array.isArray(pendingHoursData) 
-    ? pendingHoursData 
-    : [];
+  const pendingHours = Array.isArray(pendingHoursData?.data)
+    ? pendingHoursData.data
+    : Array.isArray(pendingHoursData)
+      ? pendingHoursData
+      : [];
 
   return (
     <div className="space-y-6">
@@ -158,9 +138,7 @@ export default function HoursApproval() {
 
       <Tabs defaultValue="pending" className="w-full">
         <TabsList>
-          <TabsTrigger value="pending">
-            Pending ({pendingHours.length})
-          </TabsTrigger>
+          <TabsTrigger value="pending">Pending ({pendingHours.length})</TabsTrigger>
           <TabsTrigger value="all">All Hours</TabsTrigger>
         </TabsList>
 
@@ -225,11 +203,14 @@ export default function HoursApproval() {
                           <div className="flex items-center gap-3">
                             <Avatar>
                               <AvatarFallback>
-                                {hour.first_name?.[0]}{hour.last_name?.[0]}
+                                {hour.first_name?.[0]}
+                                {hour.last_name?.[0]}
                               </AvatarFallback>
                             </Avatar>
                             <div>
-                              <div className="font-medium">{hour.first_name} {hour.last_name}</div>
+                              <div className="font-medium">
+                                {hour.first_name} {hour.last_name}
+                              </div>
                               <div className="text-xs text-muted-foreground">{hour.email}</div>
                             </div>
                           </div>
@@ -239,9 +220,7 @@ export default function HoursApproval() {
                         <TableCell>
                           <Badge>{hour.hours} hrs</Badge>
                         </TableCell>
-                        <TableCell className="max-w-xs truncate">
-                          {hour.description || '-'}
-                        </TableCell>
+                        <TableCell className="max-w-xs truncate">{hour.description || '-'}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
                             <Button
@@ -290,9 +269,7 @@ export default function HoursApproval() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Reject Hour Log</DialogTitle>
-            <DialogDescription>
-              Please provide a reason for rejecting this hour submission.
-            </DialogDescription>
+            <DialogDescription>Please provide a reason for rejecting this hour submission.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">

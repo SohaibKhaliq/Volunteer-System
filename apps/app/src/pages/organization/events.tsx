@@ -6,36 +6,18 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle,
+  DialogTitle
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { 
-  Calendar, 
-  MapPin, 
-  Plus, 
-  Search, 
-  Filter, 
-  Clock,
-  Sparkles,
-  Loader2,
-  MoreHorizontal,
-  Trash2
-} from 'lucide-react';
+import { Calendar, MapPin, Plus, Search, Filter, Clock, Sparkles, Loader2, MoreHorizontal, Trash2 } from 'lucide-react';
 
 export default function OrganizationEvents() {
   const queryClient = useQueryClient();
@@ -144,7 +126,11 @@ export default function OrganizationEvents() {
   };
 
   if (isLoading) {
-    return <div className="flex justify-center items-center h-96"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
+    return (
+      <div className="flex justify-center items-center h-96">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
   const displayEvents = Array.isArray(events) ? events : [];

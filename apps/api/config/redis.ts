@@ -42,7 +42,7 @@ export default redisConfig({
       db: 0,
       keyPrefix: '',
 
-      healthCheck: true,
-    },
-  },
+      healthCheck: true
+    }
+  }
 })

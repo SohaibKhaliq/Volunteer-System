@@ -83,7 +83,9 @@ Route.resource('organizations', 'OrganizationsController')
   })
   .apiOnly()
 // Admin: list resources for a given organization
-Route.get('/organizations/:id/resources', 'OrganizationsController.getResources').middleware(['auth'])
+Route.get('/organizations/:id/resources', 'OrganizationsController.getResources').middleware([
+  'auth'
+])
 
 // Organization volunteer management
 Route.get('/organizations/:id/volunteers', 'OrganizationsController.getVolunteers').middleware([
@@ -296,3 +298,97 @@ Route.post('/scheduled-jobs', 'ScheduledJobsController.store').middleware(['auth
 Route.post('/scheduled-jobs/:id/retry', 'ScheduledJobsController.retry').middleware(['auth'])
 
 // Organization routes are defined in start/organization.ts
+
+// ==========================================
+// ADMIN PANEL ROUTES (Platform Super Admin)
+// ==========================================
+Route.group(() => {
+  // Dashboard
+  Route.get('/dashboard', 'AdminController.dashboard')
+  Route.get('/analytics', 'AdminController.systemAnalytics')
+  Route.get('/activity', 'AdminController.recentActivity')
+  Route.get('/export', 'AdminController.exportSummary')
+
+  // Organization Management
+  Route.get('/organizations', 'AdminController.listOrganizations')
+  Route.post('/organizations/:id/approve', 'AdminController.approveOrganization')
+  Route.post('/organizations/:id/suspend', 'AdminController.suspendOrganization')
+  Route.post('/organizations/:id/reactivate', 'AdminController.reactivateOrganization')
+  Route.post('/organizations/:id/archive', 'AdminController.archiveOrganization')
+
+  // User Management
+  Route.get('/users', 'AdminController.listUsers')
+  Route.post('/users/:id/disable', 'AdminController.disableUser')
+  Route.post('/users/:id/enable', 'AdminController.enableUser')
+
+  // Notification Templates
+  Route.get('/templates', 'NotificationTemplatesController.index')
+  Route.post('/templates', 'NotificationTemplatesController.store')
+  Route.get('/templates/:key', 'NotificationTemplatesController.show')
+  Route.put('/templates/:key', 'NotificationTemplatesController.update')
+  Route.post('/templates/:key/reset', 'NotificationTemplatesController.reset')
+  Route.delete('/templates/:key', 'NotificationTemplatesController.destroy')
+  Route.post('/templates/preview', 'NotificationTemplatesController.preview')
+
+  // System Settings (extended)
+  Route.get('/system-settings', 'AdminController.getSystemSettings')
+  Route.put('/system-settings', 'AdminController.updateSystemSettings')
+  Route.post('/system-settings/branding', 'AdminController.updateBranding')
+  Route.get('/backup', 'AdminController.createBackup')
+  Route.get('/backup/status', 'AdminController.backupStatus')
+})
+  .prefix('/admin')
+  .middleware(['auth'])
+
+// ==========================================
+// VOLUNTEER PANEL ROUTES (End-user Portal)
+// ==========================================
+Route.group(() => {
+  // Dashboard & Profile
+  Route.get('/dashboard', 'VolunteerController.dashboard')
+  Route.get('/profile', 'VolunteerController.profile')
+  Route.put('/profile', 'VolunteerController.updateProfile')
+
+  // Opportunities
+  Route.get('/opportunities', 'VolunteerController.browseOpportunities')
+  Route.get('/opportunities/:id', 'VolunteerController.opportunityDetail')
+  Route.post('/opportunities/:id/bookmark', 'VolunteerController.bookmarkOpportunity')
+  Route.delete('/opportunities/:id/bookmark', 'VolunteerController.unbookmarkOpportunity')
+  Route.get('/bookmarks', 'VolunteerController.bookmarkedOpportunities')
+
+  // Applications
+  Route.get('/applications', 'VolunteerController.myApplications')
+
+  // Attendance & Hours
+  Route.get('/attendance', 'VolunteerController.myAttendance')
+  Route.get('/hours', 'VolunteerController.myHours')
+
+  // Organizations
+  Route.get('/organizations', 'VolunteerController.myOrganizations')
+  Route.post('/organizations/:id/join', 'VolunteerController.joinOrganization')
+  Route.delete('/organizations/:id/leave', 'VolunteerController.leaveOrganization')
+
+  // Achievements
+  Route.get('/achievements', 'VolunteerController.myAchievements')
+})
+  .prefix('/volunteer')
+  .middleware(['auth'])
+
+// ==========================================
+// CALENDAR / ICAL ROUTES
+// ==========================================
+Route.group(() => {
+  // Public calendar feeds (no auth required)
+  Route.get('/public-opportunities', 'CalendarController.publicOpportunities')
+})
+  .prefix('/calendar')
+
+Route.group(() => {
+  // Authenticated calendar feeds
+  Route.get('/my-schedule', 'CalendarController.mySchedule')
+  Route.get('/organization-opportunities', 'CalendarController.organizationOpportunities')
+  Route.get('/events', 'CalendarController.events')
+  Route.get('/subscription-urls', 'CalendarController.getSubscriptionUrl')
+})
+  .prefix('/calendar')
+  .middleware(['auth'])

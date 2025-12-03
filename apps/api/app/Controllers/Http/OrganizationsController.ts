@@ -1001,4 +1001,91 @@ export default class OrganizationsController {
 
     return response.ok(member)
   }
+
+  /**
+   * Get organization settings (org panel)
+   */
+  public async getSettings({ auth, response }: HttpContextContract) {
+    const user = auth.user!
+    const memberRecord = await OrganizationTeamMember.query().where('user_id', user.id).first()
+    if (!memberRecord) {
+      return response.notFound({ message: 'User is not part of any organization' })
+    }
+
+    const org = await Organization.find(memberRecord.organizationId)
+    if (!org) {
+      return response.notFound()
+    }
+
+    return response.ok({
+      id: org.id,
+      name: org.name,
+      slug: org.slug,
+      timezone: org.timezone,
+      status: org.status,
+      settings: org.settings,
+      billingMeta: org.billingMeta,
+      publicProfile: org.publicProfile,
+      autoApproveVolunteers: org.autoApproveVolunteers,
+      isApproved: org.isApproved,
+      isActive: org.isActive
+    })
+  }
+
+  /**
+   * Update organization settings (org panel)
+   */
+  public async updateSettings({ auth, request, response }: HttpContextContract) {
+    const user = auth.user!
+    const memberRecord = await OrganizationTeamMember.query().where('user_id', user.id).first()
+    if (!memberRecord) {
+      return response.notFound({ message: 'User is not part of any organization' })
+    }
+
+    // Only allow admins to update settings
+    const allowedRoles = ['admin', 'coordinator']
+    if (!allowedRoles.includes((memberRecord.role || '').toLowerCase())) {
+      return response.forbidden({ message: 'You do not have permission to update settings' })
+    }
+
+    const org = await Organization.find(memberRecord.organizationId)
+    if (!org) {
+      return response.notFound()
+    }
+
+    const body = request.only([
+      'timezone',
+      'settings',
+      'public_profile',
+      'auto_approve_volunteers',
+      'billing_meta'
+    ])
+
+    const updateData: any = {}
+
+    if (body.timezone) updateData.timezone = body.timezone
+    if (body.settings !== undefined) updateData.settings = body.settings
+    if (body.public_profile !== undefined) updateData.publicProfile = body.public_profile
+    if (body.auto_approve_volunteers !== undefined) {
+      updateData.autoApproveVolunteers = body.auto_approve_volunteers
+    }
+    if (body.billing_meta !== undefined) updateData.billingMeta = body.billing_meta
+
+    org.merge(updateData)
+    await org.save()
+
+    return response.ok({
+      id: org.id,
+      name: org.name,
+      slug: org.slug,
+      timezone: org.timezone,
+      status: org.status,
+      settings: org.settings,
+      billingMeta: org.billingMeta,
+      publicProfile: org.publicProfile,
+      autoApproveVolunteers: org.autoApproveVolunteers,
+      isApproved: org.isApproved,
+      isActive: org.isActive
+    })
+  }
 }

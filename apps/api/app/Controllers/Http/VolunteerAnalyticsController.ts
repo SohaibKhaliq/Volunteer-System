@@ -91,18 +91,12 @@ export default class VolunteerAnalyticsController {
     const orgId = memberRecord.organizationId
     const { metric = 'hours', limit = 10, startDate, endDate } = request.qs()
 
-    let query = Database
-      .from('volunteer_hours')
+    let query = Database.from('volunteer_hours')
       .join('organization_volunteers', 'volunteer_hours.user_id', 'organization_volunteers.user_id')
       .join('users', 'users.id', 'volunteer_hours.user_id')
       .where('organization_volunteers.organization_id', orgId)
       .where('volunteer_hours.status', 'approved')
-      .select(
-        'users.id',
-        'users.first_name',
-        'users.last_name',
-        'users.email'
-      )
+      .select('users.id', 'users.first_name', 'users.last_name', 'users.email')
 
     if (startDate) {
       query = query.where('volunteer_hours.date', '>=', startDate)
@@ -146,8 +140,7 @@ export default class VolunteerAnalyticsController {
     const end = endDate ? DateTime.fromISO(endDate) : DateTime.now()
 
     // Hours trend
-    let hoursTrendQuery = Database
-      .from('volunteer_hours')
+    let hoursTrendQuery = Database.from('volunteer_hours')
       .join('organization_volunteers', 'volunteer_hours.user_id', 'organization_volunteers.user_id')
       .where('organization_volunteers.organization_id', orgId)
       .where('volunteer_hours.status', 'approved')

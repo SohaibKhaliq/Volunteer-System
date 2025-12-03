@@ -120,7 +120,7 @@ export default class OrganizationInvitesController {
     await invite.save()
 
     // TODO: Send email
-    
+
     return response.ok({ message: 'Invitation resent successfully' })
   }
 
@@ -156,8 +156,7 @@ export default class OrganizationInvitesController {
     }
 
     // Check if already a volunteer
-    const existing = await Database
-      .from('organization_volunteers')
+    const existing = await Database.from('organization_volunteers')
       .where('organization_id', invite.organizationId)
       .where('user_id', auth.user.id)
       .first()
@@ -194,9 +193,7 @@ export default class OrganizationInvitesController {
   public async reject({ request, response }: HttpContextContract) {
     const { token } = request.params()
 
-    const invite = await OrganizationInvite.query()
-      .where('token', token)
-      .first()
+    const invite = await OrganizationInvite.query().where('token', token).first()
 
     if (!invite) {
       return response.notFound({ message: 'Invalid invitation token' })

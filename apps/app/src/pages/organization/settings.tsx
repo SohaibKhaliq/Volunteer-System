@@ -1,18 +1,10 @@
-
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Bell, 
-  Lock, 
-  Globe, 
-  Palette, 
-  HelpCircle,
-  LogOut
-} from 'lucide-react';
+import { Bell, Lock, Globe, Palette, HelpCircle, LogOut } from 'lucide-react';
 
 export default function OrganizationSettings() {
   return (
@@ -34,7 +26,7 @@ export default function OrganizationSettings() {
                 General
               </TabsTrigger>
               <TabsTrigger
-                value="notifications" 
+                value="notifications"
                 className="w-full justify-start px-4 py-2 data-[state=active]:bg-gray-100 data-[state=active]:text-gray-900"
               >
                 <Bell className="h-4 w-4 mr-2" />
@@ -71,8 +63,8 @@ export default function OrganizationSettings() {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="timezone">Timezone</Label>
-                    <select 
-                      id="timezone" 
+                    <select
+                      id="timezone"
                       className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <option>UTC (GMT+00:00)</option>
@@ -141,7 +133,7 @@ export default function OrganizationSettings() {
                   <div className="pt-4">
                     <Button>Update Password</Button>
                   </div>
-                  
+
                   <div className="pt-6 border-t mt-6">
                     <h4 className="text-sm font-medium text-red-600 mb-2">Danger Zone</h4>
                     <Button variant="destructive" size="sm">

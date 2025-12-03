@@ -14,12 +14,7 @@
     "Database": "database",
     "Contracts": "contracts"
   },
-  "preloads": [
-    "./start/routes",
-    "./start/kernel",
-    "./start/bouncer",
-    "./start/limiter"
-  ],
+  "preloads": ["./start/routes", "./start/kernel", "./start/bouncer", "./start/limiter"],
   "providers": [
     "./providers/AppProvider",
     "@adonisjs/core",
@@ -31,21 +26,15 @@
     "@adonisjs/limiter",
     "@adonisjs/redis"
   ],
-  "aceProviders": [
-    "@adonisjs/repl"
-  ],
+  "aceProviders": ["@adonisjs/repl"],
   "tests": {
     "suites": [
       {
         "name": "functional",
-        "files": [
-          "tests/functional/**/*.spec(.ts|.js)"
-        ],
+        "files": ["tests/functional/**/*.spec(.ts|.js)"],
         "timeout": 60000
       }
     ]
   },
-  "testProviders": [
-    "@japa/preset-adonis/TestsProvider"
-  ]
+  "testProviders": ["@japa/preset-adonis/TestsProvider"]
 }

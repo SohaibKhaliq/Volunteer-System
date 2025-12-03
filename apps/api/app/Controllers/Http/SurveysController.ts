@@ -243,4 +243,3 @@ export default class SurveysController {
     return response.send(csv)
   }
 }
-

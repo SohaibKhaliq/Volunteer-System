@@ -23,7 +23,7 @@ export default class extends BaseSeeder {
         name: 'Community Helpers Network',
         description: 'Supporting local communities through volunteer programs',
         contactEmail: 'info@communityhelpers.org',
-       contactPhone: '+1-555-0102',
+        contactPhone: '+1-555-0102',
         isApproved: true,
         isActive: true
       },
@@ -82,21 +82,96 @@ export default class extends BaseSeeder {
 
     // Create volunteer users
     const volunteerUsers = await User.createMany([
-      { firstName: 'David', lastName: 'Brown', email: 'david.brown@example.com', password: 'password123' },
-      { firstName: 'Emma', lastName: 'Davis', email: 'emma.davis@example.com', password: 'password123' },
-      { firstName: 'Frank', lastName: 'Miller', email: 'frank.miller@example.com', password: 'password123' },
-      { firstName: 'Grace', lastName: 'Wilson', email: 'grace.wilson@example.com', password: 'password123' },
-      { firstName: 'Henry', lastName: 'Moore', email: 'henry.moore@example.com', password: 'password123' },
-      { firstName: 'Ivy', lastName: 'Taylor', email: 'ivy.taylor@example.com', password: 'password123' },
-      { firstName: 'Jack', lastName: 'Anderson', email: 'jack.anderson@example.com', password: 'password123' },
-      { firstName: 'Kate', lastName: 'Thomas', email: 'kate.thomas@example.com', password: 'password123' },
-      { firstName: 'Leo', lastName: 'Jackson', email: 'leo.jackson@example.com', password: 'password123' },
-      { firstName: 'Mia', lastName: 'White', email: 'mia.white@example.com', password: 'password123' },
-      { firstName: 'Noah', lastName: 'Harris', email: 'noah.harris@example.com', password: 'password123' },
-      { firstName: 'Olivia', lastName: 'Martin', email: 'olivia.martin@example.com', password: 'password123' },
-      { firstName: 'Peter', lastName: 'Garcia', email: 'peter.garcia@example.com', password: 'password123' },
-      { firstName: 'Quinn', lastName: 'Martinez', email: 'quinn.martinez@example.com', password: 'password123' },
-      { firstName: 'Rachel', lastName: 'Robinson', email: 'rachel.robinson@example.com', password: 'password123' }
+      {
+        firstName: 'David',
+        lastName: 'Brown',
+        email: 'david.brown@example.com',
+        password: 'password123'
+      },
+      {
+        firstName: 'Emma',
+        lastName: 'Davis',
+        email: 'emma.davis@example.com',
+        password: 'password123'
+      },
+      {
+        firstName: 'Frank',
+        lastName: 'Miller',
+        email: 'frank.miller@example.com',
+        password: 'password123'
+      },
+      {
+        firstName: 'Grace',
+        lastName: 'Wilson',
+        email: 'grace.wilson@example.com',
+        password: 'password123'
+      },
+      {
+        firstName: 'Henry',
+        lastName: 'Moore',
+        email: 'henry.moore@example.com',
+        password: 'password123'
+      },
+      {
+        firstName: 'Ivy',
+        lastName: 'Taylor',
+        email: 'ivy.taylor@example.com',
+        password: 'password123'
+      },
+      {
+        firstName: 'Jack',
+        lastName: 'Anderson',
+        email: 'jack.anderson@example.com',
+        password: 'password123'
+      },
+      {
+        firstName: 'Kate',
+        lastName: 'Thomas',
+        email: 'kate.thomas@example.com',
+        password: 'password123'
+      },
+      {
+        firstName: 'Leo',
+        lastName: 'Jackson',
+        email: 'leo.jackson@example.com',
+        password: 'password123'
+      },
+      {
+        firstName: 'Mia',
+        lastName: 'White',
+        email: 'mia.white@example.com',
+        password: 'password123'
+      },
+      {
+        firstName: 'Noah',
+        lastName: 'Harris',
+        email: 'noah.harris@example.com',
+        password: 'password123'
+      },
+      {
+        firstName: 'Olivia',
+        lastName: 'Martin',
+        email: 'olivia.martin@example.com',
+        password: 'password123'
+      },
+      {
+        firstName: 'Peter',
+        lastName: 'Garcia',
+        email: 'peter.garcia@example.com',
+        password: 'password123'
+      },
+      {
+        firstName: 'Quinn',
+        lastName: 'Martinez',
+        email: 'quinn.martinez@example.com',
+        password: 'password123'
+      },
+      {
+        firstName: 'Rachel',
+        lastName: 'Robinson',
+        email: 'rachel.robinson@example.com',
+        password: 'password123'
+      }
     ])
 
     // Create volunteers for each organization
@@ -131,7 +206,13 @@ export default class extends BaseSeeder {
     }
 
     // Create events for each organization
-    const eventTypes = ['Community Service', 'Education', 'Environmental', 'Health', 'Emergency Response']
+    const eventTypes = [
+      'Community Service',
+      'Education',
+      'Environmental',
+      'Health',
+      'Emergency Response'
+    ]
     const eventTitles = [
       'Beach Cleanup Drive',
       'Youth Tutoring Session',

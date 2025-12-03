@@ -5,7 +5,8 @@ import {
   HasMany,
   manyToMany,
   ManyToMany,
-  beforeDelete
+  beforeDelete,
+  beforeSave
 } from '@ioc:Adonis/Lucid/Orm'
 import { DateTime } from 'luxon'
 import Event from './Event'
@@ -21,6 +22,9 @@ export default class Organization extends BaseModel {
 
   @column()
   public name: string
+
+  @column()
+  public slug?: string
 
   @column()
   public description?: string
@@ -42,6 +46,31 @@ export default class Organization extends BaseModel {
 
   @column()
   public address?: string
+
+  @column()
+  public city?: string
+
+  @column()
+  public country?: string
+
+  @column()
+  public timezone: string
+
+  @column({
+    prepare: (value: any) => (value ? JSON.stringify(value) : null),
+    consume: (value: any) => (value ? JSON.parse(value) : null)
+  })
+  public settings?: object
+
+  @column()
+  public status: string // 'active', 'suspended', 'archived'
+
+  @column({
+    columnName: 'billing_meta',
+    prepare: (value: any) => (value ? JSON.stringify(value) : null),
+    consume: (value: any) => (value ? JSON.parse(value) : null)
+  })
+  public billingMeta?: object
 
   @column()
   public isApproved?: boolean
@@ -79,6 +108,32 @@ export default class Organization extends BaseModel {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   public updatedAt: DateTime
+
+  /**
+   * Generate a unique slug from the organization name
+   */
+  public static generateSlug(name: string): string {
+    const base = name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+    const random = Math.random().toString(36).substring(2, 8)
+    return `${base}-${random}`
+  }
+
+  @beforeSave()
+  public static async generateSlugIfEmpty(org: Organization) {
+    if (!org.slug && org.name) {
+      org.slug = Organization.generateSlug(org.name)
+    }
+    // Ensure default values
+    if (!org.timezone) {
+      org.timezone = 'UTC'
+    }
+    if (!org.status) {
+      org.status = 'active'
+    }
+  }
 
   /**
    * Get total volunteer count

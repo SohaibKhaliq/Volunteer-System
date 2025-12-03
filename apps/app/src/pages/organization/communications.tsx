@@ -6,16 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { 
-  Search, 
-  Send, 
-  MoreVertical, 
-  Phone, 
-  Video, 
-  Paperclip,
-  Image as ImageIcon,
-  Smile
-} from 'lucide-react';
+import { Search, Send, MoreVertical, Phone, Video, Paperclip, Image as ImageIcon, Smile } from 'lucide-react';
 
 export default function OrganizationCommunications() {
   const [selectedChat, setSelectedChat] = useState<number | null>(1);
@@ -95,7 +86,9 @@ export default function OrganizationCommunications() {
                   key={chat.id}
                   onClick={() => setSelectedChat(chat.id)}
                   className={`flex items-start gap-3 p-4 text-left transition-colors hover:bg-gray-100/50 ${
-                    selectedChat === chat.id ? 'bg-white border-l-4 border-blue-600 shadow-sm' : 'border-l-4 border-transparent'
+                    selectedChat === chat.id
+                      ? 'bg-white border-l-4 border-blue-600 shadow-sm'
+                      : 'border-l-4 border-transparent'
                   }`}
                 >
                   <div className="relative">
@@ -115,7 +108,10 @@ export default function OrganizationCommunications() {
                     <p className="text-xs text-muted-foreground truncate">{chat.lastMessage}</p>
                   </div>
                   {chat.unread > 0 && (
-                    <Badge variant="default" className="h-5 w-5 rounded-full p-0 flex items-center justify-center text-[10px]">
+                    <Badge
+                      variant="default"
+                      className="h-5 w-5 rounded-full p-0 flex items-center justify-center text-[10px]"
+                    >
                       {chat.unread}
                     </Badge>
                   )}
@@ -131,11 +127,11 @@ export default function OrganizationCommunications() {
           <div className="p-4 border-b flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Avatar>
-                <AvatarImage src={chats.find(c => c.id === selectedChat)?.avatar} />
-                <AvatarFallback>{chats.find(c => c.id === selectedChat)?.name[0]}</AvatarFallback>
+                <AvatarImage src={chats.find((c) => c.id === selectedChat)?.avatar} />
+                <AvatarFallback>{chats.find((c) => c.id === selectedChat)?.name[0]}</AvatarFallback>
               </Avatar>
               <div>
-                <h3 className="font-semibold">{chats.find(c => c.id === selectedChat)?.name}</h3>
+                <h3 className="font-semibold">{chats.find((c) => c.id === selectedChat)?.name}</h3>
                 <p className="text-xs text-green-600 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
                   Online
@@ -159,10 +155,7 @@ export default function OrganizationCommunications() {
           <ScrollArea className="flex-1 p-4">
             <div className="space-y-4">
               {messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex ${msg.senderId === 1 ? 'justify-end' : 'justify-start'}`}
-                >
+                <div key={msg.id} className={`flex ${msg.senderId === 1 ? 'justify-end' : 'justify-start'}`}>
                   <div
                     className={`max-w-[70%] rounded-lg p-3 ${
                       msg.senderId === 1
@@ -171,7 +164,9 @@ export default function OrganizationCommunications() {
                     }`}
                   >
                     <p className="text-sm">{msg.text}</p>
-                    <p className={`text-[10px] mt-1 text-right ${msg.senderId === 1 ? 'text-blue-100' : 'text-gray-500'}`}>
+                    <p
+                      className={`text-[10px] mt-1 text-right ${msg.senderId === 1 ? 'text-blue-100' : 'text-gray-500'}`}
+                    >
                       {msg.time}
                     </p>
                   </div>
@@ -198,11 +193,7 @@ export default function OrganizationCommunications() {
                   value={messageInput}
                   onChange={(e) => setMessageInput(e.target.value)}
                 />
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="absolute right-2 bottom-1.5 h-6 w-6"
-                >
+                <Button variant="ghost" size="icon" className="absolute right-2 bottom-1.5 h-6 w-6">
                   <Smile className="h-4 w-4 text-muted-foreground" />
                 </Button>
               </div>

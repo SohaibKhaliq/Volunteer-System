@@ -17,8 +17,7 @@ export default class VolunteerHoursManagementController {
     const orgId = memberRecord.organizationId
     const { page = 1, limit = 20, userId, startDate, endDate } = request.qs()
 
-    let query = Database
-      .from('volunteer_hours')
+    let query = Database.from('volunteer_hours')
       .join('organization_volunteers', 'volunteer_hours.user_id', 'organization_volunteers.user_id')
       .join('users', 'users.id', 'volunteer_hours.user_id')
       .leftJoin('events', 'events.id', 'volunteer_hours.event_id')
@@ -61,18 +60,14 @@ export default class VolunteerHoursManagementController {
 
     const { notes } = request.only(['notes'])
 
-    const hour = await Database
-      .from('volunteer_hours')
-      .where('id', params.id)
-      .first()
+    const hour = await Database.from('volunteer_hours').where('id', params.id).first()
 
     if (!hour) {
       return response.notFound({ message: 'Hour log not found' })
     }
 
     // Verify the hour belongs to a volunteer in this organization
-    const volunteerBelongsToOrg = await Database
-      .from('organization_volunteers')
+    const volunteerBelongsToOrg = await Database.from('organization_volunteers')
       .where('organization_id', memberRecord.organizationId)
       .where('user_id', hour.user_id)
       .first()
@@ -81,12 +76,11 @@ export default class VolunteerHoursManagementController {
       return response.forbidden({ message: 'Hour log does not belong to your organization' })
     }
 
-    await Database
-      .from('volunteer_hours')
+    await Database.from('volunteer_hours')
       .where('id', params.id)
       .update({
         status: 'approved',
-        notes: notes ||hour.notes,
+        notes: notes || hour.notes,
         approved_by: user.id,
         approved_at: Database.raw('NOW()')
       })
@@ -107,18 +101,14 @@ export default class VolunteerHoursManagementController {
 
     const { reason } = request.only(['reason'])
 
-    const hour = await Database
-      .from('volunteer_hours')
-      .where('id', params.id)
-      .first()
+    const hour = await Database.from('volunteer_hours').where('id', params.id).first()
 
     if (!hour) {
       return response.notFound({ message: 'Hour log not found' })
     }
 
     // Verify the hour belongs to a volunteer in this organization
-    const volunteerBelongsToOrg = await Database
-      .from('organization_volunteers')
+    const volunteerBelongsToOrg = await Database.from('organization_volunteers')
       .where('organization_id', memberRecord.organizationId)
       .where('user_id', hour.user_id)
       .first()
@@ -127,8 +117,7 @@ export default class VolunteerHoursManagementController {
       return response.forbidden({ message: 'Hour log does not belong to your organization' })
     }
 
-    await Database
-      .from('volunteer_hours')
+    await Database.from('volunteer_hours')
       .where('id', params.id)
       .update({
         status: 'rejected',
@@ -158,25 +147,23 @@ export default class VolunteerHoursManagementController {
     }
 
     // Verify all hours belong to volunteers in this organization
-    const hours = await Database
-      .from('volunteer_hours')
+    const hours = await Database.from('volunteer_hours')
       .join('organization_volunteers', 'volunteer_hours.user_id', 'organization_volunteers.user_id')
       .where('organization_volunteers.organization_id', memberRecord.organizationId)
       .whereIn('volunteer_hours.id', ids)
       .select('volunteer_hours.id')
 
-    const validIds = hours.map(h => h.id)
+    const validIds = hours.map((h) => h.id)
 
     if (validIds.length !== ids.length) {
-      return response.badRequest({ 
+      return response.badRequest({
         message: 'Some hour logs do not belong to your organization',
         valid_count: validIds.length,
         requested_count: ids.length
       })
     }
 
-    await Database
-      .from('volunteer_hours')
+    await Database.from('volunteer_hours')
       .whereIn('id', validIds)
       .update({
         status: 'approved',
@@ -184,7 +171,7 @@ export default class VolunteerHoursManagementController {
         approved_at: Database.raw('NOW()')
       })
 
-    return response.ok({ 
+    return response.ok({
       message: `${validIds.length} hour logs approved successfully`,
       approved_count: validIds.length
     })
@@ -204,8 +191,7 @@ export default class VolunteerHoursManagementController {
     const { status, startDate, endDate, page = 1, limit = 50 } = request.qs()
 
     // Verify volunteer belongs to org
-    const volunteerBelongsToOrg = await Database
-      .from('organization_volunteers')
+    const volunteerBelongsToOrg = await Database.from('organization_volunteers')
       .where('organization_id', memberRecord.organizationId)
       .where('user_id', params.id)
       .first()
@@ -214,14 +200,10 @@ export default class VolunteerHoursManagementController {
       return response.forbidden({ message: 'Volunteer does not belong to your organization' })
     }
 
-    let query = Database
-      .from('volunteer_hours')
+    let query = Database.from('volunteer_hours')
       .leftJoin('events', 'events.id', 'volunteer_hours.event_id')
       .where('volunteer_hours.user_id', params.id)
-      .select(
-        'volunteer_hours.*',
-        'events.title as event_title'
-      )
+      .select('volunteer_hours.*', 'events.title as event_title')
       .orderBy('volunteer_hours.date', 'desc')
 
     if (status) {

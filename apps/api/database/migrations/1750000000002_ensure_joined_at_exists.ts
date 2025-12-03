@@ -7,7 +7,7 @@ export default class EnsureJoinedAtExists extends BaseSchema {
     // Use raw SQL with IF NOT EXISTS which is safe on MySQL 8+ and avoids throwing
     // when running against databases that already have the column.
     await this.schema.raw(
-      `ALTER TABLE \`${this.tableName}\` ADD COLUMN IF NOT EXISTS \`joined_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP`,
+      `ALTER TABLE \`${this.tableName}\` ADD COLUMN IF NOT EXISTS \`joined_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP`
     )
   }
 

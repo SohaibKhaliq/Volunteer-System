@@ -1,4 +1,3 @@
-
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { rules, schema } from '@ioc:Adonis/Core/Validator'
 
@@ -14,7 +13,7 @@ export default class AuthController {
         ]),
         password: schema.string({}, [rules.minLength(8)]),
         firstName: schema.string.optional({ trim: true }),
-        lastName: schema.string.optional({ trim: true }),
+        lastName: schema.string.optional({ trim: true })
       })
 
       const data = await request.validate({ schema: userSchema })

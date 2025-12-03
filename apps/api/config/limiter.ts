@@ -52,7 +52,7 @@ export default limiterConfig({
       | this file, you just have to reference the connection name.
       |
       */
-      connectionName: 'local',
-    },
-  },
+      connectionName: 'local'
+    }
+  }
 })
