@@ -7,6 +7,7 @@ import OrganizationVolunteer from 'App/Models/OrganizationVolunteer'
 import { DateTime } from 'luxon'
 import crypto from 'crypto'
 import fs from 'fs'
+import { parse } from 'csv-parse/sync'
 
 export default class ImportController {
   /**
@@ -44,22 +45,32 @@ export default class ImportController {
 
     try {
       const fileContent = fs.readFileSync(filePath, 'utf-8')
-      const lines = fileContent.split('\n').filter((line) => line.trim())
 
-      if (lines.length < 2) {
+      // Parse CSV with proper handling of quoted fields
+      const records = parse(fileContent, {
+        columns: true,
+        skip_empty_lines: true,
+        trim: true
+      }) as Record<string, string>[]
+
+      if (records.length === 0) {
         return response.badRequest({
           message: 'CSV file must have a header and at least one data row'
         })
       }
 
-      const headers = lines[0].split(',').map((h) => h.trim().toLowerCase())
-      const emailIndex = headers.indexOf('email')
-      const firstNameIndex = headers.indexOf('first_name')
-      const lastNameIndex = headers.indexOf('last_name')
-      const roleIndex = headers.indexOf('role')
-      const statusIndex = headers.indexOf('status')
+      // Normalize column names (lowercase)
+      const normalizedRecords = records.map((record) => {
+        const normalized: Record<string, string> = {}
+        for (const [key, value] of Object.entries(record)) {
+          normalized[key.toLowerCase()] = value
+        }
+        return normalized
+      })
 
-      if (emailIndex === -1) {
+      // Check for required column
+      const firstRecord = normalizedRecords[0]
+      if (!('email' in firstRecord)) {
         return response.badRequest({ message: 'CSV must have an "email" column' })
       }
 
@@ -69,12 +80,12 @@ export default class ImportController {
         errors: [] as string[]
       }
 
-      for (let i = 1; i < lines.length; i++) {
-        const values = lines[i].split(',').map((v) => v.trim())
-        const email = values[emailIndex]
+      for (let i = 0; i < normalizedRecords.length; i++) {
+        const record = normalizedRecords[i]
+        const email = record.email
 
         if (!email || !email.includes('@')) {
-          results.errors.push(`Row ${i + 1}: Invalid email`)
+          results.errors.push(`Row ${i + 2}: Invalid email`)
           results.skipped++
           continue
         }
@@ -84,13 +95,14 @@ export default class ImportController {
           let volunteerUser = await User.findBy('email', email)
 
           if (!volunteerUser) {
-            // Create new user
+            // Create new user with random password - they'll need to use password reset
             volunteerUser = await User.create({
               email,
-              firstName: firstNameIndex !== -1 ? values[firstNameIndex] : undefined,
-              lastName: lastNameIndex !== -1 ? values[lastNameIndex] : undefined,
-              password: crypto.randomBytes(16).toString('hex') // Random password, user will need to reset
+              firstName: record.first_name || undefined,
+              lastName: record.last_name || undefined,
+              password: crypto.randomBytes(16).toString('hex')
             })
+            // Note: In production, you should send a password reset email here
           }
 
           // Check if already a volunteer in this org
@@ -108,15 +120,15 @@ export default class ImportController {
           await OrganizationVolunteer.create({
             organizationId: memberRecord.organizationId,
             userId: volunteerUser.id,
-            role: roleIndex !== -1 && values[roleIndex] ? values[roleIndex] : 'Volunteer',
-            status: statusIndex !== -1 && values[statusIndex] ? values[statusIndex] : 'Active',
+            role: record.role || 'Volunteer',
+            status: record.status || 'Active',
             hours: 0,
             rating: 0
           })
 
           results.imported++
         } catch (err) {
-          results.errors.push(`Row ${i + 1}: ${String(err)}`)
+          results.errors.push(`Row ${i + 2}: ${String(err)}`)
           results.skipped++
         }
       }
@@ -171,26 +183,32 @@ export default class ImportController {
 
     try {
       const fileContent = fs.readFileSync(filePath, 'utf-8')
-      const lines = fileContent.split('\n').filter((line) => line.trim())
 
-      if (lines.length < 2) {
+      // Parse CSV with proper handling of quoted fields
+      const records = parse(fileContent, {
+        columns: true,
+        skip_empty_lines: true,
+        trim: true
+      }) as Record<string, string>[]
+
+      if (records.length === 0) {
         return response.badRequest({
           message: 'CSV file must have a header and at least one data row'
         })
       }
 
-      const headers = lines[0].split(',').map((h) => h.trim().toLowerCase())
-      const titleIndex = headers.indexOf('title')
-      const descriptionIndex = headers.indexOf('description')
-      const locationIndex = headers.indexOf('location')
-      const capacityIndex = headers.indexOf('capacity')
-      const typeIndex = headers.indexOf('type')
-      const startAtIndex = headers.indexOf('start_at')
-      const endAtIndex = headers.indexOf('end_at')
-      const statusIndex = headers.indexOf('status')
-      const visibilityIndex = headers.indexOf('visibility')
+      // Normalize column names (lowercase)
+      const normalizedRecords = records.map((record) => {
+        const normalized: Record<string, string> = {}
+        for (const [key, value] of Object.entries(record)) {
+          normalized[key.toLowerCase()] = value
+        }
+        return normalized
+      })
 
-      if (titleIndex === -1 || startAtIndex === -1) {
+      // Check for required columns
+      const firstRecord = normalizedRecords[0]
+      if (!('title' in firstRecord) || !('start_at' in firstRecord)) {
         return response.badRequest({ message: 'CSV must have "title" and "start_at" columns' })
       }
 
@@ -200,13 +218,13 @@ export default class ImportController {
         errors: [] as string[]
       }
 
-      for (let i = 1; i < lines.length; i++) {
-        const values = lines[i].split(',').map((v) => v.trim())
-        const title = values[titleIndex]
-        const startAtStr = values[startAtIndex]
+      for (let i = 0; i < normalizedRecords.length; i++) {
+        const record = normalizedRecords[i]
+        const title = record.title
+        const startAtStr = record.start_at
 
         if (!title) {
-          results.errors.push(`Row ${i + 1}: Title is required`)
+          results.errors.push(`Row ${i + 2}: Title is required`)
           results.skipped++
           continue
         }
@@ -214,7 +232,7 @@ export default class ImportController {
         try {
           const startAt = DateTime.fromISO(startAtStr)
           if (!startAt.isValid) {
-            results.errors.push(`Row ${i + 1}: Invalid start_at date format`)
+            results.errors.push(`Row ${i + 2}: Invalid start_at date format (use ISO format)`)
             results.skipped++
             continue
           }
@@ -223,27 +241,21 @@ export default class ImportController {
             organizationId: memberRecord.organizationId,
             title,
             slug: Opportunity.generateSlug(title),
-            description: descriptionIndex !== -1 ? values[descriptionIndex] : undefined,
-            location: locationIndex !== -1 ? values[locationIndex] : undefined,
-            capacity: capacityIndex !== -1 ? parseInt(values[capacityIndex], 10) || 0 : 0,
-            type: typeIndex !== -1 && values[typeIndex] ? values[typeIndex] : 'event',
+            description: record.description || undefined,
+            location: record.location || undefined,
+            capacity: record.capacity ? parseInt(record.capacity, 10) || 0 : 0,
+            type: record.type || 'event',
             startAt,
-            endAt:
-              endAtIndex !== -1 && values[endAtIndex]
-                ? DateTime.fromISO(values[endAtIndex])
-                : undefined,
-            status: statusIndex !== -1 && values[statusIndex] ? values[statusIndex] : 'draft',
-            visibility:
-              visibilityIndex !== -1 && values[visibilityIndex]
-                ? values[visibilityIndex]
-                : 'public',
+            endAt: record.end_at ? DateTime.fromISO(record.end_at) : undefined,
+            status: record.status || 'draft',
+            visibility: record.visibility || 'public',
             checkinCode: Opportunity.generateCheckinCode(),
             createdBy: user.id
           })
 
           results.imported++
         } catch (err) {
-          results.errors.push(`Row ${i + 1}: ${String(err)}`)
+          results.errors.push(`Row ${i + 2}: ${String(err)}`)
           results.skipped++
         }
       }
