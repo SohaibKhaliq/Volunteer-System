@@ -320,6 +320,22 @@ Route.group(() => {
   Route.get('/users', 'AdminController.listUsers')
   Route.post('/users/:id/disable', 'AdminController.disableUser')
   Route.post('/users/:id/enable', 'AdminController.enableUser')
+
+  // Notification Templates
+  Route.get('/templates', 'NotificationTemplatesController.index')
+  Route.post('/templates', 'NotificationTemplatesController.store')
+  Route.get('/templates/:key', 'NotificationTemplatesController.show')
+  Route.put('/templates/:key', 'NotificationTemplatesController.update')
+  Route.post('/templates/:key/reset', 'NotificationTemplatesController.reset')
+  Route.delete('/templates/:key', 'NotificationTemplatesController.destroy')
+  Route.post('/templates/preview', 'NotificationTemplatesController.preview')
+
+  // System Settings (extended)
+  Route.get('/system-settings', 'AdminController.getSystemSettings')
+  Route.put('/system-settings', 'AdminController.updateSystemSettings')
+  Route.post('/system-settings/branding', 'AdminController.updateBranding')
+  Route.get('/backup', 'AdminController.createBackup')
+  Route.get('/backup/status', 'AdminController.backupStatus')
 })
   .prefix('/admin')
   .middleware(['auth'])
@@ -356,4 +372,23 @@ Route.group(() => {
   Route.get('/achievements', 'VolunteerController.myAchievements')
 })
   .prefix('/volunteer')
+  .middleware(['auth'])
+
+// ==========================================
+// CALENDAR / ICAL ROUTES
+// ==========================================
+Route.group(() => {
+  // Public calendar feeds (no auth required)
+  Route.get('/public-opportunities', 'CalendarController.publicOpportunities')
+})
+  .prefix('/calendar')
+
+Route.group(() => {
+  // Authenticated calendar feeds
+  Route.get('/my-schedule', 'CalendarController.mySchedule')
+  Route.get('/organization-opportunities', 'CalendarController.organizationOpportunities')
+  Route.get('/events', 'CalendarController.events')
+  Route.get('/subscription-urls', 'CalendarController.getSubscriptionUrl')
+})
+  .prefix('/calendar')
   .middleware(['auth'])

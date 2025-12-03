@@ -493,4 +493,203 @@ export default class AdminController {
       return response.unauthorized({ error: { message: error.message || 'Access denied' } })
     }
   }
+
+  /**
+   * Get system settings
+   */
+  public async getSystemSettings({ auth, response }: HttpContextContract) {
+    try {
+      await this.requireSuperAdmin(auth)
+
+      // Get all system settings from settings table
+      const settings = await Database.from('system_settings').select('key', 'value')
+
+      const settingsMap: Record<string, any> = {}
+      for (const s of settings) {
+        try {
+          settingsMap[s.key] = JSON.parse(s.value)
+        } catch {
+          settingsMap[s.key] = s.value
+        }
+      }
+
+      // Default settings structure
+      const defaults = {
+        platform_name: 'Volunteer System',
+        platform_tagline: 'Connecting volunteers with opportunities',
+        primary_color: '#3B82F6',
+        secondary_color: '#10B981',
+        logo_url: null,
+        favicon_url: null,
+        support_email: 'support@example.com',
+        default_timezone: 'UTC',
+        require_email_verification: true,
+        allow_public_registration: true,
+        auto_approve_organizations: false,
+        max_volunteers_per_opportunity: 100,
+        enable_qr_checkin: true,
+        enable_calendar_export: true,
+        maintenance_mode: false,
+        maintenance_message: 'System is under maintenance. Please check back later.'
+      }
+
+      return response.ok({ ...defaults, ...settingsMap })
+    } catch (error) {
+      Logger.error('Get system settings error: %o', error)
+      return response.unauthorized({ error: { message: error.message || 'Access denied' } })
+    }
+  }
+
+  /**
+   * Update system settings
+   */
+  public async updateSystemSettings({ auth, request, response }: HttpContextContract) {
+    try {
+      const admin = await this.requireSuperAdmin(auth)
+
+      const settings = request.body()
+
+      // Validate and save each setting
+      for (const [key, value] of Object.entries(settings)) {
+        const stringValue = typeof value === 'object' ? JSON.stringify(value) : String(value)
+        
+        await Database.insertQuery()
+          .table('system_settings')
+          .insert({ key, value: stringValue })
+          .onConflict('key')
+          .merge(['value'])
+      }
+
+      // Log the action
+      await AuditLog.create({
+        userId: admin.id,
+        action: 'system_settings_updated',
+        targetType: 'system',
+        targetId: 0,
+        metadata: JSON.stringify({ keys: Object.keys(settings) })
+      })
+
+      return response.ok({ message: 'Settings updated successfully' })
+    } catch (error) {
+      Logger.error('Update system settings error: %o', error)
+      return response.unauthorized({ error: { message: error.message || 'Access denied' } })
+    }
+  }
+
+  /**
+   * Update platform branding
+   */
+  public async updateBranding({ auth, request, response }: HttpContextContract) {
+    try {
+      const admin = await this.requireSuperAdmin(auth)
+
+      const branding = request.only([
+        'platform_name',
+        'platform_tagline',
+        'primary_color',
+        'secondary_color',
+        'logo_url',
+        'favicon_url'
+      ])
+
+      // Save branding settings
+      for (const [key, value] of Object.entries(branding)) {
+        if (value !== undefined) {
+          await Database.insertQuery()
+            .table('system_settings')
+            .insert({ key, value: String(value) })
+            .onConflict('key')
+            .merge(['value'])
+        }
+      }
+
+      // Log the action
+      await AuditLog.create({
+        userId: admin.id,
+        action: 'branding_updated',
+        targetType: 'system',
+        targetId: 0,
+        metadata: JSON.stringify(branding)
+      })
+
+      return response.ok({ message: 'Branding updated successfully', branding })
+    } catch (error) {
+      Logger.error('Update branding error: %o', error)
+      return response.unauthorized({ error: { message: error.message || 'Access denied' } })
+    }
+  }
+
+  /**
+   * Create a database backup (metadata only - actual backup would be handled by infrastructure)
+   */
+  public async createBackup({ auth, response }: HttpContextContract) {
+    try {
+      const admin = await this.requireSuperAdmin(auth)
+
+      // In a real implementation, this would trigger a database backup job
+      // For now, we just log the request and return a status
+
+      const backupId = `backup_${Date.now()}`
+      const backupInfo = {
+        id: backupId,
+        requestedBy: admin.id,
+        requestedAt: new Date().toISOString(),
+        status: 'initiated',
+        message: 'Backup request has been initiated. In production, this would trigger a database backup job.'
+      }
+
+      // Log the action
+      await AuditLog.create({
+        userId: admin.id,
+        action: 'backup_requested',
+        targetType: 'system',
+        targetId: 0,
+        metadata: JSON.stringify(backupInfo)
+      })
+
+      return response.ok(backupInfo)
+    } catch (error) {
+      Logger.error('Create backup error: %o', error)
+      return response.unauthorized({ error: { message: error.message || 'Access denied' } })
+    }
+  }
+
+  /**
+   * Get backup status
+   */
+  public async backupStatus({ auth, response }: HttpContextContract) {
+    try {
+      await this.requireSuperAdmin(auth)
+
+      // Get recent backup logs
+      const backupLogs = await AuditLog.query()
+        .where('action', 'backup_requested')
+        .orderBy('created_at', 'desc')
+        .limit(10)
+
+      const backups = backupLogs.map((log) => {
+        let metadata = {}
+        try {
+          metadata = JSON.parse(log.metadata || '{}')
+        } catch {
+          metadata = {}
+        }
+        return {
+          id: (metadata as any).id || log.id,
+          requestedAt: log.createdAt,
+          status: 'completed', // In production, this would check actual backup status
+          ...metadata
+        }
+      })
+
+      return response.ok({
+        lastBackup: backups[0] || null,
+        recentBackups: backups,
+        message: 'Backup status is simulated. In production, this would check actual backup infrastructure.'
+      })
+    } catch (error) {
+      Logger.error('Backup status error: %o', error)
+      return response.unauthorized({ error: { message: error.message || 'Access denied' } })
+    }
+  }
 }

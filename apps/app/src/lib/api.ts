@@ -509,7 +509,50 @@ const api = {
   leaveVolunteerOrganization: async (id: number) => axios.delete(`/volunteer/organizations/${id}/leave`),
   
   // Volunteer Achievements
-  getVolunteerAchievements: async () => axios.get('/volunteer/achievements')
+  getVolunteerAchievements: async () => axios.get('/volunteer/achievements'),
+
+  // ==========================================
+  // CALENDAR / ICAL ENDPOINTS
+  // ==========================================
+  getPublicOpportunitiesCalendar: async (params?: { organizationSlug?: string; from?: string; to?: string }) =>
+    axios.get('/calendar/public-opportunities', { params, responseType: 'blob' }),
+  getMyScheduleCalendar: async (params?: { from?: string; to?: string }) =>
+    axios.get('/calendar/my-schedule', { params, responseType: 'blob' }),
+  getOrganizationOpportunitiesCalendar: async (params?: { from?: string; to?: string; status?: string }) =>
+    axios.get('/calendar/organization-opportunities', { params, responseType: 'blob' }),
+  getEventsCalendar: async (params?: { from?: string; to?: string; organizationId?: number }) =>
+    axios.get('/calendar/events', { params, responseType: 'blob' }),
+  getCalendarSubscriptionUrls: async () => axios.get('/calendar/subscription-urls'),
+
+  // ==========================================
+  // ADMIN NOTIFICATION TEMPLATES
+  // ==========================================
+  getNotificationTemplates: async () => axios.get('/admin/templates'),
+  createNotificationTemplate: async (data: { key: string; subject: string; body: string }) =>
+    axios.post('/admin/templates', data),
+  getNotificationTemplate: async (key: string) => axios.get(`/admin/templates/${key}`),
+  updateNotificationTemplate: async (key: string, data: { subject: string; body: string }) =>
+    axios.put(`/admin/templates/${key}`, data),
+  resetNotificationTemplate: async (key: string) => axios.post(`/admin/templates/${key}/reset`),
+  deleteNotificationTemplate: async (key: string) => axios.delete(`/admin/templates/${key}`),
+  previewNotificationTemplate: async (data: { key?: string; subject: string; body: string; sampleData?: Record<string, string> }) =>
+    axios.post('/admin/templates/preview', data),
+
+  // ==========================================
+  // ADMIN SYSTEM SETTINGS
+  // ==========================================
+  getSystemSettings: async () => axios.get('/admin/system-settings'),
+  updateSystemSettings: async (settings: Record<string, any>) => axios.put('/admin/system-settings', settings),
+  updateBranding: async (branding: { 
+    platform_name?: string; 
+    platform_tagline?: string; 
+    primary_color?: string; 
+    secondary_color?: string;
+    logo_url?: string;
+    favicon_url?: string;
+  }) => axios.post('/admin/system-settings/branding', branding),
+  createBackup: async () => axios.get('/admin/backup'),
+  getBackupStatus: async () => axios.get('/admin/backup/status')
 } as const;
 
 export const useLazyQuery = (key: QueryKey, fn: QueryFunction, options = {}) => {

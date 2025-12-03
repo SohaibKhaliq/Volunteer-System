@@ -493,3 +493,307 @@ test.group('Permission Model', (group) => {
     adminResponse.assertStatus(200)
   })
 })
+
+// ==========================================
+// CALENDAR EXPORT TESTS
+// ==========================================
+test.group('Calendar Export', (group) => {
+  let testUser: User
+  let testOrg: Organization
+  let testOpportunity: Opportunity
+
+  group.setup(async () => {
+    testUser = await User.create({
+      email: 'calendar-test@test.com',
+      password: 'password123',
+      firstName: 'Calendar',
+      lastName: 'Tester',
+      isAdmin: false
+    })
+
+    testOrg = await Organization.create({
+      name: 'Calendar Test Org',
+      slug: 'calendar-test-org',
+      status: 'active'
+    })
+
+    testOpportunity = await Opportunity.create({
+      organizationId: testOrg.id,
+      title: 'Calendar Test Event',
+      slug: 'calendar-test-event',
+      description: 'Test event for calendar export',
+      location: 'Test Location',
+      status: 'published',
+      visibility: 'public',
+      startAt: new Date(Date.now() + 86400000), // Tomorrow
+      endAt: new Date(Date.now() + 90000000)
+    })
+
+    // Add user as org member
+    await Database.table('organization_volunteers').insert({
+      organization_id: testOrg.id,
+      user_id: testUser.id,
+      role: 'coordinator',
+      status: 'active',
+      joined_at: new Date(),
+      created_at: new Date(),
+      updated_at: new Date()
+    })
+  })
+
+  group.teardown(async () => {
+    await Database.rawQuery('DELETE FROM opportunities WHERE slug = ?', ['calendar-test-event'])
+    await Database.rawQuery('DELETE FROM organization_volunteers WHERE organization_id = ?', [testOrg.id])
+    await Database.rawQuery('DELETE FROM organizations WHERE slug = ?', ['calendar-test-org'])
+    await Database.rawQuery('DELETE FROM users WHERE email = ?', ['calendar-test@test.com'])
+  })
+
+  test('public calendar returns iCal format', async ({ client, assert }) => {
+    const response = await client.get('/calendar/public-opportunities')
+
+    response.assertStatus(200)
+    assert.include(response.header('content-type'), 'text/calendar')
+  })
+
+  test('authenticated user can get my schedule calendar', async ({ client, assert }) => {
+    const response = await client
+      .get('/calendar/my-schedule')
+      .loginAs(testUser)
+
+    response.assertStatus(200)
+    assert.include(response.header('content-type'), 'text/calendar')
+  })
+
+  test('authenticated user can get organization opportunities calendar', async ({ client, assert }) => {
+    const response = await client
+      .get('/calendar/organization-opportunities')
+      .loginAs(testUser)
+
+    response.assertStatus(200)
+    assert.include(response.header('content-type'), 'text/calendar')
+  })
+
+  test('authenticated user can get subscription URLs', async ({ client, assert }) => {
+    const response = await client
+      .get('/calendar/subscription-urls')
+      .loginAs(testUser)
+
+    response.assertStatus(200)
+    assert.property(response.body(), 'myScheduleUrl')
+    assert.property(response.body(), 'publicOpportunitiesUrl')
+    assert.property(response.body(), 'instructions')
+  })
+})
+
+// ==========================================
+// NOTIFICATION TEMPLATES TESTS
+// ==========================================
+test.group('Notification Templates', (group) => {
+  let adminUser: User
+  let regularUser: User
+
+  group.setup(async () => {
+    adminUser = await User.create({
+      email: 'template-admin@test.com',
+      password: 'password123',
+      firstName: 'Template',
+      lastName: 'Admin',
+      isAdmin: true
+    })
+
+    regularUser = await User.create({
+      email: 'template-user@test.com',
+      password: 'password123',
+      firstName: 'Template',
+      lastName: 'User',
+      isAdmin: false
+    })
+  })
+
+  group.teardown(async () => {
+    await Database.rawQuery('DELETE FROM users WHERE email LIKE ?', ['template-%@test.com'])
+  })
+
+  test('admin can list notification templates', async ({ client, assert }) => {
+    const response = await client
+      .get('/admin/templates')
+      .loginAs(adminUser)
+
+    response.assertStatus(200)
+    assert.property(response.body(), 'templates')
+    assert.property(response.body(), 'availableVariables')
+  })
+
+  test('regular user cannot access notification templates', async ({ client }) => {
+    const response = await client
+      .get('/admin/templates')
+      .loginAs(regularUser)
+
+    response.assertStatus(401)
+  })
+
+  test('admin can get a specific template', async ({ client, assert }) => {
+    const response = await client
+      .get('/admin/templates/invite_email')
+      .loginAs(adminUser)
+
+    response.assertStatus(200)
+    assert.equal(response.body().key, 'invite_email')
+    assert.property(response.body(), 'subject')
+    assert.property(response.body(), 'body')
+  })
+
+  test('admin can preview a template', async ({ client, assert }) => {
+    const response = await client
+      .post('/admin/templates/preview')
+      .json({
+        subject: 'Hello {{recipient_name}}',
+        body: 'Welcome to {{organization_name}}!'
+      })
+      .loginAs(adminUser)
+
+    response.assertStatus(200)
+    assert.equal(response.body().subject, 'Hello John Doe')
+    assert.include(response.body().body, 'Sample Organization')
+  })
+
+  test('admin can update a template', async ({ client, assert }) => {
+    const response = await client
+      .put('/admin/templates/invite_email')
+      .json({
+        subject: 'Custom Invite Subject',
+        body: 'Custom invite body'
+      })
+      .loginAs(adminUser)
+
+    response.assertStatus(200)
+    assert.equal(response.body().template.subject, 'Custom Invite Subject')
+  })
+
+  test('admin can reset a template to default', async ({ client }) => {
+    const response = await client
+      .post('/admin/templates/invite_email/reset')
+      .loginAs(adminUser)
+
+    response.assertStatus(200)
+    response.assertBodyContains({ message: 'Template reset to default' })
+  })
+
+  test('admin can create a custom template', async ({ client, assert }) => {
+    const response = await client
+      .post('/admin/templates')
+      .json({
+        key: 'custom_template_test',
+        subject: 'Custom Template Subject',
+        body: 'Custom template body for testing'
+      })
+      .loginAs(adminUser)
+
+    response.assertStatus(201)
+    assert.equal(response.body().template.key, 'custom_template_test')
+  })
+
+  test('admin can delete a custom template', async ({ client }) => {
+    const response = await client
+      .delete('/admin/templates/custom_template_test')
+      .loginAs(adminUser)
+
+    response.assertStatus(200)
+    response.assertBodyContains({ message: 'Template deleted successfully' })
+  })
+})
+
+// ==========================================
+// ADMIN SYSTEM SETTINGS TESTS
+// ==========================================
+test.group('Admin System Settings', (group) => {
+  let adminUser: User
+  let regularUser: User
+
+  group.setup(async () => {
+    adminUser = await User.create({
+      email: 'settings-admin@test.com',
+      password: 'password123',
+      firstName: 'Settings',
+      lastName: 'Admin',
+      isAdmin: true
+    })
+
+    regularUser = await User.create({
+      email: 'settings-user@test.com',
+      password: 'password123',
+      firstName: 'Settings',
+      lastName: 'User',
+      isAdmin: false
+    })
+  })
+
+  group.teardown(async () => {
+    await Database.rawQuery('DELETE FROM users WHERE email LIKE ?', ['settings-%@test.com'])
+  })
+
+  test('admin can get system settings', async ({ client, assert }) => {
+    const response = await client
+      .get('/admin/system-settings')
+      .loginAs(adminUser)
+
+    response.assertStatus(200)
+    assert.property(response.body(), 'platform_name')
+    assert.property(response.body(), 'require_email_verification')
+  })
+
+  test('regular user cannot access system settings', async ({ client }) => {
+    const response = await client
+      .get('/admin/system-settings')
+      .loginAs(regularUser)
+
+    response.assertStatus(401)
+  })
+
+  test('admin can update system settings', async ({ client }) => {
+    const response = await client
+      .put('/admin/system-settings')
+      .json({
+        platform_name: 'Updated Platform Name',
+        maintenance_mode: false
+      })
+      .loginAs(adminUser)
+
+    response.assertStatus(200)
+    response.assertBodyContains({ message: 'Settings updated successfully' })
+  })
+
+  test('admin can update branding', async ({ client, assert }) => {
+    const response = await client
+      .post('/admin/system-settings/branding')
+      .json({
+        platform_name: 'Branded Platform',
+        primary_color: '#FF5733',
+        platform_tagline: 'New tagline'
+      })
+      .loginAs(adminUser)
+
+    response.assertStatus(200)
+    assert.equal(response.body().branding.platform_name, 'Branded Platform')
+    assert.equal(response.body().branding.primary_color, '#FF5733')
+  })
+
+  test('admin can request a backup', async ({ client, assert }) => {
+    const response = await client
+      .get('/admin/backup')
+      .loginAs(adminUser)
+
+    response.assertStatus(200)
+    assert.property(response.body(), 'id')
+    assert.equal(response.body().status, 'initiated')
+  })
+
+  test('admin can check backup status', async ({ client, assert }) => {
+    const response = await client
+      .get('/admin/backup/status')
+      .loginAs(adminUser)
+
+    response.assertStatus(200)
+    assert.property(response.body(), 'recentBackups')
+  })
+})
