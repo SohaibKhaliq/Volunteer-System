@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
@@ -12,7 +12,7 @@ export default function FeedbackDashboard() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  const { data: surveys = [], isLoading } = useQuery(['surveys'], api.listSurveys);
+  const { data: surveys = [] } = useQuery(['surveys'], () => api.listSurveys());
   const { user } = useApp();
   const isAdmin = !!(
     user?.isAdmin ||
