@@ -7,8 +7,14 @@ import api from '@/lib/api';
 
 const Home = () => {
   const { t } = useTranslation();
-  const { data: featuredEvents, isLoading } = useQuery(['featured-events'], () => api.listEvents() as unknown as Promise<any[]>);
-  const { data: stats, isLoading: isLoadingStats } = useQuery(['public-stats'], () => api.getReportsOverview() as unknown as Promise<any>);
+  const { data: featuredEvents, isLoading } = useQuery(
+    ['featured-events'],
+    () => api.listEvents() as unknown as Promise<any[]>
+  );
+  const { data: stats, isLoading: isLoadingStats } = useQuery(
+    ['public-stats'],
+    () => api.getReportsOverview() as unknown as Promise<any>
+  );
 
   return (
     <div className="flex flex-col min-h-screen">
