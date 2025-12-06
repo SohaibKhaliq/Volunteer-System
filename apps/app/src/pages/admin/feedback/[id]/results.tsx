@@ -1,4 +1,4 @@
-import React from 'react';
+// no default React import needed
 import { useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
