@@ -1,5 +1,5 @@
 import { FixType } from '@/types/utils';
-import Axios, { AxiosRequestConfig } from 'axios';
+import Axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 
 import { toast } from '@/components/atoms/use-toast';
 import { showApiError } from './error-to-toast';
@@ -36,10 +36,10 @@ export const axios = Axios.create({
 
 axios.interceptors.request.use(authRequestInterceptor as FixType);
 axios.interceptors.response.use(
-  (response) => {
+  (response: AxiosResponse<unknown>) => {
     return response.data;
   },
-  async (error) => {
+  async (error: any) => {
     const originalRequest = error?.config;
     // If unauthorized and we haven't retried yet, attempt a lightweight authenticate
     try {
