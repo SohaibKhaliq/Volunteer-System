@@ -110,7 +110,7 @@ export default function AdminCertifications() {
     return () => clearTimeout(timeout);
   }, [courseUserQuery]);
 
-  const { data: courseUsers = [], isLoading: courseUsersLoading } = useQuery<User[]>({
+  const { data: courseUsers = [] } = useQuery<User[]>({
     queryKey: ['users', 'courses', debouncedCourseUserQuery],
     queryFn: () => api.listUsers(debouncedCourseUserQuery),
     enabled: debouncedCourseUserQuery.length > 0 || debouncedCourseUserQuery === ''
