@@ -73,7 +73,7 @@ const AddressInput = forwardRef<HTMLDivElement, TextProps>((props, ref) => {
             aria-expanded={open}
             className="flex-1 justify-between w-full"
           >
-            {location ? location.address : placeholder ?? t('Enter an address...')}
+            {location ? location.address : (placeholder ?? t('Enter an address...'))}
             <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
