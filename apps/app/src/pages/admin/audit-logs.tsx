@@ -51,7 +51,9 @@ export default function AdminAuditLogs() {
                 logs.map((log: any) => (
                   <TableRow key={log.id}>
                     <TableCell>{log.action}</TableCell>
-                    <TableCell>{log.user?.firstName} {log.user?.lastName}</TableCell>
+                    <TableCell>
+                      {log.user?.firstName} {log.user?.lastName}
+                    </TableCell>
                     <TableCell className="text-sm text-muted-foreground">{log.ipAddress || 'N/A'}</TableCell>
                     <TableCell>{format(new Date(log.createdAt), 'PPpp')}</TableCell>
                   </TableRow>
