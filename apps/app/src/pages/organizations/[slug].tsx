@@ -1,4 +1,4 @@
-import React from 'react';
+// no default React namespace required in this file
 import { useQuery } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
 import api from '@/lib/api';
@@ -6,16 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-  Loader2,
-  MapPin,
-  Users,
-  Clock,
-  Calendar,
-  ExternalLink,
-  Globe,
-  ArrowLeft
-} from 'lucide-react';
+import { Loader2, MapPin, Users, Clock, Calendar, ExternalLink, Globe, ArrowLeft } from 'lucide-react';
 
 interface OrganizationDetail {
   id: number;
@@ -52,7 +43,11 @@ export default function PublicOrganizationDetail() {
   const { slug } = useParams<{ slug: string }>();
 
   // Fetch organization details
-  const { data: orgData, isLoading: isOrgLoading, error } = useQuery({
+  const {
+    data: orgData,
+    isLoading: isOrgLoading,
+    error
+  } = useQuery({
     queryKey: ['publicOrganization', slug],
     queryFn: () => api.getPublicOrganization(slug!),
     enabled: !!slug
@@ -79,9 +74,7 @@ export default function PublicOrganizationDetail() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <h3 className="text-lg font-semibold mb-2">Organization Not Found</h3>
-            <p className="text-muted-foreground mb-4">
-              This organization doesn't exist or is not public.
-            </p>
+            <p className="text-muted-foreground mb-4">This organization doesn't exist or is not public.</p>
             <Link to="/organizations">
               <Button variant="outline">
                 <ArrowLeft className="h-4 w-4 mr-2" />
@@ -111,9 +104,7 @@ export default function PublicOrganizationDetail() {
           <div className="flex flex-col md:flex-row gap-6">
             <Avatar className="h-32 w-32">
               <AvatarImage src={org.logo} />
-              <AvatarFallback className="text-4xl">
-                {org.name.charAt(0).toUpperCase()}
-              </AvatarFallback>
+              <AvatarFallback className="text-4xl">{org.name.charAt(0).toUpperCase()}</AvatarFallback>
             </Avatar>
             <div className="flex-1">
               <div className="flex items-start justify-between">
@@ -219,9 +210,7 @@ function OpportunityCard({ opportunity, orgSlug }: { opportunity: Opportunity; o
           <CardTitle className="text-lg">{opportunity.title}</CardTitle>
           <Badge variant="outline">{opportunity.type}</Badge>
         </div>
-        {opportunity.team && (
-          <CardDescription>{opportunity.team.name}</CardDescription>
-        )}
+        {opportunity.team && <CardDescription>{opportunity.team.name}</CardDescription>}
       </CardHeader>
       <CardContent>
         <div className="space-y-2 mb-4">
@@ -249,9 +238,7 @@ function OpportunityCard({ opportunity, orgSlug }: { opportunity: Opportunity; o
         <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
           {opportunity.description || 'No description available.'}
         </p>
-        <Button className="w-full">
-          Apply Now
-        </Button>
+        <Button className="w-full">Apply Now</Button>
       </CardContent>
     </Card>
   );
