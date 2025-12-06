@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
-import { Clock, Edit, Trash2, Users, Plus, Eye } from 'lucide-react';
+import { Clock, Edit, Trash2, Users, Plus } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import SkeletonCard from '@/components/atoms/skeleton-card';
@@ -16,15 +16,14 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
-  DialogTrigger
+  DialogFooter
 } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
+ 
 
 export default function AdminScheduling() {
   const { data, isLoading } = useQuery({
     queryKey: ['tasks'],
-    queryFn: api.listTasks
+    queryFn: () => api.listTasks()
   });
 
   const shiftsRaw = Array.isArray(data) ? data : [];
@@ -121,7 +120,7 @@ export default function AdminScheduling() {
   // scheduled jobs
   const { data: jobsData, isLoading: jobsLoading } = useQuery({
     queryKey: ['scheduledJobs'],
-    queryFn: api.listScheduledJobs
+    queryFn: () => api.listScheduledJobs()
   });
   const jobs = Array.isArray(jobsData) ? jobsData : [];
 
