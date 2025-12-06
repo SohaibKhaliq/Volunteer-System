@@ -91,17 +91,10 @@ export default function AdminDashboard() {
 
   const loading = loadingOverview || loadingHours || loadingEvents || loadingChart;
 
-  const chartData = Array.isArray(chartDataRes)
-    ? chartDataRes
-    : (chartDataRes?.data ??
-      chartDataRes ?? [
-        { month: 'Jan', volunteers: 50, hours: 120 },
-        { month: 'Feb', volunteers: 60, hours: 140 },
-        { month: 'Mar', volunteers: 80, hours: 160 },
-        { month: 'Apr', volunteers: 90, hours: 200 },
-        { month: 'May', volunteers: 110, hours: 240 },
-        { month: 'Jun', volunteers: 130, hours: 260 }
-      ]);
+  // Prefer server-provided chart data. If the server returns an object wrapper
+  // (res.data) or an array, use that — otherwise fall back to an empty array so
+  // charts render an empty state instead of a hard-coded sample dataset.
+  const chartData = Array.isArray(chartDataRes) ? chartDataRes : (chartDataRes?.data ?? chartDataRes ?? []);
 
   const eventDistribution = Array.isArray((eventStats as any)?.byStatus)
     ? (eventStats as any).byStatus.map((s: any) => ({
