@@ -151,7 +151,7 @@ export default function Register() {
         <div className="relative h-full flex flex-col justify-end p-12 text-white">
           <blockquote className="space-y-2">
             <p className="text-lg font-medium leading-relaxed">
-              "The best way to find yourself is to lose yourself in the service of others."
+              The best way to find yourself is to lose yourself in the service of others.
             </p>
             <footer className="text-sm opacity-80">— Mahatma Gandhi</footer>
           </blockquote>
