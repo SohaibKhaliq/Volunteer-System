@@ -31,9 +31,7 @@ const VolunteerSettings = () => {
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <Label className="text-base">{t('SMS Notifications')}</Label>
-              <p className="text-sm text-muted-foreground">
-                {t('Receive text messages for urgent alerts.')}
-              </p>
+              <p className="text-sm text-muted-foreground">{t('Receive text messages for urgent alerts.')}</p>
             </div>
             <Switch />
           </div>
