@@ -36,9 +36,8 @@ export default function AdminHours() {
     return () => clearTimeout(t);
   }, [volunteerQuery]);
 
-  const { data: volunteerResults = [], isLoading: volunteersLoading } = useQuery(
-    ['users', debouncedVolunteerQuery],
-    () => api.listUsers(debouncedVolunteerQuery)
+  const { data: volunteerResults = [] } = useQuery(['users', debouncedVolunteerQuery], () =>
+    api.listUsers(debouncedVolunteerQuery)
   );
 
   const { data, isLoading } = useQuery({
