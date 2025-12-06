@@ -1,4 +1,4 @@
-import React from 'react';
+// automatic JSX runtime — remove unused default React import
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Header from '@/components/molecules/header';
