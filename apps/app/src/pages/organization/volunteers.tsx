@@ -66,6 +66,7 @@ export default function OrganizationVolunteers() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
+    phone: '',
     role: 'Volunteer',
     status: 'Active',
     skills: ''
@@ -76,6 +77,7 @@ export default function OrganizationVolunteers() {
     setFormData({
       name: '',
       email: '',
+      phone: '',
       role: 'Volunteer',
       status: 'Active',
       skills: ''
@@ -88,6 +90,7 @@ export default function OrganizationVolunteers() {
     setFormData({
       name: volunteer.name,
       email: volunteer.email,
+      phone: volunteer.phone ?? '',
       role: volunteer.role,
       status: volunteer.status,
       skills: volunteer.skills ? volunteer.skills.join(', ') : ''
