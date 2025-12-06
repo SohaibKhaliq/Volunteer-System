@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Calendar as CalendarIcon, MapPin, Clock, Car, Search, Filter, ArrowRight } from 'lucide-react';
+import { Calendar as CalendarIcon, MapPin, Car, Search, Filter, ArrowRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
