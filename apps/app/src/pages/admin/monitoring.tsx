@@ -8,8 +8,10 @@ import { Button } from '@/components/ui/button';
 import { saveAs } from 'file-saver';
 
 export default function AdminMonitoring() {
-  const { data: stats, isLoading: statsLoading } = useQuery(['monitoring', 'stats'], api.getMonitoringStats);
-  const { data: recent, isLoading: recentLoading } = useQuery(['monitoring', 'recent'], api.getMonitoringRecent);
+  const { data: stats, isLoading: statsLoading } = useQuery(['monitoring', 'stats'], () => api.getMonitoringStats());
+  const { data: recent, isLoading: recentLoading } = useQuery(['monitoring', 'recent'], () =>
+    api.getMonitoringRecent()
+  );
 
   const queryClient = useQueryClient();
 
