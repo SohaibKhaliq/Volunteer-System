@@ -1,5 +1,4 @@
 import { describe, it, expect, vi } from 'vitest';
-import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import Providers from '@/providers';
@@ -18,7 +17,7 @@ describe('OrganizationLayout sidebar', () => {
   it('renders nav with overflow and shows Exit Portal button', async () => {
     const { container } = render(
       <Providers>
-        <MemoryRouter initialEntries={["/organization"]}>
+        <MemoryRouter initialEntries={['/organization']}>
           <OrganizationLayout />
         </MemoryRouter>
       </Providers>
