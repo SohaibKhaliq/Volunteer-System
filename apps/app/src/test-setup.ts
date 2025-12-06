@@ -37,9 +37,9 @@ Object.defineProperty(window, 'matchMedia', {
 
 // Ensure location is writable in tests
 if (!Object.getOwnPropertyDescriptor(window, 'location')?.writable) {
-  // @ts-expect-error
+  // @ts-expect-error Allow replacing location for tests
   delete window.location;
-  // @ts-expect-error
+  // @ts-expect-error Allow replacing location for tests
   window.location = { href: '/', pathname: '/', search: '', hash: '' };
 }
 
