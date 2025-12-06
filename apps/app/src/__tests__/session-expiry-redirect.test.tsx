@@ -23,7 +23,7 @@ describe('AppProvider session expiry flow', () => {
     mockedApi.getCurrentUser = vi.fn().mockRejectedValue(err);
 
     // spy on location.href
-    const originalLocation = window.location;
+    const originalLocation: any = window.location;
     // @ts-ignore
     delete window.location;
     // @ts-ignore
@@ -48,6 +48,9 @@ describe('AppProvider session expiry flow', () => {
     });
 
     // restore
+    // originalLocation may be typed as Location — cast to any to avoid TS complaints
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     window.location = originalLocation;
   });
 });
