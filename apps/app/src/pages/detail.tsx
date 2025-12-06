@@ -12,7 +12,7 @@ import L from 'leaflet';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { axios } from '@/lib/axios';
 import api from '@/lib/api';
-import { useState } from 'react';
+// no local state required here
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { useToast } from '@/components/atoms/use-toast';
 import { useStore } from '@/lib/store';
@@ -21,7 +21,7 @@ import { useStore } from '@/lib/store';
 import icon from 'leaflet/dist/images/marker-icon.png';
 import iconShadow from 'leaflet/dist/images/marker-shadow.png';
 
-let DefaultIcon = L.icon({
+const DefaultIcon = L.icon({
   iconUrl: icon,
   shadowUrl: iconShadow,
   iconSize: [25, 41],
@@ -36,7 +36,7 @@ const Detail = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { user, token } = useStore((state) => ({ user: state.user, token: state.token }));
+  const { token } = useStore((state) => ({ token: state.token }));
 
   const { data: event, isLoading } = useQuery({
     queryKey: ['event', id],
@@ -422,7 +422,7 @@ const Detail = () => {
           </div>
         </div>
       </div>
-      <AssignDialog />
+      {/* Assign dialog removed from this page — not defined here */}
     </div>
   );
 };
