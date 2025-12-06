@@ -337,7 +337,7 @@ export default function AdminCommunications() {
                         <input
                           type="checkbox"
                           checked={selectedRoles.includes(r.name)}
-                          onChange={(e) => {
+                          onChange={() => {
                             const next = selectedRoles.includes(r.name)
                               ? selectedRoles.filter((s) => s !== r.name)
                               : [...selectedRoles, r.name];
