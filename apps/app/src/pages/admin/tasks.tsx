@@ -155,7 +155,7 @@ export default function AdminTasks() {
 
       return { previousAll, previousByEvent };
     },
-    onError: (err, variables, context: any) => {
+    onError: (_err, _variables, context: any) => {
       // rollback
       if (context?.previousAll) queryClient.setQueryData(['tasks'], context.previousAll);
       if (context?.previousByEvent) queryClient.setQueryData(['tasks', eventIdParam], context.previousByEvent);
@@ -482,8 +482,8 @@ export default function AdminTasks() {
                       slot_count: typeof editRequiredVolunteers === 'number' ? editRequiredVolunteers : 0,
                       start_at: editDueDate || null
                     };
-                    if (editEventId) payload.event_id = editEventId;
-                    payload.priority = editPriority;
+                    if (editEventId) (payload as any).event_id = editEventId;
+                    (payload as any).priority = editPriority;
                     updateMutation.mutate({ id: editTaskItem.id, data: payload });
                     setShowEditDialog(false);
                   }}
