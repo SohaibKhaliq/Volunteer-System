@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, FormEvent } from 'react';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -16,8 +16,7 @@ export default function CreateUserDialog({ onCreated }: Props) {
     firstName: '',
     lastName: '',
     password: '',
-    isAdmin: false,
-
+    isAdmin: false
   });
 
   const mutation = useMutation((payload: any) => api.createUser(payload), {
@@ -27,7 +26,7 @@ export default function CreateUserDialog({ onCreated }: Props) {
     }
   });
 
-  const submit = (e: React.FormEvent) => {
+  const submit = (e: FormEvent) => {
     e.preventDefault();
     mutation.mutate(form);
   };
@@ -63,7 +62,6 @@ export default function CreateUserDialog({ onCreated }: Props) {
             onChange={(e) => setForm({ ...form, password: e.target.value })}
             placeholder="Password (dev only)"
           />
-
 
           <DialogFooter className="mt-2">
             <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)}>
