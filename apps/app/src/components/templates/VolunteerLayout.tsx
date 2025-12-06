@@ -1,16 +1,7 @@
 import { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { 
-  LayoutDashboard, 
-  History, 
-  User, 
-  Settings, 
-  LogOut, 
-  Menu, 
-  X,
-  Bell
-} from 'lucide-react';
+import { LayoutDashboard, History, User, Settings, LogOut, Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import NotificationBell from '@/components/molecules/notification-bell';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
