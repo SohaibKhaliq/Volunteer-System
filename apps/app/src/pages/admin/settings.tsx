@@ -16,7 +16,7 @@ export default function AdminSettings() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['settings'],
-    queryFn: api.getSettings,
+    queryFn: () => api.getSettings(),
     onSuccess: (data) => {
       if (data && typeof data === 'object') {
         setSettings(data);
