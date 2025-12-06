@@ -38,13 +38,13 @@ export default function OrganizationCompliance() {
   // Fetch Documents
   const { data: documents, isLoading: isDocsLoading } = useQuery({
     queryKey: ['organizationDocuments'],
-    queryFn: api.listOrganizationDocuments
+    queryFn: () => api.listOrganizationDocuments()
   });
 
   // Fetch Stats
   const { data: stats, isLoading: isStatsLoading } = useQuery({
     queryKey: ['organizationComplianceStats'],
-    queryFn: api.getOrganizationComplianceStats
+    queryFn: () => api.getOrganizationComplianceStats()
   });
 
   // Upload/Update Document Mutation
