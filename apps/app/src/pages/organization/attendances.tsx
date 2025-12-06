@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Loader2, QrCode, Clock, Users, ClipboardCheck, Download, RefreshCw, UserCheck, UserMinus } from 'lucide-react';
+import { Loader2, QrCode, Clock, Users, ClipboardCheck, RefreshCw, UserCheck } from 'lucide-react';
 
 interface Attendance {
   id: number;
