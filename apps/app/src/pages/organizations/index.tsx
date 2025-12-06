@@ -1,19 +1,13 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Loader2, Search, MapPin, Users, Calendar, ExternalLink } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Loader2, Search, MapPin, Users, ExternalLink } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface PublicOrganization {
@@ -173,9 +167,7 @@ export default function PublicOrganizations() {
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Users className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">No Organizations Found</h3>
-            <p className="text-muted-foreground">
-              Try adjusting your search criteria or check back later.
-            </p>
+            <p className="text-muted-foreground">Try adjusting your search criteria or check back later.</p>
           </CardContent>
         </Card>
       ) : (
@@ -189,11 +181,7 @@ export default function PublicOrganizations() {
           {/* Pagination */}
           {meta.lastPage > 1 && (
             <div className="flex justify-center gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-              >
+              <Button variant="outline" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
                 Previous
               </Button>
               <span className="flex items-center px-4">
@@ -221,9 +209,7 @@ function OrganizationCard({ organization }: { organization: PublicOrganization }
         <div className="flex items-start gap-4">
           <Avatar className="h-16 w-16">
             <AvatarImage src={organization.logo_thumb || organization.logo} />
-            <AvatarFallback className="text-lg">
-              {organization.name.charAt(0).toUpperCase()}
-            </AvatarFallback>
+            <AvatarFallback className="text-lg">{organization.name.charAt(0).toUpperCase()}</AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
             <CardTitle className="text-lg truncate">{organization.name}</CardTitle>
