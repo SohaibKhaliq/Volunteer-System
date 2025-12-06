@@ -22,11 +22,7 @@ interface PublicOrganization {
   type?: string;
 }
 
-interface OrganizationStats {
-  volunteers: number;
-  events: number;
-  totalHours: number;
-}
+// OrganizationStats type was unused — removed.
 
 export default function PublicOrganizations() {
   const [search, setSearch] = useState('');
