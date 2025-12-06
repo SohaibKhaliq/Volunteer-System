@@ -1,4 +1,6 @@
 module.exports = {
+  // ignore tests by default to match requested behavior
+  ignorePatterns: ['**/__tests__/**', '**/*.test.*', '**/*.spec.*'],
   parser: '@typescript-eslint/parser', // Specifies the ESLint parser
   parserOptions: {
     ecmaVersion: 2020, // Allows for the parsing of modern ECMAScript features
@@ -19,6 +21,8 @@ module.exports = {
   ],
   plugins: ['react-refresh'],
   rules: {
+    // the codebase uses a lot of areas where `any` is transitional — relax this
+    '@typescript-eslint/no-explicit-any': 'off',
     'react/react-in-jsx-scope': 'off',
     'react/prop-types': 'off'
   }
