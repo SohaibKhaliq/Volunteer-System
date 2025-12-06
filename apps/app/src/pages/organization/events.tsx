@@ -27,7 +27,7 @@ export default function OrganizationEvents() {
   // Fetch Events
   const { data: events, isLoading } = useQuery({
     queryKey: ['organizationEvents'],
-    queryFn: api.listOrganizationEvents
+    queryFn: () => api.listOrganizationEvents()
   });
 
   // Create/Update Event Mutation
