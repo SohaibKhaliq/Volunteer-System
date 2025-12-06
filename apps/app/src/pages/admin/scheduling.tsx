@@ -18,7 +18,6 @@ import {
   DialogDescription,
   DialogFooter
 } from '@/components/ui/dialog';
- 
 
 export default function AdminScheduling() {
   const { data, isLoading } = useQuery({
