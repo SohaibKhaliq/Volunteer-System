@@ -1,5 +1,5 @@
-import React from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -15,7 +15,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  LineChart,
   Line,
   AreaChart,
   Area,
@@ -28,11 +27,11 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
+  DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 
 export default function OrganizationReports() {
-  const [dateRange, setDateRange] = React.useState('last-6-months');
+  const [dateRange, setDateRange] = useState('last-6-months');
 
   // Fetch reports summary
   const { data: summaryData, isLoading: isSummaryLoading } = useQuery({
@@ -130,8 +129,8 @@ export default function OrganizationReports() {
 
   const summary = summaryData?.data || summaryData || {};
   const analytics = analyticsData?.data || analyticsData || {};
-  const leaderboard = Array.isArray(leaderboardData?.data || leaderboardData) 
-    ? (leaderboardData?.data || leaderboardData) 
+  const leaderboard = Array.isArray(leaderboardData?.data || leaderboardData)
+    ? leaderboardData?.data || leaderboardData
     : [];
   const hoursReport = hoursReportData?.data || hoursReportData || {};
   const performance = performanceData?.data || performanceData || {};
@@ -188,7 +187,9 @@ export default function OrganizationReports() {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Reports & Analytics</h2>
-          <p className="text-muted-foreground">Comprehensive insights into your organization's impact and performance.</p>
+          <p className="text-muted-foreground">
+            Comprehensive insights into your organization's impact and performance.
+          </p>
         </div>
         <div className="flex gap-2">
           <Select value={dateRange} onValueChange={setDateRange}>
@@ -245,7 +246,8 @@ export default function OrganizationReports() {
           <CardContent>
             <div className="text-2xl font-bold">{summary.volunteers?.total || analytics.total_volunteers || 0}</div>
             <p className="text-xs text-muted-foreground">
-              {summary.volunteers?.active || analytics.active_volunteers || 0} active ({summary.volunteers?.retentionRate || analytics.retention_rate || 0}% retention)
+              {summary.volunteers?.active || analytics.active_volunteers || 0} active (
+              {summary.volunteers?.retentionRate || analytics.retention_rate || 0}% retention)
             </p>
           </CardContent>
         </Card>
@@ -256,9 +258,7 @@ export default function OrganizationReports() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{summary.hours?.total || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              {summary.hours?.inPeriod || 0} in selected period
-            </p>
+            <p className="text-xs text-muted-foreground">{summary.hours?.inPeriod || 0} in selected period</p>
           </CardContent>
         </Card>
         <Card>
@@ -268,9 +268,7 @@ export default function OrganizationReports() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{summary.opportunities?.total || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              {summary.opportunities?.upcoming || 0} upcoming
-            </p>
+            <p className="text-xs text-muted-foreground">{summary.opportunities?.upcoming || 0} upcoming</p>
           </CardContent>
         </Card>
         <Card>
@@ -280,9 +278,7 @@ export default function OrganizationReports() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{summary.applications?.total || 0}</div>
-            <p className="text-xs text-muted-foreground">
-              {summary.attendances?.total || 0} attendances
-            </p>
+            <p className="text-xs text-muted-foreground">{summary.attendances?.total || 0} attendances</p>
           </CardContent>
         </Card>
       </div>
@@ -305,7 +301,15 @@ export default function OrganizationReports() {
                     <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" />
                     <Tooltip />
                     <Legend />
-                    <Area yAxisId="left" type="monotone" dataKey="hours" stroke="#8884d8" fill="#8884d8" fillOpacity={0.3} name="Hours" />
+                    <Area
+                      yAxisId="left"
+                      type="monotone"
+                      dataKey="hours"
+                      stroke="#8884d8"
+                      fill="#8884d8"
+                      fillOpacity={0.3}
+                      name="Hours"
+                    />
                     <Line yAxisId="right" type="monotone" dataKey="volunteers" stroke="#82ca9d" name="Volunteers" />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -425,7 +429,13 @@ export default function OrganizationReports() {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="month" />
                     <YAxis yAxisId="left" orientation="left" stroke="#8884d8" />
-                    <YAxis yAxisId="right" orientation="right" stroke="#82ca9d" domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
+                    <YAxis
+                      yAxisId="right"
+                      orientation="right"
+                      stroke="#82ca9d"
+                      domain={[0, 100]}
+                      tickFormatter={(v) => `${v}%`}
+                    />
                     <Tooltip />
                     <Legend />
                     <Bar yAxisId="left" dataKey="size" fill="#8884d8" name="Cohort Size" />
