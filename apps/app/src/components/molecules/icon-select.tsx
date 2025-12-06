@@ -19,7 +19,7 @@ const IconSelect = ({ icon: Icon, value, options, onChange, placeholder }: IconS
         <SelectValue asChild>
           <div className="flex gap-2 items-center">
             <Icon className={cn('text-gray-200')} />
-            {value ? selected?.label : placeholder ?? 'Select an option...'}
+            {value ? selected?.label : (placeholder ?? 'Select an option...')}
           </div>
         </SelectValue>
       </SelectTrigger>
