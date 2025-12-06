@@ -1,6 +1,13 @@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter
+} from '@/components/ui/dialog';
 import { UserCog, Shield, CheckCircle2, Circle } from 'lucide-react';
 
 interface Role {
@@ -28,9 +35,7 @@ interface Props {
 export default function ManageRolesModal({ open, onClose, user, roles, selectedRoleIds, onToggleRole }: Props) {
   if (!user) return null;
 
-  const userName = user.firstName && user.lastName 
-    ? `${user.firstName} ${user.lastName}` 
-    : user.email || 'User';
+  const userName = user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.email || 'User';
 
   const assignedCount = selectedRoleIds.size;
 
@@ -44,9 +49,7 @@ export default function ManageRolesModal({ open, onClose, user, roles, selectedR
             </div>
             <div className="flex-1">
               <DialogTitle className="text-xl">Manage User Roles</DialogTitle>
-              <DialogDescription className="mt-1">
-                {userName}
-              </DialogDescription>
+              <DialogDescription className="mt-1">{userName}</DialogDescription>
             </div>
           </div>
         </DialogHeader>
@@ -72,9 +75,7 @@ export default function ManageRolesModal({ open, onClose, user, roles, selectedR
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <Shield className="h-12 w-12 text-muted-foreground/50 mb-3" />
                 <p className="text-sm text-muted-foreground">No roles available</p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Create roles first to assign them to users
-                </p>
+                <p className="text-xs text-muted-foreground mt-1">Create roles first to assign them to users</p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -104,20 +105,14 @@ export default function ManageRolesModal({ open, onClose, user, roles, selectedR
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-sm capitalize">
-                            {role.name}
-                          </div>
+                          <div className="font-semibold text-sm capitalize">{role.name}</div>
                           {role.description && (
-                            <div className="text-xs text-muted-foreground mt-0.5 truncate">
-                              {role.description}
-                            </div>
+                            <div className="text-xs text-muted-foreground mt-0.5 truncate">{role.description}</div>
                           )}
                         </div>
                       </div>
                       {isAssigned ? (
-                        <Badge className="bg-violet-600 hover:bg-violet-700 text-white border-0">
-                          Assigned
-                        </Badge>
+                        <Badge className="bg-violet-600 hover:bg-violet-700 text-white border-0">Assigned</Badge>
                       ) : (
                         <Badge variant="outline" className="text-gray-500">
                           Not assigned
@@ -132,10 +127,11 @@ export default function ManageRolesModal({ open, onClose, user, roles, selectedR
         </div>
 
         <DialogFooter className="flex items-center justify-between gap-3">
-          <div className="text-xs text-muted-foreground">
-            Click on a role to toggle assignment
-          </div>
-          <Button onClick={onClose} className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700">
+          <div className="text-xs text-muted-foreground">Click on a role to toggle assignment</div>
+          <Button
+            onClick={onClose}
+            className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
+          >
             Done
           </Button>
         </DialogFooter>
