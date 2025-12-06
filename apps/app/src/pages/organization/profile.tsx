@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { toast } from '@/components/atoms/use-toast';
@@ -186,7 +186,7 @@ export default function OrganizationProfile() {
 
   // logo preview state + input ref
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // validation
   const [errors, setErrors] = useState<{ email?: string; phone?: string }>({});
