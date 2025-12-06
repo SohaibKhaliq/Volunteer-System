@@ -1,5 +1,5 @@
 // src/pages/admin/certifications.tsx
-import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -17,7 +17,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { API_URL } from '@/lib/config';
 import { toast } from '@/components/atoms/use-toast';
-import { Checkbox } from '@/components/ui/checkbox';
+// Checkbox was unused and this component may not exist in workspace; removed
 import { Switch } from '@/components/ui/switch';
 
 interface User {
@@ -70,7 +70,7 @@ export default function AdminCertifications() {
 
   const { data: items = [], isLoading } = useQuery<ComplianceDoc[]>({
     queryKey: ['compliance'],
-    queryFn: api.listCompliance
+    queryFn: () => api.listCompliance()
   });
 
   // Users for certifications dialog
@@ -101,7 +101,7 @@ export default function AdminCertifications() {
 
   const { data: courses = [], isLoading: coursesLoading } = useQuery<Course[]>({
     queryKey: ['courses'],
-    queryFn: api.listCourses
+    queryFn: () => api.listCourses()
   });
 
   // Users for courses dialog
