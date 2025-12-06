@@ -132,7 +132,7 @@ export default function OrganizationTeams() {
 
   const handleDelete = (teamId: number) => {
     if (window.confirm('Are you sure you want to delete this team?')) {
-      deleteTeamMutation.mutate(teamId);
+      deleteTeamMutation.mutate(teamId as any);
     }
   };
 
