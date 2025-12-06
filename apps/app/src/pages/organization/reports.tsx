@@ -58,13 +58,13 @@ export default function OrganizationReports() {
   });
 
   // Fetch opportunity performance
-  const { data: performanceData, isLoading: isPerformanceLoading } = useQuery({
+  const { data: performanceData } = useQuery({
     queryKey: ['opportunityPerformance'],
     queryFn: () => api.getOpportunityPerformanceReport({ limit: 10 })
   });
 
   // Fetch retention data
-  const { data: retentionData, isLoading: isRetentionLoading } = useQuery({
+  const { data: retentionData } = useQuery({
     queryKey: ['volunteerRetention'],
     queryFn: () => api.getVolunteerRetentionReport()
   });
@@ -146,12 +146,13 @@ export default function OrganizationReports() {
     : [];
 
   // Transform status distribution for pie chart
-  const statusData = Array.isArray(analytics.status_distribution)
-    ? analytics.status_distribution.map((item: any) => ({
-        name: item.status,
-        value: parseInt(item.count, 10) || 0
-      }))
-    : [];
+  // statusData is unused: analytics.status_distribution mapping kept for future
+  // const statusData = Array.isArray(analytics.status_distribution)
+  //   ? analytics.status_distribution.map((item: any) => ({
+  //       name: item.status,
+  //       value: parseInt(item.count, 10) || 0
+  //     }))
+  //   : [];
 
   // Application status pie data
   const applicationStatusData = summary.applications?.byStatus
@@ -188,7 +189,7 @@ export default function OrganizationReports() {
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Reports & Analytics</h2>
           <p className="text-muted-foreground">
-            Comprehensive insights into your organization's impact and performance.
+            Comprehensive insights into your organization&apos;s impact and performance.
           </p>
         </div>
         <div className="flex gap-2">
@@ -337,7 +338,7 @@ export default function OrganizationReports() {
                       dataKey="first_name"
                       type="category"
                       width={80}
-                      tickFormatter={(value, index) => {
+                      tickFormatter={(_value, index) => {
                         const item = leaderboard[index];
                         return `${item.first_name} ${item.last_name?.charAt(0) || ''}`;
                       }}
@@ -374,7 +375,7 @@ export default function OrganizationReports() {
                       fill="#8884d8"
                       dataKey="value"
                     >
-                      {applicationStatusData.map((entry, index) => (
+                      {applicationStatusData.map((_, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
