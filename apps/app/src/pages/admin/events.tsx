@@ -644,7 +644,7 @@ export default function AdminEvents() {
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             onClick={() =>
-                              updateMutation.mutate({ id: event.id, data: { is_recurring: !event.isRecurring } })
+                              updateMutation.mutate({ id: event.id, data: { isRecurring: !event.isRecurring } })
                             }
                           >
                             {event.isRecurring ? 'Set as One-time' : 'Set as Recurring'}
