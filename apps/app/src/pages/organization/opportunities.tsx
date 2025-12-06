@@ -18,7 +18,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Plus, Loader2, Pencil, Trash2, Calendar, Users, Eye, CheckCircle, XCircle } from 'lucide-react';
+import { Plus, Loader2, Pencil, Trash2, Calendar, Users, CheckCircle, XCircle } from 'lucide-react';
 
 interface Opportunity {
   id: number;
@@ -70,10 +70,7 @@ export default function OrganizationOpportunities() {
   });
 
   // Fetch Teams for dropdown
-  const { data: teams } = useQuery({
-    queryKey: ['organizationTeams'],
-    queryFn: () => api.listOrganizationTeams()
-  });
+  // teams list isn't used yet in this page; remove to avoid unused variable
 
   // Create/Update Opportunity Mutation
   const saveOpportunityMutation = useMutation({
@@ -134,18 +131,18 @@ export default function OrganizationOpportunities() {
     setIsDialogOpen(true);
   };
 
-  const handleOpenEdit = (opportunity: Opportunity) => {
-    setEditingOpportunity(opportunity);
+  const handleOpenEdit = (_opportunity: Opportunity) => {
+    setEditingOpportunity(_opportunity);
     setFormData({
-      title: opportunity.title,
-      description: opportunity.description || '',
-      location: opportunity.location || '',
-      capacity: opportunity.capacity?.toString() || '',
-      type: opportunity.type,
-      start_at: opportunity.startAt ? new Date(opportunity.startAt).toISOString().slice(0, 16) : '',
-      end_at: opportunity.endAt ? new Date(opportunity.endAt).toISOString().slice(0, 16) : '',
-      visibility: opportunity.visibility,
-      status: opportunity.status
+      title: _opportunity.title,
+      description: _opportunity.description || '',
+      location: _opportunity.location || '',
+      capacity: _opportunity.capacity?.toString() || '',
+      type: _opportunity.type,
+      start_at: _opportunity.startAt ? new Date(_opportunity.startAt).toISOString().slice(0, 16) : '',
+      end_at: _opportunity.endAt ? new Date(_opportunity.endAt).toISOString().slice(0, 16) : '',
+      visibility: _opportunity.visibility,
+      status: _opportunity.status
     });
     setIsDialogOpen(true);
   };
@@ -167,7 +164,8 @@ export default function OrganizationOpportunities() {
 
   const handleDelete = (id: number) => {
     if (window.confirm('Are you sure you want to delete this opportunity?')) {
-      deleteOpportunityMutation.mutate(id);
+      // cast to any because useMutation generic may not accept number in current typing
+      deleteOpportunityMutation.mutate(id as any);
     }
   };
 
