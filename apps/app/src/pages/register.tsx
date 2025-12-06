@@ -20,7 +20,7 @@ export default function Register() {
 
   const mutation = useMutation((data: any) => api.register(data), {
     onSuccess(data) {
-      const token = data?.token?.token;
+      const token = (data as any)?.token?.token;
       if (token) {
         setToken(token);
 
