@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, MapPin, Users, Clock, Calendar, ExternalLink, Globe, ArrowLeft } from 'lucide-react';
+import { Loader2, MapPin, Users, Clock, Calendar, Globe, ArrowLeft } from 'lucide-react';
 
 interface OrganizationDetail {
   id: number;
@@ -74,7 +74,7 @@ export default function PublicOrganizationDetail() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <h3 className="text-lg font-semibold mb-2">Organization Not Found</h3>
-            <p className="text-muted-foreground mb-4">This organization doesn't exist or is not public.</p>
+            <p className="text-muted-foreground mb-4">This organization doesn&apos;t exist or is not public.</p>
             <Link to="/organizations">
               <Button variant="outline">
                 <ArrowLeft className="h-4 w-4 mr-2" />
@@ -190,7 +190,7 @@ export default function PublicOrganizationDetail() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {opportunities.map((opp) => (
-              <OpportunityCard key={opp.id} opportunity={opp} orgSlug={slug!} />
+              <OpportunityCard key={opp.id} opportunity={opp} />
             ))}
           </div>
         )}
@@ -199,9 +199,8 @@ export default function PublicOrganizationDetail() {
   );
 }
 
-function OpportunityCard({ opportunity, orgSlug }: { opportunity: Opportunity; orgSlug: string }) {
+function OpportunityCard({ opportunity }: { opportunity: Opportunity }) {
   const startDate = new Date(opportunity.startAt);
-  const endDate = opportunity.endAt ? new Date(opportunity.endAt) : null;
 
   return (
     <Card className="hover:shadow-lg transition-shadow">
