@@ -13,9 +13,9 @@ export default class ErrorBoundary extends React.Component<{ children?: React.Re
     return { hasError: true, error };
   }
 
-  componentDidCatch(_error: any, _info: any) {
+  componentDidCatch() {
     // TODO: send this to telemetry / logging
-    // console.error('ErrorBoundary caught', _error, _info)
+    // console.error('ErrorBoundary caught')
   }
 
   render() {
