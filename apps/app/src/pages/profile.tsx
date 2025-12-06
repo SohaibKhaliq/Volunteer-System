@@ -218,7 +218,7 @@ export default function Profile() {
                   // ensure at least one badge
                   if (computed.length === 0) computed.push('Member');
 
-                  return computed.map((b) => (
+                  return computed.map((b: any) => (
                     <Badge key={b} variant="secondary" className="px-3 py-1">
                       <Award className="h-3 w-3 mr-1 text-yellow-500" /> {b}
                     </Badge>
@@ -304,7 +304,7 @@ export default function Profile() {
                   <CardDescription>Your next commitments</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {upcomingShifts.map((shift) => (
+                  {upcomingShifts.map((shift: any) => (
                     <div
                       key={shift.id}
                       className="flex items-center justify-between p-4 border rounded-lg bg-slate-50/50"
@@ -376,7 +376,7 @@ export default function Profile() {
               <CardContent>
                 <div className="space-y-4">
                   {upcomingShifts.length > 0 ? (
-                    upcomingShifts.map((shift) => (
+                    upcomingShifts.map((shift: any) => (
                       <div
                         key={shift.id}
                         className="flex flex-col md:flex-row md:items-center justify-between p-6 border rounded-lg gap-4"
@@ -461,7 +461,7 @@ export default function Profile() {
                       </tr>
                     </thead>
                     <tbody className="divide-y">
-                      {history.map((item) => (
+                      {history.map((item: any) => (
                         <tr key={item.id}>
                           <td className="p-4 font-medium">{item.title}</td>
                           <td className="p-4 text-slate-500">{item.date}</td>
