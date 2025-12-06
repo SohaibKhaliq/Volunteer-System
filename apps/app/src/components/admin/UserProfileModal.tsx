@@ -1,7 +1,14 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter
+} from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { UserCog, Mail, Phone, Calendar, CheckCircle, XCircle } from 'lucide-react';
+import { UserCog, Mail, Phone, Calendar } from 'lucide-react';
 import { format } from 'date-fns';
 import type { User } from '../../types/user';
 
@@ -27,8 +34,8 @@ export default function UserProfileModal({ open, onClose, user }: Props) {
     isActive,
     roles,
     lastLoginAt,
-    createdAt,
-    updatedAt,
+    createdAt
+    // updatedAt not displayed — keep object destructuring minimal
   } = user;
 
   const fullName = `${firstName ?? ''} ${lastName ?? ''}`.trim() || email;
@@ -43,9 +50,7 @@ export default function UserProfileModal({ open, onClose, user }: Props) {
             </div>
             <div className="flex-1">
               <DialogTitle className="text-xl">{fullName}</DialogTitle>
-              <DialogDescription className="mt-1 text-muted-foreground">
-                Volunteer profile
-              </DialogDescription>
+              <DialogDescription className="mt-1 text-muted-foreground">Volunteer profile</DialogDescription>
             </div>
           </div>
         </DialogHeader>
@@ -64,27 +69,19 @@ export default function UserProfileModal({ open, onClose, user }: Props) {
           )}
 
           <div className="flex items-center gap-2">
-            <Badge variant={isActive ? 'default' : 'secondary'}>
-              {isActive ? 'Active' : 'Inactive'}
-            </Badge>
-            {volunteerStatus && (
-              <Badge variant="outline">{volunteerStatus}</Badge>
-            )}
+            <Badge variant={isActive ? 'default' : 'secondary'}>{isActive ? 'Active' : 'Inactive'}</Badge>
+            {volunteerStatus && <Badge variant="outline">{volunteerStatus}</Badge>}
           </div>
 
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4 text-muted-foreground" />
-            <span>
-              Joined: {createdAt ? format(new Date(createdAt), 'PPP') : '-'}
-            </span>
+            <span>Joined: {createdAt ? format(new Date(createdAt), 'PPP') : '-'}</span>
           </div>
 
           {lastLoginAt && (
             <div className="flex items-center gap-2">
               <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span>
-                Last login: {lastLoginAt ? format(new Date(lastLoginAt), 'PPP p') : '-'}
-              </span>
+              <span>Last login: {lastLoginAt ? format(new Date(lastLoginAt), 'PPP p') : '-'}</span>
             </div>
           )}
 
