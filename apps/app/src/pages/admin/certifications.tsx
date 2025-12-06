@@ -656,11 +656,11 @@ export default function AdminCertifications() {
                   }
                 }}
               />
-              {editing?.file && (
+              {editing?.file ? (
                 <div className="text-xs text-muted-foreground p-2 bg-muted/50 rounded-md">
                   {(editing.file as File).name} ({((editing.file as File).size / 1024 / 1024) | 0}MB)
                 </div>
-              )}
+              ) : null}
               {editing?.id && editing?.metadata?.file?.path && (
                 <div className="flex items-center gap-2 pt-2">
                   <a
@@ -936,7 +936,8 @@ function TipTapEditor({ value, onChange }: TipTapEditorProps) {
 
   useEffect(() => {
     if (editor && editor.getHTML() !== value) {
-      editor.commands.setContent(value, false);
+      // passing a boolean here is not accepted by the editor API types; use no-options.
+      editor.commands.setContent(value);
     }
   }, [editor, value]);
 
