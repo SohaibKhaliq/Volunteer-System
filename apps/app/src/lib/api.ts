@@ -36,9 +36,10 @@ const api = {
   /* Organization Volunteer Management */
   getOrganizationVolunteers: async (orgId: number, filters?: any) =>
     axios.get(`/organizations/${orgId}/volunteers`, { params: filters }),
-  addOrganizationVolunteer: async (orgId: number, data: any) => axios.post(`/organizations/${orgId}/volunteers`, data),
+  addOrganizationVolunteerForOrg: async (orgId: number, data: any) =>
+    axios.post(`/organizations/${orgId}/volunteers`, data),
   joinOrganization: async (orgId: number) => axios.post(`/organizations/${orgId}/volunteers`, {}),
-  updateOrganizationVolunteer: async (orgId: number, userId: number, data: any) =>
+  updateOrganizationVolunteerForOrg: async (orgId: number, userId: number, data: any) =>
     axios.put(`/organizations/${orgId}/volunteers/${userId}`, data),
   removeOrganizationVolunteer: async (orgId: number, userId: number) =>
     axios.delete(`/organizations/${orgId}/volunteers/${userId}`),
@@ -441,7 +442,7 @@ const api = {
   rejectVolunteerHour: async (id: number, reason?: string) =>
     axios.post(`/organization/hours/${id}/reject`, { reason }),
   bulkApproveHours: async (ids: number[]) => axios.post('/organization/hours/bulk-approve', { ids }),
-  getVolunteerHours: async (volunteerId: number, filters?: any) =>
+  getVolunteerHoursForOrganization: async (volunteerId: number, filters?: any) =>
     axios.get(`/organization/volunteers/${volunteerId}/hours`, { params: filters }),
 
   // Volunteer Analytics
