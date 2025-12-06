@@ -14,14 +14,14 @@ const Contact = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     const formData = new FormData(e.target as HTMLFormElement);
     const data = {
       firstName: formData.get('firstName'),
       lastName: formData.get('lastName'),
       email: formData.get('email'),
       subject: formData.get('subject'),
-      message: formData.get('message'),
+      message: formData.get('message')
     };
 
     try {
