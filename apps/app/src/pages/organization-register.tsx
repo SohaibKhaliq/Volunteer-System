@@ -181,7 +181,7 @@ export default function OrganizationRegister() {
           </div>
           <blockquote className="space-y-2">
             <p className="text-lg font-medium leading-relaxed">
-              "Alone we can do so little; together we can do so much."
+              Alone we can do so little; together we can do so much.
             </p>
             <footer className="text-sm opacity-80">— Helen Keller</footer>
           </blockquote>
