@@ -1,5 +1,5 @@
 // src/pages/admin/volunteer-profile.tsx
-import { useState, useEffect } from 'react';
+// no direct react hooks required here
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -13,7 +13,7 @@ export default function AdminVolunteerProfile() {
   const params = new URLSearchParams(location.search);
   const idParam = params.get('id');
 
-  const { data: currentUser } = useQuery({ queryKey: ['me'], queryFn: api.getCurrentUser, enabled: !idParam });
+  const { data: currentUser } = useQuery({ queryKey: ['me'], queryFn: () => api.getCurrentUser(), enabled: !idParam });
   const { data: userById } = useQuery({
     queryKey: ['user', idParam],
     queryFn: () => api.getUser(Number(idParam)),
