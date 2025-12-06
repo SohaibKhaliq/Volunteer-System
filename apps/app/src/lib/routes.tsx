@@ -32,7 +32,10 @@ import AdminCompliance from '@/pages/admin/compliance';
 import AdminReports from '@/pages/admin/reports';
 import AdminCommunications from '@/pages/admin/communications';
 import AdminResources from '@/pages/admin/resources';
+import AdminResourcesDashboard from '@/pages/admin/resources-dashboard';
+import AdminImports from '@/pages/admin/imports';
 import AdminTemplates from '@/pages/admin/templates';
+import AdminBackgroundChecks from '@/pages/admin/background-checks';
 import AdminScheduling from '@/pages/admin/scheduling';
 import AdminMonitoring from '@/pages/admin/monitoring';
 import AdminBackup from '@/pages/admin/backup';
@@ -110,6 +113,7 @@ const routes: RouteObject[] = [
       { path: 'compliance', element: <AdminCompliance /> },
       { path: 'certifications', element: <AdminCertifications /> },
       { path: 'notifications', element: <AdminNotifications /> },
+      { path: 'background-checks', element: <AdminBackgroundChecks /> },
       { path: 'templates', element: <AdminTemplates /> },
       { path: 'communications', element: <AdminCommunications /> },
       { path: 'backup', element: <AdminBackup /> },
@@ -118,6 +122,8 @@ const routes: RouteObject[] = [
       { path: 'reports', element: <AdminReports /> },
       { path: 'exports', element: <AdminExports /> },
       { path: 'resources', element: <AdminResources /> },
+      { path: 'resources/dashboard', element: <AdminResourcesDashboard /> },
+      { path: 'imports', element: <AdminImports /> },
       { path: 'scheduling', element: <AdminScheduling /> },
       { path: 'feedback', element: <AdminFeedback /> },
       { path: 'feedback/create', element: <AdminFeedbackCreate /> },
