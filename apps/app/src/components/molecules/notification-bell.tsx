@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { Bell, Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -19,7 +19,7 @@ export default function NotificationBell() {
   const token = useStore((s) => s.token);
   const { data: items = [], isLoading } = useQuery({
     queryKey: ['notifications'],
-    queryFn: api.listNotifications,
+    queryFn: () => api.listNotifications(),
     // poll for new notifications occasionally so users see them without manual refresh
     refetchInterval: 15000
   });
@@ -78,7 +78,7 @@ export default function NotificationBell() {
   }, [items]);
 
   // Attempt WebSocket connection using socket.io for realtime notifications
-  React.useEffect(() => {
+  useEffect(() => {
     if (!token) return;
 
     let socket: any = null;
