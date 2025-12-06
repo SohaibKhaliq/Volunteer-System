@@ -36,7 +36,7 @@ export default function Login() {
 
   const mutation = useMutation((credentials: any) => api.login(credentials), {
     onSuccess(data) {
-      const token = data?.token?.token;
+      const token = (data as any)?.token?.token;
       if (token) {
         setToken(token);
 
