@@ -1,4 +1,4 @@
-import React from 'react';
+// no default React import needed
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
