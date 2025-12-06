@@ -176,8 +176,8 @@ export default function AdminOrganizations() {
               try {
                 const res: any = await api.listOrganizations({ withCompliance: 'true' });
                 // normalize backend response which may be array or paginated object
-                const rawList: any[] = Array.isArray(res) ? res : (res?.data ?? res);
-                const list: any[] = Array.isArray(rawList) ? rawList : (rawList?.data ?? []);
+                const rawList: any = Array.isArray(res) ? res : (res?.data ?? res);
+                const list: any[] = Array.isArray(rawList) ? rawList : ((rawList as any)?.data ?? []);
 
                 if (!Array.isArray(list) || list.length === 0) {
                   toast({ title: 'No organizations to export', variant: 'info' });
