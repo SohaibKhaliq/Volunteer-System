@@ -8,11 +8,7 @@ import { AreaChart, Area, ResponsiveContainer, XAxis, Tooltip } from 'recharts';
 
 export default function OrganizationDashboard() {
   // Dashboard stats (fetched)
-  const {
-    data: stats,
-    isLoading,
-    error
-  } = useQuery({
+  const { data: stats, isLoading } = useQuery({
     queryKey: ['organizationDashboardStats'],
     queryFn: () => api.getOrganizationDashboardStats()
   });
