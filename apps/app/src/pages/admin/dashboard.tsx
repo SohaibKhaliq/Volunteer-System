@@ -35,7 +35,7 @@ export default function AdminDashboard() {
   const { data: chartDataRes, isLoading: loadingChart } = useQuery(['reports', 'chartData'], () => api.getChartData());
   const { data: tasksRaw } = useQuery({
     queryKey: ['tasks'],
-    queryFn: api.listTasks,
+    queryFn: () => api.listTasks(),
     staleTime: 60 * 1000
   });
 
