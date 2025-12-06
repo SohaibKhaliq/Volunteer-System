@@ -159,7 +159,7 @@ export default function AdminScheduling() {
     } catch (e) {
       return toast.error('Payload must be valid JSON');
     }
-    createMutation.mutate({ name, type, runAt, payload: parsedPayload });
+    createMutation.mutate({ name, type, runAt, payload: parsedPayload } as any);
   };
 
   return (
