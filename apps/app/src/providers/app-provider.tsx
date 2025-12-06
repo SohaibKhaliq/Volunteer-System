@@ -33,7 +33,7 @@ export default function AppProvider({ children }: AppProviderProps) {
 
   const { data: me, isLoading: isLoadingMe } = useQuery({
     queryKey: ['me'],
-    queryFn: api.getCurrentUser,
+    queryFn: () => api.getCurrentUser(),
     enabled: !!token, // only run when token exists
     retry: false,
     onSuccess: () => {
