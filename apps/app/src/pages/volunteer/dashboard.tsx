@@ -4,14 +4,14 @@ import api from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Clock, Award, ArrowRight, Building2, CheckCircle, BookmarkIcon, Users } from 'lucide-react';
+import { Calendar, Clock, Award, ArrowRight, Building2, CheckCircle, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const VolunteerDashboard = () => {
   const { t } = useTranslation();
 
   // Fetch volunteer dashboard data from dedicated endpoint
-  const { data: dashboardData, isLoading } = useQuery({
+  const { data: dashboardData } = useQuery({
     queryKey: ['volunteer-dashboard'],
     queryFn: async () => {
       try {
@@ -34,7 +34,13 @@ const VolunteerDashboard = () => {
           };
         } catch {
           return {
-            stats: { totalHours: 0, eventsAttended: 0, pendingApplications: 0, acceptedApplications: 0, organizationCount: 0 },
+            stats: {
+              totalHours: 0,
+              eventsAttended: 0,
+              pendingApplications: 0,
+              acceptedApplications: 0,
+              organizationCount: 0
+            },
             upcomingEvents: [],
             recentAchievements: []
           };
@@ -147,10 +153,12 @@ const VolunteerDashboard = () => {
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold">{t('Your Upcoming Events')}</h2>
             <Link to="/volunteer/history">
-              <Button variant="ghost" size="sm">{t('View All')} <ArrowRight className="ml-2 h-4 w-4" /></Button>
+              <Button variant="ghost" size="sm">
+                {t('View All')} <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
             </Link>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {upcomingEvents.map((event: any) => (
               <Card key={event.id} className="hover:shadow-md transition-shadow">
@@ -185,10 +193,12 @@ const VolunteerDashboard = () => {
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">{t('Browse Opportunities')}</h2>
           <Link to="/organizations">
-            <Button variant="ghost" size="sm">{t('View All')} <ArrowRight className="ml-2 h-4 w-4" /></Button>
+            <Button variant="ghost" size="sm">
+              {t('View All')} <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
           </Link>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {opportunities.slice(0, 6).map((opp: any) => (
             <div key={opp.id} className="bg-white border rounded-xl overflow-hidden hover:shadow-md transition-shadow">
@@ -214,7 +224,9 @@ const VolunteerDashboard = () => {
                   )}
                 </div>
                 <Link to={`/opportunities/${opp.id}`}>
-                  <Button className="w-full" variant="outline">{t('View Details')}</Button>
+                  <Button className="w-full" variant="outline">
+                    {t('View Details')}
+                  </Button>
                 </Link>
               </div>
             </div>
@@ -228,7 +240,7 @@ const VolunteerDashboard = () => {
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold">{t('Recent Achievements')}</h2>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {achievements.slice(0, 3).map((ach: any) => (
               <Card key={ach.id} className="border-l-4 border-l-yellow-500">
