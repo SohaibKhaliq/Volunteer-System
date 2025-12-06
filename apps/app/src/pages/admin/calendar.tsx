@@ -69,13 +69,11 @@ export default function AdminCalendar() {
             </div>
             <div className="flex gap-2">
               <Button
-                onClick={() =>
-                  download(() => api.getPublicOpportunitiesCalendar({ range }), 'public-opportunities-calendar')
-                }
+                onClick={() => download(() => api.getPublicOpportunitiesCalendar(), 'public-opportunities-calendar')}
               >
                 Download Public Opportunities
               </Button>
-              <Button onClick={() => download(() => api.getEventsCalendar({ range }), 'events-calendar')}>
+              <Button onClick={() => download(() => api.getEventsCalendar(), 'events-calendar')}>
                 Download Events
               </Button>
             </div>
