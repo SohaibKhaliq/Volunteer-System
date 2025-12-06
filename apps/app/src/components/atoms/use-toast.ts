@@ -3,12 +3,18 @@ import { toast as sonnerToast, Toaster as SonnerToaster } from 'sonner';
 
 type ToastOptions = Parameters<typeof sonnerToast>[1] | undefined;
 
-function baseToast(message: string | { title?: string; description?: string }, opts?: ToastOptions) {
+type MessageObject = {
+  title?: string;
+  description?: string;
+  variant?: 'success' | 'destructive' | 'error' | 'warning' | 'info';
+};
+
+function baseToast(message: string | MessageObject, opts?: ToastOptions) {
   // Keep compatibility with previous signature where callers passed an object
   if (typeof message === 'object') {
-    const title = (message as any).title;
-    const description = (message as any).description;
-    const variant = (message as any).variant as string | undefined;
+    const title = (message as MessageObject).title;
+    const description = (message as MessageObject).description;
+    const variant = (message as MessageObject).variant as string | undefined;
     const content = `${title ? title + ': ' : ''}${description ?? ''}`.trim();
 
     if (variant === 'success') {
