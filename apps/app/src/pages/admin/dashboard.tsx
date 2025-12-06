@@ -115,7 +115,12 @@ export default function AdminDashboard() {
 
   const chartColors = ['#4f46e5', '#0ea5e9', '#f97316', '#10b981'];
 
-  const activity = [{ time: 'Live', desc: 'Live activity coming soon' }];
+  const { data: activityRaw } = useQuery(['admin', 'activity'], () => api.getAdminActivity(), {
+    staleTime: 60 * 1000
+  });
+
+  // Normalize remote activity into a safe array of {time, desc}
+  const activity = Array.isArray(activityRaw?.data ?? activityRaw) ? (activityRaw?.data ?? activityRaw) : [];
 
   return (
     <div className="space-y-6" aria-busy={loading}>
@@ -256,7 +261,7 @@ export default function AdminDashboard() {
           <CardTitle>Recent Activity</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2">
-          {activity.map((a, i) => (
+          {activity.map((a: any, i: number) => (
             <div key={i} className="flex justify-between text-sm text-muted-foreground">
               <span>{a.desc}</span>
               <span>{a.time}</span>
