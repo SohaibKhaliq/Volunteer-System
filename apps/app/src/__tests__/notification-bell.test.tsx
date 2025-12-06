@@ -1,4 +1,4 @@
-import React from 'react';
+// automatic JSX runtime — remove unused default React import
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
