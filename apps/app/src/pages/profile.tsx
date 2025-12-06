@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -29,7 +29,7 @@ import { useNavigate } from 'react-router-dom';
 
 export default function Profile() {
   const queryClient = useQueryClient();
-  const { data: user, isLoading } = useQuery(['me'], api.getCurrentUser);
+  const { data: user, isLoading } = useQuery(['me'], () => api.getCurrentUser());
   const { setToken } = useStore();
   const navigate = useNavigate();
   const { token } = useStore();
