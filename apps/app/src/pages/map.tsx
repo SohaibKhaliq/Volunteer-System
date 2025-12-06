@@ -27,41 +27,8 @@ let DefaultIcon = L.icon({
 
 L.Marker.prototype.options.icon = DefaultIcon;
 
-const MOCK_EVENTS = [
-  {
-    id: 1,
-    title: 'Community Park Cleanup',
-    organization: 'Green Earth Initiative',
-    date: '2024-11-25',
-    time: '09:00 AM',
-    location: 'Central Park, Downtown',
-    type: 'Environment',
-    coordinates: [31.6295, -7.9811], // Marrakech coords approx
-    image: 'https://images.unsplash.com/photo-1559027615-cd4628902d4a?q=80&w=800&auto=format&fit=crop'
-  },
-  {
-    id: 2,
-    title: 'Food Bank Distribution',
-    organization: 'Local Food Pantry',
-    date: '2024-11-26',
-    time: '10:00 AM',
-    location: 'Community Center',
-    type: 'Social Service',
-    coordinates: [31.635, -8.0],
-    image: 'https://images.unsplash.com/photo-1593113598332-cd288d649433?q=80&w=800&auto=format&fit=crop'
-  },
-  {
-    id: 3,
-    title: 'Senior Tech Support',
-    organization: 'Digital Inclusion',
-    date: '2024-11-27',
-    time: '02:00 PM',
-    location: 'Public Library',
-    type: 'Education',
-    coordinates: [31.62, -7.99],
-    image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?q=80&w=800&auto=format&fit=crop'
-  }
-];
+// Events are loaded dynamically via the API. The component previously used
+// static MOCK_EVENTS but now relies on `api.listEvents`.
 
 const MapPage = () => {
   const { t } = useTranslation();
@@ -79,7 +46,7 @@ const MapPage = () => {
   const { toast } = useToast();
   const token = useStore((s) => s.token);
 
-  const { data: eventsData = MOCK_EVENTS, isLoading: isLoadingEvents } = useQuery(
+  const { data: eventsData = [], isLoading: isLoadingEvents } = useQuery(
     ['map-events', debouncedQuery],
     async () => {
       const res = await api.listEvents({ q: debouncedQuery });
