@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/components/atoms/use-toast';
 import { useStore } from '@/lib/store';
@@ -37,7 +37,7 @@ const MapPage = () => {
   const [debouncedQuery, setDebouncedQuery] = useState('');
 
   // debounce search to avoid too many requests
-  React.useEffect(() => {
+  useEffect(() => {
     const t = setTimeout(() => setDebouncedQuery(searchQuery.trim()), 300);
     return () => clearTimeout(t);
   }, [searchQuery]);
