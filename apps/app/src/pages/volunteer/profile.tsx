@@ -18,19 +18,19 @@ const VolunteerProfile = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user?.id) return;
-    
+
     setIsSaving(true);
     const formData = new FormData(e.target as HTMLFormElement);
     const data = {
       firstName: formData.get('firstName'),
       lastName: formData.get('lastName'), // Note: lastName input was removed in previous step, need to check if I should add it back or just use Full Name
-      phone: formData.get('phone'),
+      phone: formData.get('phone')
       // bio is not in user model yet, skipping for now or adding to profileMetadata
     };
 
     try {
-      // Split full name if needed or just update what we have. 
-      // The input label says "Full Name" but ID is "firstName". 
+      // Split full name if needed or just update what we have.
+      // The input label says "Full Name" but ID is "firstName".
       // Let's assume we just update firstName for now or split it.
       // Actually, let's just send what we have.
       await api.updateUser(user.id, data);
@@ -73,7 +73,7 @@ const VolunteerProfile = () => {
                 <Input name="phone" id="phone" placeholder="+1 (555) 000-0000" defaultValue={(user as any)?.phone} />
               </div>
             </div>
-            
+
             <div className="space-y-2">
               <Label htmlFor="bio">{t('Bio')}</Label>
               <Textarea id="bio" placeholder={t('Tell organizations a bit about yourself...')} />
