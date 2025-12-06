@@ -1,4 +1,4 @@
-import React from 'react';
+// no default React import required
 import { useTranslation } from 'react-i18next';
 
 const Cookies = () => {
