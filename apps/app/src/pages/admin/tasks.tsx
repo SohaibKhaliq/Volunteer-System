@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
@@ -86,12 +86,11 @@ export default function AdminTasks() {
   const [searchParams] = useSearchParams();
   const eventIdParam = searchParams.get('eventId');
 
-  const { data: tasksRaw, isLoading } = useQuery<any>(
-    ['tasks', eventIdParam], 
-    () => api.list('tasks', eventIdParam ? { event_id: eventIdParam } : undefined)
+  const { data: tasksRaw, isLoading } = useQuery<any>(['tasks', eventIdParam], () =>
+    api.list('tasks', eventIdParam ? { event_id: eventIdParam } : undefined)
   );
   // normalize tasks from API (handle snake_case or camelCase and paginated responses)
-  const tasks: Task[] | undefined = React.useMemo(() => {
+  const tasks: Task[] | undefined = useMemo(() => {
     const list: any[] = Array.isArray(tasksRaw) ? tasksRaw : (tasksRaw?.data ?? []);
     return list.map((item) => ({
       id: item.id,
