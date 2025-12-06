@@ -14,27 +14,27 @@ export default function OrganizationDashboard() {
     error
   } = useQuery({
     queryKey: ['organizationDashboardStats'],
-    queryFn: api.getOrganizationDashboardStats
+    queryFn: () => api.getOrganizationDashboardStats()
   });
 
   // Fetch additional data used on the dashboard
   const { data: events } = useQuery({
     queryKey: ['organizationEvents'],
-    queryFn: api.listOrganizationEvents
+    queryFn: () => api.listOrganizationEvents()
   });
   const { data: volunteers } = useQuery({
     queryKey: ['organizationVolunteers'],
-    queryFn: api.listOrganizationVolunteers
+    queryFn: () => api.listOrganizationVolunteers()
   });
   const { data: compliance } = useQuery({
     queryKey: ['organizationComplianceStats'],
-    queryFn: api.getOrganizationComplianceStats
+    queryFn: () => api.getOrganizationComplianceStats()
   });
 
   // Fetch organization documents so we can generate recent compliance activity (expiries, uploads)
   const { data: documents } = useQuery({
     queryKey: ['organizationDocuments'],
-    queryFn: api.listOrganizationDocuments
+    queryFn: () => api.listOrganizationDocuments()
   });
 
   const { data: pendingHoursData } = useQuery({
