@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -109,7 +109,7 @@ export default function AdminUsers() {
   const usersMeta = usersRes?.meta || {};
 
   // Analytics Query
-  const { data: analytics } = useQuery(['userAnalytics'], api.getUserAnalytics);
+  const { data: analytics } = useQuery(['userAnalytics'], () => api.getUserAnalytics());
 
   // Mutations
   const deactivateMutation = useMutation((userId: number) => api.updateUser(userId, { isDisabled: true }), {
