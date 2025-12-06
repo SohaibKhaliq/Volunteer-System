@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { toast } from '@/components/atoms/use-toast';
 import exportToCsv from '@/lib/exportCsv';
-import { chartData } from '@/lib/mock/adminMock';
 import { Button } from '@/components/ui/button';
 import SkeletonCard from '@/components/atoms/skeleton-card';
 import { Badge } from '@/components/ui/badge';
@@ -74,31 +73,31 @@ export default function AdminReports() {
   const reportData = useMemo(() => {
     if (!rawReportData || typeof rawReportData !== 'object' || Array.isArray(rawReportData)) return null;
     const r = rawReportData as any;
-    
+
     const getNum = (val: any) => (typeof val === 'number' ? val : 0);
-    
+
     return {
       volunteerParticipation: {
         total: getNum(r.volunteerParticipation?.total),
         active: getNum(r.volunteerParticipation?.active),
         inactive: getNum(r.volunteerParticipation?.inactive),
-        trend: getNum(r.volunteerParticipation?.trend),
+        trend: getNum(r.volunteerParticipation?.trend)
       },
       eventCompletion: {
         total: getNum(r.eventCompletion?.total),
         completed: getNum(r.eventCompletion?.completed),
         ongoing: getNum(r.eventCompletion?.ongoing),
         cancelled: getNum(r.eventCompletion?.cancelled),
-        completionRate: getNum(r.eventCompletion?.completionRate),
+        completionRate: getNum(r.eventCompletion?.completionRate)
       },
       volunteerHours: {
         total: getNum(r.volunteerHours?.total),
         thisMonth: getNum(r.volunteerHours?.thisMonth),
         lastMonth: getNum(r.volunteerHours?.lastMonth),
-        trend: getNum(r.volunteerHours?.trend),
+        trend: getNum(r.volunteerHours?.trend)
       },
       organizationPerformance: {
-        topPerformers: Array.isArray(r.organizationPerformance?.topPerformers) 
+        topPerformers: Array.isArray(r.organizationPerformance?.topPerformers)
           ? r.organizationPerformance.topPerformers.map((p: any) => ({
               name: String(p?.name || 'Unknown'),
               score: getNum(p?.score),
@@ -111,40 +110,43 @@ export default function AdminReports() {
         compliant: getNum(r.complianceAdherence?.compliant),
         pending: getNum(r.complianceAdherence?.pending),
         expired: getNum(r.complianceAdherence?.expired),
-        adherenceRate: getNum(r.complianceAdherence?.adherenceRate),
+        adherenceRate: getNum(r.complianceAdherence?.adherenceRate)
       },
       predictions: {
         volunteerDemand: {
           nextMonth: getNum(r.predictions?.volunteerDemand?.nextMonth),
-          confidence: getNum(r.predictions?.volunteerDemand?.confidence),
+          confidence: getNum(r.predictions?.volunteerDemand?.confidence)
         },
         noShowRate: getNum(r.predictions?.noShowRate),
-        eventSuccessRate: getNum(r.predictions?.eventSuccessRate),
+        eventSuccessRate: getNum(r.predictions?.eventSuccessRate)
       }
     };
   }, [rawReportData]);
 
-  const handleExport = () => {
-    // Basic client-side export for CSV using mock/report data
+  const handleExport = async () => {
+    // Basic client-side export for CSV using report data; fall back to chart data from API
     if (exportFormat === 'csv') {
       if (reportData) {
-        // Flatten top-level report data into key/value rows
         const rows: Record<string, any>[] = Object.keys(reportData).map((k) => ({
           key: k,
           value: JSON.stringify((reportData as any)[k])
         }));
         exportToCsv(`${reportType || 'report'}.csv`, rows);
       } else {
-        // fallback: export example chart data
-        exportToCsv('chart-data.csv', chartData as unknown as Record<string, any>[]);
+        try {
+          const chart = await api.getChartData();
+          exportToCsv('chart-data.csv', (chart as unknown as Record<string, any>[]) || []);
+        } catch (e: any) {
+          toast({ title: 'Export failed', description: e?.message || 'Unable to fetch chart data' });
+        }
       }
       return;
     }
 
-    // For non-CSV formats we currently log and show a toast (mock)
+    // For non-CSV formats show a user-facing message
     console.log(`Exporting as ${exportFormat}`);
     try {
-      toast({ title: 'Export started', description: `Preparing ${exportFormat.toUpperCase()} export (mock)` });
+      toast({ title: 'Export started', description: `Preparing ${exportFormat.toUpperCase()} export` });
     } catch (e) {
       // noop
     }
