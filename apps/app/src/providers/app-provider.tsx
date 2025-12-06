@@ -1,23 +1,18 @@
 import api from '@/lib/api';
 import { useStore } from '@/lib/store';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { toast } from '@/components/atoms/use-toast';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 type AppProviderProps = {
-  children: React.ReactNode;
+  children: ReactNode;
 };
 
 type AppProviderState = {
   showBackButton: boolean;
   authenticated: boolean;
   user?: any;
-};
-
-const initialState: AppProviderState = {
-  showBackButton: false,
-  authenticated: false
 };
 
 const AppProviderContext = createContext<AppProviderState | undefined>(undefined);
