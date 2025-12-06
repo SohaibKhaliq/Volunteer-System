@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
 import api from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/atoms/use-toast';
@@ -21,7 +21,7 @@ export default function Login() {
 
   // If we're already authenticated (token present), redirect away from the login page
   const { token, user: existingUser } = useStore();
-  React.useEffect(() => {
+  useEffect(() => {
     if (token) {
       let target = '/';
       try {
@@ -75,7 +75,7 @@ export default function Login() {
     }
   });
 
-  const submit = (e: React.FormEvent) => {
+  const submit = (e: FormEvent) => {
     e.preventDefault();
     mutation.mutate({ email, password });
   };
