@@ -53,7 +53,7 @@ export default function AdminMonitoring() {
               <div className="p-4 border rounded">
                 <div className="text-sm text-muted-foreground">Communications</div>
                 <div className="text-2xl font-semibold">
-                  {Object.values(s.communications?.byStatus || {}).reduce((a: any, b: any) => a + b, 0)}
+                  {Number(Object.values(s.communications?.byStatus || {}).reduce((a: any, b: any) => a + b, 0))}
                 </div>
                 <div className="text-sm">
                   Failed logs: <Badge variant="destructive">{s.communications?.failedLogs || 0}</Badge>
@@ -62,7 +62,7 @@ export default function AdminMonitoring() {
               <div className="p-4 border rounded">
                 <div className="text-sm text-muted-foreground">Scheduled Jobs</div>
                 <div className="text-2xl font-semibold">
-                  {Object.values(s.scheduledJobs || {}).reduce((a: any, b: any) => a + b, 0)}
+                  {Number(Object.values(s.scheduledJobs || {}).reduce((a: any, b: any) => a + b, 0))}
                 </div>
                 <div className="text-sm">Scheduled: {s.scheduledJobs?.Scheduled || 0}</div>
               </div>
