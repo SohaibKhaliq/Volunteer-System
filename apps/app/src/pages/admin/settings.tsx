@@ -14,12 +14,12 @@ export default function AdminSettings() {
   const queryClient = useQueryClient();
   const [settings, setSettings] = useState<Record<string, any>>({});
 
-  const { data, isLoading } = useQuery({
+  const { isLoading } = useQuery({
     queryKey: ['settings'],
     queryFn: () => api.getSettings(),
-    onSuccess: (data) => {
-      if (data && typeof data === 'object') {
-        setSettings(data);
+    onSuccess: (incoming) => {
+      if (incoming && typeof incoming === 'object') {
+        setSettings(incoming);
       }
     }
   });
