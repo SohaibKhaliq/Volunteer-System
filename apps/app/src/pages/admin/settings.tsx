@@ -34,7 +34,7 @@ export default function AdminSettings() {
   });
 
   const handleSave = () => {
-    updateMutation.mutate(settings);
+    updateMutation.mutate(settings as any);
   };
 
   if (isLoading) {
