@@ -121,7 +121,7 @@ export default function OrganizationLayout() {
                   <h1 className="text-2xl font-bold text-gray-900">
                     {navItems.find((item) => item.path === location.pathname)?.label || 'Dashboard'}
                   </h1>
-                  <p className="text-sm text-gray-500 mt-1">Manage your organization's activities</p>
+                  <p className="text-sm text-gray-500 mt-1">Manage your organization&apos;s activities</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <Button variant="ghost" size="icon" className="relative">
