@@ -745,7 +745,6 @@ export default function AdminTasks() {
                             const ids = taskAssignments.map((a: any) => a.user?.id ?? a.user_id).filter(Boolean);
                             setSelectedUserIds(ids);
                             // debug: log users and assignments so we can inspect shapes in the browser console
-                            // eslint-disable-next-line no-console
                             console.log('Opening Assign dialog', { task, usersList, taskAssignments });
                             setShowAssignDialog(true);
                           }}
