@@ -7,7 +7,9 @@ import api from '@/lib/api';
 
 const VolunteerHistory = () => {
   const { t } = useTranslation();
-  const { data: history, isLoading } = useQuery(['volunteer-hours'], () => api.listHours().then(res => res.data));
+  const { data: history, isLoading } = useQuery(['volunteer-hours'], () =>
+    api.listHours().then((res: any) => res.data)
+  );
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -43,9 +45,7 @@ const VolunteerHistory = () => {
                   <TableCell>{new Date(item.date).toLocaleDateString()}</TableCell>
                   <TableCell>{item.hours}</TableCell>
                   <TableCell>
-                    <Badge variant={item.status === 'approved' ? 'default' : 'secondary'}>
-                      {item.status}
-                    </Badge>
+                    <Badge variant={item.status === 'approved' ? 'default' : 'secondary'}>{item.status}</Badge>
                   </TableCell>
                 </TableRow>
               ))}
