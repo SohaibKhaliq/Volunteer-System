@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, Plus } from 'lucide-react';
 
 export default function OrganizationResources() {
-  const queryClient = useQueryClient();
+  // queryClient not required here yet
   const [search, setSearch] = useState('');
 
   const { data: resourcesRaw, isLoading } = useQuery({
