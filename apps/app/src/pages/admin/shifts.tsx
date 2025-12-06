@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { axios } from '@/lib/axios';
@@ -19,18 +19,31 @@ export default function AdminShifts() {
 
   const { data: shiftsRaw, isLoading } = useQuery(['shifts', search], () => api.listShifts({ search }));
 
-  const shifts: any[] = Array.isArray(shiftsRaw) ? shiftsRaw : (shiftsRaw?.data ?? []);
+  type Shift = {
+    id: number;
+    title?: string;
+    event?: { id?: number; name?: string; title?: string } | null;
+    start_at?: string;
+    startAt?: string;
+    end_at?: string;
+    endAt?: string;
+    capacity?: number;
+  };
 
-  const deleteMutation = useMutation({
-    mutationFn: api.deleteShift,
+  type UserSnippet = { id: number; firstName?: string; lastName?: string; name?: string; email?: string };
+
+  const shifts: Shift[] = Array.isArray(shiftsRaw) ? shiftsRaw : (shiftsRaw?.data ?? []);
+
+  const deleteMutation = useMutation<void, unknown, number>({
+    mutationFn: (id: number) => api.deleteShift(id),
     onSuccess: () => queryClient.invalidateQueries(['shifts'])
   });
 
   // Quick assign volunteer
-  const [assignOpen, setAssignOpen] = React.useState(false);
-  const [assignShift, setAssignShift] = React.useState<any | null>(null);
-  const [userQuery, setUserQuery] = React.useState('');
-  const [debouncedUserQuery, setDebouncedUserQuery] = React.useState('');
+  const [assignOpen, setAssignOpen] = useState(false);
+  const [assignShift, setAssignShift] = useState<Shift | null>(null);
+  const [userQuery, setUserQuery] = useState('');
+  const [debouncedUserQuery, setDebouncedUserQuery] = useState('');
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedUserQuery(userQuery), 250);
@@ -50,23 +63,27 @@ export default function AdminShifts() {
     { staleTime: 1000 * 60 * 5 }
   );
 
-  const { data: possibleUsersRaw = [] } = useQuery(
+  const { data: possibleUsersRaw } = useQuery<UserSnippet[] | { data: UserSnippet[] }>(
     ['organization-volunteers', orgProfile?.data?.id ?? orgProfile?.id, debouncedUserQuery],
     async () => {
       if (!orgProfile) return [] as const;
       const orgId = orgProfile?.data?.id ?? orgProfile?.id;
       const res = await api.getOrganizationVolunteers(orgId, { search: debouncedUserQuery });
       if (Array.isArray(res)) return res;
-      if (res && Array.isArray((res as any).data)) return (res as any).data;
+      if (res && Array.isArray((res as { data?: unknown }).data)) {
+        return (res as { data?: unknown }).data as UserSnippet[];
+      }
       return [] as const;
     },
     { enabled: !!orgProfile }
   );
 
-  const possibleUsers: any[] = Array.isArray(possibleUsersRaw) ? possibleUsersRaw : (possibleUsersRaw?.data ?? []);
+  const possibleUsers: UserSnippet[] = Array.isArray(possibleUsersRaw)
+    ? possibleUsersRaw
+    : (possibleUsersRaw?.data ?? []);
 
   const assignMutation = useMutation({
-    mutationFn: (data: any) => api.assignToShift(data),
+    mutationFn: (data: { shift_id: number; user_id: number }) => api.assignToShift(data),
     onSuccess: () => {
       queryClient.invalidateQueries(['shifts']);
       toast.success('Volunteer assigned');
@@ -83,7 +100,7 @@ export default function AdminShifts() {
     user?.is_admin ||
     (user?.roles &&
       Array.isArray(user.roles) &&
-      user.roles.some((r: any) => {
+      user.roles.some((r: { name?: string; role?: string }) => {
         const n = (r?.name || r?.role || '').toLowerCase();
         return n === 'admin' || n === 'organization_admin' || n === 'organization_manager';
       }))
@@ -135,7 +152,7 @@ export default function AdminShifts() {
                   </TableCell>
                 </TableRow>
               ) : (
-                shifts.map((s: any) => (
+                shifts.map((s: Shift) => (
                   <TableRow key={s.id}>
                     <TableCell>{s.title}</TableCell>
                     <TableCell>{s.event?.name ?? s.event?.title ?? '—'}</TableCell>
@@ -203,7 +220,7 @@ export default function AdminShifts() {
                         onValueChange={(v) => setUserQuery(v)}
                       />
                       <CommandGroup>
-                        {possibleUsers.map((u: any) => (
+                        {possibleUsers.map((u: UserSnippet) => (
                           <CommandItem
                             key={u.id}
                             onSelect={() => {
