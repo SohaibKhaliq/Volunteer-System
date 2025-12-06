@@ -1,4 +1,4 @@
-import React from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -38,7 +38,7 @@ export default function NotificationsPage() {
     Array.isArray(p) ? p : (p?.data?.data ?? p?.data ?? [])
   );
 
-  const [selected, setSelected] = React.useState<number[]>([]);
+  const [selected, setSelected] = useState<number[]>([]);
 
   const toggleSelect = (id: number) => {
     setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : prev.concat([id])));
@@ -51,8 +51,8 @@ export default function NotificationsPage() {
     queryClient.invalidateQueries(['notifications-infinite']);
   };
 
-  const loadMoreRef = React.useRef<HTMLDivElement | null>(null);
-  React.useEffect(() => {
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
     const el = loadMoreRef.current;
     if (!el) return;
     const io = new IntersectionObserver((entries) => {
@@ -82,7 +82,7 @@ export default function NotificationsPage() {
 
   const token = useStore((s) => s.token);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!token) return;
     try {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
