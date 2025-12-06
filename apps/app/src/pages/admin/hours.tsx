@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/atoms/popover';
 import { Command, CommandGroup, CommandInput, CommandItem } from '@/components/atoms/command';
-import React, { useEffect } from 'react';
+import { useEffect, useMemo, startTransition } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { toast } from '@/components/atoms/use-toast';
@@ -54,7 +54,7 @@ export default function AdminHours() {
   });
 
   // normalize response: support plain array or paginated { data, meta }
-  const normalized = React.useMemo(() => {
+  const normalized = useMemo(() => {
     if (!data) return { data: [], total: 0 };
     if (Array.isArray(data)) return { data, total: data.length };
     // common shapes: { data: [], meta: { total } } or { data: [], total }
@@ -201,7 +201,7 @@ export default function AdminHours() {
                   <CommandInput
                     placeholder="Search volunteers..."
                     value={volunteerQuery}
-                    onValueChange={(v) => React.startTransition(() => setVolunteerQuery(v))}
+                    onValueChange={(v) => startTransition(() => setVolunteerQuery(v))}
                   />
                   <CommandGroup>
                     {volunteerResults.map((u: any) => (
