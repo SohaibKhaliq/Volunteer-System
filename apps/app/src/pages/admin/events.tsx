@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, startTransition } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
@@ -444,7 +444,7 @@ export default function AdminEvents() {
                   <CommandInput
                     placeholder="Search users..."
                     value={contactQuery}
-                    onValueChange={(v) => React.startTransition(() => setContactQuery(v))}
+                    onValueChange={(v) => startTransition(() => setContactQuery(v))}
                   />
                   <CommandGroup>
                     {contactResults.map((u: any) => (
