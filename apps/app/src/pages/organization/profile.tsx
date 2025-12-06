@@ -140,7 +140,7 @@ export default function OrganizationProfile() {
         throw err;
       }
     },
-    onSuccess: (_data: any) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organizationTeam'] });
       setIsTeamModalOpen(false);
       toast.success(editingMember ? 'Team member updated' : 'Invitation sent');
@@ -279,7 +279,7 @@ export default function OrganizationProfile() {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Organization Profile</h2>
-          <p className="text-muted-foreground">Manage your organization's details and team members.</p>
+          <p className="text-muted-foreground">Manage your organization&apos;s details and team members.</p>
         </div>
         <div className="flex gap-2">
           {isEditing ? (
@@ -461,7 +461,7 @@ export default function OrganizationProfile() {
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>Team Members</CardTitle>
-                <CardDescription>Manage access to your organization's dashboard.</CardDescription>
+                <CardDescription>Manage access to your organization&apos;s dashboard.</CardDescription>
               </div>
               <Button size="sm" onClick={handleOpenAddMember}>
                 <Plus className="h-4 w-4 mr-2" />
