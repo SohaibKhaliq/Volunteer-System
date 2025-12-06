@@ -12,7 +12,6 @@
   font-style: normal;
 }
 
-
 @font-face {
   font-family: 'Cairo';
   src: url('/fonts/Cairo/Cairo-ExtraBold.ttf') format('truetype');
@@ -33,7 +32,6 @@
   font-weight: 300;
   font-style: normal;
 }
-
 
 @font-face {
   font-family: 'Cairo';
