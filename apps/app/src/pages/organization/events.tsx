@@ -120,8 +120,8 @@ export default function OrganizationEvents() {
         .filter((s: string) => s)
     };
     // include coords if present
-    if (formData.latitude !== '') payload.latitude = parseFloat(String(formData.latitude));
-    if (formData.longitude !== '') payload.longitude = parseFloat(String(formData.longitude));
+    if (formData.latitude !== '') (payload as any).latitude = parseFloat(String(formData.latitude));
+    if (formData.longitude !== '') (payload as any).longitude = parseFloat(String(formData.longitude));
     saveEventMutation.mutate(payload);
   };
 
