@@ -1,5 +1,5 @@
-import { cn } from '@/lib/utils'
-import { FC } from 'react'
+import { cn } from '@/lib/utils';
+import { FC } from 'react';
 
 const LoadingSpinner: FC<{ className?: string }> = ({ className }) => {
   return (
@@ -22,7 +22,7 @@ const LoadingSpinner: FC<{ className?: string }> = ({ className }) => {
       </svg>
       <span className="sr-only">Loading...</span>
     </div>
-  )
-}
+  );
+};
 
-export default LoadingSpinner
+export default LoadingSpinner;
