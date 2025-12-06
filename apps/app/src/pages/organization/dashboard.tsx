@@ -77,7 +77,7 @@ export default function OrganizationDashboard() {
 
   const chartData = eventsList
     .slice(0, 8)
-    .map((ev) => {
+    .map((ev: EventItem) => {
       // prefer explicit start date fields, fall back to created time
       const rawDate = ev.startAt ?? ev.start_at ?? ev.start_date ?? ev.createdAt ?? ev.created_at;
       const ts = rawDate ? Date.parse(String(rawDate)) : NaN;
@@ -85,7 +85,7 @@ export default function OrganizationDashboard() {
       const attendees = Number(ev.assigned_volunteers ?? ev.volunteer_count ?? 0);
       return { dateLabel, dateRaw: ts, attendees };
     })
-    .filter((d) => d.dateLabel !== 'Unknown');
+    .filter((d: { dateLabel: string }) => d.dateLabel !== 'Unknown');
 
   type RecentItem = {
     id?: string | number;
@@ -177,12 +177,12 @@ export default function OrganizationDashboard() {
   }
 
   // sort by timestamp desc and take up to 5 most recent
-  recentActivity.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+  recentActivity.sort((a: RecentItem, b: RecentItem) => (b.ts || 0) - (a.ts || 0));
   const recentSlice = recentActivity.slice(0, 5);
 
   // compute upcoming events and the next event label
   const nowTs = Date.now();
-  const upcomingEvents = eventsList.filter((ev) => {
+  const upcomingEvents = eventsList.filter((ev: EventItem) => {
     const raw = (ev as any).startAt ?? (ev as any).start_at ?? (ev as any).start_date;
     const ts = raw ? Date.parse(String(raw)) : NaN;
     return !Number.isNaN(ts) && ts > nowTs;
@@ -191,13 +191,13 @@ export default function OrganizationDashboard() {
   const upcomingEventsCount = upcomingEvents.length || (displayStats.upcomingEvents ?? 0);
 
   const nextEvent = upcomingEvents
-    .map((ev) => {
+    .map((ev: EventItem) => {
       const raw = (ev as any).startAt ?? (ev as any).start_at ?? (ev as any).start_date;
       const ts = raw ? Date.parse(String(raw)) : NaN;
       return { ev, ts };
     })
-    .filter((x) => !Number.isNaN(x.ts))
-    .sort((a, b) => a.ts - b.ts)[0];
+    .filter((x: { ts: number }) => !Number.isNaN(x.ts))
+    .sort((a: { ts: number }, b: { ts: number }) => a.ts - b.ts)[0];
 
   const nextEventLabel = nextEvent
     ? `${nextEvent.ev.title ?? 'Untitled'} — ${new Date(nextEvent.ts).toLocaleString()}`
