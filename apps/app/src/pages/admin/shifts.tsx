@@ -94,6 +94,40 @@ export default function AdminShifts() {
     onError: () => toast.error('Failed to assign volunteer')
   });
 
+  // Bulk assign
+  const [selectedShifts, setSelectedShifts] = useState<number[]>([]);
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkUser, setBulkUser] = useState<UserSnippet | null>(null);
+
+  const bulkAssignMutation = useMutation({
+    mutationFn: async (payload: any) => api.bulkAssignToShift(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['shifts']);
+      toast.success('Bulk assignment completed');
+      setBulkOpen(false);
+      setSelectedShifts([]);
+      setBulkUser(null);
+    },
+    onError: () => toast.error('Bulk assignment failed')
+  });
+
+  // Shift suggestions
+  const [suggestOpen, setSuggestOpen] = useState(false);
+  const [suggestShift, setSuggestShift] = useState<Shift | null>(null);
+  const { data: suggestionsRaw, isFetching: suggestionsLoading } = useQuery(
+    ['shift', 'suggestions', suggestShift?.id],
+    async () => {
+      if (!suggestShift) return [] as const;
+      const res: any = await api.getShiftSuggestions(suggestShift.id, 10);
+      // API may return wrapped or raw array
+      if (Array.isArray(res)) return res;
+      return res?.data ?? [];
+    },
+    { enabled: !!suggestOpen && !!suggestShift }
+  );
+
+  const suggestions: UserSnippet[] = Array.isArray(suggestionsRaw) ? suggestionsRaw : (suggestionsRaw?.data ?? []);
+
   const { user } = useApp();
   const canQuickAssign = !!(
     user?.isAdmin ||
@@ -105,6 +139,10 @@ export default function AdminShifts() {
         return n === 'admin' || n === 'organization_admin' || n === 'organization_manager';
       }))
   );
+
+  const bulkButtonLabel = bulkAssignMutation.isLoading
+    ? `Assigning (${selectedShifts.length})…`
+    : `Bulk Assign (${selectedShifts.length})`;
 
   return (
     <div className="space-y-6">
@@ -120,7 +158,18 @@ export default function AdminShifts() {
               onChange={(e) => setSearch(e.target.value)}
               className="w-64"
             />
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center gap-2">
+              <div className="text-sm text-muted-foreground mr-2">Selected: {selectedShifts.length}</div>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={selectedShifts.length === 0 || bulkAssignMutation.isLoading}
+                onClick={() => setBulkOpen(true)}
+                aria-disabled={selectedShifts.length === 0 || bulkAssignMutation.isLoading}
+              >
+                {bulkButtonLabel}
+              </Button>
+
               <Button onClick={() => (window.location.href = '/admin/shifts/new')}>
                 <Plus className="h-4 w-4 mr-2" /> New Shift
               </Button>
@@ -130,6 +179,7 @@ export default function AdminShifts() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead />
                 <TableHead>Title</TableHead>
                 <TableHead>Event</TableHead>
                 <TableHead>Start</TableHead>
@@ -154,6 +204,18 @@ export default function AdminShifts() {
               ) : (
                 shifts.map((s: Shift) => (
                   <TableRow key={s.id}>
+                    <TableCell>
+                      <input
+                        type="checkbox"
+                        checked={selectedShifts.includes(s.id)}
+                        disabled={bulkAssignMutation.isLoading}
+                        onChange={(e) => {
+                          setSelectedShifts((prev) =>
+                            e.target.checked ? Array.from(new Set(prev.concat([s.id]))) : prev.filter((x) => x !== s.id)
+                          );
+                        }}
+                      />
+                    </TableCell>
                     <TableCell>{s.title}</TableCell>
                     <TableCell>{s.event?.name ?? s.event?.title ?? '—'}</TableCell>
                     <TableCell>{s.start_at ?? s.startAt ?? ''}</TableCell>
@@ -173,6 +235,16 @@ export default function AdminShifts() {
                             Quick Assign
                           </Button>
                         )}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setSuggestShift(s);
+                            setSuggestOpen(true);
+                          }}
+                        >
+                          Suggestions
+                        </Button>
                         <Button
                           size="sm"
                           variant="ghost"
@@ -248,6 +320,138 @@ export default function AdminShifts() {
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Suggestions dialog */}
+      <Dialog open={suggestOpen} onOpenChange={setSuggestOpen}>
+        <DialogContent aria-labelledby="suggestions-title">
+          <DialogHeader>
+            <DialogTitle id="suggestions-title">Suggested Volunteers</DialogTitle>
+          </DialogHeader>
+          <div className="p-4 space-y-3">
+            <div className="text-sm text-muted-foreground">Shift: {suggestShift?.title ?? '—'}</div>
+            {suggestionsLoading ? (
+              <div className="text-muted-foreground">Loading suggestions…</div>
+            ) : suggestions.length === 0 ? (
+              <div className="text-muted-foreground">No suggestions available</div>
+            ) : (
+              suggestions.map((u) => (
+                <div key={u.id} className="flex items-center justify-between gap-3 p-2 border rounded">
+                  <div>
+                    <div className="font-medium">{u.firstName ?? u.name}</div>
+                    <div className="text-sm text-muted-foreground">{u.email}</div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      disabled={assignMutation.isLoading}
+                      onClick={() => assignMutation.mutate({ shift_id: suggestShift!.id, user_id: u.id })}
+                    >
+                      {assignMutation.isLoading ? (
+                        <>
+                          <Loader2 className="animate-spin h-4 w-4 mr-2 inline" /> Assigning
+                        </>
+                      ) : (
+                        'Assign'
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          <DialogFooter>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setSuggestOpen(false)}>
+                Close
+              </Button>
+              <Button
+                onClick={() => {
+                  if (!suggestShift || suggestions.length === 0) return;
+                  // Bulk assign all suggested users for this shift
+                  const payload = suggestions.map((u) => ({ shift_id: suggestShift.id, user_id: u.id }));
+                  bulkAssignMutation.mutate(payload);
+                }}
+                disabled={suggestions.length === 0 || bulkAssignMutation.isLoading}
+              >
+                {bulkAssignMutation.isLoading ? (
+                  <>
+                    <Loader2 className="animate-spin h-4 w-4 mr-2 inline" /> Assigning
+                  </>
+                ) : (
+                  'Assign all'
+                )}
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk assign dialog */}
+      <Dialog open={bulkOpen} onOpenChange={setBulkOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Bulk Assign Volunteers</DialogTitle>
+          </DialogHeader>
+          <div className="p-4 space-y-3">
+            <div className="text-sm text-muted-foreground">Selected shifts: {selectedShifts.length}</div>
+            <div>
+              <label className="text-sm block mb-1">Search volunteer</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-start">
+                    {bulkUser ? `${bulkUser.firstName ?? bulkUser.name} ${bulkUser.lastName ?? ''}` : 'Search users...'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[320px] p-0">
+                  <Command>
+                    <CommandInput
+                      placeholder="Search users..."
+                      value={userQuery}
+                      onValueChange={(v) => setUserQuery(v)}
+                    />
+                    <CommandGroup>
+                      {possibleUsers.map((u: UserSnippet) => (
+                        <CommandItem
+                          key={u.id}
+                          onSelect={() => {
+                            setBulkUser(u);
+                            setUserQuery(`${u.firstName ?? u.name} ${u.lastName ?? ''}`);
+                          }}
+                        >
+                          {u.firstName ?? u.name} {u.lastName ?? ''} {u.email ? `(${u.email})` : ''}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+          <DialogFooter>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setBulkOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                disabled={!bulkUser || bulkAssignMutation.isLoading}
+                onClick={() => {
+                  if (!bulkUser || selectedShifts.length === 0) return;
+                  const payload = selectedShifts.map((shiftId) => ({ shift_id: shiftId, user_id: bulkUser.id }));
+                  bulkAssignMutation.mutate(payload);
+                }}
+              >
+                {bulkAssignMutation.isLoading ? (
+                  <>
+                    <Loader2 className="animate-spin h-4 w-4 mr-2 inline" /> Assigning…
+                  </>
+                ) : (
+                  'Assign to selected shifts'
+                )}
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
