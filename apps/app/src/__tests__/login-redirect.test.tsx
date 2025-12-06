@@ -1,8 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
+// vitest provides globals via tsconfig types — don't import describe/it/expect/vi here
 // automatic JSX runtime — remove unused default React import
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+// queries are not necessary for this test file
 import Login from '@/pages/login';
 import api from '@/lib/api';
 
