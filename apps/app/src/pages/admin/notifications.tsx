@@ -1,4 +1,4 @@
-import React from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -63,13 +63,13 @@ export default function AdminNotifications() {
 
   const navigate = useNavigate();
 
-  const [viewOpen, setViewOpen] = React.useState(false);
-  const [viewing, setViewing] = React.useState<any | null>(null);
+  const [viewOpen, setViewOpen] = useState(false);
+  const [viewing, setViewing] = useState<any | null>(null);
 
-  const [selected, setSelected] = React.useState<number[]>([]);
+  const [selected, setSelected] = useState<number[]>([]);
 
   const toggleSelect = (id: number) => {
-    setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : prev.concat([id])));
+    setSelected((prev: number[]) => (prev.includes(id) ? prev.filter((x) => x !== id) : prev.concat([id])));
   };
 
   const renderPayload = (payload: any) => {
@@ -112,13 +112,15 @@ export default function AdminNotifications() {
 
   const markSelected = async (markRead = true) => {
     const ids = selected.slice();
-    await Promise.all(ids.map((id) => (markRead ? api.markNotificationRead(id) : api.markNotificationUnread(id))));
+    await Promise.all(
+      ids.map((id: number) => (markRead ? api.markNotificationRead(id) : api.markNotificationUnread(id)))
+    );
     setSelected([]);
     queryClient.invalidateQueries(['notifications']);
     queryClient.invalidateQueries(['admin-notifications']);
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!token) return;
     try {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
@@ -168,7 +170,6 @@ export default function AdminNotifications() {
                 <TableHead />
                 <TableHead>When</TableHead>
                 <TableHead>Type</TableHead>
-                <TableHead>Message</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
