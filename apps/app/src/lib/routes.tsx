@@ -40,6 +40,7 @@ import AdminScheduling from '@/pages/admin/scheduling';
 import AdminMonitoring from '@/pages/admin/monitoring';
 import AdminBackup from '@/pages/admin/backup';
 import AdminAnalytics from '@/pages/admin/analytics';
+import AdminCalendar from '@/pages/admin/calendar';
 import AdminFeedback from '@/pages/admin/feedback';
 import AdminFeedbackCreate from '@/pages/admin/feedback/create';
 import AdminFeedbackResults from '@/pages/admin/feedback/[id]/results';
@@ -118,6 +119,7 @@ const routes: RouteObject[] = [
       { path: 'communications', element: <AdminCommunications /> },
       { path: 'backup', element: <AdminBackup /> },
       { path: 'analytics', element: <AdminAnalytics /> },
+      { path: 'calendar', element: <AdminCalendar /> },
       { path: 'monitoring', element: <AdminMonitoring /> },
       { path: 'reports', element: <AdminReports /> },
       { path: 'exports', element: <AdminExports /> },
