@@ -44,7 +44,7 @@ import ManageRolesModal from '@/components/admin/ManageRolesModal';
 import UserProfileModal from '@/components/admin/UserProfileModal';
 import EditUserModal from '@/components/admin/EditUserModal';
 
-interface User {
+export interface User {
   id: number;
   email: string;
   firstName: string;
@@ -53,6 +53,7 @@ interface User {
   isActive: boolean;
   roles?: { name: string; id: number }[];
   lastLoginAt?: string;
+  phone?: string;
   participationCount?: number;
   complianceStatus?: 'compliant' | 'pending' | 'expired';
 }
