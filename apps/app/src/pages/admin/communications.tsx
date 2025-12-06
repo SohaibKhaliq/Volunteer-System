@@ -59,7 +59,6 @@ export default function AdminCommunications() {
     },
     onError: (err: any) => {
       // Log server error payload for debugging
-      // eslint-disable-next-line no-console
       console.error('createCommunication error', err?.response?.data ?? err);
       toast.error('Failed to create communication');
     }
