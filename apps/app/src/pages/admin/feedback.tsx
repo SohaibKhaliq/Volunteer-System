@@ -523,7 +523,7 @@ export default function AdminFeedback() {
                             <ResponsiveContainer>
                               <PieChart>
                                 <Pie dataKey="value" data={chartData} nameKey="name" outerRadius={80} label>
-                                  {chartData.map((entry: any, idx: number) => (
+                                  {chartData.map((_entry: any, idx: number) => (
                                     <Cell key={`cell-${idx}`} fill={colors[idx % colors.length]} />
                                   ))}
                                 </Pie>
