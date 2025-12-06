@@ -2,40 +2,21 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Calendar,
-  MapPin,
-  Building2,
-  Users,
-  Clock,
-  Search,
-  Filter,
-  BookmarkIcon,
-  BookmarkCheck,
-  Loader2,
-  CheckCircle
-} from 'lucide-react';
+import { Calendar, MapPin, Building2, Users, Clock, Search, Bookmark, Loader2, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 const VolunteerOpportunitiesPage = () => {
@@ -62,7 +43,7 @@ const VolunteerOpportunitiesPage = () => {
       } catch {
         // Fallback to public organizations opportunities
         try {
-          const res = await api.getPublicOrganizations({ perPage: 10 });
+          await api.getPublicOrganizations({ perPage: 10 });
           return [];
         } catch {
           return [];
@@ -160,7 +141,9 @@ const VolunteerOpportunitiesPage = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-slate-900">{t('Browse Opportunities')}</h1>
-        <p className="text-slate-600">{t('Find volunteer opportunities that match your interests and availability.')}</p>
+        <p className="text-slate-600">
+          {t('Find volunteer opportunities that match your interests and availability.')}
+        </p>
       </div>
 
       {/* Search and Filters */}
@@ -216,25 +199,19 @@ const VolunteerOpportunitiesPage = () => {
             <Card key={opp.id} className="overflow-hidden hover:shadow-lg transition-shadow">
               <div className="h-32 bg-gradient-to-r from-blue-500 to-indigo-600 relative">
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                
+
                 {/* Bookmark button */}
                 <button
                   onClick={() => toggleBookmark(opp.id)}
                   className="absolute top-3 right-3 p-2 rounded-full bg-white/20 hover:bg-white/40 transition-colors"
                 >
-                  {bookmarkedIds.includes(opp.id) ? (
-                    <BookmarkCheck className="h-4 w-4 text-white" />
-                  ) : (
-                    <BookmarkIcon className="h-4 w-4 text-white" />
-                  )}
+                  <Bookmark className="h-4 w-4 text-white" />
                 </button>
 
                 {/* Organization badge */}
                 {opp.organization && (
                   <div className="absolute top-3 left-3">
-                    <Badge className="bg-white/20 text-white border-0 backdrop-blur-sm">
-                      {opp.organization.name}
-                    </Badge>
+                    <Badge className="bg-white/20 text-white border-0 backdrop-blur-sm">{opp.organization.name}</Badge>
                   </div>
                 )}
 
@@ -257,7 +234,7 @@ const VolunteerOpportunitiesPage = () => {
                       <span className="text-xs">at {formatTime(opp.startAt || opp.start_at)}</span>
                     )}
                   </div>
-                  
+
                   {opp.location && (
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <MapPin className="h-4 w-4" />
@@ -277,9 +254,11 @@ const VolunteerOpportunitiesPage = () => {
                         <Clock className="h-4 w-4" />
                         <span>
                           {Math.round(
-                            (new Date(opp.endAt || opp.end_at).getTime() - 
-                             new Date(opp.startAt || opp.start_at).getTime()) / 3600000
-                          )}h
+                            (new Date(opp.endAt || opp.end_at).getTime() -
+                              new Date(opp.startAt || opp.start_at).getTime()) /
+                              3600000
+                          )}
+                          h
                         </span>
                       </div>
                     )}
@@ -318,9 +297,7 @@ const VolunteerOpportunitiesPage = () => {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t('Apply for Opportunity')}</DialogTitle>
-            <DialogDescription>
-              {selectedOpportunity?.title}
-            </DialogDescription>
+            <DialogDescription>{selectedOpportunity?.title}</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
