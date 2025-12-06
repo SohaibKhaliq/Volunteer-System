@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,47 +13,21 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 
-const MOCK_RIDES = [
-  {
-    id: 1,
-    driver: { name: 'Ahmed K.', rating: 4.8, image: 'https://github.com/shadcn.png' },
-    from: 'Marrakech',
-    to: 'Al Haouz',
-    date: new Date(2024, 10, 25),
-    time: '08:00 AM',
-    seats: 3,
-    price: 'Free',
-    type: 'Offer'
-  },
-  {
-    id: 2,
-    driver: { name: 'Sarah M.', rating: 4.9, image: 'https://github.com/shadcn.png' },
-    from: 'Casablanca',
-    to: 'Marrakech',
-    date: new Date(2024, 10, 26),
-    time: '09:30 AM',
-    seats: 2,
-    price: 'Share Gas',
-    type: 'Request'
-  },
-  {
-    id: 3,
-    driver: { name: 'Youssef B.', rating: 4.7, image: 'https://github.com/shadcn.png' },
-    from: 'Rabat',
-    to: 'Tangier',
-    date: new Date(2024, 10, 27),
-    time: '07:00 AM',
-    seats: 4,
-    price: 'Free',
-    type: 'Offer'
-  }
-];
+// Fetch carpooling ads (offers & requests)
+const useCarpooling = () =>
+  useQuery(['carpooling-ads'], async () => {
+    const res = await api.list('carpooling-ads');
+    if (Array.isArray(res)) return res;
+    if (res && Array.isArray((res as any).data)) return (res as any).data;
+    return [] as any[];
+  });
 
 const Carpooling = () => {
   const { t } = useTranslation();
   const [date, setDate] = useState<Date | undefined>(new Date());
   // Filters panel state (closed by default)
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const { data: rides = [] } = useCarpooling();
 
   return (
     <div className="min-h-screen bg-slate-50 py-12">
@@ -147,7 +123,7 @@ const Carpooling = () => {
 
           {/* Ride List */}
           <div className="lg:col-span-2 space-y-4">
-            {MOCK_RIDES.map((ride) => (
+            {(rides || []).map((ride: any) => (
               <Card key={ride.id} className="hover:shadow-md transition-shadow cursor-pointer group">
                 <CardContent className="p-6">
                   <div className="flex flex-col md:flex-row gap-6">
