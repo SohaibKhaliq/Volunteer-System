@@ -10,7 +10,7 @@ import { format } from 'date-fns';
 export default function AdminAuditLogs() {
   const { data, isLoading } = useQuery({
     queryKey: ['audit-logs'],
-    queryFn: api.listAuditLogs
+    queryFn: () => api.listAuditLogs()
   });
 
   const logs = Array.isArray(data) ? data : [];
