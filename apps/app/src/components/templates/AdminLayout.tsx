@@ -134,6 +134,7 @@ export default function AdminLayout() {
     { path: '/admin/certifications', icon: Award, label: 'Certifications' },
     { path: '/admin/resources', icon: Package, label: 'Resources' },
     { path: '/admin/scheduling', icon: Clock, label: 'Scheduling' },
+    { path: '/admin/calendar', icon: Calendar, label: 'Calendars' },
     { path: '/admin/feedback', icon: FileText, label: 'Feedback' },
     { path: '/admin/audit-logs', icon: ListOrdered, label: 'Audit Logs' },
     { path: '/admin/settings', icon: Settings, label: 'Settings' },
