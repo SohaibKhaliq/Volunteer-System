@@ -101,12 +101,9 @@ export default function AdminFeedback() {
     // If array of objects
     if (Array.isArray(data)) {
       const rows = data as Array<Record<string, any>>;
-      const cols = Array.from(
-        rows.reduce((acc, r) => {
-          Object.keys(r || {}).forEach((k) => acc.add(k));
-          return acc;
-        }, new Set<string>())
-      );
+      const keySet = new Set<string>();
+      rows.forEach((r) => Object.keys(r || {}).forEach((k) => keySet.add(k)));
+      const cols = Array.from(keySet);
       const header = cols.join(',');
       const lines = rows.map((r) =>
         cols
