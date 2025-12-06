@@ -56,7 +56,7 @@ export default function AdminReports() {
 
   const { data: rawReportData, isLoading } = useQuery<ReportData>(
     ['admin-reports-data', reportType, timeRange],
-    () => api.getReports<ReportData>({ type: reportType, range: timeRange }),
+    () => api.getReports({ type: reportType, range: timeRange }),
     {
       suspense: false,
       retry: false,
