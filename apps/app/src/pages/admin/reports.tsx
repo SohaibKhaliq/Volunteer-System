@@ -355,7 +355,7 @@ export default function AdminReports() {
       <div className="bg-white p-6 rounded-lg shadow-sm">
         <h3 className="text-lg font-semibold mb-4">Top Performing Organizations</h3>
         <div className="space-y-3">
-          {reportData?.organizationPerformance?.topPerformers?.map((org, index) => (
+          {reportData?.organizationPerformance?.topPerformers?.map((org: any, index: number) => (
             <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded">
               <div className="flex items-center gap-3">
                 <div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-500 text-white font-bold">
