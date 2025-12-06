@@ -4,14 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Bell, Lock, Globe, Palette, HelpCircle, LogOut } from 'lucide-react';
+import { Bell, Lock, Globe, Palette, LogOut } from 'lucide-react';
 
 export default function OrganizationSettings() {
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
-        <p className="text-muted-foreground">Manage your organization's preferences and configuration.</p>
+        <p className="text-muted-foreground">Manage your organization&apos;s preferences and configuration.</p>
       </div>
 
       <Tabs defaultValue="general" className="w-full">
