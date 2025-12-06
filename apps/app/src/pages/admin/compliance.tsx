@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -136,8 +136,8 @@ export default function AdminCompliance() {
   });
 
   // details modal state
-  const [detailsOpen, setDetailsOpen] = React.useState(false);
-  const [selectedDoc, setSelectedDoc] = React.useState<any | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selectedDoc, setSelectedDoc] = useState<any | null>(null);
 
   const openDocument = (doc: any) => {
     // open file route served by API
