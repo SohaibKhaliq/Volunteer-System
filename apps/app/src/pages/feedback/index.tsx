@@ -1,15 +1,14 @@
 import { useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import api from '@/lib/api';
-import { toast } from '@/components/atoms/use-toast';
+// toast handled via sonner in volunteer pages; not needed here
 import { useApp } from '@/providers/app-provider';
 
 export default function FeedbackDashboard() {
-  const queryClient = useQueryClient();
   const navigate = useNavigate();
 
   const { data: surveys = [] } = useQuery(['surveys'], () => api.listSurveys());
@@ -32,34 +31,8 @@ export default function FeedbackDashboard() {
     }
   }, [isAdmin]);
 
-  const publishMutation = useMutation((id: number) => api.updateSurvey(id, { status: 'Open' }), {
-    onSuccess: () => queryClient.invalidateQueries(['surveys']),
-    onError: () => toast.error('Failed to publish')
-  });
-
-  const closeMutation = useMutation((id: number) => api.updateSurvey(id, { status: 'Closed' }), {
-    onSuccess: () => queryClient.invalidateQueries(['surveys']),
-    onError: () => toast.error('Failed to close')
-  });
-
-  const duplicateMutation = useMutation(
-    async (s: any) => api.createSurvey({ ...s, title: `${s.title} (Copy)`, status: 'Draft' }),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(['surveys']);
-        toast.success('Survey duplicated');
-      },
-      onError: () => toast.error('Failed to duplicate')
-    }
-  );
-
-  const archiveMutation = useMutation((id: number) => api.deleteSurvey(id), {
-    onSuccess: () => {
-      queryClient.invalidateQueries(['surveys']);
-      toast.success('Survey archived');
-    },
-    onError: () => toast.error('Failed to archive')
-  });
+  // Mutations for admin management are provided in the admin area. On the volunteer-facing page
+  // we only show available surveys to take, so these mutations are intentionally omitted here.
 
   return (
     <div className="space-y-6">
