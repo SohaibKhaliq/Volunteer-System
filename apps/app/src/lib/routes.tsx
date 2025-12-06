@@ -39,6 +39,7 @@ import AdminBackup from '@/pages/admin/backup';
 import AdminFeedback from '@/pages/admin/feedback';
 import AdminFeedbackCreate from '@/pages/admin/feedback/create';
 import AdminFeedbackResults from '@/pages/admin/feedback/[id]/results';
+import AdminExports from '@/pages/admin/exports';
 import AdminShifts from '@/pages/admin/shifts';
 import AdminAuditLogs from '@/pages/admin/audit-logs';
 import AdminSettings from '@/pages/admin/settings';
@@ -113,6 +114,7 @@ const routes: RouteObject[] = [
       { path: 'backup', element: <AdminBackup /> },
       { path: 'monitoring', element: <AdminMonitoring /> },
       { path: 'reports', element: <AdminReports /> },
+      { path: 'exports', element: <AdminExports /> },
       { path: 'resources', element: <AdminResources /> },
       { path: 'scheduling', element: <AdminScheduling /> },
       { path: 'feedback', element: <AdminFeedback /> },
