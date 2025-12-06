@@ -1,4 +1,4 @@
-import React from 'react';
+// using automatic JSX runtime — no default React import needed
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
