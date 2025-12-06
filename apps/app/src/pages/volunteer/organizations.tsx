@@ -2,21 +2,11 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Building2,
-  Users,
-  Calendar,
-  MapPin,
-  CheckCircle,
-  Clock,
-  LogOut,
-  ArrowRight,
-  Loader2
-} from 'lucide-react';
+import { Building2, Users, Calendar, MapPin, CheckCircle, LogOut, ArrowRight, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -142,9 +132,7 @@ const VolunteerOrganizationsPage = () => {
               <CardContent className="text-center py-12">
                 <Building2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <p className="text-muted-foreground mb-4">{t("You haven't joined any organizations yet")}</p>
-                <Button onClick={() => setActiveTab('discover')}>
-                  {t('Discover Organizations')}
-                </Button>
+                <Button onClick={() => setActiveTab('discover')}>{t('Discover Organizations')}</Button>
               </CardContent>
             </Card>
           ) : (
@@ -172,14 +160,14 @@ const VolunteerOrganizationsPage = () => {
                       {getStatusBadge(org.status)}
                     </div>
 
-                    <div className="flex gap-2 mb-4">
-                      {getRoleBadge(org.role)}
-                    </div>
+                    <div className="flex gap-2 mb-4">{getRoleBadge(org.role)}</div>
 
                     {org.joined_at && (
                       <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
                         <Calendar className="h-4 w-4" />
-                        <span>{t('Joined')} {new Date(org.joined_at).toLocaleDateString()}</span>
+                        <span>
+                          {t('Joined')} {new Date(org.joined_at).toLocaleDateString()}
+                        </span>
                       </div>
                     )}
 
@@ -218,9 +206,7 @@ const VolunteerOrganizationsPage = () => {
             <Card>
               <CardContent className="text-center py-12">
                 <CheckCircle className="h-12 w-12 mx-auto text-green-500 mb-4" />
-                <p className="text-muted-foreground">
-                  {t("You're already a member of all available organizations!")}
-                </p>
+                <p className="text-muted-foreground">{t("You're already a member of all available organizations!")}</p>
               </CardContent>
             </Card>
           ) : (
@@ -246,9 +232,7 @@ const VolunteerOrganizationsPage = () => {
                     <h3 className="font-semibold text-lg mb-2">{org.name}</h3>
 
                     {org.description && (
-                      <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-                        {org.description}
-                      </p>
+                      <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{org.description}</p>
                     )}
 
                     <div className="space-y-2 text-sm text-muted-foreground mb-4">
@@ -261,7 +245,9 @@ const VolunteerOrganizationsPage = () => {
                       {org.volunteerCount !== undefined && (
                         <div className="flex items-center gap-2">
                           <Users className="h-4 w-4" />
-                          <span>{org.volunteerCount} {t('volunteers')}</span>
+                          <span>
+                            {org.volunteerCount} {t('volunteers')}
+                          </span>
                         </div>
                       )}
                     </div>
@@ -277,11 +263,7 @@ const VolunteerOrganizationsPage = () => {
                         disabled={joinMutation.isPending}
                         className="flex-1"
                       >
-                        {joinMutation.isPending ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          t('Join')
-                        )}
+                        {joinMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : t('Join')}
                       </Button>
                     </div>
                   </CardContent>
