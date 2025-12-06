@@ -30,7 +30,7 @@ export default function OrganizationVolunteers() {
   // Fetch Volunteers
   const { data: volunteers, isLoading } = useQuery({
     queryKey: ['organizationVolunteers'],
-    queryFn: api.listOrganizationVolunteers
+    queryFn: () => api.listOrganizationVolunteers()
   });
 
   // Add/Update Volunteer Mutation
