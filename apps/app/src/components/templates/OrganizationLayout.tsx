@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useApp } from '@/providers/app-provider';
 import { cn } from '@/lib/utils';
@@ -6,7 +6,7 @@ import {
   LayoutDashboard,
   Building2,
   Calendar,
- Users,
+  Users,
   Clock,
   ShieldCheck,
   FileBarChart,
