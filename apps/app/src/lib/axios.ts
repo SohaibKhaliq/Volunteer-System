@@ -32,7 +32,7 @@ try {
 
 export const axios = Axios.create({
   baseURL: safeBaseURL
-});
+}) as any;
 
 axios.interceptors.request.use(authRequestInterceptor as FixType);
 axios.interceptors.response.use(
