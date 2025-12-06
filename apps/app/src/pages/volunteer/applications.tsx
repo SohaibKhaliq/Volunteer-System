@@ -2,28 +2,12 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow
-} from '@/components/ui/table';
-import {
-  Calendar,
-  MapPin,
-  Building2,
-  Clock,
-  CheckCircle,
-  XCircle,
-  Loader2,
-  ArrowRight
-} from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Calendar, MapPin, Building2, Loader2, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -63,13 +47,29 @@ const VolunteerApplicationsPage = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'applied':
-        return <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">{t('Pending')}</Badge>;
+        return (
+          <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+            {t('Pending')}
+          </Badge>
+        );
       case 'accepted':
-        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">{t('Accepted')}</Badge>;
+        return (
+          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+            {t('Accepted')}
+          </Badge>
+        );
       case 'rejected':
-        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">{t('Rejected')}</Badge>;
+        return (
+          <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+            {t('Rejected')}
+          </Badge>
+        );
       case 'withdrawn':
-        return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">{t('Withdrawn')}</Badge>;
+        return (
+          <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">
+            {t('Withdrawn')}
+          </Badge>
+        );
       default:
         return <Badge variant="secondary">{status}</Badge>;
     }
@@ -195,12 +195,12 @@ const VolunteerApplicationsPage = () => {
                         <TableCell>
                           {formatDate(app.appliedAt || app.applied_at || app.createdAt || app.created_at)}
                         </TableCell>
-                        <TableCell>
-                          {getStatusBadge(app.status)}
-                        </TableCell>
+                        <TableCell>{getStatusBadge(app.status)}</TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
-                            <Link to={`/opportunities/${app.opportunity?.id || app.opportunityId || app.opportunity_id}`}>
+                            <Link
+                              to={`/opportunities/${app.opportunity?.id || app.opportunityId || app.opportunity_id}`}
+                            >
                               <Button variant="ghost" size="sm">
                                 {t('View')} <ArrowRight className="ml-1 h-3 w-3" />
                               </Button>
