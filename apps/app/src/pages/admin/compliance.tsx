@@ -54,7 +54,6 @@ export default function AdminCompliance() {
 
   const { data: docsRaw, isLoading } = useQuery(['compliance'], () => api.listCompliance());
   const { data: usersRaw } = useQuery(['users', 'all'], () => api.listUsers());
-  const { data: checksRaw } = useQuery(['backgroundChecks'], () => api.listBackgroundChecks());
 
   const rawDocs = Array.isArray(docsRaw) ? docsRaw : ((docsRaw as any)?.data ?? []);
   // normalize documents to expected UI shape
@@ -97,9 +96,6 @@ export default function AdminCompliance() {
     } as ComplianceDocument;
   });
   const users = Array.isArray(usersRaw) ? usersRaw : ((usersRaw as any)?.data ?? []);
-  const checks = Array.isArray(checksRaw) ? checksRaw : ((checksRaw as any)?.data ?? []);
-
-  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 
   // Mutations
   const approveMutation = useMutation({
@@ -127,13 +123,7 @@ export default function AdminCompliance() {
     }
   });
 
-  const createCheck = useMutation({
-    mutationFn: (payload: any) => api.createBackgroundCheck(payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['backgroundChecks']);
-      toast({ title: 'Background check requested', variant: 'success' });
-    }
-  });
+  // removed unused background-checks query and createCheck mutation — not referenced by current UI
 
   // details modal state
   const [detailsOpen, setDetailsOpen] = useState(false);
