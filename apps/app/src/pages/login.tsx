@@ -20,7 +20,7 @@ export default function Login() {
   const returnTo = params.get('returnTo') || '/';
 
   // If we're already authenticated (token present), redirect away from the login page
-  const { token, user: existingUser } = useStore();
+  const { token } = useStore();
   useEffect(() => {
     if (token) {
       let target = '/';
@@ -144,7 +144,7 @@ export default function Login() {
           </div>
 
           <div className="text-center text-sm">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link to="/register" className="font-medium text-primary hover:underline">
               Sign up for free
             </Link>
@@ -163,8 +163,8 @@ export default function Login() {
         <div className="relative h-full flex flex-col justify-end p-12 text-white">
           <blockquote className="space-y-2">
             <p className="text-lg font-medium leading-relaxed">
-              "Volunteering is at the very core of being a human. No one has made it through life without someone else's
-              help."
+              Volunteering is at the very core of being a human. No one has made it through life without someone
+              else&apos;s help.
             </p>
             <footer className="text-sm opacity-80">— Heather French Henry</footer>
           </blockquote>
