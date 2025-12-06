@@ -27,7 +27,6 @@ export function showApiError(err: any, title = 'Error') {
     toast({ title, description: message, variant });
   } catch (e) {
     // best-effort; don't crash
-    // eslint-disable-next-line no-console
     console.warn('showApiError failed', e);
   }
 }
