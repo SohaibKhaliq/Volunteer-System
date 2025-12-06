@@ -8,7 +8,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import SkeletonCard from '@/components/atoms/skeleton-card';
 import { toast } from '@/components/atoms/use-toast';
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import {
   PieChart,
   Pie,
@@ -37,7 +37,7 @@ export default function AdminFeedback() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['surveys'],
-    queryFn: api.listSurveys
+    queryFn: () => api.listSurveys()
   });
 
   const surveys = Array.isArray(data) ? data : [];
