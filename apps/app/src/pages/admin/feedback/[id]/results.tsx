@@ -93,7 +93,7 @@ export default function AdminSurveyResults() {
                       <ResponsiveContainer>
                         <PieChart>
                           <Pie data={chartData} dataKey="value" nameKey="name" outerRadius={80} label>
-                            {chartData.map((entry, i) => (
+                            {chartData.map((_: any, i: number) => (
                               <Cell
                                 key={`cell-${i}`}
                                 fill={['#4f46e5', '#10b981', '#f97316', '#ef4444', '#60a5fa'][i % 5]}
