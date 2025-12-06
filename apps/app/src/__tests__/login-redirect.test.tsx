@@ -15,7 +15,7 @@ describe('Login page redirect behavior', () => {
     mockedApi.login = vi.fn().mockResolvedValue({ token: { token: 'abc' } });
 
     // render login page in a memory router with returnTo
-    render(
+    const { container } = render(
       <MemoryRouter initialEntries={['/login?returnTo=/admin']}>
         <Routes>
           <Route path="/login" element={<Login />} />
