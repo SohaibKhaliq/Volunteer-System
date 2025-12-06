@@ -10,18 +10,12 @@ vi.mock('@/lib/api');
 
 const mockedApi = api as any;
 
-function renderWithProviders(ui: React.ReactElement, { route = '/login?returnTo=/admin' } = {}) {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false, suspense: false } } });
-  window.history.pushState({}, 'Test page', route);
-  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>, { wrapper: MemoryRouter });
-}
-
 describe('Login page redirect behavior', () => {
   it('navigates back to returnTo after successful login', async () => {
     mockedApi.login = vi.fn().mockResolvedValue({ token: { token: 'abc' } });
 
     // render login page in a memory router with returnTo
-    const { container } = render(
+    render(
       <MemoryRouter initialEntries={['/login?returnTo=/admin']}>
         <Routes>
           <Route path="/login" element={<Login />} />
@@ -51,7 +45,7 @@ describe('Login page redirect behavior', () => {
       JSON.stringify({ state: { token: 'abc', user: { id: 1, email: 'a@b' } } })
     );
 
-    const { container } = render(
+    render(
       <MemoryRouter initialEntries={['/login?returnTo=/dashboard']}>
         <Routes>
           <Route path="/login" element={<Login />} />
