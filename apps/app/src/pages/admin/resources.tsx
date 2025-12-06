@@ -1,9 +1,9 @@
 // src/pages/admin/resources.tsx
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, startTransition, Fragment } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Package, Edit, Trash2, Plus } from 'lucide-react';
+import { Package, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
@@ -53,7 +53,7 @@ export default function AdminResources() {
 
   const { data: resourcesRaw, isLoading } = useQuery({
     queryKey: ['resources'],
-    queryFn: api.listResources
+    queryFn: () => api.listResources()
   });
 
   // Normalize possible response shapes: plain array, { data: [] }, { resources: [] }
@@ -87,8 +87,8 @@ export default function AdminResources() {
     onError: () => toast.error('Failed to update resource')
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: api.deleteResource,
+  const deleteMutation = useMutation<void, any, number>({
+    mutationFn: (id: number) => api.deleteResource(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['resources'] });
       toast.success('Resource deleted successfully');
@@ -188,20 +188,7 @@ export default function AdminResources() {
   );
   const events: any[] = Array.isArray(eventsRaw) ? eventsRaw : (eventsRaw?.data ?? []);
 
-  const { data: orgResourcesRaw } = useQuery(
-    ['organization-resources'],
-    async () => {
-      try {
-        return await axios.get('/organization/resources', { _suppressError: true });
-      } catch (e) {
-        return await api.listResources();
-      }
-    },
-    { staleTime: 1000 * 60 * 2 }
-  );
-  const orgResources: any[] = Array.isArray(orgResourcesRaw)
-    ? orgResourcesRaw
-    : (orgResourcesRaw?.data ?? orgResourcesRaw?.resources ?? []);
+  // organization scoped resources query removed - not used at the moment
 
   const assignMutation = useMutation({
     mutationFn: ({ resourceId, payload }: { resourceId: number; payload: any }) =>
@@ -478,7 +465,7 @@ export default function AdminResources() {
                     <CommandInput
                       placeholder="Search users..."
                       value={userQuery}
-                      onValueChange={(v) => React.startTransition(() => setUserQuery(v))}
+                      onValueChange={(v) => startTransition(() => setUserQuery(v))}
                     />
                     <CommandGroup>
                       {possibleOwners.map((u: any) => (
@@ -679,7 +666,7 @@ export default function AdminResources() {
                   <div className="font-medium">Status</div>
                   <div className="font-medium">Returned At</div>
                   {history.map((h: any) => (
-                    <React.Fragment key={h.id ?? `${h.assignedAt}-${h.relatedId || h.related_id || Math.random()}`}>
+                    <Fragment key={h.id ?? `${h.assignedAt}-${h.relatedId || h.related_id || Math.random()}`}>
                       <div>
                         {h.assignedAt || h.assigned_at || h.createdAt || h.created_at || ''
                           ? new Date(h.assignedAt ?? h.assigned_at ?? h.createdAt ?? h.created_at).toLocaleString()
@@ -702,7 +689,7 @@ export default function AdminResources() {
                           ? new Date(h.returnedAt ?? h.returned_at).toLocaleString()
                           : '—'}
                       </div>
-                    </React.Fragment>
+                    </Fragment>
                   ))}
                 </div>
               )}
