@@ -1,5 +1,5 @@
 // src/pages/admin/communications.tsx
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Send, Edit, Trash2, Plus, Eye } from 'lucide-react';
+import { MessageSquare, Edit, Trash2, Plus, Eye } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -39,14 +39,14 @@ export default function AdminCommunications() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['communications'],
-    queryFn: api.listCommunications
+    queryFn: () => api.listCommunications()
   });
 
   const communications = Array.isArray(data) ? data : [];
 
-  const { data: rolesData } = useQuery({ queryKey: ['roles'], queryFn: api.listRoles });
+  const { data: rolesData } = useQuery({ queryKey: ['roles'], queryFn: () => api.listRoles() });
   const roles = Array.isArray(rolesData) ? rolesData : [];
-  const { data: eventsData } = useQuery({ queryKey: ['events'], queryFn: api.listEvents });
+  const { data: eventsData } = useQuery({ queryKey: ['events'], queryFn: () => api.listEvents() });
   const events = Array.isArray(eventsData) ? eventsData : [];
 
   const createMutation = useMutation({
@@ -76,8 +76,8 @@ export default function AdminCommunications() {
     onError: () => toast.error('Failed to update communication')
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: api.deleteCommunication,
+  const deleteMutation = useMutation<void, any, number>({
+    mutationFn: (id: number) => api.deleteCommunication(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['communications'] });
       toast.success('Communication deleted successfully');
