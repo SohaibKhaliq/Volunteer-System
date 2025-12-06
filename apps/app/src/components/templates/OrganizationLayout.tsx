@@ -62,7 +62,7 @@ export default function OrganizationLayout() {
             <nav className="flex-1 p-4 space-y-1 overflow-y-auto min-h-0">
               {navItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = location.pathname === item.path || location.pathname.startsWith(`${item.path}/`);
+                // isActive was unused — compute only the values we actually use
                 // Handle exact match for root path to avoid highlighting dashboard on subpages if not desired,
                 // but usually dashboard is just /organization so startsWith might be too broad if we have /organization/profile
                 // Let's refine:
