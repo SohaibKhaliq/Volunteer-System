@@ -214,7 +214,7 @@ export default function AdminDashboard() {
             <ResponsiveContainer width="80%" height={150}>
               <PieChart>
                 <Pie data={eventDistribution} dataKey="value" nameKey="name" outerRadius={60}>
-                  {eventDistribution.map((_, idx) => (
+                  {eventDistribution.map((_: any, idx: number) => (
                     <Cell key={idx} fill={chartColors[idx % chartColors.length]} />
                   ))}
                 </Pie>
