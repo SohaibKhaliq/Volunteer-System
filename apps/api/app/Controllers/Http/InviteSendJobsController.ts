@@ -1,5 +1,6 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import InviteSendJob from 'App/Models/InviteSendJob'
+import Database from '@ioc:Adonis/Lucid/Database'
 import { processQueue } from 'App/Services/InviteSender'
 
 export default class InviteSendJobsController {
@@ -7,7 +8,17 @@ export default class InviteSendJobsController {
     await auth.use('api').authenticate()
     const user = auth.user!
     // allow only admin users
-    if (!user || !(user.isAdmin || (user.roles || []).some((r: any) => String(r?.name ?? r?.role ?? '').toLowerCase().includes('admin')))) {
+    if (
+      !user ||
+      !(
+        user.isAdmin ||
+        (user.roles || []).some((r: any) =>
+          String(r?.name ?? r?.role ?? '')
+            .toLowerCase()
+            .includes('admin')
+        )
+      )
+    ) {
       return { error: 'admin access required' }
     }
 
@@ -59,7 +70,17 @@ export default class InviteSendJobsController {
   public async show({ auth, params, response }: HttpContextContract) {
     await auth.use('api').authenticate()
     const user = auth.user!
-    if (!user || !(user.isAdmin || (user.roles || []).some((r: any) => String(r?.name ?? r?.role ?? '').toLowerCase().includes('admin')))) {
+    if (
+      !user ||
+      !(
+        user.isAdmin ||
+        (user.roles || []).some((r: any) =>
+          String(r?.name ?? r?.role ?? '')
+            .toLowerCase()
+            .includes('admin')
+        )
+      )
+    ) {
       return response.unauthorized({ message: 'admin access required' })
     }
 
@@ -72,7 +93,17 @@ export default class InviteSendJobsController {
   public async retry({ auth, params, response }: HttpContextContract) {
     await auth.use('api').authenticate()
     const user = auth.user!
-    if (!user || !(user.isAdmin || (user.roles || []).some((r: any) => String(r?.name ?? r?.role ?? '').toLowerCase().includes('admin')))) {
+    if (
+      !user ||
+      !(
+        user.isAdmin ||
+        (user.roles || []).some((r: any) =>
+          String(r?.name ?? r?.role ?? '')
+            .toLowerCase()
+            .includes('admin')
+        )
+      )
+    ) {
       return response.unauthorized({ message: 'admin access required' })
     }
 
@@ -93,5 +124,52 @@ export default class InviteSendJobsController {
     }
 
     return response.ok(job)
+  }
+
+  public async stats({ auth, response }: HttpContextContract) {
+    await auth.use('api').authenticate()
+    const user = auth.user!
+    if (
+      !user ||
+      !(
+        user.isAdmin ||
+        (user.roles || []).some((r: any) =>
+          String(r?.name ?? r?.role ?? '')
+            .toLowerCase()
+            .includes('admin')
+        )
+      )
+    ) {
+      return response.unauthorized({ message: 'admin access required' })
+    }
+
+    try {
+      // Count by status
+      const rows: any = await Database.from('invite_send_jobs')
+        .select('status')
+        .count('* as cnt')
+        .groupBy('status')
+
+      const byStatus: Record<string, number> = {}
+      let total = 0
+      for (const r of rows) {
+        const s = String(r.status || 'unknown')
+        const cnt = Number(r.cnt || 0)
+        byStatus[s] = cnt
+        total += cnt
+      }
+
+      const sent = Number(byStatus['sent'] || 0)
+      const successRate = total > 0 ? Math.round((sent / total) * 100) : 0
+
+      // Average attempts (best-effort)
+      const avgRow: any = await Database.from('invite_send_jobs').avg('attempts as avg')
+      const avgAttempts = avgRow && avgRow[0] ? Number(avgRow[0].avg || 0) : 0
+
+      return response.ok({ total, byStatus, successRate, avgAttempts })
+    } catch (e) {
+      // If table missing or error occurs, return zeros (fail-safe)
+      return response.ok({ total: 0, byStatus: {}, successRate: 0, avgAttempts: 0 })
+    }
   }
 }
