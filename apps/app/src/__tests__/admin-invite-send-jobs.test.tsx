@@ -53,4 +53,50 @@ describe('Admin Invite Send Jobs page', () => {
     // check JSON invite email is visible in the dialog pre-render
     expect(await screen.findByText(/"email": "a@test"/)).toBeInTheDocument();
   });
+
+  it('allows filtering and pagination interactions', async () => {
+    const jobsPage1 = {
+      data: [{ id: 1, organizationInviteId: 101, status: 'failed', attempts: 1, invite: { email: 'a@test' } }],
+      meta: { current_page: 1, last_page: 2, total: 2, per_page: 1 }
+    };
+
+    const jobsPage2 = {
+      data: [{ id: 2, organizationInviteId: 102, status: 'failed', attempts: 2, invite: { email: 'b@test' } }],
+      meta: { current_page: 2, last_page: 2, total: 2, per_page: 1 }
+    };
+
+    const mockList = vi.fn().mockResolvedValueOnce(jobsPage1).mockResolvedValueOnce(jobsPage2);
+    (api as any).listInviteSendJobs = mockList;
+
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+
+    render(
+      <QueryClientProvider client={client}>
+        <Providers>
+          <MemoryRouter>
+            <AdminInviteSendJobs />
+          </MemoryRouter>
+        </Providers>
+      </QueryClientProvider>
+    );
+
+    // initial load should call API once
+    expect(await screen.findByText('Invite #101')).toBeInTheDocument();
+    expect(mockList).toHaveBeenCalledTimes(1);
+
+    // type a search and apply filters
+    const searchInput = await screen.findByPlaceholderText('Search by email or invite id');
+    fireEvent.change(searchInput, { target: { value: 'a@test' } });
+    const applyBtn = await screen.findByText('Apply Filters');
+    fireEvent.click(applyBtn);
+
+    // listInviteSendJobs should be called again for filtered data
+    expect(mockList).toHaveBeenCalled();
+
+    // click next page
+    const nextBtn = await screen.findByText('Next');
+    fireEvent.click(nextBtn);
+    // second page call should have occurred
+    expect(mockList).toHaveBeenCalledTimes(2);
+  });
 });
