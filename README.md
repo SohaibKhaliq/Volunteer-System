@@ -122,6 +122,7 @@ cp .env.example .env
 ```bash
 node ace migration:run
 node ace db:seed
+  (note: individual seeders are deprecated — a single consolidated Australia seeder is used at apps/api/database/seeders/000_all_australia_seeder.ts)
 ```
 - Run the api
 ```bash
