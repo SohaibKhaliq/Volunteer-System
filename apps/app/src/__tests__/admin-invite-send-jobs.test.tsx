@@ -30,7 +30,22 @@ describe('Admin Invite Send Jobs page', () => {
       .fn()
       .mockResolvedValue({ data: { total: 2, byStatus: { sent: 1, failed: 1 }, successRate: 50 } });
     const mockRetry = ((api as any).retryInviteSendJob = vi.fn().mockResolvedValue({}));
-    (api as any).retryAllFailedInviteSendJobs = vi.fn().mockResolvedValue({ data: { requeued: 2 } });
+    // make retryAll return a deferred promise so we can test the loading state
+    let resolver: any;
+    const deferred = new Promise((resolve) => {
+      resolver = resolve;
+    });
+    (api as any).retryAllFailedInviteSendJobs = vi.fn().mockReturnValue(deferred);
+    (api as any).getAdminActivity = vi.fn().mockResolvedValue({
+      data: [
+        {
+          id: 1,
+          action: 'invite_send_jobs_requeue_completed',
+          created_at: new Date().toISOString(),
+          metadata: { requeued: 2 }
+        }
+      ]
+    });
 
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -65,6 +80,11 @@ describe('Admin Invite Send Jobs page', () => {
     const bulkBtn = await screen.findByText('Retry all failed');
     fireEvent.click(bulkBtn);
     expect((api as any).retryAllFailedInviteSendJobs).toHaveBeenCalled();
+    // while the promise is pending the button should show 'Requeueing...'
+    expect(bulkBtn).toBeDisabled();
+    expect(bulkBtn.textContent).toContain('Requeueing');
+    // resolve the deferred to finish the mutation
+    resolver({ data: { requeued: 2 } });
     confirmSpy.mockRestore();
   });
 
