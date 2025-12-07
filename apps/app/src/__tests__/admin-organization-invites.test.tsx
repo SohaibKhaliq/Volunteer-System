@@ -24,6 +24,7 @@ describe('Admin Organization Invites page', () => {
     (api as any).cancelOrganizationInvite = vi.fn().mockResolvedValue({});
     (api as any).acceptInvite = vi.fn().mockResolvedValue({});
     (api as any).rejectInvite = vi.fn().mockResolvedValue({});
+    (api as any).adminAcceptOrganizationInvite = vi.fn().mockResolvedValue({});
 
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -65,7 +66,9 @@ describe('Admin Organization Invites page', () => {
     expect((navigator as any).clipboard.writeText).toHaveBeenCalled();
 
     // click 'Accept (token)' (we need token on invite)
-    (api as any).getOrganizationInvites = vi.fn().mockResolvedValue([{ id: 1, email: 'a@example.com', token: 'tok1', created_at: new Date().toISOString() }]);
+    (api as any).getOrganizationInvites = vi
+      .fn()
+      .mockResolvedValue([{ id: 1, email: 'a@example.com', token: 'tok1', created_at: new Date().toISOString() }]);
     // re-render not necessary; we directly test acceptInvite invocation by simulating the button
     const acceptBtns = await screen.findAllByText('Accept (token)');
     if (acceptBtns.length > 0) {
@@ -77,6 +80,14 @@ describe('Admin Organization Invites page', () => {
     if (rejectBtns.length > 0) {
       fireEvent.click(rejectBtns[1] || rejectBtns[0]);
       expect((api as any).rejectInvite).toHaveBeenCalledWith('tok2');
+    }
+
+    // accept as admin (prompt for user id)
+    vi.spyOn(window, 'prompt').mockImplementation(() => '77');
+    const adminAcceptBtns = await screen.findAllByText('Accept as Admin');
+    if (adminAcceptBtns.length > 0) {
+      fireEvent.click(adminAcceptBtns[0]);
+      expect((api as any).adminAcceptOrganizationInvite).toHaveBeenCalledWith(42, 1, 77);
     }
   });
 });
