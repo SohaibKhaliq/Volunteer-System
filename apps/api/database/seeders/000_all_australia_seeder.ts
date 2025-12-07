@@ -38,7 +38,11 @@ export default class AustraliaFullSeeder extends BaseSeeder {
       for (const r of roles) {
         const rExists = await Database.from('roles').where('name', r).first()
         if (!rExists) {
-          await Database.table('roles').insert({ name: r, created_at: now.toSQL(), updated_at: now.toSQL() })
+          await Database.table('roles').insert({
+            name: r,
+            created_at: now.toSQL(),
+            updated_at: now.toSQL()
+          })
         }
       }
 
@@ -46,7 +50,11 @@ export default class AustraliaFullSeeder extends BaseSeeder {
       for (const p of permissions) {
         const pExists = await Database.from('permissions').where('name', p).first()
         if (!pExists) {
-          await Database.table('permissions').insert({ name: p, created_at: now.toSQL(), updated_at: now.toSQL() })
+          await Database.table('permissions').insert({
+            name: p,
+            created_at: now.toSQL(),
+            updated_at: now.toSQL()
+          })
         }
       }
 
@@ -325,7 +333,7 @@ export default class AustraliaFullSeeder extends BaseSeeder {
       return event
     }
 
-    for (const [idx, key] of Object.keys(createdOrgs).entries()) {
+    for (const key of Object.keys(createdOrgs)) {
       const org = createdOrgs[key]
       // create 4 events per org
       for (let e = 0; e < 4; e++) {
@@ -498,7 +506,10 @@ export default class AustraliaFullSeeder extends BaseSeeder {
         })
       }
     } catch (e) {
-      console.warn('Skipping offers/resources/help requests or surveys (maybe tables missing)', e?.message)
+      console.warn(
+        'Skipping offers/resources/help requests or surveys (maybe tables missing)',
+        e?.message
+      )
     }
 
     // --- Achievements default set ---
@@ -554,7 +565,10 @@ export default class AustraliaFullSeeder extends BaseSeeder {
     }
 
     // final summary
-    console.info('AustraliaFullSeeder: successful — organizations:', Object.keys(createdOrgs).length)
+    console.info(
+      'AustraliaFullSeeder: successful — organizations:',
+      Object.keys(createdOrgs).length
+    )
     console.info('AustraliaFullSeeder: users:', volunteerList.length + (adminUser ? 1 : 0))
   }
 }
