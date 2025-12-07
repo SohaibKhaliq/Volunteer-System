@@ -249,8 +249,46 @@ export default class AustraliaFullSeeder extends BaseSeeder {
     }
 
     // --- Events, Tasks, and Volunteer Hours ---
-    const seedEventForOrg = async (org: any, idx: number) => {
-      const title = `${org.name} - Community Event #${idx + 1}`
+    // Use real event titles pulled from original datasets where possible
+    const eventTitleMap: Record<string, string[]> = {
+      'red-cross': [
+        'Sydney Bushfire Relief',
+        'Red Cross Community First Aid Training',
+        'Red Cross Support Drive',
+        'Red Cross Donation Collection'
+      ],
+      'nsw-rfs': [
+        'NSW RFS Community Preparedness',
+        'RFS Volunteer Training',
+        'Bushfire Support Drill',
+        'Community Evacuation Awareness'
+      ],
+      'salvation-army': [
+        'Melbourne Food Drive',
+        'Salvation Army Food Distribution',
+        'Homeless Support Night',
+        'Community Clothing Drive'
+      ],
+      'lifeline': [
+        'Lifeline Awareness Day',
+        'Lifeline Volunteer Training',
+        'Telephone Support Training',
+        'Mental Health Outreach'
+      ],
+      'ses-vic': [
+        'SES Flood Response Drill',
+        'SES Emergency Preparedness',
+        'Community Flood Exercise',
+        'Road Rescue Training'
+      ]
+    }
+
+    const seedEventForOrg = async (org: any, idx: number, key?: string) => {
+      // prefer mapped titles where available; fall back to a generic title
+      const pool = key && eventTitleMap[key] ? eventTitleMap[key] : []
+      const title = pool.length
+        ? pool[idx % pool.length]
+        : `${org.name} - Community Event ${idx + 1}`
       let event = await Database.from('events').where({ organization_id: org.id, title }).first()
       if (!event) {
         const start = now.plus({ days: (idx + 1) * 3 })
@@ -331,7 +369,8 @@ export default class AustraliaFullSeeder extends BaseSeeder {
           role: 'volunteer',
           status: 'pending',
           expires_at: now.plus({ days: 60 }).toSQL(),
-          message: 'Invitation seeded by AustraliaFullSeeder',
+          // use original invite message text from previous dataset
+          message: 'Welcome — seeded invite for testing',
           created_at: now.toSQL(),
           updated_at: now.toSQL()
         })
@@ -350,7 +389,11 @@ export default class AustraliaFullSeeder extends BaseSeeder {
         if (!existing) {
           const [cid] = await Database.table('courses').insert({
             title: c.title,
-            description: `${c.title} — seeded`,
+            // use explicit descriptions from historical seeders instead of template
+            description:
+              c.title === 'First Aid (HLTAID011)'
+                ? 'Provide First Aid course'
+                : 'Training for volunteer coordinators',
             instructor: c.instructor,
             start_at: now.plus({ days: 5 }).toSQL(),
             end_at: now.plus({ days: 6 }).toSQL(),
