@@ -156,6 +156,27 @@ export default function AdminOrganizationInvites() {
                   {inv.token ? (
                     <Button
                       size="sm"
+                      variant="default"
+                      onClick={async () => {
+                        const idInput = window.prompt('Enter user ID to accept invite for (admin):')
+                        if (!idInput) return
+                        const uid = Number(idInput)
+                        if (!uid) return toast.error('Invalid user id')
+                        try {
+                          await api.adminAcceptOrganizationInvite(orgId, inv.id, uid)
+                          queryClient.invalidateQueries(['org', orgId, 'invites', statusFilter])
+                          toast.success('Invite accepted on behalf of user')
+                        } catch (err) {
+                          toast.error('Admin accept failed')
+                        }
+                      }}
+                    >
+                      Accept as Admin
+                    </Button>
+                  ) : null}
+                  {inv.token ? (
+                    <Button
+                      size="sm"
                       variant="destructive"
                       onClick={async () => {
                         try {
