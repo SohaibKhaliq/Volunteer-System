@@ -22,11 +22,13 @@ import AppProvider from '@/providers/app-provider';
 import AdminDashboard from '@/pages/admin/dashboard';
 import AdminUsers from '@/pages/admin/users';
 import AdminOrganizations from '@/pages/admin/organizations';
+import AdminOrganizationInvites from '@/pages/admin/organization-invites';
 import AdminAchievements from '@/pages/admin/achievements';
 import AdminEvents from '@/pages/admin/events';
 import AdminTasks from '@/pages/admin/tasks';
 import AdminHours from '@/pages/admin/hours'; // Added this import based on the instruction's context
 import AdminCertifications from '@/pages/admin/certifications';
+import AdminPendingHours from '@/pages/admin/pending-hours';
 import AdminNotifications from '@/pages/admin/notifications';
 import AdminCompliance from '@/pages/admin/compliance';
 import AdminReports from '@/pages/admin/reports';
@@ -34,10 +36,12 @@ import AdminCommunications from '@/pages/admin/communications';
 import AdminResources from '@/pages/admin/resources';
 import AdminResourcesDashboard from '@/pages/admin/resources-dashboard';
 import AdminImports from '@/pages/admin/imports';
+import AdminPendingHoursByOrg from '@/pages/admin/pending-hours-orgs';
 import AdminTemplates from '@/pages/admin/templates';
 import AdminBackgroundChecks from '@/pages/admin/background-checks';
 import AdminScheduling from '@/pages/admin/scheduling';
 import AdminMonitoring from '@/pages/admin/monitoring';
+import AdminScheduledJobs from '@/pages/admin/scheduled-jobs';
 import AdminBackup from '@/pages/admin/backup';
 import AdminAnalytics from '@/pages/admin/analytics';
 import AdminCalendar from '@/pages/admin/calendar';
@@ -108,11 +112,14 @@ const routes: RouteObject[] = [
       { index: true, element: <AdminDashboard /> },
       { path: 'users', element: <AdminUsers /> },
       { path: 'organizations', element: <AdminOrganizations /> },
+      { path: 'organizations/:id/invites', element: <AdminOrganizationInvites /> },
       { path: 'achievements', element: <AdminAchievements /> },
       { path: 'events', element: <AdminEvents /> },
       { path: 'shifts', element: <AdminShifts /> },
       { path: 'tasks', element: <AdminTasks /> },
       { path: 'hours', element: <AdminHours /> },
+      { path: 'pending-hours', element: <AdminPendingHours /> },
+      { path: 'pending-hours/orgs', element: <AdminPendingHoursByOrg /> },
       { path: 'compliance', element: <AdminCompliance /> },
       { path: 'certifications', element: <AdminCertifications /> },
       { path: 'notifications', element: <AdminNotifications /> },
@@ -123,6 +130,7 @@ const routes: RouteObject[] = [
       { path: 'analytics', element: <AdminAnalytics /> },
       { path: 'calendar', element: <AdminCalendar /> },
       { path: 'monitoring', element: <AdminMonitoring /> },
+      { path: 'scheduled-jobs', element: <AdminScheduledJobs /> },
       { path: 'reports', element: <AdminReports /> },
       { path: 'exports', element: <AdminExports /> },
       { path: 'resources', element: <AdminResources /> },
