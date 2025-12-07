@@ -306,7 +306,10 @@ Route.group(() => {
   // Dashboard
   Route.get('/dashboard', 'AdminController.dashboard')
   Route.get('/analytics', 'AdminController.systemAnalytics')
+  Route.get('/summary', 'AdminController.summary')
+  Route.get('/features', 'AdminController.features')
   Route.get('/activity', 'AdminController.recentActivity')
+  Route.get('/pending-hours/organizations', 'AdminController.pendingHoursByOrganization')
   Route.get('/export', 'AdminController.exportSummary')
 
   // Organization Management
