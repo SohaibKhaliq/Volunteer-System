@@ -42,6 +42,7 @@ import AdminBackgroundChecks from '@/pages/admin/background-checks';
 import AdminScheduling from '@/pages/admin/scheduling';
 import AdminMonitoring from '@/pages/admin/monitoring';
 import AdminScheduledJobs from '@/pages/admin/scheduled-jobs';
+import AdminInviteSendJobs from '@/pages/admin/invite-send-jobs';
 import AdminBackup from '@/pages/admin/backup';
 import AdminAnalytics from '@/pages/admin/analytics';
 import AdminCalendar from '@/pages/admin/calendar';
@@ -131,6 +132,7 @@ const routes: RouteObject[] = [
       { path: 'calendar', element: <AdminCalendar /> },
       { path: 'monitoring', element: <AdminMonitoring /> },
       { path: 'scheduled-jobs', element: <AdminScheduledJobs /> },
+      { path: 'invite-send-jobs', element: <AdminInviteSendJobs /> },
       { path: 'reports', element: <AdminReports /> },
       { path: 'exports', element: <AdminExports /> },
       { path: 'resources', element: <AdminResources /> },
