@@ -242,6 +242,7 @@ const api = {
   listInviteSendJobs: async (params?: any) => axios.get('/admin/invite-send-jobs', { params }),
   getInviteSendJob: async (id: number) => axios.get(`/admin/invite-send-jobs/${id}`),
   retryInviteSendJob: async (id: number) => axios.post(`/admin/invite-send-jobs/${id}/retry`),
+  getInviteSendJobsStats: async () => axios.get('/admin/invite-send-jobs/stats'),
 
   /* Monitoring */
   getMonitoringStats: async () => axios.get('/monitoring/stats'),
