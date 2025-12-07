@@ -25,7 +25,11 @@ export default class AustraliaFullSeeder extends BaseSeeder {
       if (total === 0) {
         const allowTypes = ['rescue', 'medical_assistance', 'food', 'shelter', 'other']
         await Database.table('types').multiInsert(
-          allowTypes.map((t) => ({ type: t, created_at: now.toSQL(), updated_at: now.toSQL() }))
+          allowTypes.map((t) => ({
+            type: t,
+            created_at: now.toSQL({ includeOffset: false }),
+            updated_at: now.toSQL({ includeOffset: false })
+          }))
         )
       }
     } catch (e) {
@@ -40,8 +44,8 @@ export default class AustraliaFullSeeder extends BaseSeeder {
         if (!rExists) {
           await Database.table('roles').insert({
             name: r,
-            created_at: now.toSQL(),
-            updated_at: now.toSQL()
+            created_at: now.toSQL({ includeOffset: false }),
+            updated_at: now.toSQL({ includeOffset: false })
           })
         }
       }
@@ -52,8 +56,8 @@ export default class AustraliaFullSeeder extends BaseSeeder {
         if (!pExists) {
           await Database.table('permissions').insert({
             name: p,
-            created_at: now.toSQL(),
-            updated_at: now.toSQL()
+            created_at: now.toSQL({ includeOffset: false }),
+            updated_at: now.toSQL({ includeOffset: false })
           })
         }
       }
@@ -71,8 +75,8 @@ export default class AustraliaFullSeeder extends BaseSeeder {
             await Database.table('role_permissions').insert({
               role_id: admin.id,
               permission_id: p.id,
-              created_at: now.toSQL(),
-              updated_at: now.toSQL()
+              created_at: now.toSQL({ includeOffset: false }),
+              updated_at: now.toSQL({ includeOffset: false })
             })
         }
       }
@@ -143,8 +147,8 @@ export default class AustraliaFullSeeder extends BaseSeeder {
           is_approved: true,
           is_active: true,
           public_profile: true,
-          created_at: now.toSQL(),
-          updated_at: now.toSQL()
+          created_at: now.toSQL({ includeOffset: false }),
+          updated_at: now.toSQL({ includeOffset: false })
         })
         org = await Database.from('organizations').where('id', id).first()
       }
@@ -161,8 +165,8 @@ export default class AustraliaFullSeeder extends BaseSeeder {
         first_name: 'Platform',
         last_name: 'Admin',
         is_admin: true,
-        created_at: now.toSQL(),
-        updated_at: now.toSQL()
+        created_at: now.toSQL({ includeOffset: false }),
+        updated_at: now.toSQL({ includeOffset: false })
       })
       adminUser = await Database.from('users').where('id', adminId).first()
     }
@@ -190,8 +194,8 @@ export default class AustraliaFullSeeder extends BaseSeeder {
           last_name: city,
           phone: `+61 4${String(100000 + i).slice(-8)}`,
           volunteer_status: 'active',
-          created_at: now.toSQL(),
-          updated_at: now.toSQL()
+          created_at: now.toSQL({ includeOffset: false }),
+          updated_at: now.toSQL({ includeOffset: false })
         })
         u = await Database.from('users').where('id', uid).first()
       }
@@ -210,8 +214,8 @@ export default class AustraliaFullSeeder extends BaseSeeder {
           organization_id: org.id,
           user_id: adminUser.id,
           role: 'Admin',
-          created_at: now.toSQL(),
-          updated_at: now.toSQL()
+          created_at: now.toSQL({ includeOffset: false }),
+          updated_at: now.toSQL({ includeOffset: false })
         })
       }
 
@@ -227,9 +231,9 @@ export default class AustraliaFullSeeder extends BaseSeeder {
             user_id: u.id,
             role: Math.random() > 0.9 ? 'admin' : 'volunteer',
             status: Math.random() > 0.1 ? 'active' : 'inactive',
-            joined_at: now.minus({ days: Math.floor(Math.random() * 400) }).toSQL(),
-            created_at: now.toSQL(),
-            updated_at: now.toSQL()
+            joined_at: now.minus({ days: Math.floor(Math.random() * 400) }).toSQL({ includeOffset: false }),
+            created_at: now.toSQL({ includeOffset: false }),
+            updated_at: now.toSQL({ includeOffset: false })
           })
         }
       }
@@ -284,12 +288,12 @@ export default class AustraliaFullSeeder extends BaseSeeder {
           title,
           description: `${title} — volunteering opportunity in Australia`,
           location: `${idx + 1}00 ${org.name.split(' ')[0]} St, ${cities[idx % cities.length]}`,
-          start_at: start.toSQL(),
-          end_at: start.plus({ hours: 4 }).toSQL(),
+          start_at: start.toSQL({ includeOffset: false }),
+          end_at: start.plus({ hours: 4 }).toSQL({ includeOffset: false }),
           capacity: 50 + Math.floor(Math.random() * 150),
           is_published: true,
-          created_at: now.toSQL(),
-          updated_at: now.toSQL()
+          created_at: now.toSQL({ includeOffset: false }),
+          updated_at: now.toSQL({ includeOffset: false })
         })
         event = await Database.from('events').where('id', eid).first()
       }
@@ -306,8 +310,8 @@ export default class AustraliaFullSeeder extends BaseSeeder {
             title: ttitle,
             description: 'Task seeded for demos',
             slot_count: 5,
-            created_at: now.toSQL(),
-            updated_at: now.toSQL()
+            created_at: now.toSQL({ includeOffset: false }),
+            updated_at: now.toSQL({ includeOffset: false })
           })
         }
       }
@@ -325,8 +329,8 @@ export default class AustraliaFullSeeder extends BaseSeeder {
           date: now.minus({ days: Math.floor(Math.random() * 180) }).toISODate(),
           hours: Number((Math.random() * 4 + 1).toFixed(2)),
           status: 'approved',
-          created_at: now.toSQL(),
-          updated_at: now.toSQL()
+          created_at: now.toSQL({ includeOffset: false }),
+          updated_at: now.toSQL({ includeOffset: false })
         })
       }
 
@@ -355,11 +359,11 @@ export default class AustraliaFullSeeder extends BaseSeeder {
           token: Math.random().toString(36).slice(2, 12),
           role: 'volunteer',
           status: 'pending',
-          expires_at: now.plus({ days: 60 }).toSQL(),
+          expires_at: now.plus({ days: 60 }).toSQL({ includeOffset: false }),
           // use original invite message text from previous dataset
           message: 'Welcome — seeded invite for testing',
-          created_at: now.toSQL(),
-          updated_at: now.toSQL()
+          created_at: now.toSQL({ includeOffset: false }),
+          updated_at: now.toSQL({ includeOffset: false })
         })
       }
     }
@@ -382,12 +386,12 @@ export default class AustraliaFullSeeder extends BaseSeeder {
                 ? 'Provide First Aid course'
                 : 'Training for volunteer coordinators',
             instructor: c.instructor,
-            start_at: now.plus({ days: 5 }).toSQL(),
-            end_at: now.plus({ days: 6 }).toSQL(),
+            start_at: now.plus({ days: 5 }).toSQL({ includeOffset: false }),
+            end_at: now.plus({ days: 6 }).toSQL({ includeOffset: false }),
             capacity: 30,
             status: 'Open',
-            created_at: now.toSQL(),
-            updated_at: now.toSQL()
+            created_at: now.toSQL({ includeOffset: false }),
+            updated_at: now.toSQL({ includeOffset: false })
           })
           courseId = cid
         } else {
@@ -406,8 +410,8 @@ export default class AustraliaFullSeeder extends BaseSeeder {
               user_id: v.user_id,
               status: 'Enrolled',
               progress: 0,
-              created_at: now.toSQL(),
-              updated_at: now.toSQL()
+              created_at: now.toSQL({ includeOffset: false }),
+              updated_at: now.toSQL({ includeOffset: false })
             })
           }
         }
@@ -441,8 +445,8 @@ export default class AustraliaFullSeeder extends BaseSeeder {
             email: `${o.name.replace(/\s+/g, '').toLowerCase()}@example.com`,
             is_on_site: 1,
             user_id: adminUser.id,
-            created_at: now.toSQL(),
-            updated_at: now.toSQL(),
+            created_at: now.toSQL({ includeOffset: false }),
+            updated_at: now.toSQL({ includeOffset: false }),
             files: '[]'
           })
         }
@@ -464,8 +468,8 @@ export default class AustraliaFullSeeder extends BaseSeeder {
             quantity: r.quantity,
             status: 'Available',
             organization_id: org.id,
-            created_at: now.toSQL(),
-            updated_at: now.toSQL()
+            created_at: now.toSQL({ includeOffset: false }),
+            updated_at: now.toSQL({ includeOffset: false })
           })
         }
       }
@@ -483,8 +487,8 @@ export default class AustraliaFullSeeder extends BaseSeeder {
           phone: '+61 400 000 001',
           email: 'needs@example.com',
           is_on_site: 1,
-          created_at: now.toSQL(),
-          updated_at: now.toSQL(),
+          created_at: now.toSQL({ includeOffset: false }),
+          updated_at: now.toSQL({ includeOffset: false }),
           files: '[]'
         })
       }
@@ -495,14 +499,14 @@ export default class AustraliaFullSeeder extends BaseSeeder {
           title: 'Volunteer Satisfaction Survey',
           description: 'Short survey for seeded events',
           status: 'Open',
-          created_at: now.toSQL(),
-          updated_at: now.toSQL()
+          created_at: now.toSQL({ includeOffset: false }),
+          updated_at: now.toSQL({ includeOffset: false })
         })
         await Database.table('survey_responses').insert({
           survey_id: sid,
           user_id: volunteerList[0]?.id ?? adminUser.id,
           answers: JSON.stringify({ q1: 'satisfied' }),
-          created_at: now.toSQL()
+          created_at: now.toSQL({ includeOffset: false })
         })
       }
     } catch (e) {
@@ -537,8 +541,8 @@ export default class AustraliaFullSeeder extends BaseSeeder {
         for (const a of defaults) {
           await Database.table('achievements').insert({
             ...a,
-            created_at: now.toSQL(),
-            updated_at: now.toSQL()
+            created_at: now.toSQL({ includeOffset: false }),
+            updated_at: now.toSQL({ includeOffset: false })
           })
         }
       }
@@ -556,8 +560,8 @@ export default class AustraliaFullSeeder extends BaseSeeder {
           job_name: 'audit-maintenance',
           schedule: '0 2 * * *',
           is_enabled: 1,
-          created_at: now.toSQL(),
-          updated_at: now.toSQL()
+          created_at: now.toSQL({ includeOffset: false }),
+          updated_at: now.toSQL({ includeOffset: false })
         })
       }
     } catch (e) {
