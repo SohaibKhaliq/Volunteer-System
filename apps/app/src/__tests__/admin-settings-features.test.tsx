@@ -94,4 +94,34 @@ describe('AdminSettings features tab', () => {
     expect(updateArg.features).toBeTruthy();
     expect(updateArg.features.dataOps === true || updateArg.features.dataOps === 'true').toBeTruthy();
   });
+
+  it('saves branding settings via updateBranding', async () => {
+    const mockGet = ((api as any).getSystemSettings = vi
+      .fn()
+      .mockResolvedValue({ platform_name: 'Old', primary_color: '#000000' }));
+    const mockBrand = ((api as any).updateBranding = vi.fn().mockResolvedValue({ message: 'ok' }));
+
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <Providers>
+          <MemoryRouter>
+            <AdminSettings />
+          </MemoryRouter>
+        </Providers>
+      </QueryClientProvider>
+    );
+
+    // switch to Branding tab
+    const brandingTab = await screen.findByText('Branding');
+    fireEvent.click(brandingTab);
+
+    const nameInput = await screen.findByLabelText('Platform Name');
+    fireEvent.change(nameInput, { target: { value: 'Branded Platform' } });
+
+    const saveBtn = await screen.findByText('Save Branding');
+    fireEvent.click(saveBtn);
+
+    expect((api as any).updateBranding).toHaveBeenCalled();
+  });
 });
