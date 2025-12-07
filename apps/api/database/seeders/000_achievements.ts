@@ -3,7 +3,7 @@ import Achievement from 'App/Models/Achievement'
 
 export default class AchievementSeeder extends BaseSeeder {
   public async run() {
-    this.logger.info('AchievementSeeder disabled — using 000_all_australia_seeder instead')
+    console.info('AchievementSeeder disabled — using 000_all_australia_seeder instead')
     return
     const defaults = [
       {
