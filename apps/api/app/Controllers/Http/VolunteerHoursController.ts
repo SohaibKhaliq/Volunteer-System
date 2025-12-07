@@ -74,7 +74,7 @@ export default class VolunteerHoursController {
         if (row) orgId = row.organization_id
       } catch {}
 
-      await AuditLog.create({
+      await AuditLog.safeCreate({
         userId: user.id,
         action: 'volunteer_hours_status_changed',
         details: JSON.stringify({
@@ -113,7 +113,7 @@ export default class VolunteerHoursController {
         orgIds = rows.map((r) => r.organization_id)
       } catch {}
 
-      await AuditLog.create({
+      await AuditLog.safeCreate({
         userId: user.id,
         action: 'volunteer_hours_bulk_update',
         details: JSON.stringify({ ids, newStatus: status, organizationIds: orgIds })
