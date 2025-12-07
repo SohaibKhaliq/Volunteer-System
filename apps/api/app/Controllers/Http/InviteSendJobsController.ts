@@ -3,7 +3,7 @@ import InviteSendJob from 'App/Models/InviteSendJob'
 import { processQueue } from 'App/Services/InviteSender'
 
 export default class InviteSendJobsController {
-  public async index({ auth }: HttpContextContract) {
+  public async index({ auth, request }: HttpContextContract) {
     await auth.use('api').authenticate()
     const user = auth.user!
     // allow only admin users
@@ -11,7 +11,49 @@ export default class InviteSendJobsController {
       return { error: 'admin access required' }
     }
 
-    return InviteSendJob.query().preload('invite').orderBy('created_at', 'desc')
+    const qs = request.qs()
+    const status = qs.status
+    const q = qs.q || qs.search
+    const inviteId = qs.inviteId || qs.invite_id
+    const page = Number(qs.page || 1)
+    const perPage = Number(qs.perPage || qs.per_page || 20)
+    const startDate = qs.startDate || qs.start_date
+    const endDate = qs.endDate || qs.end_date
+
+    let query = InviteSendJob.query().preload('invite').orderBy('created_at', 'desc')
+
+    if (status) {
+      query = query.where('status', status)
+    }
+
+    if (inviteId) {
+      query = query.where('organization_invite_id', Number(inviteId))
+    }
+
+    if (q) {
+      // search by invite email or job id
+      const term = String(q)
+      if (/^\d+$/.test(term)) {
+        query = query.where((builder) => {
+          builder.where('id', Number(term)).orWhere('organization_invite_id', Number(term))
+        })
+      } else {
+        query = query.whereHas('invite', (builder) => builder.where('email', 'LIKE', `%${term}%`))
+      }
+    }
+
+    if (startDate) {
+      const sd = new Date(startDate)
+      if (!isNaN(sd.getTime())) query = query.where('created_at', '>=', sd.toISOString())
+    }
+
+    if (endDate) {
+      const ed = new Date(endDate)
+      if (!isNaN(ed.getTime())) query = query.where('created_at', '<=', ed.toISOString())
+    }
+
+    // paginate for admin UIs
+    return query.paginate(page, perPage)
   }
 
   public async show({ auth, params, response }: HttpContextContract) {
