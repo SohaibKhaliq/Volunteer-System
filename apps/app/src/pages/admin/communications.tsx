@@ -34,6 +34,7 @@ export default function AdminCommunications() {
   const [logsOpen, setLogsOpen] = useState(false);
   const [logsFor, setLogsFor] = useState<any | null>(null);
   const [logs, setLogs] = useState<any[]>([]);
+  const [selectedLogIds, setSelectedLogIds] = useState<number[]>([]);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [toDelete, setToDelete] = useState<number | null>(null);
 
@@ -420,6 +421,16 @@ export default function AdminCommunications() {
                   ) : (
                     logs.map((l: any) => (
                       <TableRow key={l.id}>
+                        <TableCell>
+                          <input
+                            type="checkbox"
+                            checked={selectedLogIds.includes(l.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) setSelectedLogIds((s) => Array.from(new Set([...s, l.id])));
+                              else setSelectedLogIds((s) => s.filter((x) => x !== l.id));
+                            }}
+                          />
+                        </TableCell>
                         <TableCell>{l.recipient}</TableCell>
                         <TableCell>
                           <Badge
@@ -458,6 +469,29 @@ export default function AdminCommunications() {
                   )}
                 </TableBody>
               </Table>
+            </div>
+            <div className="flex items-center justify-between mt-2">
+              <div className="text-xs text-muted-foreground">Selected: {selectedLogIds.length}</div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="secondary"
+                  onClick={async () => {
+                    if (selectedLogIds.length === 0) return;
+                    try {
+                      await api.bulkRetryCommunicationLogs(selectedLogIds);
+                      const res: any = await api.listCommunicationLogs(logsFor.id);
+                      const data = res && res.data ? res.data : res;
+                      setLogs(data || []);
+                      setSelectedLogIds([]);
+                      toast.success('Bulk retry requested');
+                    } catch (e) {
+                      toast.error('Bulk retry failed');
+                    }
+                  }}
+                >
+                  Retry Selected
+                </Button>
+              </div>
             </div>
           </div>
           <DialogFooter>
