@@ -10,22 +10,22 @@ import {
   Shield,
   BarChart3,
   Home,
-  MessageSquare,
   CalendarClock,
   Award,
   Package,
   Clock,
   Activity,
   FileText,
+  MessageSquare,
   ListOrdered,
-  Settings,
   LogOut,
   User,
   Bell
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import api from '@/lib/api';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { Badge } from '@/components/ui/badge';
 import { useStore } from '@/lib/store';
 import { showApiError } from '@/lib/error-to-toast';
 import { toast } from '@/components/atoms/use-toast';
@@ -119,38 +119,118 @@ export default function AdminLayout() {
   //   );
   // }
 
-  const navItems = [
-    { path: '/admin', icon: Home, label: 'Dashboard' },
-    { path: '/admin/users', icon: Users, label: 'Users & Roles' },
-    { path: '/admin/organizations', icon: Building2, label: 'Organizations' },
-    { path: '/admin/events', icon: Calendar, label: 'Events & Tasks' },
-    { path: '/admin/tasks', icon: ClipboardCheck, label: 'Task Management' },
-    { path: '/admin/compliance', icon: Shield, label: 'Compliance' },
-    { path: '/admin/hours', icon: CalendarClock, label: 'Volunteer Hours' },
-    { path: '/admin/communications', icon: MessageSquare, label: 'Communications' },
-    { path: '/admin/achievements', icon: Award, label: 'Achievements' },
-    { path: '/admin/templates', icon: FileText, label: 'Templates' },
-    // Monitoring is an admin-only tool
-    ...(isAdmin ? [{ path: '/admin/monitoring', icon: Activity, label: 'Monitoring' }] : []),
-    { path: '/admin/notifications', icon: Bell, label: 'Notifications' },
-    { path: '/admin/background-checks', icon: ClipboardCheck, label: 'Background Checks' },
-    { path: '/admin/certifications', icon: Award, label: 'Certifications' },
-    { path: '/admin/resources', icon: Package, label: 'Resources' },
-    { path: '/admin/resources/dashboard', icon: Activity, label: 'Resources Dashboard' },
-    { path: '/admin/scheduling', icon: Clock, label: 'Scheduling' },
-    { path: '/admin/shifts', icon: CalendarClock, label: 'Shifts' },
-    { path: '/admin/calendar', icon: Calendar, label: 'Calendars' },
-    { path: '/admin/feedback', icon: FileText, label: 'Feedback' },
-    { path: '/admin/imports', icon: ListOrdered, label: 'Imports' },
-    { path: '/admin/exports', icon: ListOrdered, label: 'Exports' },
-    { path: '/admin/backup', icon: Package, label: 'Backups' },
-    { path: '/admin/analytics', icon: BarChart3, label: 'Analytics' },
-    { path: '/admin/audit-logs', icon: ListOrdered, label: 'Audit Logs' },
-    { path: '/admin/settings', icon: Settings, label: 'Settings' },
-    { path: '/admin/volunteer-profile', icon: User, label: 'Volunteer Profile' },
-    { path: '/admin/reports', icon: BarChart3, label: 'Reports & Analytics' }
-  ];
+  // fetch background checks list to compute counts for badges in the sidebar
+  const { data: bkData } = useQuery(['admin', 'background-checks', 'list'], () => api.listBackgroundChecks(), {
+    staleTime: 60_000
+  });
 
+  const backgroundChecks: any[] = Array.isArray(bkData) ? bkData : (bkData?.data ?? []);
+  const pendingBackgroundChecksCount = backgroundChecks.filter(
+    (c) => (c.status ?? '').toString().toLowerCase() !== 'clear'
+  ).length;
+
+  // Feature flags — derived from roles (quick heuristic). Adjust to mirror server-side flags if available.
+  const isSuperAdmin = !!(
+    user?.roles &&
+    Array.isArray(user.roles) &&
+    user.roles.some((r: any) => {
+      const s = String(r?.name ?? r?.role ?? '').toLowerCase();
+      return s.includes('owner') || s.includes('super') || s.includes('superadmin');
+    })
+  );
+
+  const features = {
+    dataOps: isSuperAdmin, // imports/exports/backups
+    analytics: isAdmin || isSuperAdmin,
+    monitoring: isAdmin
+  };
+
+  // Group sidebar links into semantic sections for clarity
+  const sidebarGroups: {
+    title?: string;
+    items: Array<{
+      path: string;
+      icon: any;
+      label: string;
+      adminOnly?: boolean;
+      showBadge?: boolean;
+      feature?: string;
+    }>;
+  }[] = [
+    {
+      title: 'Overview',
+      items: [{ path: '/admin', icon: Home, label: 'Dashboard' }]
+    },
+    {
+      title: 'Management',
+      items: [
+        { path: '/admin/users', icon: Users, label: 'Users & Roles' },
+        { path: '/admin/roles', icon: Shield, label: 'Roles' },
+        { path: '/admin/organizations', icon: Building2, label: 'Organizations' },
+        { path: '/admin/volunteer-profile', icon: User, label: 'Volunteer Profile' }
+      ]
+    },
+    {
+      title: 'Programs',
+      items: [
+        { path: '/admin/events', icon: Calendar, label: 'Events & Tasks' },
+        { path: '/admin/tasks', icon: ClipboardCheck, label: 'Task Management' },
+        { path: '/admin/shifts', icon: CalendarClock, label: 'Shifts' },
+        { path: '/admin/hours', icon: CalendarClock, label: 'Volunteer Hours' }
+      ]
+    },
+    {
+      title: 'Data & Ops',
+      items: [
+        { path: '/admin/resources', icon: Package, label: 'Resources' },
+        { path: '/admin/resources/dashboard', icon: Activity, label: 'Resources Dashboard' },
+        { path: '/admin/types', icon: FileText, label: 'Types' },
+        { path: '/admin/achievements', icon: Award, label: 'Achievements' }
+      ]
+    },
+    {
+      title: 'Safety & Compliance',
+      items: [
+        { path: '/admin/compliance', icon: Shield, label: 'Compliance' },
+        { path: '/admin/certifications', icon: Award, label: 'Certifications' },
+        { path: '/admin/background-checks', icon: ClipboardCheck, label: 'Background Checks', showBadge: true }
+      ]
+    },
+    {
+      title: 'Integrations',
+      items: [
+        { path: '/admin/calendar', icon: Calendar, label: 'Calendars' },
+        { path: '/admin/scheduling', icon: Clock, label: 'Scheduling' }
+      ]
+    },
+    {
+      title: 'Data & Exports',
+      items: [
+        { path: '/admin/imports', icon: ListOrdered, label: 'Imports', adminOnly: true, feature: 'dataOps' },
+        { path: '/admin/exports', icon: ListOrdered, label: 'Exports', adminOnly: true, feature: 'dataOps' },
+        { path: '/admin/backup', icon: Package, label: 'Backups', adminOnly: true, feature: 'dataOps' }
+      ]
+    },
+    {
+      title: 'Admin Tools',
+      items: [
+        { path: '/admin/notifications', icon: Bell, label: 'Notifications' },
+        { path: '/admin/templates', icon: FileText, label: 'Templates' },
+        { path: '/admin/communications', icon: MessageSquare, label: 'Communications' },
+        { path: '/admin/feedback', icon: FileText, label: 'Feedback' },
+        { path: '/admin/monitoring', icon: Activity, label: 'Monitoring', adminOnly: true, feature: 'monitoring' },
+        { path: '/admin/analytics', icon: BarChart3, label: 'Analytics', adminOnly: true, feature: 'analytics' },
+        { path: '/admin/reports', icon: BarChart3, label: 'Reports & Analytics' },
+        { path: '/admin/audit-logs', icon: ListOrdered, label: 'Audit Logs', adminOnly: true, feature: 'analytics' },
+        { path: '/admin/settings', icon: LogOut, label: 'Settings' }
+      ]
+    }
+  ];
+  const currentLabel =
+    sidebarGroups
+      .flatMap((g) => g.items)
+      .find((item) => location.pathname === item.path || location.pathname.startsWith(item.path + '/'))?.label ||
+    'Dashboard';
   return (
     <Providers>
       <div className="min-h-screen bg-gray-50">
@@ -163,26 +243,42 @@ export default function AdminLayout() {
             </div>
 
             <nav className="flex-1 p-4 space-y-1 overflow-y-auto min-h-0">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                const isActive = location.pathname === item.path;
+              {sidebarGroups.map((group) => (
+                <div key={group.title ?? 'group'}>
+                  {group.title && (
+                    <div className="px-3 py-2 text-xs text-muted-foreground uppercase tracking-wide font-semibold">
+                      {group.title}
+                    </div>
+                  )}
+                  {group.items.map((item) => {
+                    if (item.adminOnly && !isAdmin) return null;
+                    if ((item as any).feature && !(features as any)[(item as any).feature]) return null;
+                    const Icon = item.icon;
+                    const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
 
-                return (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    className={cn(
-                      'flex items-center gap-3 px-4 py-3 rounded-lg transition-all',
-                      isActive
-                        ? 'bg-blue-50 text-blue-700 font-medium'
-                        : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
-                    )}
-                  >
-                    <Icon className={cn('h-5 w-5', isActive ? 'text-blue-700' : 'text-gray-500')} />
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
+                    return (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        className={cn(
+                          'flex items-center gap-3 px-4 py-3 rounded-lg transition-all',
+                          isActive
+                            ? 'bg-blue-50 text-blue-700 font-medium'
+                            : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                        )}
+                      >
+                        <Icon className={cn('h-5 w-5', isActive ? 'text-blue-700' : 'text-gray-500')} />
+                        <span className="flex-1">{item.label}</span>
+                        {item.showBadge ? (
+                          <Badge variant="secondary" className="text-xs">
+                            {pendingBackgroundChecksCount}
+                          </Badge>
+                        ) : null}
+                      </Link>
+                    );
+                  })}
+                </div>
+              ))}
             </nav>
 
             <div className="p-4 border-t border-gray-200">
@@ -224,9 +320,7 @@ export default function AdminLayout() {
             <header className="bg-white border-b border-gray-200 px-8 py-4 sticky top-0 z-10">
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900">
-                    {navItems.find((item) => item.path === location.pathname)?.label || 'Dashboard'}
-                  </h1>
+                  <h1 className="text-2xl font-bold text-gray-900">{currentLabel}</h1>
                   <p className="text-sm text-gray-500 mt-1">Manage and monitor your volunteer system</p>
                 </div>
                 <div className="flex items-center gap-3">
