@@ -46,6 +46,8 @@ import AdminFeedbackCreate from '@/pages/admin/feedback/create';
 import AdminFeedbackResults from '@/pages/admin/feedback/[id]/results';
 import AdminExports from '@/pages/admin/exports';
 import AdminShifts from '@/pages/admin/shifts';
+import AdminRoles from '@/pages/admin/roles';
+import AdminTypes from '@/pages/admin/types';
 import AdminAuditLogs from '@/pages/admin/audit-logs';
 import AdminSettings from '@/pages/admin/settings';
 import AdminVolunteerProfile from '@/pages/admin/volunteer-profile';
@@ -131,6 +133,8 @@ const routes: RouteObject[] = [
       { path: 'feedback/create', element: <AdminFeedbackCreate /> },
       { path: 'feedback/:id/results', element: <AdminFeedbackResults /> },
       { path: 'audit-logs', element: <AdminAuditLogs /> },
+      { path: 'roles', element: <AdminRoles /> },
+      { path: 'types', element: <AdminTypes /> },
       { path: 'settings', element: <AdminSettings /> },
       { path: 'volunteer-profile', element: <AdminVolunteerProfile /> }
     ]
