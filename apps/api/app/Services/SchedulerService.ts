@@ -77,7 +77,13 @@ export async function processDue() {
         job.lastError = undefined
         await job.save()
       } catch (err) {
-        Logger.error(`Error processing job ${job.id}: ${String(err)}`)
+        try {
+          if (err instanceof Error)
+            Logger.error(`Error processing job ${job.id}: ${err.message}\n${err.stack}`)
+          else Logger.error('Error processing job %s: %o', job.id, err)
+        } catch (inner) {
+          Logger.error('Error processing job %s (failed to format error): %o', job.id, String(err))
+        }
         // On error, increment attempts and set next runAt with exponential backoff
         try {
           job.attempts = (job.attempts || 0) + 1
@@ -88,12 +94,29 @@ export async function processDue() {
           job.lastRunAt = DateTime.local()
           await job.save()
         } catch (saveErr) {
-          Logger.error(`Failed to update job after error ${job.id}: ${String(saveErr)}`)
+          try {
+            if (saveErr instanceof Error)
+              Logger.error(
+                `Failed to update job after error ${job.id}: ${saveErr.message}\n${saveErr.stack}`
+              )
+            else Logger.error('Failed to update job after error %s: %o', job.id, saveErr)
+          } catch (inner) {
+            Logger.error(
+              'Failed to update job after error %s (failed to format error): %o',
+              job.id,
+              String(saveErr)
+            )
+          }
         }
       }
     }
   } catch (err) {
-    Logger.error('Error in scheduler: ' + String(err))
+    try {
+      if (err instanceof Error) Logger.error(`Error in scheduler: ${err.message}\n${err.stack}`)
+      else Logger.error('Error in scheduler: %o', err)
+    } catch (inner) {
+      Logger.error('Error in scheduler (failed to format error): %o', String(err))
+    }
   }
 }
 
