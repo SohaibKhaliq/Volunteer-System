@@ -196,11 +196,15 @@ export default class InviteSendJobsController {
       const toRequeueCountRow: any = await Database.from('invite_send_jobs').where('status', 'failed').count('* as cnt')
       const toRequeueCount = (toRequeueCountRow && toRequeueCountRow[0] && Number(toRequeueCountRow[0].cnt)) || 0
 
-      await AuditLog.create({
+      await AuditLog.safeCreate({
         userId: user.id,
         action: 'invite_send_jobs_requeue_started',
         targetType: 'invite_send_jobs',
-        metadata: JSON.stringify({ initiatedBy: user.id, startedAt: new Date().toISOString(), toRequeueCount })
+        metadata: JSON.stringify({
+          initiatedBy: user.id,
+          startedAt: new Date().toISOString(),
+          toRequeueCount
+        })
       })
       // Update all failed jobs to pending, reset attempts and errors.
       // Use Database directly for a faster bulk update.
@@ -220,7 +224,7 @@ export default class InviteSendJobsController {
       }
 
       // create a completed audit log entry so the activity trail shows finished work
-      await AuditLog.create({
+      await AuditLog.safeCreate({
         userId: user.id,
         action: 'invite_send_jobs_requeue_completed',
         targetType: 'invite_send_jobs',
