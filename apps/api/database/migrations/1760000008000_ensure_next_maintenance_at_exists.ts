@@ -62,7 +62,10 @@ export default class EnsureNextMaintenanceAtExists extends BaseSchema {
               } catch (rawErr) {
                 // If the column already exists (race condition), ignore and continue
                 const msg = String(rawErr?.message || rawErr)
-                if (msg.toLowerCase().includes('duplicate') || msg.toLowerCase().includes('already exists')) {
+                if (
+                  msg.toLowerCase().includes('duplicate') ||
+                  msg.toLowerCase().includes('already exists')
+                ) {
                   // ignore
                 } else {
                   throw rawErr
@@ -77,14 +80,14 @@ export default class EnsureNextMaintenanceAtExists extends BaseSchema {
       }
 
       // Try to add FK constraint for assigned_technician_id (best-effort)
-        try {
-          // use IF NOT EXISTS style where supported; otherwise best-effort and ignore duplicate FK errors
-          await conn.raw(
-            `ALTER TABLE \`${this.tableName}\` ADD CONSTRAINT fk_resources_assigned_technician FOREIGN KEY (assigned_technician_id) REFERENCES users(id) ON DELETE SET NULL`
-          )
-        } catch (err) {
-        // ignore errors here; the FK may already exist or DB doesn't allow it
-      }
+      try {
+        // use IF NOT EXISTS style where supported; otherwise best-effort and ignore duplicate FK errors
+        await conn.raw(
+          `ALTER TABLE \`${this.tableName}\` ADD CONSTRAINT fk_resources_assigned_technician FOREIGN KEY (assigned_technician_id) REFERENCES users(id) ON DELETE SET NULL`
+        )
+      } catch (err) {
+          // ignore errors here; the FK may already exist or DB doesn't allow it
+        }
     } catch (e) {
       // overall failure: try a best-effort schema alter to add all columns
         try {
@@ -101,22 +104,28 @@ export default class EnsureNextMaintenanceAtExists extends BaseSchema {
             // ignore
           }
         } catch (err2) {
-        // fallback raw add for all three
+          // fallback raw add for all three
           try {
             // Try ADD COLUMN IF NOT EXISTS where supported to avoid duplicate column errors
-            await conn.raw(`ALTER TABLE \`${this.tableName}\` ADD COLUMN IF NOT EXISTS \`next_maintenance_at\` TIMESTAMP NULL`)
-            await conn.raw(`ALTER TABLE \`${this.tableName}\` ADD COLUMN IF NOT EXISTS \`last_maintenance_at\` TIMESTAMP NULL`)
-            await conn.raw(`ALTER TABLE \`${this.tableName}\` ADD COLUMN IF NOT EXISTS \`assigned_technician_id\` INT NULL`)
-          try {
             await conn.raw(
-              `ALTER TABLE \`${this.tableName}\` ADD CONSTRAINT fk_resources_assigned_technician FOREIGN KEY (assigned_technician_id) REFERENCES users(id) ON DELETE SET NULL`
+              `ALTER TABLE \`${this.tableName}\` ADD COLUMN IF NOT EXISTS \`next_maintenance_at\` TIMESTAMP NULL`
             )
-          } catch (err) {}
-        } catch (err3) {
-          console.error('Failed to ensure maintenance columns exist:', String(err3))
-          throw err3
+            await conn.raw(
+              `ALTER TABLE \`${this.tableName}\` ADD COLUMN IF NOT EXISTS \`last_maintenance_at\` TIMESTAMP NULL`
+            )
+            await conn.raw(
+              `ALTER TABLE \`${this.tableName}\` ADD COLUMN IF NOT EXISTS \`assigned_technician_id\` INT NULL`
+            )
+            try {
+              await conn.raw(
+                `ALTER TABLE \`${this.tableName}\` ADD CONSTRAINT fk_resources_assigned_technician FOREIGN KEY (assigned_technician_id) REFERENCES users(id) ON DELETE SET NULL`
+              )
+            } catch (err) {}
+          } catch (err3) {
+            console.error('Failed to ensure maintenance columns exist:', String(err3))
+            throw err3
+          }
         }
-      }
     }
   }
 
