@@ -12,9 +12,7 @@ export default class AustraliaFullSeeder extends BaseSeeder {
   public async run() {
     const env = process.env.NODE_ENV || 'development'
     if (env !== 'development' && env !== 'test') {
-      this.logger.info(
-        'AustraliaFullSeeder skipped - not running in non-development/test environment'
-      )
+      console.info('AustraliaFullSeeder skipped - not running in non-development/test environment')
       return
     }
 
@@ -31,41 +29,25 @@ export default class AustraliaFullSeeder extends BaseSeeder {
         )
       }
     } catch (e) {
-      this.logger.warn('Skipping types seeding: table may not exist or error', e?.message)
+      console.warn('Skipping types seeding: table may not exist or error', e?.message)
     }
 
     // --- Roles & Permissions ---
     try {
       const roles = ['admin', 'org_manager', 'volunteer']
       for (const r of roles) {
-        await Database.table('roles')
-          .where('name', r)
-          .first()
-          .then((rExists) => {
-            if (!rExists) {
-              return Database.table('roles').insert({
-                name: r,
-                created_at: now.toSQL(),
-                updated_at: now.toSQL()
-              })
-            }
-          })
+        const rExists = await Database.from('roles').where('name', r).first()
+        if (!rExists) {
+          await Database.table('roles').insert({ name: r, created_at: now.toSQL(), updated_at: now.toSQL() })
+        }
       }
 
       const permissions = ['manage_users', 'manage_events', 'view_reports', 'manage_compliance']
       for (const p of permissions) {
-        await Database.table('permissions')
-          .where('name', p)
-          .first()
-          .then((pExists) => {
-            if (!pExists) {
-              return Database.table('permissions').insert({
-                name: p,
-                created_at: now.toSQL(),
-                updated_at: now.toSQL()
-              })
-            }
-          })
+        const pExists = await Database.from('permissions').where('name', p).first()
+        if (!pExists) {
+          await Database.table('permissions').insert({ name: p, created_at: now.toSQL(), updated_at: now.toSQL() })
+        }
       }
 
       // attach all permissions to admin role
@@ -87,10 +69,7 @@ export default class AustraliaFullSeeder extends BaseSeeder {
         }
       }
     } catch (e) {
-      this.logger.warn(
-        'Skipping roles/permissions seeding: table may not exist or error',
-        e?.message
-      )
+      console.warn('Skipping roles/permissions seeding: table may not exist or error', e?.message)
     }
 
     // --- Organizations (Australian examples) ---
@@ -350,7 +329,7 @@ export default class AustraliaFullSeeder extends BaseSeeder {
       const org = createdOrgs[key]
       // create 4 events per org
       for (let e = 0; e < 4; e++) {
-        await seedEventForOrg(org, e)
+        await seedEventForOrg(org, e, key)
       }
     }
 
@@ -426,7 +405,7 @@ export default class AustraliaFullSeeder extends BaseSeeder {
         }
       }
     } catch (e) {
-      this.logger.warn('Skipping courses seeding (maybe table missing)', e?.message)
+      console.warn('Skipping courses seeding (maybe table missing)', e?.message)
     }
 
     // --- Offers, Resources, Help Requests, Surveys ---
@@ -519,10 +498,7 @@ export default class AustraliaFullSeeder extends BaseSeeder {
         })
       }
     } catch (e) {
-      this.logger.warn(
-        'Skipping offers/resources/help requests or surveys (maybe tables missing)',
-        e?.message
-      )
+      console.warn('Skipping offers/resources/help requests or surveys (maybe tables missing)', e?.message)
     }
 
     // --- Achievements default set ---
@@ -556,7 +532,7 @@ export default class AustraliaFullSeeder extends BaseSeeder {
         }
       }
     } catch (e) {
-      this.logger.warn('Skipping achievements seeding (maybe table missing)', e?.message)
+      console.warn('Skipping achievements seeding (maybe table missing)', e?.message)
     }
 
     // --- Scheduled jobs / meta seeds (simple examples) ---
@@ -574,14 +550,11 @@ export default class AustraliaFullSeeder extends BaseSeeder {
         })
       }
     } catch (e) {
-      this.logger.warn('Skipping scheduled_jobs seed', e?.message)
+      console.warn('Skipping scheduled_jobs seed', e?.message)
     }
 
     // final summary
-    this.logger.info(
-      'AustraliaFullSeeder: successful — organizations:',
-      Object.keys(createdOrgs).length
-    )
-    this.logger.info('AustraliaFullSeeder: users:', volunteerList.length + (adminUser ? 1 : 0))
+    console.info('AustraliaFullSeeder: successful — organizations:', Object.keys(createdOrgs).length)
+    console.info('AustraliaFullSeeder: users:', volunteerList.length + (adminUser ? 1 : 0))
   }
 }
