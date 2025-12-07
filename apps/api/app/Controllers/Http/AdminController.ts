@@ -56,9 +56,7 @@ export default class AdminController {
         .count('* as total')
 
       // Pending approvals (organizations with pending status)
-      const pendingOrgs = await Organization.query()
-        .where('status', 'pending')
-        .count('* as total')
+      const pendingOrgs = await Organization.query().where('status', 'pending').count('* as total')
 
       return response.ok({
         organizations: {
@@ -85,13 +83,177 @@ export default class AdminController {
   }
 
   /**
+   * Quick admin summary counts (background checks pending, imports pending,
+   * pending volunteer hours, unread notifications)
+   */
+  public async summary({ auth, response }: HttpContextContract) {
+    try {
+      await this.requireSuperAdmin(auth)
+
+      const bgChecks = await Database.from('background_checks')
+        .whereIn('status', ['requested', 'pending'])
+        .count('* as total')
+
+      const importJobs = await Database.from('scheduled_jobs')
+        .where('type', 'like', '%import%')
+        .whereNotIn('status', ['Completed', 'completed'])
+        .count('* as total')
+
+      const pendingHours = await Database.from('volunteer_hours')
+        .where('status', 'pending')
+        .count('* as total')
+
+      const unreadNotifs = await Database.from('notifications')
+        .where('read', false)
+        .count('* as total')
+
+      return response.ok({
+        backgroundChecksPending: Number(bgChecks[0]?.$extras?.total || 0),
+        importsPending: Number(importJobs[0]?.$extras?.total || 0),
+        pendingHours: Number(pendingHours[0]?.$extras?.total || 0),
+        unreadNotifications: Number(unreadNotifs[0]?.$extras?.total || 0)
+      })
+    } catch (error) {
+      Logger.error('Admin summary error: %o', error)
+      return response.unauthorized({ error: { message: error.message || 'Access denied' } })
+    }
+  }
+
+  /**
+   * Features available to the current user — respects system settings and user roles.
+   * This endpoint is for the frontend to decide which admin sections to render.
+   */
+  public async features({ auth, response }: HttpContextContract) {
+    try {
+      await auth.use('api').authenticate()
+      const user = auth.user!
+
+      // Try to read a 'features' entry in the system settings table (JSON stored)
+      let settingsFeatures: Record<string, boolean> | null = null
+      try {
+        const row = await Database.from('system_settings').where('key', 'features').first()
+        if (row && row.value) {
+          try {
+            settingsFeatures = JSON.parse(row.value)
+          } catch {
+            // ignore malformed JSON
+            settingsFeatures = null
+          }
+        }
+      } catch (err) {
+        // ignore DB lookup errors and fall back to defaults
+      }
+
+      const roleNames = Array.isArray((user as any).roles)
+        ? (user as any).roles.map((r: any) => String(r?.name ?? r?.role ?? '').toLowerCase())
+        : []
+
+      const isSuper =
+        roleNames.some((r: string) => r.includes('super') || r.includes('owner')) ||
+        !!user.isAdmin ||
+        !!user.is_admin
+
+      const defaults: Record<string, boolean> = {
+        dataOps: false,
+        analytics: true,
+        monitoring: true,
+        scheduling: true
+      }
+
+      const final: Record<string, boolean> = {
+        dataOps: (settingsFeatures?.dataOps ?? defaults.dataOps) || isSuper || !!user.isAdmin,
+        analytics: settingsFeatures?.analytics ?? defaults.analytics,
+        monitoring: settingsFeatures?.monitoring ?? defaults.monitoring,
+        scheduling: settingsFeatures?.scheduling ?? defaults.scheduling
+      }
+
+      return response.ok(final)
+    } catch (error) {
+      Logger.error('Admin features error: %o', error)
+      return response.unauthorized({ error: { message: error.message || 'Access denied' } })
+    }
+  }
+
+  /**
+   * Pending volunteer hours grouped by organization (for platform admin)
+   */
+  public async pendingHoursByOrganization({ auth, request, response }: HttpContextContract) {
+    try {
+      await this.requireSuperAdmin(auth)
+
+      // optional paging / limit query
+      const { limit = 10 } = request.qs()
+
+      // Count pending hours grouped by organization via organization_volunteers join
+      const groups = await Database.rawQuery(
+        `SELECT ov.organization_id as organizationId, orgs.name as organizationName, COUNT(*) as pendingCount
+         FROM volunteer_hours vh
+         JOIN organization_volunteers ov ON ov.user_id = vh.user_id
+         JOIN organizations orgs ON orgs.id = ov.organization_id
+         WHERE vh.status = 'pending'
+         GROUP BY ov.organization_id, orgs.name
+         ORDER BY pendingCount DESC`,
+        []
+      )
+
+      const out: any[] = []
+
+      for (const g of groups[0] || []) {
+        const orgId = g.organizationId
+
+        const items = await Database.from('volunteer_hours')
+          .join(
+            'organization_volunteers',
+            'volunteer_hours.user_id',
+            'organization_volunteers.user_id'
+          )
+          .leftJoin('users', 'users.id', 'volunteer_hours.user_id')
+          .leftJoin('events', 'events.id', 'volunteer_hours.event_id')
+          .where('organization_volunteers.organization_id', orgId)
+          .where('volunteer_hours.status', 'pending')
+          .select(
+            'volunteer_hours.id',
+            'volunteer_hours.date',
+            'volunteer_hours.hours',
+            'volunteer_hours.notes',
+            'users.first_name',
+            'users.last_name',
+            'users.email',
+            'events.title as event_title'
+          )
+          .orderBy('volunteer_hours.date', 'desc')
+          .limit(Number(limit))
+
+        out.push({
+          organizationId: orgId,
+          organizationName: g.organizationName,
+          pendingCount: Number(g.pendingCount || 0),
+          items
+        })
+      }
+
+      return response.ok(out)
+    } catch (error) {
+      Logger.error('Admin pending hours by org error: %o', error)
+      return response.unauthorized({ error: { message: error.message || 'Access denied' } })
+    }
+  }
+
+  /**
    * List all organizations with filters (admin view)
    */
   public async listOrganizations({ auth, request, response }: HttpContextContract) {
     try {
       await this.requireSuperAdmin(auth)
 
-      const { page = 1, perPage = 20, status, search, sortBy = 'created_at', sortOrder = 'desc' } = request.qs()
+      const {
+        page = 1,
+        perPage = 20,
+        status,
+        search,
+        sortBy = 'created_at',
+        sortOrder = 'desc'
+      } = request.qs()
 
       const query = Organization.query()
 
@@ -142,7 +304,9 @@ export default class AdminController {
       return response.ok({ message: 'Organization approved', organization: org })
     } catch (error) {
       Logger.error('Admin approve organization error: %o', error)
-      return response.badRequest({ error: { message: error.message || 'Failed to approve organization' } })
+      return response.badRequest({
+        error: { message: error.message || 'Failed to approve organization' }
+      })
     }
   }
 
@@ -171,7 +335,9 @@ export default class AdminController {
       return response.ok({ message: 'Organization suspended', organization: org })
     } catch (error) {
       Logger.error('Admin suspend organization error: %o', error)
-      return response.badRequest({ error: { message: error.message || 'Failed to suspend organization' } })
+      return response.badRequest({
+        error: { message: error.message || 'Failed to suspend organization' }
+      })
     }
   }
 
@@ -199,7 +365,9 @@ export default class AdminController {
       return response.ok({ message: 'Organization reactivated', organization: org })
     } catch (error) {
       Logger.error('Admin reactivate organization error: %o', error)
-      return response.badRequest({ error: { message: error.message || 'Failed to reactivate organization' } })
+      return response.badRequest({
+        error: { message: error.message || 'Failed to reactivate organization' }
+      })
     }
   }
 
@@ -227,7 +395,9 @@ export default class AdminController {
       return response.ok({ message: 'Organization archived', organization: org })
     } catch (error) {
       Logger.error('Admin archive organization error: %o', error)
-      return response.badRequest({ error: { message: error.message || 'Failed to archive organization' } })
+      return response.badRequest({
+        error: { message: error.message || 'Failed to archive organization' }
+      })
     }
   }
 
@@ -238,7 +408,14 @@ export default class AdminController {
     try {
       await this.requireSuperAdmin(auth)
 
-      const { page = 1, perPage = 20, status, search, sortBy = 'created_at', sortOrder = 'desc' } = request.qs()
+      const {
+        page = 1,
+        perPage = 20,
+        status,
+        search,
+        sortBy = 'created_at',
+        sortOrder = 'desc'
+      } = request.qs()
 
       const query = User.query().preload('roles').preload('organizations')
 
@@ -367,31 +544,40 @@ export default class AdminController {
       since.setDate(since.getDate() - days)
 
       // User growth over time
-      const userGrowth = await Database.rawQuery(`
+      const userGrowth = await Database.rawQuery(
+        `
         SELECT DATE(created_at) as date, COUNT(*) as count
         FROM users
         WHERE created_at >= ?
         GROUP BY DATE(created_at)
         ORDER BY date
-      `, [since.toISOString()])
+      `,
+        [since.toISOString()]
+      )
 
       // Organization growth over time
-      const orgGrowth = await Database.rawQuery(`
+      const orgGrowth = await Database.rawQuery(
+        `
         SELECT DATE(created_at) as date, COUNT(*) as count
         FROM organizations
         WHERE created_at >= ?
         GROUP BY DATE(created_at)
         ORDER BY date
-      `, [since.toISOString()])
+      `,
+        [since.toISOString()]
+      )
 
       // Volunteer hours over time
-      const hoursData = await Database.rawQuery(`
+      const hoursData = await Database.rawQuery(
+        `
         SELECT DATE(date) as date, SUM(hours) as total_hours
         FROM volunteer_hours
         WHERE date >= ? AND status = 'approved'
         GROUP BY DATE(date)
         ORDER BY date
-      `, [since.toISOString()])
+      `,
+        [since.toISOString()]
+      )
 
       // Organizations by status
       const orgsByStatus = await Database.from('organizations')
@@ -428,9 +614,7 @@ export default class AdminController {
 
       const { page = 1, perPage = 50, action, targetType } = request.qs()
 
-      const query = AuditLog.query()
-        .preload('user')
-        .orderBy('created_at', 'desc')
+      const query = AuditLog.query().preload('user').orderBy('created_at', 'desc')
 
       if (action) {
         query.where('action', action)
@@ -552,7 +736,7 @@ export default class AdminController {
       // Validate and save each setting
       for (const [key, value] of Object.entries(settings)) {
         const stringValue = typeof value === 'object' ? JSON.stringify(value) : String(value)
-        
+
         await Database.insertQuery()
           .table('system_settings')
           .insert({ key, value: stringValue })
@@ -635,7 +819,8 @@ export default class AdminController {
         requestedBy: admin.id,
         requestedAt: new Date().toISOString(),
         status: 'initiated',
-        message: 'Backup request has been initiated. In production, this would trigger a database backup job.'
+        message:
+          'Backup request has been initiated. In production, this would trigger a database backup job.'
       }
 
       // Log the action
@@ -685,7 +870,8 @@ export default class AdminController {
       return response.ok({
         lastBackup: backups[0] || null,
         recentBackups: backups,
-        message: 'Backup status is simulated. In production, this would check actual backup infrastructure.'
+        message:
+          'Backup status is simulated. In production, this would check actual backup infrastructure.'
       })
     } catch (error) {
       Logger.error('Backup status error: %o', error)
