@@ -20,7 +20,8 @@ import { DateTime } from 'luxon'
 
 export default class ComprehensiveOrgSeeder extends BaseSeeder {
   public async run() {
-    const orgEmail = 'organization@gmail.com'
+    this.logger.info('ComprehensiveOrgSeeder disabled — using 000_all_australia_seeder instead')
+    return
 
     // Check if organization exists
     let org = await Database.from('organizations').where('contact_email', orgEmail).first()
@@ -238,9 +239,6 @@ export default class ComprehensiveOrgSeeder extends BaseSeeder {
       })
     }
 
-    // Summary log
-    console.log(
-      `✅ Comprehensive seeder applied for ${orgEmail}. Volunteers: ${volunteers.length}, volunteer_hours entries: ${vhEntries.length}, events: ${eventIds.length}`
-    )
+    // consolidated seeder now responsible for this data
   }
 }
