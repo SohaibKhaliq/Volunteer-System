@@ -9,6 +9,15 @@ export default class Type extends BaseModel {
   @column()
   public type: RequestTypes
 
+  @column()
+  public name?: string
+
+  @column()
+  public category?: string
+
+  @column()
+  public description?: string
+
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
 
