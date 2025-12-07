@@ -51,22 +51,37 @@ export default class CarpoolingAdsController {
           })
       }
 
+      // Validate and move files safely
+      const uploadedFiles = request.files('files') || []
+      const MAX_BYTES = 5 * 1024 * 1024
+      const allowedExt = ['png', 'jpg', 'jpeg', 'pdf', 'txt', 'doc', 'docx']
+      const placedFiles: Array<{ originalName: string; storedName: string; path: string }> = []
+
+      for (const f of uploadedFiles) {
+        if (!f) continue
+        if (f.size && f.size > MAX_BYTES) {
+          return response.badRequest({ message: 'One of the uploaded files is too large' })
+        }
+        const ext = (f.extname || '').toLowerCase()
+        if (ext && !allowedExt.includes(ext)) {
+          return response.badRequest({ message: 'Invalid file type uploaded' })
+        }
+        await f.moveToDisk('local', { dirname: 'carpooling' })
+        placedFiles.push({
+          originalName: f.clientName || '',
+          storedName: f.fileName || '',
+          path: `carpooling/${f.fileName}`
+        })
+      }
+
       const carpooling = await CarpoolingAd.create({
         ...parsedPayload,
         status: payload.type === 'offer' ? CarpoolingStatus.planned : CarpoolingStatus.requested,
         type: payload.type as 'request' | 'offer',
-        files: JSON.stringify(
-          request
-            .files('files')
-            .map((file) => file.fileName!)
-            .filter(Boolean)
-        )
+        files: JSON.stringify(placedFiles)
       })
 
-      // TODO: properly handle files / validate them
-      await Promise.allSettled(
-        request.files('files').map((file) => file.move(Application.tmpPath('uploads')))
-      )
+      // we already validated and moved files above
 
       return response.created(carpooling)
     } catch (error) {
