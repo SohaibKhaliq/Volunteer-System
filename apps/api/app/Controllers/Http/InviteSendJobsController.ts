@@ -1,6 +1,7 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import InviteSendJob from 'App/Models/InviteSendJob'
 import Database from '@ioc:Adonis/Lucid/Database'
+import AuditLog from 'App/Models/AuditLog'
 import { processQueue } from 'App/Services/InviteSender'
 
 export default class InviteSendJobsController {
@@ -191,17 +192,22 @@ export default class InviteSendJobsController {
     }
 
     try {
+      // Record a start audit entry so admins can see an activity log while the batches run
+      await AuditLog.create({
+        userId: user.id,
+        action: 'invite_send_jobs_requeue_started',
+        targetType: 'invite_send_jobs',
+        metadata: JSON.stringify({ initiatedBy: user.id, startedAt: new Date().toISOString() })
+      })
       // Update all failed jobs to pending, reset attempts and errors.
       // Use Database directly for a faster bulk update.
-      const updated = await Database.from('invite_send_jobs')
-        .where('status', 'failed')
-        .update({
-          status: 'pending',
-          attempts: 0,
-          next_attempt_at: null,
-          last_error: null,
-          updated_at: new Date()
-        })
+      const updated = await Database.from('invite_send_jobs').where('status', 'failed').update({
+        status: 'pending',
+        attempts: 0,
+        next_attempt_at: null,
+        last_error: null,
+        updated_at: new Date()
+      })
 
       // Kick the queue to pick up the newly requeued jobs (best-effort).
       try {
@@ -209,6 +215,17 @@ export default class InviteSendJobsController {
       } catch (e) {
         // ignore
       }
+
+      // create a completed audit log entry so the activity trail shows finished work
+      await AuditLog.create({
+        userId: user.id,
+        action: 'invite_send_jobs_requeue_completed',
+        targetType: 'invite_send_jobs',
+        metadata: JSON.stringify({
+          requeued: Number(updated || 0),
+          completedAt: new Date().toISOString()
+        })
+      })
 
       return response.ok({ requeued: Number(updated || 0) })
     } catch (e) {
