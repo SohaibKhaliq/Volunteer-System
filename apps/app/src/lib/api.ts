@@ -509,7 +509,21 @@ const api = {
   getVolunteerAchievements: async () => axios.get('/volunteer/achievements'),
 
   // ==========================================
-  // CALENDAR / ICAL ENDPOINTS
+  // ROLES & TYPES MANAGEMENT
+  // ==========================================
+  // Roles
+  createRole: async (data: any) => axios.post('/roles', data),
+  updateRole: async (id: number, data: any) => axios.put(`/roles/${id}`, data),
+  deleteRole: async (id: number) => axios.delete(`/roles/${id}`),
+
+  // Types
+  listTypes: async () => axios.get('/types'),
+  createType: async (data: any) => axios.post('/types', data),
+  updateType: async (id: number, data: any) => axios.put(`/types/${id}`, data),
+  deleteType: async (id: number) => axios.delete(`/types/${id}`),
+
+  // ==========================================
+  // CALENDAR / ICAL ROUTES
   // ==========================================
   getPublicOpportunitiesCalendar: async (params?: { organizationSlug?: string; from?: string; to?: string }) =>
     axios.get('/calendar/public-opportunities', { params, responseType: 'blob' }),
@@ -564,39 +578,5 @@ export const useLazyQuery = (key: QueryKey, fn: QueryFunction, options = {}) => 
 
   return [query.refetch, query];
 };
-
-// export const useApi = <QueryName extends keyof typeof api>(
-//   queryName: QueryName,
-//   params?: Parameters<(typeof api)[QueryName]>[0]
-// ) => {
-//   const query = useQuery({
-//     queryKey: [queryName],
-//     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-//     // @ts-ignore TODO: fix this
-//     queryFn: async () => await api[queryName](...params)
-//   });
-
-//   return query;
-// };
-
-// export const useApiMutation = <QueryName extends keyof typeof api>(
-//   queryName: QueryName,
-//   params?: Parameters<(typeof api)[QueryName]>[0]
-// ) => {
-//   const mutation = useMutation({
-//     mutationKey: [queryName],
-//     mutationFn: async () => await api[queryName](...params)
-//   });
-// };
-
-// export const useApiLazy = <QueryName extends keyof typeof api>(
-//   queryName: QueryName,
-//   params?: Parameters<(typeof api)[QueryName]>[0]
-// ) => {
-//   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-//   // @ts-ignore TODO: fix this
-//   const [refetch, query] = useLazyQuery([queryName], async () => await api[queryName](...params));
-//   return [refetch, query];
-// };
 
 export default api as any;
