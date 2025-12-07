@@ -59,7 +59,7 @@ export default class AssignmentsController {
     // If the assignment was cancelled, add an audit log entry for traceability
     try {
       if (status === AssignmentStatus.Cancelled) {
-        await AuditLog.create({
+        await AuditLog.safeCreate({
           userId: auth.user ? auth.user.id : null,
           action: 'assignment_cancelled',
           details: JSON.stringify({ assignmentId: assignment.id, previousStatus: previous })
