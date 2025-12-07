@@ -2,6 +2,7 @@ import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import OrganizationInvite from 'App/Models/OrganizationInvite'
 import Organization from 'App/Models/Organization'
 import User from 'App/Models/User'
+import AuditLog from 'App/Models/AuditLog'
 import { DateTime } from 'luxon'
 import Database from '@ioc:Adonis/Lucid/Database'
 
@@ -224,5 +225,46 @@ export default class OrganizationInvitesController {
     await invite.cancel()
 
     return response.ok({ message: 'Invitation cancelled' })
+  }
+
+  /**
+   * Admin accept: allow an admin to accept an invite on behalf of a user
+   * Request body should include { userId } (the user to attach). This is
+   * an admin-only operation.
+   */
+  public async adminAccept({ params, request, auth, response }: HttpContextContract) {
+    // authenticate admin
+    await auth.use('api').authenticate()
+    const user = auth.user!
+    if (!user || !(user.isAdmin || (user.roles && Array.isArray(user.roles) && user.roles.some((r: any) => String(r?.name ?? r?.role ?? '').toLowerCase().includes('admin'))))) {
+      return response.unauthorized({ message: 'Admin access required' })
+    }
+
+    const { organizationId } = params
+    const inviteId = params.id
+    const userId = request.input('userId')
+
+    if (!userId) return response.badRequest({ message: 'userId is required' })
+
+    const invite = await OrganizationInvite.query().where('organization_id', organizationId).where('id', inviteId).first()
+    if (!invite) return response.notFound({ message: 'Invitation not found' })
+    if (invite.status !== 'pending') return response.badRequest({ message: 'Invitation is not pending' })
+
+    const targetUser = await User.find(userId)
+    if (!targetUser) return response.notFound({ message: 'User not found' })
+
+    // Attach user to organization as a volunteer
+    const org = await Organization.find(organizationId)
+    if (!org) return response.notFound({ message: 'Organization not found' })
+
+    await org.related('volunteers').attach({ [targetUser.id]: { role: invite.role, status: 'active', joined_at: DateTime.now().toSQL() } })
+
+    // Mark invite accepted
+    await invite.accept()
+
+    // Log audit
+    await AuditLog.create({ userId: user.id, action: 'invite_accepted_by_admin', targetType: 'organization', targetId: invite.organizationId, metadata: JSON.stringify({ inviteId: invite.id, acceptedFor: targetUser.id }) })
+
+    return response.ok({ message: 'Invite accepted', invite })
   }
 }
