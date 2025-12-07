@@ -11,7 +11,8 @@ import { DateTime } from 'luxon'
 
 export default class InitialDataSeeder extends BaseSeeder {
   public async run() {
-    const roles = ['admin', 'coordinator', 'volunteer']
+    this.logger.info('InitialDataSeeder disabled — using 000_all_australia_seeder instead')
+    return
     const permissions = [
       'manage_users',
       'manage_events',
@@ -129,7 +130,7 @@ export default class InitialDataSeeder extends BaseSeeder {
       })
     }
 
-    // Seed a couple of volunteers for the organization
+    // disabled
     const OrganizationVolunteer = await import('App/Models/OrganizationVolunteer')
     const volCount = await OrganizationVolunteer.default
       .query()
