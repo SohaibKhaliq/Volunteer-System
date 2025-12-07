@@ -24,6 +24,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import api from '@/lib/api';
+import useAdminSummary from '@/hooks/useAdminSummary';
+import useFeatures from '@/hooks/useFeatures';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
 import { useStore } from '@/lib/store';
@@ -119,17 +121,17 @@ export default function AdminLayout() {
   //   );
   // }
 
-  // fetch background checks list to compute counts for badges in the sidebar
-  const { data: bkData } = useQuery(['admin', 'background-checks', 'list'], () => api.listBackgroundChecks(), {
-    staleTime: 60_000
-  });
+  // fetch admin summary counts for quick badges
+  const { data: adminSummaryData } = useAdminSummary();
 
-  const backgroundChecks: any[] = Array.isArray(bkData) ? bkData : (bkData?.data ?? []);
-  const pendingBackgroundChecksCount = backgroundChecks.filter(
-    (c) => (c.status ?? '').toString().toLowerCase() !== 'clear'
-  ).length;
+  const adminSummary: any = (adminSummaryData && (adminSummaryData.data ?? adminSummaryData)) || {};
 
-  // Feature flags — derived from roles (quick heuristic). Adjust to mirror server-side flags if available.
+  const pendingBackgroundChecksCount = Number(adminSummary.backgroundChecksPending || 0);
+  const importsPendingCount = Number(adminSummary.importsPending || 0);
+  const pendingHoursCount = Number(adminSummary.pendingHours || 0);
+  const unreadNotificationsCount = Number(adminSummary.unreadNotifications || 0);
+
+  // Feature flags — prefer server-driven flags and fall back to local role heuristic
   const isSuperAdmin = !!(
     user?.roles &&
     Array.isArray(user.roles) &&
@@ -139,10 +141,15 @@ export default function AdminLayout() {
     })
   );
 
+  const { data: featuresData } = useFeatures();
+
+  const serverFeatures: any = (featuresData && (featuresData.data ?? featuresData)) || {};
+
   const features = {
-    dataOps: isSuperAdmin, // imports/exports/backups
-    analytics: isAdmin || isSuperAdmin,
-    monitoring: isAdmin
+    dataOps: serverFeatures.dataOps ?? isSuperAdmin, // imports/exports/backups
+    analytics: serverFeatures.analytics ?? (isAdmin || isSuperAdmin),
+    monitoring: serverFeatures.monitoring ?? isAdmin,
+    scheduling: serverFeatures.scheduling ?? true
   };
 
   // Group sidebar links into semantic sections for clarity
@@ -176,7 +183,8 @@ export default function AdminLayout() {
         { path: '/admin/events', icon: Calendar, label: 'Events & Tasks' },
         { path: '/admin/tasks', icon: ClipboardCheck, label: 'Task Management' },
         { path: '/admin/shifts', icon: CalendarClock, label: 'Shifts' },
-        { path: '/admin/hours', icon: CalendarClock, label: 'Volunteer Hours' }
+        { path: '/admin/hours', icon: CalendarClock, label: 'Volunteer Hours', showBadge: true },
+        { path: '/admin/pending-hours/orgs', icon: CalendarClock, label: 'Pending Hours (by org)', adminOnly: true }
       ]
     },
     {
@@ -206,7 +214,14 @@ export default function AdminLayout() {
     {
       title: 'Data & Exports',
       items: [
-        { path: '/admin/imports', icon: ListOrdered, label: 'Imports', adminOnly: true, feature: 'dataOps' },
+        {
+          path: '/admin/imports',
+          icon: ListOrdered,
+          label: 'Imports',
+          adminOnly: true,
+          feature: 'dataOps',
+          showBadge: true
+        },
         { path: '/admin/exports', icon: ListOrdered, label: 'Exports', adminOnly: true, feature: 'dataOps' },
         { path: '/admin/backup', icon: Package, label: 'Backups', adminOnly: true, feature: 'dataOps' }
       ]
@@ -214,9 +229,10 @@ export default function AdminLayout() {
     {
       title: 'Admin Tools',
       items: [
-        { path: '/admin/notifications', icon: Bell, label: 'Notifications' },
+        { path: '/admin/notifications', icon: Bell, label: 'Notifications', showBadge: true },
         { path: '/admin/templates', icon: FileText, label: 'Templates' },
         { path: '/admin/communications', icon: MessageSquare, label: 'Communications' },
+        { path: '/admin/scheduled-jobs', icon: Clock, label: 'Scheduled Jobs', adminOnly: true },
         { path: '/admin/feedback', icon: FileText, label: 'Feedback' },
         { path: '/admin/monitoring', icon: Activity, label: 'Monitoring', adminOnly: true, feature: 'monitoring' },
         { path: '/admin/analytics', icon: BarChart3, label: 'Analytics', adminOnly: true, feature: 'analytics' },
@@ -270,9 +286,37 @@ export default function AdminLayout() {
                         <Icon className={cn('h-5 w-5', isActive ? 'text-blue-700' : 'text-gray-500')} />
                         <span className="flex-1">{item.label}</span>
                         {item.showBadge ? (
-                          <Badge variant="secondary" className="text-xs">
-                            {pendingBackgroundChecksCount}
-                          </Badge>
+                          // make the badge itself navigable to a filtered, actionable page
+                          <button
+                            onClick={(e) => {
+                              // prevent the parent Link from handling click — we want a specific target
+                              e.stopPropagation();
+                              e.preventDefault();
+                              let target = item.path;
+                              if (item.path === '/admin/imports') target = '/admin/imports';
+                              else if (item.path === '/admin/hours') target = '/admin/pending-hours';
+                              else if (item.path === '/admin/notifications')
+                                target = '/admin/notifications?filter=unread';
+                              else if (item.path === '/admin/background-checks')
+                                target = '/admin/background-checks?status=pending';
+                              // navigate using react-router
+                              navigate(target);
+                            }}
+                            aria-label={`Open ${item.label}`}
+                            className="inline-flex items-center"
+                          >
+                            <Badge variant="secondary" className="text-xs">
+                              {item.path === '/admin/background-checks'
+                                ? pendingBackgroundChecksCount
+                                : item.path === '/admin/imports'
+                                  ? importsPendingCount
+                                  : item.path === '/admin/hours'
+                                    ? pendingHoursCount
+                                    : item.path === '/admin/notifications'
+                                      ? unreadNotificationsCount
+                                      : ''}
+                            </Badge>
+                          </button>
                         ) : null}
                       </Link>
                     );
