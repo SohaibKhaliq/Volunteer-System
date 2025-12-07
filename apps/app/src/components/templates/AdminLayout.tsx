@@ -174,8 +174,7 @@ export default function AdminLayout() {
       items: [
         { path: '/admin/users', icon: Users, label: 'Users & Roles' },
         { path: '/admin/roles', icon: Shield, label: 'Roles' },
-        { path: '/admin/organizations', icon: Building2, label: 'Organizations' },
-        { path: '/admin/volunteer-profile', icon: User, label: 'Volunteer Profile' }
+        { path: '/admin/organizations', icon: Building2, label: 'Organizations' }
       ]
     },
     {
