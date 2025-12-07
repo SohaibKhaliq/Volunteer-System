@@ -1,17 +1,53 @@
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import api from '@/lib/api';
+import { toast } from '@/components/atoms/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Bell, Lock, Globe, Palette, LogOut } from 'lucide-react';
+import { Bell, Lock, Globe } from 'lucide-react';
 
 export default function OrganizationSettings() {
+  /* logic */
+  const queryClient = useQueryClient();
+  const [formData, setFormData] = useState<any>({});
+
+  const { isLoading } = useQuery(['orgSettings'], () => api.getOrganizationSettings().then((res: any) => res || {}), {
+    onSuccess: (data) => setFormData(data)
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (data: any) => api.updateOrganizationSettings(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['orgSettings']);
+      toast({ title: 'Settings updated', variant: 'success' });
+    },
+    onError: () => toast({ title: 'Failed to update settings', variant: 'destructive' })
+  });
+
+  const handleSave = () => {
+    updateMutation.mutate(formData);
+  };
+
+  const handleChange = (field: string, value: any) => {
+    setFormData((prev: any) => ({ ...prev, [field]: value }));
+  };
+
+  if (isLoading) return <div>Loading settings...</div>;
+
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
-        <p className="text-muted-foreground">Manage your organization&apos;s preferences and configuration.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
+          <p className="text-muted-foreground">Manage your organization&apos;s preferences and configuration.</p>
+        </div>
+        <Button onClick={handleSave} disabled={updateMutation.isLoading}>
+             {updateMutation.isLoading ? 'Saving...' : 'Save Changes'}
+        </Button>
       </div>
 
       <Tabs defaultValue="general" className="w-full">
@@ -39,13 +75,6 @@ export default function OrganizationSettings() {
                 <Lock className="h-4 w-4 mr-2" />
                 Security
               </TabsTrigger>
-              <TabsTrigger
-                value="appearance"
-                className="w-full justify-start px-4 py-2 data-[state=active]:bg-gray-100 data-[state=active]:text-gray-900"
-              >
-                <Palette className="h-4 w-4 mr-2" />
-                Appearance
-              </TabsTrigger>
             </TabsList>
           </aside>
 
@@ -59,17 +88,23 @@ export default function OrganizationSettings() {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="org-name">Display Name</Label>
-                    <Input id="org-name" defaultValue="" />
+                    <Input 
+                        id="org-name" 
+                        value={formData.displayName || ''} 
+                        onChange={(e) => handleChange('displayName', e.target.value)} 
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="timezone">Timezone</Label>
                     <select
                       id="timezone"
+                      value={formData.timezone || 'UTC'}
+                      onChange={(e) => handleChange('timezone', e.target.value)}
                       className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      <option>UTC (GMT+00:00)</option>
-                      <option>EST (GMT-05:00)</option>
-                      <option>PST (GMT-08:00)</option>
+                      <option value="UTC">UTC (GMT+00:00)</option>
+                      <option value="EST">EST (GMT-05:00)</option>
+                      <option value="PST">PST (GMT-08:00)</option>
                     </select>
                   </div>
                   <div className="flex items-center justify-between py-2">
@@ -77,7 +112,10 @@ export default function OrganizationSettings() {
                       <Label>Public Profile</Label>
                       <p className="text-xs text-muted-foreground">Make your organization visible to all volunteers</p>
                     </div>
-                    <Switch defaultChecked />
+                    <Switch 
+                        checked={formData.isPublic || false}
+                        onCheckedChange={(checked) => handleChange('isPublic', checked)}
+                    />
                   </div>
                 </CardContent>
               </Card>
@@ -95,21 +133,20 @@ export default function OrganizationSettings() {
                       <Label>New Volunteer Registrations</Label>
                       <p className="text-xs text-muted-foreground">Receive an email when a new volunteer joins</p>
                     </div>
-                    <Switch defaultChecked />
+                    <Switch 
+                        checked={formData.notifyVolunteerJoin || false}
+                        onCheckedChange={(checked) => handleChange('notifyVolunteerJoin', checked)}
+                    />
                   </div>
                   <div className="flex items-center justify-between py-2 border-b">
                     <div className="space-y-0.5">
                       <Label>Event Signups</Label>
                       <p className="text-xs text-muted-foreground">Notify when someone signs up for an event</p>
                     </div>
-                    <Switch defaultChecked />
-                  </div>
-                  <div className="flex items-center justify-between py-2 border-b">
-                    <div className="space-y-0.5">
-                      <Label>Compliance Alerts</Label>
-                      <p className="text-xs text-muted-foreground">Important alerts about document expiry</p>
-                    </div>
-                    <Switch defaultChecked />
+                    <Switch 
+                        checked={formData.notifyEventSignup || false}
+                        onCheckedChange={(checked) => handleChange('notifyEventSignup', checked)}
+                    />
                   </div>
                 </CardContent>
               </Card>
@@ -122,63 +159,7 @@ export default function OrganizationSettings() {
                   <CardDescription>Manage your account security and access.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="current-password">Current Password</Label>
-                    <Input id="current-password" type="password" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="new-password">New Password</Label>
-                    <Input id="new-password" type="password" />
-                  </div>
-                  <div className="pt-4">
-                    <Button>Update Password</Button>
-                  </div>
-
-                  <div className="pt-6 border-t mt-6">
-                    <h4 className="text-sm font-medium text-red-600 mb-2">Danger Zone</h4>
-                    <Button variant="destructive" size="sm">
-                      <LogOut className="h-4 w-4 mr-2" />
-                      Sign out of all devices
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="appearance" className="mt-0 space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Appearance Settings</CardTitle>
-                  <CardDescription>Customize how the organization panel looks.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Theme</Label>
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="border-2 border-blue-600 rounded-md p-2 cursor-pointer bg-white">
-                        <div className="h-2 w-full bg-gray-200 rounded mb-2"></div>
-                        <div className="h-2 w-2/3 bg-gray-200 rounded"></div>
-                        <p className="text-xs font-medium mt-2 text-center text-blue-600">Light</p>
-                      </div>
-                      <div className="border rounded-md p-2 cursor-pointer bg-gray-900">
-                        <div className="h-2 w-full bg-gray-700 rounded mb-2"></div>
-                        <div className="h-2 w-2/3 bg-gray-700 rounded"></div>
-                        <p className="text-xs font-medium mt-2 text-center text-white">Dark</p>
-                      </div>
-                      <div className="border rounded-md p-2 cursor-pointer bg-white">
-                        <div className="h-2 w-full bg-gray-200 rounded mb-2"></div>
-                        <div className="h-2 w-2/3 bg-gray-200 rounded"></div>
-                        <p className="text-xs font-medium mt-2 text-center">System</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between py-2">
-                    <div className="space-y-0.5">
-                      <Label>Compact Mode</Label>
-                      <p className="text-xs text-muted-foreground">Reduce spacing and font size</p>
-                    </div>
-                    <Switch />
-                  </div>
+                     <p className="text-sm text-muted-foreground">Password management is handled via your personal profile settings.</p>
                 </CardContent>
               </Card>
             </TabsContent>
