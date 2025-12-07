@@ -339,6 +339,10 @@ Route.group(() => {
   Route.post('/system-settings/branding', 'AdminController.updateBranding')
   // Admin-level invite actions (accept on behalf of users)
   Route.post('/organizations/:organizationId/invites/:id/accept', 'OrganizationInvitesController.adminAccept')
+  // Admin: invite send jobs monitor & retry
+  Route.get('/invite-send-jobs', 'InviteSendJobsController.index')
+  Route.get('/invite-send-jobs/:id', 'InviteSendJobsController.show')
+  Route.post('/invite-send-jobs/:id/retry', 'InviteSendJobsController.retry')
   Route.get('/backup', 'AdminController.createBackup')
   Route.get('/backup/status', 'AdminController.backupStatus')
 })
