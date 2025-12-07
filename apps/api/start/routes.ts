@@ -337,6 +337,8 @@ Route.group(() => {
   Route.get('/system-settings', 'AdminController.getSystemSettings')
   Route.put('/system-settings', 'AdminController.updateSystemSettings')
   Route.post('/system-settings/branding', 'AdminController.updateBranding')
+  // Admin-level invite actions (accept on behalf of users)
+  Route.post('/organizations/:organizationId/invites/:id/accept', 'OrganizationInvitesController.adminAccept')
   Route.get('/backup', 'AdminController.createBackup')
   Route.get('/backup/status', 'AdminController.backupStatus')
 })
