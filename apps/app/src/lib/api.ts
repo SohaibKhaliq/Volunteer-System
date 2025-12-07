@@ -203,7 +203,7 @@ const api = {
   listMyOrganizationResources: async (params?: any) => axios.get('/organization/resources', { params }),
 
   /* Audit Logs endpoints */
-  listAuditLogs: async () => axios.get('/audit-logs'),
+  listAuditLogs: async (params?: { page?: number; limit?: number; q?: string }) => axios.get('/audit-logs', { params }),
   getAuditLog: async (id: number) => axios.get(`/audit-logs/${id}`),
 
   /* Surveys endpoints */
@@ -236,6 +236,13 @@ const api = {
   /* Monitoring */
   getMonitoringStats: async () => axios.get('/monitoring/stats'),
   getMonitoringRecent: async () => axios.get('/monitoring/recent'),
+
+  /* Admin summary for dashboard badges and counts */
+  getAdminSummary: async () => axios.get('/admin/summary'),
+  /* Admin server-driven feature flags */
+  getAdminFeatures: async () => axios.get('/admin/features'),
+  /* Admin: pending hours grouped by organization */
+  getAdminPendingHoursByOrg: async (params?: any) => axios.get('/admin/pending-hours/organizations', { params }),
 
   /* System Settings endpoints */
   getSettings: async () => axios.get('/settings'),
