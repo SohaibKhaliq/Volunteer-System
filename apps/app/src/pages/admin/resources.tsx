@@ -98,6 +98,17 @@ export default function AdminResources() {
     onError: () => toast.error('Failed to delete resource')
   });
 
+  const patchStatusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: number; status: string }) => api.patchResourceStatus(id, { status }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['resources'] });
+      toast.success('Resource status updated');
+    },
+    onError: () => {
+      toast.error('Failed to update resource status');
+    }
+  });
+
   const filtered = resources.filter((r: any) => {
     if (filterStatus !== 'All' && r.status !== filterStatus) return false;
     if (search && !`${r.name}`.toLowerCase().includes(search.toLowerCase())) return false;
@@ -389,6 +400,43 @@ export default function AdminResources() {
                             >
                               Edit
                             </Button>
+
+                            {/* Quick status changes using the server patch endpoint */}
+                            <div className="mt-2 border-t pt-2">
+                              <div className="text-xs text-muted-foreground mb-1">Set status</div>
+                              <div className="flex flex-col">
+                                <Button
+                                  variant="ghost"
+                                  onClick={() => patchStatusMutation.mutate({ id: r.id, status: 'available' })}
+                                >
+                                  Available
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  onClick={() => patchStatusMutation.mutate({ id: r.id, status: 'in_use' })}
+                                >
+                                  In Use
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  onClick={() => patchStatusMutation.mutate({ id: r.id, status: 'reserved' })}
+                                >
+                                  Reserved
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  onClick={() => patchStatusMutation.mutate({ id: r.id, status: 'maintenance' })}
+                                >
+                                  Maintenance
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  onClick={() => patchStatusMutation.mutate({ id: r.id, status: 'retired' })}
+                                >
+                                  Retired
+                                </Button>
+                              </div>
+                            </div>
                             {r.status === 'retired' ? (
                               <Button
                                 variant="ghost"
@@ -500,16 +548,18 @@ export default function AdminResources() {
             <div>
               <label className="text-sm block mb-1">Status</label>
               <Select
-                value={editing?.status || 'Available'}
+                value={editing?.status || 'available'}
                 onValueChange={(v) => setEditing((s: any) => ({ ...(s || {}), status: v }))}
               >
                 <SelectTrigger className="w-40">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Available">Available</SelectItem>
-                  <SelectItem value="Low Stock">Low Stock</SelectItem>
-                  <SelectItem value="Out of Stock">Out of Stock</SelectItem>
+                  <SelectItem value="available">Available</SelectItem>
+                  <SelectItem value="in_use">In Use</SelectItem>
+                  <SelectItem value="reserved">Reserved</SelectItem>
+                  <SelectItem value="maintenance">Maintenance</SelectItem>
+                  <SelectItem value="retired">Retired</SelectItem>
                 </SelectContent>
               </Select>
             </div>
