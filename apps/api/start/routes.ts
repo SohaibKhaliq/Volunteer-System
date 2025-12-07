@@ -344,6 +344,7 @@ Route.group(() => {
   Route.get('/invite-send-jobs/:id', 'InviteSendJobsController.show')
   Route.post('/invite-send-jobs/:id/retry', 'InviteSendJobsController.retry')
   Route.get('/invite-send-jobs/stats', 'InviteSendJobsController.stats')
+  Route.post('/invite-send-jobs/retry-failed', 'InviteSendJobsController.retryAllFailed')
   Route.get('/backup', 'AdminController.createBackup')
   Route.get('/backup/status', 'AdminController.backupStatus')
 })
