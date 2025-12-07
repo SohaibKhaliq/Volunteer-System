@@ -33,13 +33,29 @@ export async function sendInviteNow(inviteId: number) {
         })
       }
     } catch (e) {
-      // Mail may not be configured in some environments (tests/CI) — log and continue
-      Logger.warn('Mail send for invite failed or not configured: %o', String(e))
+      // Mail may not be configured in some environments (tests/CI) — log and continue.
+      try {
+        if (e instanceof Error) {
+          Logger.warn(`Mail send for invite failed or not configured: ${e.message}\n${e.stack}`)
+        } else {
+          Logger.warn('Mail send for invite failed or not configured: %o', e)
+        }
+      } catch (inner) {
+        Logger.warn('Mail send for invite failed or not configured: %o', String(e))
+      }
     }
 
     return true
   } catch (err) {
-    Logger.error('sendInviteNow failed: %o', err)
+    try {
+      if (err instanceof Error) {
+        Logger.error(`sendInviteNow failed: ${err.message}\n${err.stack}`)
+      } else {
+        Logger.error('sendInviteNow failed: %o', err)
+      }
+    } catch (inner) {
+      Logger.error('sendInviteNow failed (failed to format error): %o', String(err))
+    }
     return false
   }
 }
@@ -66,13 +82,34 @@ export async function enqueueInviteSend(inviteId: number) {
     }
   } catch (e) {
     // If DB isn't available for some reason, fallback to in-memory queue
-    Logger.warn('Failed to enqueue invite in DB, falling back to in-memory: %o', String(e))
+    try {
+      if (e instanceof Error) {
+        Logger.warn(
+          `Failed to enqueue invite in DB, falling back to in-memory: ${e.message}\n${e.stack}`
+        )
+      } else {
+        Logger.warn('Failed to enqueue invite in DB, falling back to in-memory: %o', e)
+      }
+    } catch (inner) {
+      Logger.warn(
+        'Failed to enqueue invite in DB (failed to format error), falling back to in-memory: %o',
+        String(e)
+      )
+    }
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     ;(global as any).__invite_fallback_queue ||= []
     ;(global as any).__invite_fallback_queue.push(inviteId)
   }
 
-  if (!_processing) processQueue().catch((err) => Logger.error('Invite queue error: %o', err))
+  if (!_processing)
+    processQueue().catch((err) => {
+      try {
+        if (err instanceof Error) Logger.error(`Invite queue error: ${err.message}\n${err.stack}`)
+        else Logger.error('Invite queue error: %o', err)
+      } catch (inner) {
+        Logger.error('Invite queue error (failed to format error): %o', String(err))
+      }
+    })
 }
 
 export async function processQueue(batch = 10) {
@@ -152,8 +189,16 @@ export async function processQueue(batch = 10) {
 
 export function initInviteSender(intervalMs = 60 * 1000) {
   if (_interval) return
-  // run once immediately and then periodically
-  processQueue().catch((e) => Logger.error('Invite sender initial run failed: %o', e))
+  // run once immediately and then periodically — ensure we log full errors if they happen during startup
+  processQueue().catch((e) => {
+    try {
+      if (e instanceof Error)
+        Logger.error(`Invite sender initial run failed: ${e.message}\n${e.stack}`)
+      else Logger.error('Invite sender initial run failed: %o', e)
+    } catch (inner) {
+      Logger.error('Invite sender initial run failed (failed to format error): %o', String(e))
+    }
+  })
   _interval = setInterval(() => void processQueue(), intervalMs)
 }
 
