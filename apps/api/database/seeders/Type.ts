@@ -4,6 +4,7 @@ import { RequestTypes } from '../../contracts/requests'
 
 export default class extends BaseSeeder {
   public async run() {
-    await Type.createMany(Object.values(RequestTypes).map((type) => ({ type })))
+    this.logger.info('Type seeder disabled — using 000_all_australia_seeder instead')
+    return
   }
 }
