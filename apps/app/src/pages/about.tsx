@@ -1,8 +1,24 @@
 import { useTranslation } from 'react-i18next';
 import { Users, Heart, Shield, Globe } from 'lucide-react';
 
+import { useQuery } from '@tanstack/react-query';
+import api from '@/lib/api';
+
 const About = () => {
   const { t } = useTranslation();
+  const { data: settings } = useQuery(['settings'], () => api.getSettings().then((res: any) => res || {}));
+
+  const mission =
+    settings?.mission ||
+    t(
+      'At Local Aid, we believe that everyone has the power to make a difference. Our platform bridges the gap between passionate volunteers and organizations that need their help.'
+    );
+
+  const vision =
+    settings?.vision ||
+    t(
+      'We strive to simplify the volunteering process, making it easier for organizations to manage their workforce and for individuals to find opportunities that align with their values and skills.'
+    );
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50">
@@ -22,16 +38,13 @@ const About = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <div>
               <h2 className="text-3xl font-bold mb-6 text-slate-900">{t('Our Mission')}</h2>
-              <p className="text-lg text-slate-600 mb-6 leading-relaxed">
-                {t(
-                  'At Local Aid, we believe that everyone has the power to make a difference. Our platform bridges the gap between passionate volunteers and organizations that need their help.'
-                )}
-              </p>
-              <p className="text-lg text-slate-600 leading-relaxed">
-                {t(
-                  'We strive to simplify the volunteering process, making it easier for organizations to manage their workforce and for individuals to find opportunities that align with their values and skills.'
-                )}
-              </p>
+              <p className="text-lg text-slate-600 mb-6 leading-relaxed whitespace-pre-wrap">{mission}</p>
+              {vision && (
+                <>
+                  <h3 className="text-2xl font-semibold mb-4 text-slate-900">{t('Our Vision')}</h3>
+                  <p className="text-lg text-slate-600 leading-relaxed whitespace-pre-wrap">{vision}</p>
+                </>
+              )}
             </div>
             <div className="relative h-[400px] rounded-2xl overflow-hidden shadow-xl">
               <img
@@ -50,26 +63,32 @@ const About = () => {
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold mb-4">{t('Our Core Values')}</h2>
             <p className="text-slate-600 max-w-2xl mx-auto">
-              {t('These principles guide everything we do, from product development to community support.')}
+              {settings?.values ? (
+                <span className="whitespace-pre-wrap">{settings.values}</span>
+              ) : (
+                t('These principles guide everything we do, from product development to community support.')
+              )}
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {[
-              { icon: Users, title: 'Community', desc: 'Building strong connections between people.' },
-              { icon: Heart, title: 'Compassion', desc: 'Driven by a desire to help others.' },
-              { icon: Shield, title: 'Trust', desc: 'Creating a safe and reliable environment.' },
-              { icon: Globe, title: 'Impact', desc: 'Focusing on tangible, positive change.' }
-            ].map((item, i) => (
-              <div key={i} className="bg-white p-8 rounded-xl shadow-sm hover:shadow-md transition-all text-center">
-                <div className="w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-6">
-                  <item.icon className="h-6 w-6" />
+          {!settings?.values && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+              {[
+                { icon: Users, title: 'Community', desc: 'Building strong connections between people.' },
+                { icon: Heart, title: 'Compassion', desc: 'Driven by a desire to help others.' },
+                { icon: Shield, title: 'Trust', desc: 'Creating a safe and reliable environment.' },
+                { icon: Globe, title: 'Impact', desc: 'Focusing on tangible, positive change.' }
+              ].map((item, i) => (
+                <div key={i} className="bg-white p-8 rounded-xl shadow-sm hover:shadow-md transition-all text-center">
+                  <div className="w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-6">
+                    <item.icon className="h-6 w-6" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-3">{t(item.title)}</h3>
+                  <p className="text-slate-600">{t(item.desc)}</p>
                 </div>
-                <h3 className="text-xl font-semibold mb-3">{t(item.title)}</h3>
-                <p className="text-slate-600">{t(item.desc)}</p>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
