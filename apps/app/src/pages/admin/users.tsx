@@ -113,17 +113,17 @@ export default function AdminUsers() {
   const { data: analytics } = useQuery(['userAnalytics'], () => api.getUserAnalytics());
 
   // Mutations
-  const deactivateMutation = useMutation((userId: number) => api.updateUser(userId, { isDisabled: true }), {
+  const disableMutation = useMutation((userId: number) => api.disableUser(userId), {
     onSuccess: () => {
       queryClient.invalidateQueries(['users']);
-      toast({ title: 'User deactivated', variant: 'success' });
+      toast({ title: 'User disabled', variant: 'success' });
     }
   });
 
-  const activateMutation = useMutation((userId: number) => api.activateUser(userId), {
+  const enableMutation = useMutation((userId: number) => api.enableUser(userId), {
     onSuccess: () => {
       queryClient.invalidateQueries(['users']);
-      toast({ title: 'User activated', variant: 'success' });
+      toast({ title: 'User enabled', variant: 'success' });
     }
   });
 
@@ -426,15 +426,15 @@ export default function AdminUsers() {
                         {user.isActive ? (
                           <DropdownMenuItem
                             className="text-orange-600"
-                            onClick={() => deactivateMutation.mutate(user.id)}
+                            onClick={() => disableMutation.mutate(user.id)}
                           >
                             <Ban className="h-4 w-4 mr-2" />
-                            Deactivate
+                            Disable Account
                           </DropdownMenuItem>
                         ) : (
-                          <DropdownMenuItem className="text-green-600" onClick={() => activateMutation.mutate(user.id)}>
+                          <DropdownMenuItem className="text-green-600" onClick={() => enableMutation.mutate(user.id)}>
                             <CheckCircle className="h-4 w-4 mr-2" />
-                            Activate
+                            Enable Account
                           </DropdownMenuItem>
                         )}
 
