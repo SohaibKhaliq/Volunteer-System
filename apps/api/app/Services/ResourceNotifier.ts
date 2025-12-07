@@ -55,7 +55,16 @@ async function checkOverdueAssignments() {
       }
     }
   } catch (e) {
-    Logger.error('Error checking overdue assignments: ' + String(e))
+    // Provide richer error diagnostics so runtime failures aren't lost as 'aborted' or '{}'
+    try {
+      if (e instanceof Error) {
+        Logger.error(`Error checking overdue assignments: ${e.message}\n${e.stack}`)
+      } else {
+        Logger.error('Error checking overdue assignments: %o', e)
+      }
+    } catch (inner) {
+      Logger.error('Error checking overdue assignments (failed to format error): %o', String(e))
+    }
   }
 }
 
@@ -132,7 +141,15 @@ async function checkMaintenanceDue() {
       }
     }
   } catch (e) {
-    Logger.error('Error checking maintenance due: ' + String(e))
+    try {
+      if (e instanceof Error) {
+        Logger.error(`Error checking maintenance due: ${e.message}\n${e.stack}`)
+      } else {
+        Logger.error('Error checking maintenance due: %o', e)
+      }
+    } catch (inner) {
+      Logger.error('Error checking maintenance due (failed to format error): %o', String(e))
+    }
   }
 }
 
