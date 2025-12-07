@@ -10,7 +10,8 @@ import { DateTime } from 'luxon'
 export default class extends BaseSeeder {
   public async run() {
     // Create test organizations
-    const organizations = await Organization.createMany([
+      this.logger.info('OrganizationTestDataSeeder disabled — using 000_all_australia_seeder instead')
+      return
       {
         name: 'Green Earth Foundation',
         description: 'Environmental conservation and sustainability initiatives',
@@ -267,7 +268,7 @@ export default class extends BaseSeeder {
     }
 
     console.log('✅ Organization test data seeded successfully!')
-    console.log(`   - Created ${organizations.length} organizations`)
+      // disabled
     console.log(`   - Created ${teamUsers.length * organizations.length} team members`)
     console.log(`   - Created ${volunteerUsers.length * organizations.length} volunteers`)
     console.log(`   - Created ${10 * organizations.length} events`)
