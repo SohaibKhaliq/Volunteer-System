@@ -11,7 +11,8 @@ import { DateTime } from 'luxon'
 
 export default class Phase2DataSeeder extends BaseSeeder {
   public async run() {
-    // Create test organization
+    this.logger.info('Phase2DataSeeder disabled — using 000_all_australia_seeder instead')
+    return
     const org = await Organization.firstOrCreate(
       { name: 'Community Volunteers Hub' },
       {
@@ -306,7 +307,7 @@ export default class Phase2DataSeeder extends BaseSeeder {
       }
     }
 
-    console.log('Phase 2 seeder completed successfully!')
+    // disabled
     console.log(`Created/updated:`)
     console.log(`  - 1 organization`)
     console.log(`  - ${2 + volunteers.length} users`)
