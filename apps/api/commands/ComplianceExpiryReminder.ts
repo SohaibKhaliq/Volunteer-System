@@ -8,7 +8,8 @@ export default class ComplianceExpiryReminder extends BaseCommand {
   public static description = 'Detect documents nearing expiry and notify users'
 
   public async run() {
-    const warnDate = DateTime.now().plus({ days: 14 }).toISO()
+    // Use JS Date for DB comparisons (don't pass timezone-offset ISO strings to SQL)
+    const warnDate = DateTime.now().plus({ days: 14 }).toJSDate()
     const docs = await ComplianceDocument.query()
       .whereNotNull('expires_at')
       .where('expires_at', '<=', warnDate)
