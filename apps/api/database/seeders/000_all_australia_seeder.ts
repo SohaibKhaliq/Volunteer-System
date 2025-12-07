@@ -27,6 +27,9 @@ export default class AustraliaFullSeeder extends BaseSeeder {
         await Database.table('types').multiInsert(
           allowTypes.map((t) => ({
             type: t,
+            name: `${t.charAt(0).toUpperCase()}${t.slice(1).replace(/_/g, ' ')}`,
+            category: 'Request',
+            description: null,
             created_at: now.toSQL({ includeOffset: false }),
             updated_at: now.toSQL({ includeOffset: false })
           }))
