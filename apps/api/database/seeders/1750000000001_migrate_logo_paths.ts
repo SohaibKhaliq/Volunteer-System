@@ -11,48 +11,9 @@ export default class MigrateLogoPathsSeeder extends BaseSeeder {
       fs.mkdirSync(`${tmpRoot}/organizations`, { recursive: true })
 
     let migrated = 0
-    for (const r of rows) {
-      if (!r.logo) continue
-      const raw = String(r.logo)
-      const filename = raw.split('/').pop()
-      if (!filename) continue
-      // desired path
-      const destRel = `organizations/${filename}`
-      const destFull = `${tmpRoot}/${destRel}`
 
-      // detect existing candidate locations
-      const cand1 = `${tmpRoot}/local/${filename}`
-      const cand2 = `${tmpRoot}/${filename}`
-      const cand3 = `${tmpRoot}/organizations/${filename}`
-
-      let found: string | null = null
-      for (const c of [cand3, cand1, cand2]) {
-        if (fs.existsSync(c)) {
-          found = c
-          break
-        }
-      }
-
-      if (!found) continue
-
-      // move if necessary
-      if (found !== destFull) {
-        try {
-          fs.renameSync(found, destFull)
-        } catch (err) {
-          this.logger.warn(`Failed to migrate logo file ${found} -> ${destFull}: ${String(err)}`)
-          continue
-        }
-      }
-
-      try {
-        await Database.from('organizations').where('id', r.id).update({ logo: destRel })
-        migrated++
-      } catch (err) {
-        this.logger.warn('Failed to update organization logo db value', err)
-      }
-    }
-
+    this.logger.info('migrate_logo_paths seeder disabled — all seeding consolidated')
+    return
     this.logger.info(`Migrated ${migrated} organization logos to organizations/ path`)
   }
 }
