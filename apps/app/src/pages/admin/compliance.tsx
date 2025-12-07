@@ -129,11 +129,24 @@ export default function AdminCompliance() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState<any | null>(null);
 
-  const openDocument = (doc: any) => {
-    // open file route served by API
+  const openDocument = async (doc: any) => {
     try {
-      window.open(`/compliance/${doc.id}/file`, '_blank');
+      const res: any = await api.getComplianceFile(doc.id);
+      // res may contain a blob
+      const data = res?.data ?? res;
+      const blob = new Blob([data], { type: 'application/octet-stream' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      // Try to preserve filename when available in metadata
+      const filename = (doc.file && (doc.file.storedName || doc.file.path?.split('/').pop())) || `document-${doc.id}`;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
     } catch (e) {
+      console.error(e);
       toast.error('Unable to open document');
     }
   };
