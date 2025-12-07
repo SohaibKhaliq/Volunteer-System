@@ -72,7 +72,7 @@ export default function AdminOrganizations() {
 
   const { data: orgs, isLoading } = useQuery<Organization[]>(
     ['organizations'],
-    () => api.listOrganizations({ withCompliance: 'true' }),
+    () => api.listOrganizations({ withCompliance: 'true', withCounts: 'true', withPerformance: 'true' }),
     {
       select: (data: any) => {
         // Normalize backend snake_case to camelCase for the UI
@@ -185,7 +185,7 @@ export default function AdminOrganizations() {
             onClick={async () => {
               setExporting(true);
               try {
-                const res: any = await api.listOrganizations({ withCompliance: 'true' });
+                const res: any = await api.listOrganizations({ withCompliance: 'true', withCounts: 'true', withPerformance: 'true' });
                 // normalize backend response which may be array or paginated object
                 const rawList: any = Array.isArray(res) ? res : (res?.data ?? res);
                 const list: any[] = Array.isArray(rawList) ? rawList : ((rawList as any)?.data ?? []);
