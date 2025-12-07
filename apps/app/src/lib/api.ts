@@ -67,6 +67,9 @@ const api = {
     axios.post(`/organizations/${orgId}/invites/${inviteId}/resend`),
   cancelOrganizationInvite: async (orgId: number, inviteId: number) =>
     axios.delete(`/organizations/${orgId}/invites/${inviteId}`),
+  // Admin: accept an invite on behalf of a user
+  adminAcceptOrganizationInvite: async (orgId: number, inviteId: number, userId: number) =>
+    axios.post(`/admin/organizations/${orgId}/invites/${inviteId}/accept`, { userId }),
   acceptInvite: async (token: string) => axios.post(`/invites/${token}/accept`),
   rejectInvite: async (token: string) => axios.post(`/invites/${token}/reject`),
 
