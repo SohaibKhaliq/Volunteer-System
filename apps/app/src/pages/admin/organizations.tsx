@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table';
@@ -57,6 +58,7 @@ interface Organization {
 
 export default function AdminOrganizations() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
@@ -96,11 +98,12 @@ export default function AdminOrganizations() {
 
   // Mutations
   const approveMutation = useMutation({
-    mutationFn: (orgId: number) => api.updateOrganization(orgId, { is_approved: true }),
+    mutationFn: (orgId: number) => api.approveOrganization(orgId),
     onSuccess: () => {
       queryClient.invalidateQueries(['organizations']);
       toast({ title: 'Organization approved', variant: 'success' });
-    }
+    },
+    onError: () => toast({ title: 'Approval failed', variant: 'destructive' })
   });
 
   const rejectMutation = useMutation({
@@ -111,11 +114,19 @@ export default function AdminOrganizations() {
     }
   });
 
-  const deactivateMutation = useMutation({
-    mutationFn: (orgId: number) => api.updateOrganization(orgId, { is_active: false }),
+  const suspendMutation = useMutation({
+    mutationFn: (orgId: number) => api.suspendOrganization(orgId),
     onSuccess: () => {
       queryClient.invalidateQueries(['organizations']);
-      toast({ title: 'Organization deactivated', variant: 'success' });
+      toast({ title: 'Organization suspended', variant: 'success' });
+    }
+  });
+
+  const reactivateMutation = useMutation({
+    mutationFn: (orgId: number) => api.reactivateOrganization(orgId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['organizations']);
+      toast({ title: 'Organization reactivated', variant: 'success' });
     }
   });
 
@@ -423,6 +434,14 @@ export default function AdminOrganizations() {
                           View Analytics
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => {
+                            navigate(`/admin/organizations/${org.id}/invites`);
+                          }}
+                        >
+                          <Users className="h-4 w-4 mr-2" />
+                          Manage Invites
+                        </DropdownMenuItem>
                         {!org.isApproved ? (
                           <DropdownMenuItem onClick={() => approveMutation.mutate(org.id)} className="text-green-600">
                             <CheckCircle className="h-4 w-4 mr-2" />
@@ -434,13 +453,18 @@ export default function AdminOrganizations() {
                             Revoke Approval
                           </DropdownMenuItem>
                         )}
-                        {org.isActive && (
-                          <DropdownMenuItem
-                            onClick={() => deactivateMutation.mutate(org.id)}
-                            className="text-orange-600"
-                          >
+                        {org.isActive ? (
+                          <DropdownMenuItem onClick={() => suspendMutation.mutate(org.id)} className="text-orange-600">
                             <XCircle className="h-4 w-4 mr-2" />
-                            Deactivate
+                            Suspend
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem
+                            onClick={() => reactivateMutation.mutate(org.id)}
+                            className="text-green-600"
+                          >
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Reactivate
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuItem
