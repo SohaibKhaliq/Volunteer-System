@@ -70,7 +70,9 @@ export default class OrganizationCommunicationsController {
       })
     }
 
-    // Create communication record
+    // Create communication record and schedule it for sending via the background sender.
+    // Using 'Scheduled' status allows the CommunicationSender service to pick it up.
+    const { DateTime } = await import('luxon')
     const communication = await Communication.create({
       organizationId: orgId,
       senderId: user.id,
@@ -79,11 +81,12 @@ export default class OrganizationCommunicationsController {
       message,
       recipients,
       metadata,
-      status: 'sent',
-      sentAt: new Date()
+      status: 'Scheduled',
+      sendAt: DateTime.local()
     })
 
-    // TODO: Trigger actual email/SMS sending via queue/background job
+    // Communication scheduled — the CommunicationSender background service
+    // will pick up scheduled communications and dispatch them (email/notifications).
 
     return response.created({
       message: 'Communication sent successfully',
@@ -150,6 +153,8 @@ export default class OrganizationCommunicationsController {
     }
 
     // Create broadcast communication
+    // schedule broadcast for background processing
+    const { DateTime } = await import('luxon')
     const communication = await Communication.create({
       organizationId: orgId,
       senderId: user.id,
@@ -158,8 +163,8 @@ export default class OrganizationCommunicationsController {
       message,
       recipients: recipientIds,
       metadata: { broadcast: true, filter },
-      status: 'sent',
-      sentAt: new Date()
+      status: 'Scheduled',
+      sendAt: DateTime.local()
     })
 
     return response.created({
