@@ -2,6 +2,7 @@ import { test } from '@japa/runner'
 import User from 'App/Models/User'
 import Organization from 'App/Models/Organization'
 import OrganizationInvite from 'App/Models/OrganizationInvite'
+import Database from '@ioc:Adonis/Lucid/Database'
 import InviteSendJob from 'App/Models/InviteSendJob'
 
 test.group('Admin invite send jobs bulk retry', () => {
@@ -47,5 +48,21 @@ test.group('Admin invite send jobs bulk retry', () => {
       test.assert(job.status === 'pending')
       test.assert(job.attempts === 0)
     }
+
+    // confirm audit logs were written
+    const completed = await Database.from('audit_logs').where(
+      'action',
+      'invite_send_jobs_requeue_completed'
+    )
+    test.assert(completed.length >= 1)
+
+    const started = await Database.from('audit_logs').where(
+      'action',
+      'invite_send_jobs_requeue_started'
+    )
+    test.assert(started.length >= 1)
+    // ensure metadata contains count (toRequeueCount) and is >= 3
+    const meta = JSON.parse(started[0].metadata || '{}')
+    test.assert(Number(meta.toRequeueCount || 0) >= 3)
   })
 })
