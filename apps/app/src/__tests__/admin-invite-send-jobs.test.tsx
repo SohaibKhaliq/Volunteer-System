@@ -30,6 +30,7 @@ describe('Admin Invite Send Jobs page', () => {
       .fn()
       .mockResolvedValue({ data: { total: 2, byStatus: { sent: 1, failed: 1 }, successRate: 50 } });
     const mockRetry = ((api as any).retryInviteSendJob = vi.fn().mockResolvedValue({}));
+    (api as any).retryAllFailedInviteSendJobs = vi.fn().mockResolvedValue({ data: { requeued: 2 } });
 
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -58,6 +59,13 @@ describe('Admin Invite Send Jobs page', () => {
     expect(await screen.findByText('Invite ID: 42')).toBeInTheDocument();
     // check JSON invite email is visible in the dialog pre-render
     expect(await screen.findByText(/"email": "a@test"/)).toBeInTheDocument();
+
+    // bulk retry - confirm true
+    const confirmSpy = vi.spyOn(window, 'confirm').mockImplementation(() => true as unknown as boolean);
+    const bulkBtn = await screen.findByText('Retry all failed');
+    fireEvent.click(bulkBtn);
+    expect((api as any).retryAllFailedInviteSendJobs).toHaveBeenCalled();
+    confirmSpy.mockRestore();
   });
 
   it('allows filtering and pagination interactions', async () => {
