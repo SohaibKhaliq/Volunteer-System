@@ -4,7 +4,7 @@ import { DateTime } from 'luxon'
 
 export default class ScheduledJobsSeeder extends BaseSeeder {
   public async run() {
-    this.logger.info('ScheduledJobsSeeder disabled — using 000_all_australia_seeder instead')
+    console.info('ScheduledJobsSeeder disabled — using 000_all_australia_seeder instead')
     return
   }
 }
