@@ -30,6 +30,11 @@ export default function AdminInviteSendJobs() {
     keepPreviousData: true
   });
 
+  // metrics/stats
+  const { data: stats } = useQuery(['invite-send-jobs-stats'], () => api.getInviteSendJobsStats(), {
+    refetchInterval: 15_000
+  });
+
   const retryMutation = useMutation((id: number) => api.retryInviteSendJob(id), {
     onSuccess: () => {
       queryClient.invalidateQueries(['invite-send-jobs']);
@@ -130,6 +135,27 @@ export default function AdminInviteSendJobs() {
       </div>
 
       <div className="grid grid-cols-1 gap-3">
+        {/* Metrics */}
+        <div className="grid grid-cols-4 gap-3">
+          <div className="bg-white p-4 rounded shadow">
+            <div className="text-sm text-muted-foreground">Total Jobs</div>
+            <div className="text-2xl font-semibold">{stats?.data?.total ?? stats?.total ?? 0}</div>
+          </div>
+          <div className="bg-white p-4 rounded shadow">
+            <div className="text-sm text-muted-foreground">Sent</div>
+            <div className="text-2xl font-semibold">{stats?.data?.byStatus?.sent ?? stats?.byStatus?.sent ?? 0}</div>
+          </div>
+          <div className="bg-white p-4 rounded shadow">
+            <div className="text-sm text-muted-foreground">Failed</div>
+            <div className="text-2xl font-semibold">
+              {stats?.data?.byStatus?.failed ?? stats?.byStatus?.failed ?? 0}
+            </div>
+          </div>
+          <div className="bg-white p-4 rounded shadow">
+            <div className="text-sm text-muted-foreground">Success Rate</div>
+            <div className="text-2xl font-semibold">{stats?.data?.successRate ?? stats?.successRate ?? 0}%</div>
+          </div>
+        </div>
         {isLoading && <div className="text-sm text-muted-foreground">Loading...</div>}
 
         {(Array.isArray(data) ? data : data?.data || []).map((j: any) => (
