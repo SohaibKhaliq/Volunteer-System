@@ -1,5 +1,8 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import VolunteerHour from 'App/Models/VolunteerHour'
+import AuditLog from 'App/Models/AuditLog'
+import Database from '@ioc:Adonis/Lucid/Database'
+import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 
 export default class VolunteerHoursController {
   public async index({ request, response }: HttpContextContract) {
@@ -50,19 +53,75 @@ export default class VolunteerHoursController {
     return response.ok(mapped)
   }
 
-  public async update({ params, request, response }: HttpContextContract) {
+  public async update({ auth, params, request, response }: HttpContextContract) {
     const record = await VolunteerHour.find(params.id)
     if (!record) return response.notFound()
+    const previousStatus = record.status
     record.merge(request.only(['status']))
     await record.save()
     // return a normalized shape
     const rec = record.toJSON() as any
+
+    // Log this action so admins can audit status changes
+    try {
+      const user = auth.user!
+      // try to resolve organization for this volunteer (first match)
+      let orgId: number | null = null
+      try {
+        const row: any = await Database.from('organization_volunteers')
+          .where('user_id', rec.user?.id ?? rec.user_id)
+          .first()
+        if (row) orgId = row.organization_id
+      } catch {}
+
+      await AuditLog.create({
+        userId: user.id,
+        action: 'volunteer_hours_status_changed',
+        details: JSON.stringify({
+          previousStatus,
+          newStatus: rec.status,
+          hourId: rec.id,
+          organizationId: orgId
+        })
+      })
+    } catch (e) {
+      // swallow logging errors
+    }
+
     return response.ok({ id: rec.id, status: rec.status })
   }
 
-  public async bulkUpdate({ request, response }: HttpContextContract) {
+  public async bulkUpdate({ auth, request, response }: HttpContextContract) {
     const { ids, status } = request.only(['ids', 'status'])
     await VolunteerHour.query().whereIn('id', ids).update({ status })
+
+    // Log bulk change
+    try {
+      const user = auth.user!
+      // try to resolve organizations for the given ids (limited)
+      let orgIds: number[] = []
+      try {
+        const rows: any[] = await Database.from('volunteer_hours')
+          .whereIn('id', ids)
+          .join(
+            'organization_volunteers',
+            'organization_volunteers.user_id',
+            'volunteer_hours.user_id'
+          )
+          .distinct('organization_volunteers.organization_id as organization_id')
+
+        orgIds = rows.map((r) => r.organization_id)
+      } catch {}
+
+      await AuditLog.create({
+        userId: user.id,
+        action: 'volunteer_hours_bulk_update',
+        details: JSON.stringify({ ids, newStatus: status, organizationIds: orgIds })
+      })
+    } catch (e) {
+      // ignore logging error
+    }
+
     return response.ok({ message: 'Bulk update successful' })
   }
 }
