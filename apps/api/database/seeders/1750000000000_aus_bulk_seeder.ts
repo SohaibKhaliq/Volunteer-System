@@ -87,9 +87,9 @@ export default class AusBulkSeeder extends BaseSeeder {
     if (volunteerRows.length) {
       try {
         await Database.table('organization_volunteers').multiInsert(volunteerRows)
-        this.logger.info(`Inserted ${volunteerRows.length} organization_volunteers`)
+        console.info(`Inserted ${volunteerRows.length} organization_volunteers`)
       } catch (err) {
-        this.logger.warn('Failed to insert organization_volunteers batch', err)
+        console.warn('Failed to insert organization_volunteers batch', err)
       }
     }
 
@@ -145,16 +145,16 @@ export default class AusBulkSeeder extends BaseSeeder {
           })
         }
       } catch (err) {
-        this.logger.warn('Failed to insert event or generate hours', err)
+        console.warn('Failed to insert event or generate hours', err)
       }
     }
 
     if (hoursRows.length) {
       try {
         await Database.table('volunteer_hours').multiInsert(hoursRows)
-        this.logger.info(`Inserted ${hoursRows.length} volunteer_hours entries`)
+        console.info(`Inserted ${hoursRows.length} volunteer_hours entries`)
       } catch (err) {
-        this.logger.warn('Failed to insert volunteer_hours batch', err)
+        console.warn('Failed to insert volunteer_hours batch', err)
       }
     }
 
