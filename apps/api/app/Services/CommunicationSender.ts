@@ -8,7 +8,7 @@ import { DateTime } from 'luxon'
 
 let _interval: NodeJS.Timeout | null = null
 
-async function processDue() {
+export async function processDue() {
   try {
     const now = DateTime.local().toISO()
     const due = await Communication.query()
