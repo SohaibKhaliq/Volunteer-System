@@ -15,6 +15,7 @@ const api = {
     return axios.post('/logout');
   },
   contact: async (data: any) => axios.post('/contact', data),
+  getHealth: async () => axios.get('/health'),
 
   /* Help Request endpoints */
   createHelpRequest: async (data: FormData) => {
@@ -104,6 +105,7 @@ const api = {
 
   /* Compliance endpoints */
   updateComplianceDoc: async (id: number, data: any) => axios.put(`/compliance/${id}`, data),
+  getComplianceFile: async (id: number) => axios.get(`/compliance/${id}/file`, { responseType: 'blob' }),
   // Helpers for uploading files with FormData when required by the UI
   createComplianceWithFile: async (data: FormData) =>
     axios.post('/compliance', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
@@ -197,6 +199,7 @@ const api = {
   listResourceAssignments: async (resourceId: number) => axios.get(`/resources/${resourceId}/assignments`),
   assignResource: async (resourceId: number, data: any) => axios.post(`/resources/${resourceId}/assign`, data),
   returnAssignment: async (assignmentId: number, data: any) => axios.post(`/assignments/${assignmentId}/return`, data),
+  patchResourceStatus: async (resourceId: number, data: any) => axios.patch(`/resources/${resourceId}/status`, data),
   createMaintenance: async (resourceId: number, data: any) => axios.post(`/resources/${resourceId}/maintenance`, data),
   retireResource: async (resourceId: number) => axios.post(`/resources/${resourceId}/retire`),
   reactivateResource: async (resourceId: number) => axios.post(`/resources/${resourceId}/reactivate`),
@@ -255,6 +258,16 @@ const api = {
   listNotifications: async (params?: any) => axios.get('/notifications', { params }),
   markNotificationRead: async (id: number) => axios.put(`/notifications/${id}/read`),
   markNotificationUnread: async (id: number) => axios.put(`/notifications/${id}/unread`),
+  // NOTE: SSE-based notifications stream was removed on the server and now returns 501.
+  // Realtime notifications are delivered via Socket.IO — components should connect
+  // with socket.io-client and update React Query caches instead of calling this
+  // endpoint. Keep this helper here for backwards-compatibility but return a
+  // clear error to avoid accidental calls.
+  getNotificationsStream: async () => {
+    return Promise.reject(
+      new Error('Notifications SSE stream removed on server — use Socket.IO for realtime notifications')
+    );
+  },
 
   /* Volunteer Hours endpoints */
   listHours: async () => axios.get('/hours'),
