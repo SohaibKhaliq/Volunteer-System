@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { toast } from '@/components/atoms/use-toast';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import SkeletonCard from '@/components/atoms/skeleton-card';
@@ -41,6 +42,26 @@ export default function AdminMonitoring() {
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-end">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={async () => {
+            try {
+              const res: any = await api.getHealth();
+              if (res && (res.data ?? res).healthy) {
+                toast({ title: 'Health OK', variant: 'success' });
+              } else {
+                toast({ title: 'Health check returned issues', variant: 'destructive' });
+              }
+            } catch (e) {
+              toast({ title: 'Health check failed', description: String(e), variant: 'destructive' });
+            }
+          }}
+        >
+          Check Health
+        </Button>
+      </div>
       <Card>
         <CardHeader>
           <CardTitle>Monitoring Dashboard</CardTitle>
