@@ -334,7 +334,27 @@ export default function AdminCertifications() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => window.open(`${API_URL}/compliance/${cert.id}/file`, '_blank')}
+                      onClick={async () => {
+                        try {
+                          const res: any = await api.getComplianceFile(cert.id);
+                          const data = res?.data ?? res;
+                          const blob = new Blob([data], { type: 'application/octet-stream' });
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          const filename =
+                            cert.metadata?.file?.storedName ||
+                            cert.metadata?.file?.path?.split('/').pop() ||
+                            `file-${cert.id}`;
+                          a.download = filename;
+                          document.body.appendChild(a);
+                          a.click();
+                          a.remove();
+                          URL.revokeObjectURL(url);
+                        } catch (e) {
+                          toast.error('Failed to download file');
+                        }
+                      }}
                     >
                       <Download className="h-4 w-4" />
                     </Button>
@@ -663,14 +683,33 @@ export default function AdminCertifications() {
               ) : null}
               {editing?.id && editing?.metadata?.file?.path && (
                 <div className="flex items-center gap-2 pt-2">
-                  <a
-                    href={`${API_URL}/compliance/${editing.id}/file`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <Button
+                    variant="link"
+                    onClick={async () => {
+                      try {
+                        const res: any = await api.getComplianceFile(editing.id);
+                        const data = res?.data ?? res;
+                        const blob = new Blob([data], { type: 'application/octet-stream' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        const filename =
+                          editing?.metadata?.file?.storedName ||
+                          editing?.metadata?.file?.path?.split('/').pop() ||
+                          `file-${editing.id}`;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                        URL.revokeObjectURL(url);
+                      } catch (e) {
+                        toast.error('Failed to download file');
+                      }
+                    }}
                     className="text-sm text-primary hover:underline flex items-center gap-1"
                   >
                     📎 View current file
-                  </a>
+                  </Button>
                 </div>
               )}
             </div>
