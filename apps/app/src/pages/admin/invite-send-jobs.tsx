@@ -35,12 +35,31 @@ export default function AdminInviteSendJobs() {
     refetchInterval: 15_000
   });
 
+  // recent activity (show last few bulk-requeue actions)
+  const { data: activity } = useQuery(
+    ['invite-send-jobs-activity'],
+    () => api.getAdminActivity({ action: 'invite_send_jobs_requeue_completed', perPage: 5 }),
+    {
+      refetchInterval: 15_000
+    }
+  );
+
   const retryMutation = useMutation((id: number) => api.retryInviteSendJob(id), {
     onSuccess: () => {
       queryClient.invalidateQueries(['invite-send-jobs']);
       toast.success('Job retried');
     },
     onError: () => toast.error('Failed to retry job')
+  });
+
+  const retryAllMutation = useMutation(() => api.retryAllFailedInviteSendJobs(), {
+    onSuccess: (res: any) => {
+      const count = res?.data?.requeued ?? res?.requeued ?? 0;
+      toast.success(`Requeued ${count} failed job(s)`);
+      queryClient.invalidateQueries(['invite-send-jobs']);
+      queryClient.invalidateQueries(['invite-send-jobs-stats']);
+    },
+    onError: () => toast.error('Failed to requeue failed jobs')
   });
 
   const [selectedJob, setSelectedJob] = useState<any | null>(null);
@@ -120,6 +139,19 @@ export default function AdminInviteSendJobs() {
         >
           Clear
         </button>
+        <button
+          className="px-3 py-1 bg-rose-600 text-white rounded"
+          onClick={() => {
+            // simple confirmation
+            // eslint-disable-next-line no-restricted-globals
+            if (confirm('This will requeue all jobs with status "failed". Continue?')) {
+              retryAllMutation.mutate();
+            }
+          }}
+          disabled={retryAllMutation.isLoading}
+        >
+          {retryAllMutation.isLoading ? 'Requeueing...' : 'Retry all failed'}
+        </button>
         <div className="flex items-center gap-2 ml-auto">
           <label className="text-sm text-muted-foreground">Per page</label>
           <select
@@ -154,6 +186,20 @@ export default function AdminInviteSendJobs() {
           <div className="bg-white p-4 rounded shadow">
             <div className="text-sm text-muted-foreground">Success Rate</div>
             <div className="text-2xl font-semibold">{stats?.data?.successRate ?? stats?.successRate ?? 0}%</div>
+          </div>
+        </div>
+        {/* Recent activity */}
+        <div className="col-span-4 mt-2">
+          <div className="text-sm font-medium mb-2">Recent requeue activity</div>
+          <div className="space-y-2">
+            {(Array.isArray(activity) ? activity : activity?.data || []).slice(0, 5).map((a: any) => (
+              <div key={a.id} className="p-2 rounded border bg-white">
+                <div className="text-xs text-muted-foreground">
+                  {a.action} — {new Date(a.created_at || a.createdAt).toLocaleString()}
+                </div>
+                <div className="text-sm">{a.metadata ? JSON.stringify(a.metadata) : ''}</div>
+              </div>
+            ))}
           </div>
         </div>
         {isLoading && <div className="text-sm text-muted-foreground">Loading...</div>}
