@@ -64,5 +64,18 @@ test.group('Admin organization lifecycle', (group) => {
       'organization_archived'
     ])
     test.assert(logs.length >= 4)
+
+    // verify details of the approve audit entry
+    const approvedLog = await AuditLog.query().where('action', 'organization_approved').first()
+    test.assert(approvedLog)
+    if (typeof approvedLog?.targetType !== 'undefined') {
+      test.assert(approvedLog?.targetType === 'organization')
+    }
+    if (typeof approvedLog?.targetId !== 'undefined') {
+      test.assert(approvedLog?.targetId === org.id)
+    }
+    if (typeof approvedLog?.metadata !== 'undefined') {
+      test.assert(approvedLog?.metadata && approvedLog?.metadata.includes('pending'))
+    }
   })
 })
