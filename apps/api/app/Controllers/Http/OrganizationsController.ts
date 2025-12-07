@@ -14,7 +14,7 @@ import CreateOrganizationValidator from 'App/Validators/CreateOrganizationValida
 
 export default class OrganizationsController {
   public async index({ response, request }: HttpContextContract) {
-    const { withCounts, withCompliance } = request.qs()
+    const { withCounts, withCompliance, withPerformance } = request.qs()
 
     const query = Organization.query()
 
@@ -30,6 +30,19 @@ export default class OrganizationsController {
       if (withCounts === 'true') {
         payload.volunteer_count = await org.getVolunteerCount()
         payload.event_count = await org.getEventCount()
+      }
+      // Optionally include a small performance score metric (0-100) for admin lists
+      // based on retention rate and other basic analytics. Keep this cheap by
+      // using the analytics helper which aggregates counts and retention.
+      if (withPerformance === 'true') {
+        try {
+          const analytics = await org.getAnalytics()
+          // retentionRate comes back as a percentage (0-100)
+          const retention = Math.round(Number(analytics.retentionRate || 0))
+          payload.performance_score = retention
+        } catch (e) {
+          payload.performance_score = null
+        }
       }
       // optionally include a precomputed compliance score (percentage)
       if (withCompliance === 'true') {
