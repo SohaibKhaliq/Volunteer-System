@@ -15,6 +15,11 @@ import CreateOrganizationValidator from 'App/Validators/CreateOrganizationValida
 export default class OrganizationsController {
   public async index({ response, request }: HttpContextContract) {
     const { withCounts, withCompliance, withPerformance } = request.qs()
+    // Treat withPerformance as enabled by default when not specified so API consumers
+    // that expect a performance_score do not need to opt-in. Allow callers to
+    // explicitly disable withPerformance=false.
+    const computePerformance =
+      typeof withPerformance === 'undefined' ? true : String(withPerformance) === 'true'
 
     const query = Organization.query()
 
@@ -34,12 +39,26 @@ export default class OrganizationsController {
       // Optionally include a small performance score metric (0-100) for admin lists
       // based on retention rate and other basic analytics. Keep this cheap by
       // using the analytics helper which aggregates counts and retention.
-      if (withPerformance === 'true') {
+      if (computePerformance) {
         try {
           const analytics = await org.getAnalytics()
-          // retentionRate comes back as a percentage (0-100)
-          const retention = Math.round(Number(analytics.retentionRate || 0))
-          payload.performance_score = retention
+          // Combine a few simple signals into a single 0-100 performance score:
+          // - retentionRate (0-100) (weight 50%)
+          // - totalHours normalized to a baseline (weight 30%)
+          // - eventCount normalized to a baseline (weight 20%)
+          const retention = Number(analytics.retentionRate || 0)
+          const totalHours = Number(analytics.totalHours || 0)
+          const eventCount = Number(analytics.eventCount || 0)
+
+          // Baselines (tunable): treat 100 hours and 10 events as '100' for normalization
+          const HOURS_BASELINE = 100
+          const EVENTS_BASELINE = 10
+
+          const hoursScore = Math.min(100, Math.round((totalHours / HOURS_BASELINE) * 100))
+          const eventsScore = Math.min(100, Math.round((eventCount / EVENTS_BASELINE) * 100))
+
+          const combined = Math.round(retention * 0.5 + hoursScore * 0.3 + eventsScore * 0.2)
+          payload.performance_score = Number.isFinite(combined) ? combined : null
         } catch (e) {
           payload.performance_score = null
         }
