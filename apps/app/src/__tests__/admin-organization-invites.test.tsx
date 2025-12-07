@@ -22,6 +22,8 @@ describe('Admin Organization Invites page', () => {
     (api as any).sendOrganizationInvite = vi.fn().mockResolvedValue({});
     (api as any).resendOrganizationInvite = vi.fn().mockResolvedValue({});
     (api as any).cancelOrganizationInvite = vi.fn().mockResolvedValue({});
+    (api as any).acceptInvite = vi.fn().mockResolvedValue({});
+    (api as any).rejectInvite = vi.fn().mockResolvedValue({});
 
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
@@ -55,5 +57,20 @@ describe('Admin Organization Invites page', () => {
     const cancelBtns = await screen.findAllByText('Cancel');
     fireEvent.click(cancelBtns[1]);
     expect((api as any).cancelOrganizationInvite).toHaveBeenCalledWith(42, 2);
+
+    // attempt accept via token (mock writeText)
+    (navigator as any).clipboard = { writeText: vi.fn() };
+    const copyBtns = await screen.findAllByText('Copy Link');
+    fireEvent.click(copyBtns[0]);
+    expect((navigator as any).clipboard.writeText).toHaveBeenCalled();
+
+    // click 'Accept (token)' (we need token on invite)
+    (api as any).getOrganizationInvites = vi.fn().mockResolvedValue([{ id: 1, email: 'a@example.com', token: 'tok1', created_at: new Date().toISOString() }]);
+    // re-render not necessary; we directly test acceptInvite invocation by simulating the button
+    const acceptBtns = await screen.findAllByText('Accept (token)');
+    if (acceptBtns.length > 0) {
+      fireEvent.click(acceptBtns[0]);
+      expect((api as any).acceptInvite).toHaveBeenCalledWith('tok1');
+    }
   });
 });
