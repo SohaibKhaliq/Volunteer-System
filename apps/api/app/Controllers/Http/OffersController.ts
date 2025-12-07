@@ -27,10 +27,30 @@ export default class OffersController {
         location: JSON.parse(payload.location)
       })
 
-      // TODO: properly handle files / validate them
-      await Promise.allSettled(
-        request.files('files').map((file) => file.move(Application.tmpPath('uploads')))
-      )
+      // Handle uploaded files safely: validate size/extensions and move to configured disk
+      const uploadedFiles = request.files('files') || []
+      const MAX_BYTES = 5 * 1024 * 1024 // 5MB
+      const allowedExt = ['png', 'jpg', 'jpeg', 'pdf', 'txt', 'doc', 'docx']
+
+      const placedFiles: Array<{ originalName: string; storedName: string; path: string }> = []
+
+      for (const f of uploadedFiles) {
+        if (!f) continue
+        if (f.size && f.size > MAX_BYTES) {
+          return response.badRequest({ message: 'One of the uploaded files is too large' })
+        }
+        const ext = (f.extname || '').toLowerCase()
+        if (ext && !allowedExt.includes(ext)) {
+          return response.badRequest({ message: 'Invalid file type uploaded' })
+        }
+        // Move to disk 'local' under offers directory so other services can find it
+        await f.moveToDisk('local', { dirname: 'offers' })
+        placedFiles.push({
+          originalName: f.clientName || '',
+          storedName: f.fileName || '',
+          path: `offers/${f.fileName}`
+        })
+      }
 
       const helpRequest = await Offer.create({
         longitude: parsedPayload.location.lng,
@@ -42,12 +62,7 @@ export default class OffersController {
         email: parsedPayload.email,
         phone: parsedPayload.phone,
         isOnSite: parsedPayload.isOnSite === 'yes',
-        files: JSON.stringify(
-          request
-            .files('files')
-            .map((file) => file.fileName!)
-            .filter(Boolean)
-        )
+        files: JSON.stringify(placedFiles)
       })
 
       const types = await Type.query().whereIn('type', parsedPayload.types).exec()
