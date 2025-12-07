@@ -8,7 +8,11 @@ let _interval: NodeJS.Timeout | null = null
 
 async function processDue() {
   try {
-    const now = DateTime.local().toISO()
+    // Use a JS Date for DB comparisons (MySQL rejects ISO strings with timezone offsets)
+    // DateTime.local().toISO() yields values like '2025-12-07T15:15:57.464+05:00' which MySQL
+    // considers an invalid datetime in queries. Use toJSDate() so the driver formats
+    // it appropriately for the DB backend.
+    const now = DateTime.local().toJSDate()
     const due = await ScheduledJob.query()
       .where('status', 'Scheduled')
       .andWhere('run_at', '<=', now)
