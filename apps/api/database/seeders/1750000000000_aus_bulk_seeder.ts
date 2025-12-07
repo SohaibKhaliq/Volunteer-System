@@ -7,12 +7,8 @@ import { DateTime } from 'luxon'
 // Large volume seeder to populate Australian-style volunteers, events and hours
 export default class AusBulkSeeder extends BaseSeeder {
   public async run() {
-    // safety: only run on development environment
-    const env = process.env.NODE_ENV || 'development'
-    if (env !== 'development') {
-      this.logger.info('AusBulkSeeder skipped - not running in development environment')
-      return
-    }
+    this.logger.info('AusBulkSeeder disabled — using 000_all_australia_seeder instead')
+    return
 
     // Ensure there are some organizations to attach to
     const orgs = await Organization.query().limit(10)
@@ -162,6 +158,6 @@ export default class AusBulkSeeder extends BaseSeeder {
       }
     }
 
-    this.logger.info('Aus bulk seeder completed')
+    // previously seeded many Australian volunteers/events; now disabled in favor of 000_all_australia_seeder
   }
 }
