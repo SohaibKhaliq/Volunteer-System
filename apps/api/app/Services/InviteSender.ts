@@ -1,7 +1,8 @@
 import OrganizationInvite from 'App/Models/OrganizationInvite'
+import InviteSendJob from 'App/Models/InviteSendJob'
+import { DateTime } from 'luxon'
 import Logger from '@ioc:Adonis/Core/Logger'
 
-let _queue: number[] = []
 let _processing = false
 let _interval: NodeJS.Timeout | null = null
 
@@ -43,18 +44,106 @@ export async function sendInviteNow(inviteId: number) {
   }
 }
 
-export function enqueueInviteSend(inviteId: number) {
-  _queue.push(inviteId)
-  if (!_processing) processQueue().catch((e) => Logger.error('Invite queue error: %o', e))
+export async function enqueueInviteSend(inviteId: number) {
+  // create or update a job record for this invite. If one already exists
+  // and is marked 'sent' we don't recreate it.
+  try {
+    const existing = await InviteSendJob.query().where('organization_invite_id', inviteId).first()
+    if (!existing) {
+      await InviteSendJob.create({
+        organizationInviteId: inviteId,
+        status: 'pending',
+        attempts: 0
+      } as any)
+    } else if (existing.status === 'sent') {
+      // already sent — nothing to do
+      return
+    } else {
+      // make sure it's pending so worker will pick it up
+      existing.status = 'pending'
+      existing.nextAttemptAt = null
+      await existing.save()
+    }
+  } catch (e) {
+    // If DB isn't available for some reason, fallback to in-memory queue
+    Logger.warn('Failed to enqueue invite in DB, falling back to in-memory: %o', String(e))
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    ;(global as any).__invite_fallback_queue ||= []
+    ;(global as any).__invite_fallback_queue.push(inviteId)
+  }
+
+  if (!_processing) processQueue().catch((err) => Logger.error('Invite queue error: %o', err))
 }
 
-export async function processQueue() {
+export async function processQueue(batch = 10) {
   if (_processing) return
   _processing = true
   try {
-    while (_queue.length) {
-      const id = _queue.shift()!
-      await sendInviteNow(id)
+    // pick pending jobs whose next_attempt_at is null or due
+    const now = new Date()
+
+    // Use a simple loop to process jobs in small batches and update their status
+    const jobs = await InviteSendJob.query()
+      .where('status', 'pending')
+      .andWhere((query) => {
+        query.whereNull('next_attempt_at').orWhere('next_attempt_at', '<=', now)
+      })
+      .orderBy('created_at', 'asc')
+      .limit(batch)
+
+    for (const job of jobs) {
+      // Try to claim the job (avoid race) by updating status from pending -> processing
+      const updated = await InviteSendJob.query()
+        .where('id', job.id)
+        .andWhere('status', 'pending')
+        .update({ status: 'processing' })
+
+      // if no rows were updated another worker claimed it
+      if (!updated) continue
+
+      try {
+        const success = await sendInviteNow(job.organizationInviteId)
+        if (success) {
+          job.status = 'sent'
+          job.attempts = job.attempts || 0
+          job.nextAttemptAt = null
+          job.lastError = null
+          await job.save()
+        } else {
+          job.attempts = (job.attempts || 0) + 1
+          // exponential backoff in minutes (1,2,4,8,...) up to a cap
+          const delayMinutes = Math.min(60, Math.pow(2, Math.max(0, job.attempts - 1)))
+          job.nextAttemptAt = DateTime.now().plus({ minutes: delayMinutes }).toJSDate() as any
+          // if exceeded retries mark as failed
+          if (job.attempts >= 5) {
+            job.status = 'failed'
+          } else {
+            job.status = 'pending'
+          }
+          job.lastError = 'send failed — will retry'
+          await job.save()
+        }
+      } catch (e) {
+        job.attempts = (job.attempts || 0) + 1
+        const delayMinutes = Math.min(60, Math.pow(2, Math.max(0, job.attempts - 1)))
+        job.nextAttemptAt = DateTime.now().plus({ minutes: delayMinutes }).toJSDate() as any
+        job.lastError = String(e?.message || e)
+        if (job.attempts >= 5) {
+          job.status = 'failed'
+        } else {
+          job.status = 'pending'
+        }
+        await job.save()
+      }
+    }
+
+    // fallback: if DB enqueueing failed and we have a global fallback queue, drain it
+    const fallback: number[] = (global as any).__invite_fallback_queue || []
+    if (fallback.length) {
+      while ((global as any).__invite_fallback_queue.length) {
+        const id = (global as any).__invite_fallback_queue.shift()
+        await sendInviteNow(id)
+      }
     }
   } finally {
     _processing = false
