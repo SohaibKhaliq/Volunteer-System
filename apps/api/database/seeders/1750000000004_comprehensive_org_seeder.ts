@@ -20,7 +20,7 @@ import { DateTime } from 'luxon'
 
 export default class ComprehensiveOrgSeeder extends BaseSeeder {
   public async run() {
-    this.logger.info('ComprehensiveOrgSeeder disabled — using 000_all_australia_seeder instead')
+    console.info('ComprehensiveOrgSeeder disabled — using 000_all_australia_seeder instead')
     return
 
     // Check if organization exists
