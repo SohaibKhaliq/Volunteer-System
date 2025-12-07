@@ -6,7 +6,7 @@ import { DateTime } from 'luxon'
 
 let _interval: NodeJS.Timeout | null = null
 
-async function processDue() {
+export async function processDue() {
   try {
     // Use a JS Date for DB comparisons (MySQL rejects ISO strings with timezone offsets)
     // DateTime.local().toISO() yields values like '2025-12-07T15:15:57.464+05:00' which MySQL
