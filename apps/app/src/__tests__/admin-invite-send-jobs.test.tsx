@@ -26,6 +26,9 @@ describe('Admin Invite Send Jobs page', () => {
     ];
 
     (api as any).listInviteSendJobs = vi.fn().mockResolvedValue(jobs);
+    (api as any).getInviteSendJobsStats = vi
+      .fn()
+      .mockResolvedValue({ data: { total: 2, byStatus: { sent: 1, failed: 1 }, successRate: 50 } });
     const mockRetry = ((api as any).retryInviteSendJob = vi.fn().mockResolvedValue({}));
 
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -41,6 +44,9 @@ describe('Admin Invite Send Jobs page', () => {
     );
 
     expect(await screen.findByText('Invite #42')).toBeInTheDocument();
+    // metrics should be visible
+    expect(await screen.findByText('Total Jobs')).toBeInTheDocument();
+    expect(await screen.findByText('50%')).toBeInTheDocument();
 
     const retryBtn = await screen.findAllByText('Retry');
     fireEvent.click(retryBtn[0]);
@@ -66,7 +72,8 @@ describe('Admin Invite Send Jobs page', () => {
     };
 
     const mockList = vi.fn().mockResolvedValueOnce(jobsPage1).mockResolvedValueOnce(jobsPage2);
-    (api as any).listInviteSendJobs = mockList;
+    (api as any).getInviteSendJobsStats = vi.fn().mockResolvedValue(jobsPage1)(api as any).listInviteSendJobs =
+      mockList;
 
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
