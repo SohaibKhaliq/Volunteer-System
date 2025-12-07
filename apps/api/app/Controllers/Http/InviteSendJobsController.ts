@@ -172,4 +172,48 @@ export default class InviteSendJobsController {
       return response.ok({ total: 0, byStatus: {}, successRate: 0, avgAttempts: 0 })
     }
   }
+
+  public async retryAllFailed({ auth, response }: HttpContextContract) {
+    await auth.use('api').authenticate()
+    const user = auth.user!
+    if (
+      !user ||
+      !(
+        user.isAdmin ||
+        (user.roles || []).some((r: any) =>
+          String(r?.name ?? r?.role ?? '')
+            .toLowerCase()
+            .includes('admin')
+        )
+      )
+    ) {
+      return response.unauthorized({ message: 'admin access required' })
+    }
+
+    try {
+      // Update all failed jobs to pending, reset attempts and errors.
+      // Use Database directly for a faster bulk update.
+      const updated = await Database.from('invite_send_jobs')
+        .where('status', 'failed')
+        .update({
+          status: 'pending',
+          attempts: 0,
+          next_attempt_at: null,
+          last_error: null,
+          updated_at: new Date()
+        })
+
+      // Kick the queue to pick up the newly requeued jobs (best-effort).
+      try {
+        await processQueue()
+      } catch (e) {
+        // ignore
+      }
+
+      return response.ok({ requeued: Number(updated || 0) })
+    } catch (e) {
+      // missing table or DB error - return safe response
+      return response.status(500).send({ message: 'Failed to retry failed jobs', error: String(e) })
+    }
+  }
 }
