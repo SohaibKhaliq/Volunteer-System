@@ -12,8 +12,8 @@ export default class MigrateLogoPathsSeeder extends BaseSeeder {
 
     let migrated = 0
 
-    this.logger.info('migrate_logo_paths seeder disabled — all seeding consolidated')
+    console.info('migrate_logo_paths seeder disabled — all seeding consolidated')
     return
-    this.logger.info(`Migrated ${migrated} organization logos to organizations/ path`)
+    console.info(`Migrated ${migrated} organization logos to organizations/ path`)
   }
 }
