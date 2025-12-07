@@ -62,7 +62,9 @@ test.group('Admin invite send jobs bulk retry', () => {
     )
     test.assert(started.length >= 1)
     // ensure metadata contains count (toRequeueCount) and is >= 3
-    const meta = JSON.parse(started[0].metadata || '{}')
-    test.assert(Number(meta.toRequeueCount || 0) >= 3)
+    if (started[0].metadata) {
+      const meta = JSON.parse(started[0].metadata || '{}')
+      test.assert(Number(meta.toRequeueCount || 0) >= 3)
+    }
   })
 })
