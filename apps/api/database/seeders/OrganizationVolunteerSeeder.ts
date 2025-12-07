@@ -4,6 +4,10 @@ import { DateTime } from 'luxon'
 
 export default class extends BaseSeeder {
   public async run() {
+    this.logger.info(
+      'OrganizationVolunteerSeeder disabled — using 000_all_australia_seeder instead'
+    )
+    return
     // Get all organizations and users
     const organizations = await Database.from('organizations').select('id')
     const users = await Database.from('users').select('id')
