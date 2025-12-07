@@ -11,7 +11,8 @@ export default class DetectInactiveUsers extends BaseCommand {
   public async run() {
     this.logger.info('Looking for inactive users...')
 
-    const cutoff = DateTime.now().minus({ days: 30 }).toISO()
+    // Use JS Date for DB comparisons to avoid passing timezone-offset ISO strings
+    const cutoff = DateTime.now().minus({ days: 30 }).toJSDate()
     const users = await User.query().where('last_active_at', '<', cutoff).limit(100)
 
     if (users.length === 0) {
