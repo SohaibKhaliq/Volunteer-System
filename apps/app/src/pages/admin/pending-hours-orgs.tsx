@@ -104,7 +104,6 @@ export default function AdminPendingHoursByOrg() {
                             {i.first_name} {i.last_name} — {i.event_title ?? 'N/A'}
                           </div>
 
-                
                           <div className="text-xs text-muted-foreground">
                             {new Date(i.date).toLocaleDateString()} • {i.hours} hours
                           </div>
@@ -165,76 +164,84 @@ export default function AdminPendingHoursByOrg() {
               {auditLoading ? (
                 <div className="text-sm text-muted-foreground">Loading activity…</div>
               ) : (
-                auditLogs
-                .map((l: any) => {
-                  try {
-                    return { ...l, parsed: JSON.parse(l.details || '{}') };
-                  } catch {
-                    return { ...l, parsed: {} };
-                  }
-                })
-                .filter((l: any) => {
-                  const d = l.parsed || {};
-                  return (
-                    String(l.action || '').includes('volunteer_hours') &&
-                    (d.organizationId === g.organizationId ||
-                      (Array.isArray(d.organizationIds) && d.organizationIds.includes(g.organizationId)))
-                  );
-                })
-                .slice(0, 5)
-                .map((l: any) => (
-                  <div
-                    key={l.id}
-                    className="p-2 border-b text-xs text-muted-foreground flex items-center justify-between"
-                  >
-                    <div>
-                      <div className="font-medium">{l.action.replace(/_/g, ' ')}</div>
-                      <div className="text-xs">
-                        {String(l.parsed?.hourId ?? '')} — {String(l.details).slice(0, 120)}
-                      </div>
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      {new Date(l.created_at || l.createdAt).toLocaleString()}
-                    </div>
-                    <div className="ml-4 pl-2">
-                      <Button
-                        size="xs"
-                        variant="ghost"
-                        onClick={() => {
-                          setSelectedAudit(l);
-                          setShowAuditDetails(true);
-                        }}
+                <>
+                  {auditLogs
+                    .map((l: any) => {
+                      try {
+                        return { ...l, parsed: JSON.parse(l.details || '{}') };
+                      } catch {
+                        return { ...l, parsed: {} };
+                      }
+                    })
+                    .filter((l: any) => {
+                      const d = l.parsed || {};
+                      return (
+                        String(l.action || '').includes('volunteer_hours') &&
+                        (d.organizationId === g.organizationId ||
+                          (Array.isArray(d.organizationIds) && d.organizationIds.includes(g.organizationId)))
+                      );
+                    })
+                    .slice(0, 5)
+                    .map((l: any) => (
+                      <div
+                        key={l.id}
+                        className="p-2 border-b text-xs text-muted-foreground flex items-center justify-between"
                       >
-                        Details
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-
-              {/* Global audit details dialog (single instance per page) */}
-              <Dialog open={showAuditDetails} onOpenChange={setShowAuditDetails}>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle>Audit Log Details</DialogTitle>
-                  </DialogHeader>
-                  <div className="p-4">
-                    {selectedAudit ? (
-                      <div className="space-y-2 text-sm">
-                        <div className="font-semibold">{selectedAudit.action}</div>
-                        <div className="text-xs text-muted-foreground">User: {selectedAudit.user?.firstName} {selectedAudit.user?.lastName}</div>
-                        <pre className="bg-slate-50 p-3 rounded max-h-64 overflow-auto text-xs">{selectedAudit.details}</pre>
+                        <div>
+                          <div className="font-medium">{l.action.replace(/_/g, ' ')}</div>
+                          <div className="text-xs">
+                            {String(l.parsed?.hourId ?? '')} — {String(l.details).slice(0, 120)}
+                          </div>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {new Date(l.created_at || l.createdAt).toLocaleString()}
+                        </div>
+                        <div className="ml-4 pl-2">
+                          <Button
+                            size="xs"
+                            variant="ghost"
+                            onClick={() => {
+                              setSelectedAudit(l);
+                              setShowAuditDetails(true);
+                            }}
+                          >
+                            Details
+                          </Button>
+                        </div>
                       </div>
-                    ) : (
-                      <div className="text-sm text-muted-foreground">No audit selected</div>
-                    )}
-                  </div>
-                  <DialogFooter>
-                    <div className="flex justify-end">
-                      <Button variant="outline" onClick={() => setShowAuditDetails(false)}>Close</Button>
-                    </div>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+                    ))}
+
+                  {/* Global audit details dialog (single instance per page) */}
+                  <Dialog open={showAuditDetails} onOpenChange={setShowAuditDetails}>
+                    <DialogContent className="max-w-2xl">
+                      <DialogHeader>
+                        <DialogTitle>Audit Log Details</DialogTitle>
+                      </DialogHeader>
+                      <div className="p-4">
+                        {selectedAudit ? (
+                          <div className="space-y-2 text-sm">
+                            <div className="font-semibold">{selectedAudit.action}</div>
+                            <div className="text-xs text-muted-foreground">
+                              User: {selectedAudit.user?.firstName} {selectedAudit.user?.lastName}
+                            </div>
+                            <pre className="bg-slate-50 p-3 rounded max-h-64 overflow-auto text-xs">
+                              {selectedAudit.details}
+                            </pre>
+                          </div>
+                        ) : (
+                          <div className="text-sm text-muted-foreground">No audit selected</div>
+                        )}
+                      </div>
+                      <DialogFooter>
+                        <div className="flex justify-end">
+                          <Button variant="outline" onClick={() => setShowAuditDetails(false)}>
+                            Close
+                          </Button>
+                        </div>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </>
               )}
 
               {/* pagination */}
@@ -247,7 +254,9 @@ export default function AdminPendingHoursByOrg() {
                     </Button>
                     <Button
                       size="xs"
-                      disabled={auditMeta.page >= (auditMeta.lastPage ?? auditMeta.last_page ?? auditMeta.total_pages ?? 1)}
+                      disabled={
+                        auditMeta.page >= (auditMeta.lastPage ?? auditMeta.last_page ?? auditMeta.total_pages ?? 1)
+                      }
                       onClick={() => setAuditPage((p) => p + 1)}
                     >
                       Next
