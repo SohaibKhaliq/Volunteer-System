@@ -4,7 +4,9 @@ import { DateTime } from 'luxon'
 
 export default class MapEventsSeeder extends BaseSeeder {
   public async run() {
-    // Create several small events near the demo coordinates so map has data
+    // Deprecated — consolidated Australia seeder is used now.
+    this.logger.info('MapEventsSeeder disabled — using 000_all_australia_seeder instead')
+    return
     const baseLat = 31.6295
     const baseLng = -7.9811
 
@@ -27,11 +29,6 @@ export default class MapEventsSeeder extends BaseSeeder {
       })
     }
 
-    try {
-      await Database.table('events').multiInsert(events)
-      console.log('✅ Map events seeded')
-    } catch (e) {
-      console.warn('Could not seed map events, likely already present', e.message)
-    }
+    // (was previously inserting map events; now disabled)
   }
 }
