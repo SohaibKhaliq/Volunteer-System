@@ -243,6 +243,7 @@ const api = {
   getInviteSendJob: async (id: number) => axios.get(`/admin/invite-send-jobs/${id}`),
   retryInviteSendJob: async (id: number) => axios.post(`/admin/invite-send-jobs/${id}/retry`),
   getInviteSendJobsStats: async () => axios.get('/admin/invite-send-jobs/stats'),
+  retryAllFailedInviteSendJobs: async () => axios.post('/admin/invite-send-jobs/retry-failed'),
 
   /* Monitoring */
   getMonitoringStats: async () => axios.get('/monitoring/stats'),
