@@ -11,6 +11,7 @@
 
 import Server from '@ioc:Adonis/Core/Server'
 import { initCommunicationSender } from 'App/Services/CommunicationSender'
+import { initInviteSender } from 'App/Services/InviteSender'
 import { initScheduler } from 'App/Services/SchedulerService'
 import { initResourceNotifier } from 'App/Services/ResourceNotifier'
 
@@ -58,6 +59,14 @@ try {
   // avoid crashing the boot if sender fails to start
   // eslint-disable-next-line no-console
   console.error('Failed to start communication sender', e)
+}
+
+try {
+  initInviteSender()
+} catch (e) {
+  // avoid crashing the boot if invite sender fails
+  // eslint-disable-next-line no-console
+  console.error('Failed to start invite sender', e)
 }
 
 try {
