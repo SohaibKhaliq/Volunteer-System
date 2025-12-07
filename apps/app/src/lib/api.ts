@@ -238,6 +238,10 @@ const api = {
   listScheduledJobs: async () => axios.get('/scheduled-jobs'),
   createScheduledJob: async (data: any) => axios.post('/scheduled-jobs', data),
   retryScheduledJob: async (id: number) => axios.post(`/scheduled-jobs/${id}/retry`),
+  // Invite send jobs (admin)
+  listInviteSendJobs: async () => axios.get('/admin/invite-send-jobs'),
+  getInviteSendJob: async (id: number) => axios.get(`/admin/invite-send-jobs/${id}`),
+  retryInviteSendJob: async (id: number) => axios.post(`/admin/invite-send-jobs/${id}/retry`),
 
   /* Monitoring */
   getMonitoringStats: async () => axios.get('/monitoring/stats'),
