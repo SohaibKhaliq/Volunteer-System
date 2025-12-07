@@ -12,6 +12,47 @@ export default class EnsureNextMaintenanceAtExists extends BaseSchema {
       const cols = ['next_maintenance_at', 'last_maintenance_at', 'assigned_technician_id']
 
       for (const colName of cols) {
+        // robust column existence check: information_schema first, then SHOW COLUMNS (MySQL),
+        // so we avoid false negatives where a previous change already added the column.
+        let exists = false
+        try {
+          const info: any = await conn.raw(
+            `SELECT COUNT(*) as cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+            [this.tableName, colName]
+          )
+          // parse shapes
+          if (Array.isArray(info) && info[0]) {
+            const rows = info[0]
+            if (Array.isArray(rows) && rows.length > 0 && typeof rows[0].cnt !== 'undefined') {
+              exists = Number(rows[0].cnt) > 0
+            } else if (typeof rows.cnt !== 'undefined') {
+              exists = Number(rows.cnt) > 0
+            }
+          } else if (
+            info &&
+            info.rows &&
+            Array.isArray(info.rows) &&
+            info.rows[0] &&
+            typeof info.rows[0].cnt !== 'undefined'
+          ) {
+            exists = Number(info.rows[0].cnt) > 0
+          }
+        } catch (e) {
+          // ignore info schema errors and try SHOW COLUMNS next
+        }
+
+        if (!exists) {
+          try {
+            const show: any = await conn.raw(`SHOW COLUMNS FROM \`${this.tableName}\` LIKE ?`, [
+              colName
+            ])
+            if (Array.isArray(show) && show[0] && show[0].length && show[0].length > 0) {
+              exists = true
+            }
+          } catch (e) {
+            // ignore
+          }
+        }
         try {
           const qRes: any = await conn.raw(
             `SELECT COUNT(*) as cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
@@ -37,7 +78,7 @@ export default class EnsureNextMaintenanceAtExists extends BaseSchema {
             cnt = Number(qRes.rows[0].cnt)
           }
 
-          if (cnt === 0) {
+          if (!exists && cnt === 0) {
             // Add this missing column. Use schema helpers first, fallback to raw.
             try {
               await this.schema.alterTable(this.tableName, (table) => {
