@@ -3,7 +3,8 @@ import Achievement from 'App/Models/Achievement'
 
 export default class AchievementSeeder extends BaseSeeder {
   public async run() {
-    // Create global default achievements if they don't exist
+    this.logger.info('AchievementSeeder disabled — using 000_all_australia_seeder instead')
+    return
     const defaults = [
       {
         key: 'early-adopter',
@@ -31,11 +32,6 @@ export default class AchievementSeeder extends BaseSeeder {
       }
     ]
 
-    for (const def of defaults) {
-      const existing = await Achievement.findBy('key', def.key)
-      if (!existing) {
-        await Achievement.create(def)
-      }
-    }
+    // disabled
   }
 }
