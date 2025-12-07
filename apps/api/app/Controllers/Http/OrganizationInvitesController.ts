@@ -340,7 +340,7 @@ export default class OrganizationInvitesController {
     await invite.accept()
 
     // Log audit
-    await AuditLog.create({
+    await AuditLog.safeCreate({
       userId: user.id,
       action: 'invite_accepted_by_admin',
       targetType: 'organization',
