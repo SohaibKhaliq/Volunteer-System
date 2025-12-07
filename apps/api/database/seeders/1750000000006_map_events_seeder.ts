@@ -5,7 +5,7 @@ import { DateTime } from 'luxon'
 export default class MapEventsSeeder extends BaseSeeder {
   public async run() {
     // Deprecated — consolidated Australia seeder is used now.
-    this.logger.info('MapEventsSeeder disabled — using 000_all_australia_seeder instead')
+    console.info('MapEventsSeeder disabled — using 000_all_australia_seeder instead')
     return
     const baseLat = 31.6295
     const baseLng = -7.9811
