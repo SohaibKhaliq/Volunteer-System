@@ -7,7 +7,7 @@ import { DateTime } from 'luxon'
 // Large volume seeder to populate Australian-style volunteers, events and hours
 export default class AusBulkSeeder extends BaseSeeder {
   public async run() {
-    this.logger.info('AusBulkSeeder disabled — using 000_all_australia_seeder instead')
+    console.info('AusBulkSeeder disabled — using 000_all_australia_seeder instead')
     return
 
     // Ensure there are some organizations to attach to
@@ -106,7 +106,7 @@ export default class AusBulkSeeder extends BaseSeeder {
         })
         const event = {
           organization_id: org.id,
-          title: `${org.name} - Community Event #${e + 1}`,
+          title: `${org.name} - Community Event ${e + 1}`,
           description: 'Mass volunteer mobilization',
           location: 'Various',
           start_at: start.toSQL(),
