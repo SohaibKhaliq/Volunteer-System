@@ -115,7 +115,17 @@ export async function processDue() {
                 })
               }
             } catch (e) {
-              Logger.error('Failed to send email to ' + to + ': ' + String(e))
+              try {
+                if (e instanceof Error)
+                  Logger.error(`Failed to send email to ${to}: ${e.message}\n${e.stack}`)
+                else Logger.error('Failed to send email to %s: %o', to, e)
+              } catch (inner) {
+                Logger.error(
+                  'Failed to send email to %s (failed to format error): %o',
+                  to,
+                  String(e)
+                )
+              }
               log.status = 'Failed'
               log.attempts = (log.attempts || 0) + 1
               log.error = String(e)
@@ -132,11 +142,27 @@ export async function processDue() {
         await comm.save()
         Logger.info(`Communication ${comm.id} marked as Sent`)
       } catch (err) {
-        Logger.error('Error processing communication ' + comm.id + ': ' + String(err))
+        try {
+          if (err instanceof Error)
+            Logger.error(`Error processing communication ${comm.id}: ${err.message}\n${err.stack}`)
+          else Logger.error('Error processing communication %s: %o', comm.id, err)
+        } catch (inner) {
+          Logger.error(
+            'Error processing communication %s (failed to format error): %o',
+            comm.id,
+            String(err)
+          )
+        }
       }
     }
   } catch (err) {
-    Logger.error('Error in communication sender: ' + String(err))
+    try {
+      if (err instanceof Error)
+        Logger.error(`Error in communication sender: ${err.message}\n${err.stack}`)
+      else Logger.error('Error in communication sender: %o', err)
+    } catch (inner) {
+      Logger.error('Error in communication sender (failed to format error): %o', String(err))
+    }
   }
 }
 
