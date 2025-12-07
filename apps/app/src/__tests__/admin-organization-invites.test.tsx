@@ -14,8 +14,8 @@ import AdminOrganizationInvites from '@/pages/admin/organization-invites';
 describe('Admin Organization Invites page', () => {
   it('lists invites and supports create/resend/cancel', async () => {
     const invites = [
-      { id: 1, email: 'a@example.com', created_at: new Date().toISOString() },
-      { id: 2, email: 'b@example.com', created_at: new Date().toISOString() }
+      { id: 1, email: 'a@example.com', token: 'tok1', created_at: new Date().toISOString() },
+      { id: 2, email: 'b@example.com', token: 'tok2', created_at: new Date().toISOString() }
     ];
 
     (api as any).getOrganizationInvites = vi.fn().mockResolvedValue(invites);
@@ -71,6 +71,12 @@ describe('Admin Organization Invites page', () => {
     if (acceptBtns.length > 0) {
       fireEvent.click(acceptBtns[0]);
       expect((api as any).acceptInvite).toHaveBeenCalledWith('tok1');
+    }
+
+    const rejectBtns = await screen.findAllByText('Reject (token)');
+    if (rejectBtns.length > 0) {
+      fireEvent.click(rejectBtns[1] || rejectBtns[0]);
+      expect((api as any).rejectInvite).toHaveBeenCalledWith('tok2');
     }
   });
 });
