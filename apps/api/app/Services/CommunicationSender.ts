@@ -10,7 +10,8 @@ let _interval: NodeJS.Timeout | null = null
 
 export async function processDue() {
   try {
-    const now = DateTime.local().toISO()
+    // Use JS Date for DB comparisons; MySQL may reject ISO strings with timezone offsets
+    const now = DateTime.local().toJSDate()
     const due = await Communication.query()
       .where('status', 'Scheduled')
       .andWhere('send_at', '<=', now)
