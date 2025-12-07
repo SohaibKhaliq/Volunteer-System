@@ -3,13 +3,15 @@ import Resource from 'App/Models/Resource'
 import Notification from 'App/Models/Notification'
 import Event from 'App/Models/Event'
 import Logger from '@ioc:Adonis/Core/Logger'
+import Database from '@ioc:Adonis/Lucid/Database'
 import { DateTime } from 'luxon'
 
 let _interval: NodeJS.Timeout | null = null
 
 async function checkOverdueAssignments() {
   try {
-    const now = DateTime.local().toISO()
+    // Use JS Date for DB comparisons to avoid MySQL rejecting timezone-offset ISO strings
+    const now = DateTime.local().toJSDate()
     // Find assigned resource assignments that are past expectedReturnAt and still assigned
     const overdue = await ResourceAssignment.query()
       .where('status', 'assigned')
@@ -60,7 +62,48 @@ async function checkOverdueAssignments() {
 async function checkMaintenanceDue() {
   try {
     const now = DateTime.local()
-    const soon = now.plus({ days: 1 }).toISO()
+    const soon = now.plus({ days: 1 }).toJSDate()
+
+    // Check whether the column exists in the DB; avoid runtime errors on older DBs
+    try {
+      const conn = Database.connection()
+      const res: any = await conn.raw(
+        `SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ?`,
+        ['resources', 'next_maintenance_at']
+      )
+
+      let colCount = 0
+      if (Array.isArray(res)) {
+        const maybeRows = res[0]
+        if (
+          Array.isArray(maybeRows) &&
+          maybeRows.length > 0 &&
+          typeof maybeRows[0].cnt !== 'undefined'
+        ) {
+          colCount = Number(maybeRows[0].cnt)
+        } else if (maybeRows && typeof maybeRows.cnt !== 'undefined') {
+          colCount = Number(maybeRows.cnt)
+        }
+      } else if (
+        res &&
+        res.rows &&
+        Array.isArray(res.rows) &&
+        res.rows[0] &&
+        typeof res.rows[0].cnt !== 'undefined'
+      ) {
+        colCount = Number(res.rows[0].cnt)
+      }
+
+      if (colCount === 0) {
+        // Column doesn't exist — nothing to do here. Avoid the failing query.
+        return
+      }
+    } catch (e) {
+      // If we failed to inspect the schema, don't attempt the query to avoid raising unknown column errors.
+      Logger.warn('Skipping maintenance check: unable to confirm column existence')
+      return
+    }
+
     // Find resources where nextMaintenanceAt is set and <= next day
     const due = await Resource.query()
       .whereNotNull('next_maintenance_at')
