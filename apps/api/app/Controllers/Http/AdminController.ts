@@ -293,7 +293,7 @@ export default class AdminController {
       await org.save()
 
       // Log the action
-      await AuditLog.create({
+      await AuditLog.safeCreate({
         userId: admin.id,
         action: 'organization_approved',
         targetType: 'organization',
@@ -324,7 +324,7 @@ export default class AdminController {
       await org.save()
 
       // Log the action
-      await AuditLog.create({
+      await AuditLog.safeCreate({
         userId: admin.id,
         action: 'organization_suspended',
         targetType: 'organization',
@@ -354,7 +354,7 @@ export default class AdminController {
       await org.save()
 
       // Log the action
-      await AuditLog.create({
+      await AuditLog.safeCreate({
         userId: admin.id,
         action: 'organization_reactivated',
         targetType: 'organization',
@@ -384,7 +384,7 @@ export default class AdminController {
       await org.save()
 
       // Log the action
-      await AuditLog.create({
+      await AuditLog.safeCreate({
         userId: admin.id,
         action: 'organization_archived',
         targetType: 'organization',
@@ -484,7 +484,7 @@ export default class AdminController {
       await user.save()
 
       // Log the action
-      await AuditLog.create({
+      await AuditLog.safeCreate({
         userId: admin.id,
         action: 'user_disabled',
         targetType: 'user',
@@ -511,7 +511,7 @@ export default class AdminController {
       await user.save()
 
       // Log the action
-      await AuditLog.create({
+      await AuditLog.safeCreate({
         userId: admin.id,
         action: 'user_enabled',
         targetType: 'user',
@@ -745,7 +745,7 @@ export default class AdminController {
       }
 
       // Log the action
-      await AuditLog.create({
+      await AuditLog.safeCreate({
         userId: admin.id,
         action: 'system_settings_updated',
         targetType: 'system',
@@ -788,7 +788,7 @@ export default class AdminController {
       }
 
       // Log the action
-      await AuditLog.create({
+      await AuditLog.safeCreate({
         userId: admin.id,
         action: 'branding_updated',
         targetType: 'system',
@@ -824,7 +824,7 @@ export default class AdminController {
       }
 
       // Log the action
-      await AuditLog.create({
+      await AuditLog.safeCreate({
         userId: admin.id,
         action: 'backup_requested',
         targetType: 'system',
