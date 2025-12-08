@@ -151,8 +151,12 @@ export default function VolunteerOpportunityDetail() {
   return (
     <div className="container mx-auto p-4 md:p-6 space-y-6">
       {/* Back button */}
-      <Button variant="ghost" onClick={() => navigate('/volunteer/opportunities')}>
-        <ArrowLeft className="h-4 w-4 mr-2" />
+      <Button
+        variant="ghost"
+        onClick={() => navigate('/volunteer/opportunities')}
+        aria-label="Back to opportunities list"
+      >
+        <ArrowLeft className="h-4 w-4 mr-2" aria-hidden="true" />
         Back to Opportunities
       </Button>
 
@@ -164,7 +168,7 @@ export default function VolunteerOpportunityDetail() {
               <CardTitle className="text-3xl">{opp.title}</CardTitle>
               {opp.organization && (
                 <CardDescription className="flex items-center gap-2 text-lg">
-                  <Building2 className="h-5 w-5" />
+                  <Building2 className="h-5 w-5" aria-hidden="true" />
                   {opp.organization.name || opp.organizationName}
                 </CardDescription>
               )}
@@ -174,11 +178,12 @@ export default function VolunteerOpportunityDetail() {
                 variant="outline"
                 size="icon"
                 onClick={() => (isBookmarked ? unbookmarkMutation.mutate() : bookmarkMutation.mutate())}
+                aria-label={isBookmarked ? 'Remove bookmark' : 'Bookmark this opportunity'}
               >
-                <Bookmark className={`h-4 w-4 ${isBookmarked ? 'fill-current' : ''}`} />
+                <Bookmark className={`h-4 w-4 ${isBookmarked ? 'fill-current' : ''}`} aria-hidden="true" />
               </Button>
-              <Button variant="outline" size="icon" onClick={handleShare}>
-                <Share2 className="h-4 w-4" />
+              <Button variant="outline" size="icon" onClick={handleShare} aria-label="Share this opportunity">
+                <Share2 className="h-4 w-4" aria-hidden="true" />
               </Button>
             </div>
           </div>
@@ -282,21 +287,29 @@ export default function VolunteerOpportunityDetail() {
           {/* Action buttons */}
           <div className="flex flex-col sm:flex-row gap-3">
             {!isApplied && !isAccepted && (
-              <Button className="flex-1" onClick={() => setApplyDialogOpen(true)}>
+              <Button
+                className="flex-1"
+                onClick={() => setApplyDialogOpen(true)}
+                aria-label="Apply for this opportunity"
+              >
                 Apply Now
               </Button>
             )}
 
             {isAccepted && (
-              <Button className="flex-1" onClick={() => setQrScannerOpen(true)}>
-                <Camera className="h-4 w-4 mr-2" />
+              <Button
+                className="flex-1"
+                onClick={() => setQrScannerOpen(true)}
+                aria-label="Check in using QR code scanner"
+              >
+                <Camera className="h-4 w-4 mr-2" aria-hidden="true" />
                 Check In with QR
               </Button>
             )}
 
             {isApplied && (
-              <Button className="flex-1" disabled>
-                <Clock className="h-4 w-4 mr-2" />
+              <Button className="flex-1" disabled aria-label="Application is pending review">
+                <Clock className="h-4 w-4 mr-2" aria-hidden="true" />
                 Application Pending
               </Button>
             )}
@@ -314,21 +327,33 @@ export default function VolunteerOpportunityDetail() {
 
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">Why are you interested? (Optional)</label>
+              <label htmlFor="application-notes" className="text-sm font-medium">
+                Why are you interested? (Optional)
+              </label>
               <Textarea
+                id="application-notes"
                 placeholder="Tell us about your interest and relevant experience..."
                 value={applicationNotes}
                 onChange={(e) => setApplicationNotes(e.target.value)}
                 rows={4}
                 className="mt-2"
+                aria-describedby="notes-hint"
+                maxLength={500}
               />
+              <p id="notes-hint" className="text-xs text-muted-foreground mt-1">
+                {applicationNotes.length}/500 characters
+              </p>
             </div>
 
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setApplyDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={() => applyMutation.mutate()} disabled={applyMutation.isPending}>
+              <Button
+                onClick={() => applyMutation.mutate()}
+                disabled={applyMutation.isPending}
+                aria-label="Submit application"
+              >
                 {applyMutation.isPending ? 'Submitting...' : 'Submit Application'}
               </Button>
             </div>

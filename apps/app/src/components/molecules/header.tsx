@@ -11,6 +11,7 @@ import { toast } from '@/components/atoms/use-toast';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import NotificationBell from './notification-bell';
+import DarkModeToggle from './dark-mode-toggle';
 import { useTranslation } from 'react-i18next';
 
 const Header = () => {
@@ -129,6 +130,7 @@ const Header = () => {
         </div>
 
         <div className="flex items-center gap-4">
+          <DarkModeToggle />
           <Language />
 
           {authenticated ? (
