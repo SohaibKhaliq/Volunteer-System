@@ -13,11 +13,26 @@ export default class EventsController {
       }
     }
     // preload tasks and their assignments so we can compute volunteer counts
-    const { organization_id } = request.qs()
+    const { organization_id, location, cause, skill } = request.qs()
 
-    const query = Event.query().preload('tasks', (taskQuery) => {
-      taskQuery.preload('assignments')
-    })
+    const query = Event.query()
+      .preload('tasks', (taskQuery) => {
+        taskQuery.preload('assignments')
+      })
+      .preload('skills')
+
+    // Public filters
+    if (location) {
+      query.where('location', 'like', `%${location}%`)
+    }
+    if (cause) {
+      query.where('cause', cause)
+    }
+    if (skill) {
+      query.whereHas('skills', (skillsQuery) => {
+        skillsQuery.where('name', 'like', `%${skill}%`).orWhere('slug', skill)
+      })
+    }
 
     // If query provided an explicit org, prefer that
     if (organization_id) {
@@ -91,7 +106,9 @@ export default class EventsController {
       'is_recurring',
       'capacity',
       'organization_id',
-      'is_published'
+      'is_published',
+      'cause',
+      'skills' // Array of skill IDs
     ])
 
     // Normalize snake_case payload keys to model camelCase properties
@@ -104,6 +121,7 @@ export default class EventsController {
     if (raw.recurring_rule) payload.recurringRule = raw.recurring_rule
     if (typeof raw.is_recurring !== 'undefined') payload.isRecurring = raw.is_recurring
     if (typeof raw.capacity !== 'undefined') payload.capacity = raw.capacity
+    if (raw.cause) payload.cause = raw.cause
     // If the authenticated user belongs to an organization, prefer that organization
     if (auth?.user) {
       const OrganizationTeamMember = await import('App/Models/OrganizationTeamMember')
@@ -133,6 +151,11 @@ export default class EventsController {
     }
 
     const event = await Event.create(payload)
+
+    if (raw.skills && Array.isArray(raw.skills)) {
+      await event.related('skills').attach(raw.skills)
+    }
+
     return response.created(event)
   }
 

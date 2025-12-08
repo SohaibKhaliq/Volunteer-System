@@ -27,6 +27,15 @@ export default class Assignment extends BaseModel {
   @column()
   public status?: string
 
+  @column.dateTime({ columnName: 'check_in_time' })
+  public checkInTime?: DateTime
+
+  @column.dateTime({ columnName: 'check_out_time' })
+  public checkOutTime?: DateTime
+
+  @column({ columnName: 'attendance_verified' })
+  public attendanceVerified?: boolean
+
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
 

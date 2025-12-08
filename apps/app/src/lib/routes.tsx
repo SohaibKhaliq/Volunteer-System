@@ -15,6 +15,11 @@ import OrganizationRegister from '@/pages/organization-register';
 import TransportOfferForm from '@/pages/transport-offer-form';
 import TransportRequestForm from '@/pages/transport-request-form';
 import Profile from '@/pages/profile';
+import Events from '@/pages/events';
+import VolunteerDashboard from '@/pages/volunteer/dashboard';
+import VolunteerSchedule from '@/pages/volunteer/schedule';
+import EventDetails from '@/pages/event-details';
+import EventQR from '@/pages/event-qr';
 import { RouteObject } from 'react-router-dom';
 import AdminLayout from '@/components/templates/AdminLayout';
 import AppProvider from '@/providers/app-provider';
@@ -45,6 +50,7 @@ import OrganizationCompliance from '@/pages/organization/compliance';
 import OrganizationReports from '@/pages/organization/reports';
 import OrganizationCommunications from '@/pages/organization/communications';
 import OrganizationSettings from '@/pages/organization/settings';
+import OrganizationEventsManager from '@/pages/organization/event-manager';
 
 // Simple wrappers to ensure pages are vertically scrollable
 const ScrollWrapper = ({ children }: any) => (
@@ -107,7 +113,7 @@ const routes: RouteObject[] = [
     children: [
       { index: true, element: <OrganizationDashboard /> },
       { path: 'profile', element: <OrganizationProfile /> },
-      { path: 'events', element: <OrganizationEvents /> },
+      { path: 'events', element: <OrganizationEventsManager /> },
       { path: 'volunteers', element: <OrganizationVolunteers /> },
       { path: 'compliance', element: <OrganizationCompliance /> },
       { path: 'reports', element: <OrganizationReports /> },
@@ -138,7 +144,12 @@ const routes: RouteObject[] = [
       { path: 'help-offer', element: <HelpOfferForm /> },
       { path: 'transport-request', element: <TransportRequestForm /> },
       { path: 'transport-offer', element: <TransportOfferForm /> },
-      { path: 'profile', element: <Profile /> }
+      { path: 'profile', element: <Profile /> },
+      { path: 'events', element: <Events /> },
+      { path: 'events/:id', element: <EventDetails /> },
+      { path: 'events/:id/qr', element: <EventQR /> },
+      { path: 'volunteer/dashboard', element: <VolunteerDashboard /> },
+      { path: 'volunteer/schedule', element: <VolunteerSchedule /> }
     ]
   },
   {

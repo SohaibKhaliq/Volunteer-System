@@ -2,6 +2,8 @@ import { BaseModel, column, belongsTo, BelongsTo, hasMany, HasMany } from '@ioc:
 import { DateTime } from 'luxon'
 import Organization from './Organization'
 import Task from './Task'
+import Skill from './Skill'
+import { manyToMany, ManyToMany } from '@ioc:Adonis/Lucid/Orm'
 
 export default class Event extends BaseModel {
   @column({ isPrimary: true })
@@ -28,6 +30,9 @@ export default class Event extends BaseModel {
   @column({ columnName: 'capacity' })
   public capacity?: number
 
+  @column()
+  public cause?: string
+
   @column({ columnName: 'is_recurring' })
   public isRecurring?: boolean
 
@@ -39,6 +44,11 @@ export default class Event extends BaseModel {
 
   @hasMany(() => Task)
   public tasks: HasMany<typeof Task>
+
+  @manyToMany(() => Skill, {
+    pivotTable: 'event_skills',
+  })
+  public skills: ManyToMany<typeof Skill>
 
   @column({ columnName: 'is_published' })
   public isPublished?: boolean

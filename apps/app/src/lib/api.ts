@@ -50,6 +50,8 @@ const api = {
   activateUser: async (id: number) => axios.post(`/users/${id}/activate`),
 
   listEvents: async () => axios.get('/events'),
+  getEvents: async (params?: any) => axios.get('/events', { params }),
+  getEvent: async (id: string) => axios.get(`/events/${id}`),
   listRoles: async () => axios.get('/roles'),
   createEvent: async (data: any) => axios.post('/events', data),
   updateEvent: async (id: number, data: any) => axios.put(`/events/${id}`, data),

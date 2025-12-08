@@ -7,6 +7,7 @@ import Offer from './Offer'
 import Assignment from './Assignment'
 import ComplianceDocument from './ComplianceDocument'
 import Role from './Role'
+import Skill from './Skill'
 
 
 export default class User extends BaseModel {
@@ -69,6 +70,11 @@ export default class User extends BaseModel {
     pivotRelatedForeignKey: 'role_id'
   })
   public roles: ManyToMany<typeof Role>
+
+  @manyToMany(() => Skill, {
+    pivotTable: 'user_skills',
+  })
+  public skills: ManyToMany<typeof Skill>
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
