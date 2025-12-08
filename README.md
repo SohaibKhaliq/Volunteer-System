@@ -19,7 +19,7 @@
 
 This project is a monorepo containing the source code and documentation for the Local Aid plateform. This platform is designed to connect volunteers and individuals in need of assistance across Morocco.
 
-P.S: While we are not the first to come up with this idea, our goal is to build upon the existing Nt3awnou نتعاونو platform, and expand its capabilities to make it a versatile hub for connecting volunteers and people in need of help throughout Morocco. We also aim to make the platform more accessible and user-friendly and centralize information from the various existing initiatives.
+P.S: While we are not the first to come up with this idea, our goal is to build upon the existing platforms, and expand its capabilities to make it a versatile hub for connecting volunteers and people in need of help throughout Morocco. We also aim to make the platform more accessible and user-friendly and centralize information from the various existing initiatives.
 
 P.S2: [Maadlou](http://www.twitch.tv/maadlou) designed the full UI live on stream using Figma & Adobe Illustrator.
 
