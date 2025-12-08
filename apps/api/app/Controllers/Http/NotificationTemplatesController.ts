@@ -15,7 +15,7 @@ import SystemSetting from 'App/Models/SystemSetting'
 // Default templates
 const DEFAULT_TEMPLATES = {
   invite_email: {
-    subject: 'You\'ve been invited to join {{organization_name}}',
+    subject: "You've been invited to join {{organization_name}}",
     body: `Hello {{recipient_name}},
 
 You have been invited to join {{organization_name}} as a {{role}}.
@@ -419,7 +419,10 @@ export default class NotificationTemplatesController {
       // Validate key format (snake_case)
       if (!/^[a-z][a-z0-9_]*$/.test(key)) {
         return response.badRequest({
-          error: { message: 'Key must be in snake_case format (lowercase letters, numbers, and underscores)' }
+          error: {
+            message:
+              'Key must be in snake_case format (lowercase letters, numbers, and underscores)'
+          }
         })
       }
 
@@ -571,13 +574,7 @@ export default class NotificationTemplatesController {
    */
   private getVariablesForTemplate(key: string): string[] {
     const variableMap: Record<string, string[]> = {
-      invite_email: [
-        'recipient_name',
-        'organization_name',
-        'role',
-        'message',
-        'accept_url'
-      ],
+      invite_email: ['recipient_name', 'organization_name', 'role', 'message', 'accept_url'],
       application_accepted: [
         'volunteer_name',
         'organization_name',
@@ -587,12 +584,7 @@ export default class NotificationTemplatesController {
         'event_location',
         'notes'
       ],
-      application_rejected: [
-        'volunteer_name',
-        'organization_name',
-        'opportunity_title',
-        'reason'
-      ],
+      application_rejected: ['volunteer_name', 'organization_name', 'opportunity_title', 'reason'],
       event_reminder: [
         'volunteer_name',
         'organization_name',

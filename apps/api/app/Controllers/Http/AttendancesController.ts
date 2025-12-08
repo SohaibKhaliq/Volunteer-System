@@ -143,7 +143,8 @@ export default class AttendancesController {
                 opportunityId: opportunity.id,
                 opportunityTitle: opportunity.title,
                 volunteerId: user.id,
-                volunteerName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+                volunteerName:
+                  `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
                 hours: duration
               })
             })

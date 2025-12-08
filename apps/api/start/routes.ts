@@ -396,8 +396,7 @@ Route.group(() => {
 Route.group(() => {
   // Public calendar feeds (no auth required)
   Route.get('/public-opportunities', 'CalendarController.publicOpportunities')
-})
-  .prefix('/calendar')
+}).prefix('/calendar')
 
 Route.group(() => {
   // Authenticated calendar feeds

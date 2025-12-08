@@ -43,7 +43,10 @@ X-WR-TIMEZONE:UTC`
     organizer?: string
   }): string {
     const formatDate = (date: Date) => {
-      return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
+      return date
+        .toISOString()
+        .replace(/[-:]/g, '')
+        .replace(/\.\d{3}/, '')
     }
 
     const escapeText = (text: string) => {
@@ -119,8 +122,14 @@ SUMMARY:${escapeText(event.title)}`
       let ical = this.getICalHeader('Volunteer Opportunities')
 
       for (const opp of opportunities) {
-        const startAt = opp.startAt instanceof Date ? opp.startAt : new Date(opp.startAt?.toString() || Date.now())
-        const endAt = opp.endAt instanceof Date ? opp.endAt : new Date(opp.endAt?.toString() || startAt.getTime() + 3600000)
+        const startAt =
+          opp.startAt instanceof Date
+            ? opp.startAt
+            : new Date(opp.startAt?.toString() || Date.now())
+        const endAt =
+          opp.endAt instanceof Date
+            ? opp.endAt
+            : new Date(opp.endAt?.toString() || startAt.getTime() + 3600000)
 
         ical +=
           '\n' +
@@ -131,7 +140,10 @@ SUMMARY:${escapeText(event.title)}`
             location: opp.location || '',
             startAt,
             endAt,
-            createdAt: opp.createdAt instanceof Date ? opp.createdAt : new Date(opp.createdAt?.toString() || Date.now()),
+            createdAt:
+              opp.createdAt instanceof Date
+                ? opp.createdAt
+                : new Date(opp.createdAt?.toString() || Date.now()),
             organizer: opp.organization?.name || ''
           })
       }
@@ -184,8 +196,14 @@ SUMMARY:${escapeText(event.title)}`
         const opp = app.opportunity
         if (!opp) continue
 
-        const startAt = opp.startAt instanceof Date ? opp.startAt : new Date(opp.startAt?.toString() || Date.now())
-        const endAt = opp.endAt instanceof Date ? opp.endAt : new Date(opp.endAt?.toString() || startAt.getTime() + 3600000)
+        const startAt =
+          opp.startAt instanceof Date
+            ? opp.startAt
+            : new Date(opp.startAt?.toString() || Date.now())
+        const endAt =
+          opp.endAt instanceof Date
+            ? opp.endAt
+            : new Date(opp.endAt?.toString() || startAt.getTime() + 3600000)
 
         ical +=
           '\n' +
@@ -196,7 +214,10 @@ SUMMARY:${escapeText(event.title)}`
             location: opp.location || '',
             startAt,
             endAt,
-            createdAt: opp.createdAt instanceof Date ? opp.createdAt : new Date(opp.createdAt?.toString() || Date.now()),
+            createdAt:
+              opp.createdAt instanceof Date
+                ? opp.createdAt
+                : new Date(opp.createdAt?.toString() || Date.now()),
             organizer: opp.organization?.name || ''
           })
       }
@@ -228,7 +249,9 @@ SUMMARY:${escapeText(event.title)}`
         .first()
 
       if (!membership) {
-        return response.forbidden({ error: { message: 'Not authorized to access organization calendar' } })
+        return response.forbidden({
+          error: { message: 'Not authorized to access organization calendar' }
+        })
       }
 
       const { from, to, status } = request.qs()
@@ -256,8 +279,14 @@ SUMMARY:${escapeText(event.title)}`
       let ical = this.getICalHeader('Organization Opportunities')
 
       for (const opp of opportunities) {
-        const startAt = opp.startAt instanceof Date ? opp.startAt : new Date(opp.startAt?.toString() || Date.now())
-        const endAt = opp.endAt instanceof Date ? opp.endAt : new Date(opp.endAt?.toString() || startAt.getTime() + 3600000)
+        const startAt =
+          opp.startAt instanceof Date
+            ? opp.startAt
+            : new Date(opp.startAt?.toString() || Date.now())
+        const endAt =
+          opp.endAt instanceof Date
+            ? opp.endAt
+            : new Date(opp.endAt?.toString() || startAt.getTime() + 3600000)
 
         ical +=
           '\n' +
@@ -268,7 +297,10 @@ SUMMARY:${escapeText(event.title)}`
             location: opp.location || '',
             startAt,
             endAt,
-            createdAt: opp.createdAt instanceof Date ? opp.createdAt : new Date(opp.createdAt?.toString() || Date.now()),
+            createdAt:
+              opp.createdAt instanceof Date
+                ? opp.createdAt
+                : new Date(opp.createdAt?.toString() || Date.now()),
             organizer: opp.organization?.name || ''
           })
       }
@@ -276,7 +308,10 @@ SUMMARY:${escapeText(event.title)}`
       ical += '\nEND:VCALENDAR'
 
       response.header('Content-Type', 'text/calendar; charset=utf-8')
-      response.header('Content-Disposition', 'attachment; filename="organization-opportunities.ics"')
+      response.header(
+        'Content-Disposition',
+        'attachment; filename="organization-opportunities.ics"'
+      )
       return response.send(ical)
     } catch (error) {
       Logger.error('Calendar organization opportunities error: %o', error)
@@ -314,8 +349,14 @@ SUMMARY:${escapeText(event.title)}`
       let ical = this.getICalHeader('Volunteer Events')
 
       for (const evt of events) {
-        const startAt = evt.startDate instanceof Date ? evt.startDate : new Date(evt.startDate?.toString() || Date.now())
-        const endAt = evt.endDate instanceof Date ? evt.endDate : new Date(evt.endDate?.toString() || startAt.getTime() + 3600000)
+        const startAt =
+          evt.startDate instanceof Date
+            ? evt.startDate
+            : new Date(evt.startDate?.toString() || Date.now())
+        const endAt =
+          evt.endDate instanceof Date
+            ? evt.endDate
+            : new Date(evt.endDate?.toString() || startAt.getTime() + 3600000)
 
         ical +=
           '\n' +
@@ -326,7 +367,10 @@ SUMMARY:${escapeText(event.title)}`
             location: evt.location || '',
             startAt,
             endAt,
-            createdAt: evt.createdAt instanceof Date ? evt.createdAt : new Date(evt.createdAt?.toString() || Date.now()),
+            createdAt:
+              evt.createdAt instanceof Date
+                ? evt.createdAt
+                : new Date(evt.createdAt?.toString() || Date.now()),
             organizer: evt.organization?.name || ''
           })
       }
@@ -363,13 +407,14 @@ SUMMARY:${escapeText(event.title)}`
         instructions: {
           google: 'Open Google Calendar > Settings > Add calendar > From URL > Paste the URL',
           outlook: 'Open Outlook > Add calendar > Subscribe from web > Paste the URL',
-          apple:
-            'Open Calendar app > File > New Calendar Subscription > Paste the URL'
+          apple: 'Open Calendar app > File > New Calendar Subscription > Paste the URL'
         }
       })
     } catch (error) {
       Logger.error('Calendar subscription URL error: %o', error)
-      return response.internalServerError({ error: { message: 'Failed to generate subscription URL' } })
+      return response.internalServerError({
+        error: { message: 'Failed to generate subscription URL' }
+      })
     }
   }
 }

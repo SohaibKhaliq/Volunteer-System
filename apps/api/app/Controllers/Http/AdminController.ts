@@ -11,7 +11,7 @@ import OrganizationTeamMember from 'App/Models/OrganizationTeamMember'
 
 /**
  * AdminController - Platform-level super admin operations
- * 
+ *
  * Features:
  * - Manage all organizations (approve, suspend, archive)
  * - Manage all users (disable, enable, delete)

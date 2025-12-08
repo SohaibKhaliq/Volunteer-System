@@ -234,7 +234,9 @@ export default class AustraliaFullSeeder extends BaseSeeder {
             user_id: u.id,
             role: Math.random() > 0.9 ? 'admin' : 'volunteer',
             status: Math.random() > 0.1 ? 'active' : 'inactive',
-            joined_at: now.minus({ days: Math.floor(Math.random() * 400) }).toSQL({ includeOffset: false }),
+            joined_at: now
+              .minus({ days: Math.floor(Math.random() * 400) })
+              .toSQL({ includeOffset: false }),
             created_at: now.toSQL({ includeOffset: false }),
             updated_at: now.toSQL({ includeOffset: false })
           })
