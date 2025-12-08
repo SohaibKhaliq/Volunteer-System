@@ -81,6 +81,7 @@ import VolunteerHistory from '@/pages/volunteer/history';
 import VolunteerProfile from '@/pages/volunteer/profile';
 import VolunteerSettings from '@/pages/volunteer/settings';
 import VolunteerAchievements from '@/pages/volunteer/achievements';
+import VolunteerOpportunityDetail from '@/pages/volunteer/opportunity-detail';
 import FeedbackDashboard from '@/pages/feedback';
 import TakeSurvey from '@/pages/feedback/[id]/take';
 
@@ -227,7 +228,8 @@ const routes: RouteObject[] = [
       { path: 'history', element: <VolunteerHistory /> },
       { path: 'profile', element: <VolunteerProfile /> },
       { path: 'settings', element: <VolunteerSettings /> },
-      { path: 'achievements', element: <VolunteerAchievements /> }
+      { path: 'achievements', element: <VolunteerAchievements /> },
+      { path: 'opportunities/:id', element: <VolunteerOpportunityDetail /> }
     ]
   },
   {
