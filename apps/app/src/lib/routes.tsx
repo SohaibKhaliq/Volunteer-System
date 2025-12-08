@@ -68,6 +68,7 @@ import OrganizationCompliance from '@/pages/organization/compliance';
 import OrganizationReports from '@/pages/organization/reports';
 import OrganizationCommunications from '@/pages/organization/communications';
 import OrganizationSettings from '@/pages/organization/settings';
+import OrganizationTeam from '@/pages/organization/team';
 import About from '@/pages/about';
 import Contact from '@/pages/contact';
 import Privacy from '@/pages/privacy';
@@ -79,6 +80,7 @@ import VolunteerDashboard from '@/pages/volunteer/dashboard';
 import VolunteerHistory from '@/pages/volunteer/history';
 import VolunteerProfile from '@/pages/volunteer/profile';
 import VolunteerSettings from '@/pages/volunteer/settings';
+import VolunteerAchievements from '@/pages/volunteer/achievements';
 import FeedbackDashboard from '@/pages/feedback';
 import TakeSurvey from '@/pages/feedback/[id]/take';
 
@@ -162,6 +164,7 @@ const routes: RouteObject[] = [
     children: [
       { index: true, element: <OrganizationDashboard /> },
       { path: 'profile', element: <OrganizationProfile /> },
+      { path: 'team', element: <OrganizationTeam /> },
       { path: 'events', element: <OrganizationEvents /> },
       { path: 'resources', element: <OrganizationResources /> },
       { path: 'achievements', element: <OrganizationAchievements /> },
@@ -223,7 +226,8 @@ const routes: RouteObject[] = [
       { path: 'dashboard', element: <VolunteerDashboard /> },
       { path: 'history', element: <VolunteerHistory /> },
       { path: 'profile', element: <VolunteerProfile /> },
-      { path: 'settings', element: <VolunteerSettings /> }
+      { path: 'settings', element: <VolunteerSettings /> },
+      { path: 'achievements', element: <VolunteerAchievements /> }
     ]
   },
   {
