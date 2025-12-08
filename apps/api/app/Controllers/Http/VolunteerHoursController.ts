@@ -5,6 +5,7 @@ import Notification from 'App/Models/Notification'
 import Achievement from 'App/Models/Achievement'
 import UserAchievement from 'App/Models/UserAchievement'
 import Database from '@ioc:Adonis/Lucid/Database'
+import { DateTime } from 'luxon'
 
 export default class VolunteerHoursController {
   public async index({ request, response }: HttpContextContract) {
@@ -166,13 +167,23 @@ export default class VolunteerHoursController {
         }
       ]
 
+      // Get all milestone keys to check which achievements exist
+      const milestoneKeys = milestones.map((m) => m.key)
+      const existingAchievements = await Achievement.query().whereIn('key', milestoneKeys)
+      const achievementMap = new Map(existingAchievements.map((a) => [a.key, a]))
+
+      // Get user's existing achievements in one query
+      const userAchievementIds = await UserAchievement.query()
+        .where('user_id', userId)
+        .select('achievement_id')
+      const userAchievementIdSet = new Set(userAchievementIds.map((ua) => ua.achievementId))
+
+      // Process each milestone
       for (const milestone of milestones) {
         if (totalHours >= milestone.hours) {
-          // Check if achievement exists
-          let achievement = await Achievement.query().where('key', milestone.key).first()
-
+          // Get or create achievement
+          let achievement = achievementMap.get(milestone.key)
           if (!achievement) {
-            // Create achievement if it doesn't exist
             achievement = await Achievement.create({
               key: milestone.key,
               title: milestone.title,
@@ -180,15 +191,11 @@ export default class VolunteerHoursController {
               criteria: JSON.stringify({ hours: milestone.hours }),
               isEnabled: true
             })
+            achievementMap.set(milestone.key, achievement)
           }
 
-          // Check if user already has this achievement
-          const existing = await UserAchievement.query()
-            .where('user_id', userId)
-            .where('achievement_id', achievement.id)
-            .first()
-
-          if (!existing) {
+          // Award if not already earned
+          if (!userAchievementIdSet.has(achievement.id)) {
             // Award achievement
             await UserAchievement.create({
               userId,

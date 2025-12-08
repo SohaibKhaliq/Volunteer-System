@@ -65,19 +65,22 @@ export default class AttendancesController {
         .where('organization_id', opportunity.organizationId)
         .select('user_id')
 
-      for (const member of orgTeamMembers) {
-        await Notification.create({
-          userId: member.userId,
-          type: 'volunteer_checked_in',
-          payload: JSON.stringify({
-            attendanceId: attendance.id,
-            opportunityId: opportunity.id,
-            opportunityTitle: opportunity.title,
-            volunteerId: user.id,
-            volunteerName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email
+      // Create notifications in parallel for better performance
+      await Promise.all(
+        orgTeamMembers.map((member) =>
+          Notification.create({
+            userId: member.userId,
+            type: 'volunteer_checked_in',
+            payload: JSON.stringify({
+              attendanceId: attendance.id,
+              opportunityId: opportunity.id,
+              opportunityTitle: opportunity.title,
+              volunteerId: user.id,
+              volunteerName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email
+            })
           })
-        })
-      }
+        )
+      )
     } catch (err) {
       console.warn('Failed to send check-in notification:', err)
     }
@@ -116,12 +119,13 @@ export default class AttendancesController {
     let volunteerHour = null
     if (duration && duration > 0) {
       try {
-        // Check if there's an associated event for this opportunity
-        // For now, we'll create the hours without event_id if not linked
-        // Organizations can link opportunities to events if needed
+        // Placeholder for eventId when opportunity-event linking is not yet implemented
+        // TODO: Link opportunities to events and use actual event ID
+        const PLACEHOLDER_EVENT_ID = 0
+
         volunteerHour = await VolunteerHour.create({
           userId: user.id,
-          eventId: 0, // Will be updated when opportunity-event linking is implemented
+          eventId: PLACEHOLDER_EVENT_ID,
           date: attendance.checkInAt!.toJSDate(),
           hours: duration,
           status: 'Pending'
@@ -134,21 +138,24 @@ export default class AttendancesController {
             .where('organization_id', opportunity.organizationId)
             .select('user_id')
 
-          for (const member of orgTeamMembers) {
-            await Notification.create({
-              userId: member.userId,
-              type: 'hours_pending_approval',
-              payload: JSON.stringify({
-                volunteerHourId: volunteerHour.id,
-                opportunityId: opportunity.id,
-                opportunityTitle: opportunity.title,
-                volunteerId: user.id,
-                volunteerName:
-                  `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
-                hours: duration
+          // Create notifications in parallel for better performance
+          await Promise.all(
+            orgTeamMembers.map((member) =>
+              Notification.create({
+                userId: member.userId,
+                type: 'hours_pending_approval',
+                payload: JSON.stringify({
+                  volunteerHourId: volunteerHour!.id,
+                  opportunityId: opportunity.id,
+                  opportunityTitle: opportunity.title,
+                  volunteerId: user.id,
+                  volunteerName:
+                    `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+                  hours: duration
+                })
               })
-            })
-          }
+            )
+          )
         }
       } catch (err) {
         console.warn('Failed to create volunteer hours or send notification:', err)

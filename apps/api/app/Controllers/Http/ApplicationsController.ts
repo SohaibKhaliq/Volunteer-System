@@ -83,19 +83,22 @@ export default class ApplicationsController {
         .where('organization_id', opportunity.organizationId)
         .select('user_id')
 
-      for (const member of orgTeamMembers) {
-        await Notification.create({
-          userId: member.userId,
-          type: 'new_application',
-          payload: JSON.stringify({
-            applicationId: application.id,
-            opportunityId: opportunity.id,
-            opportunityTitle: opportunity.title,
-            volunteerId: user.id,
-            volunteerName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email
+      // Create notifications in parallel for better performance
+      await Promise.all(
+        orgTeamMembers.map((member) =>
+          Notification.create({
+            userId: member.userId,
+            type: 'new_application',
+            payload: JSON.stringify({
+              applicationId: application.id,
+              opportunityId: opportunity.id,
+              opportunityTitle: opportunity.title,
+              volunteerId: user.id,
+              volunteerName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email
+            })
           })
-        })
-      }
+        )
+      )
     } catch (err) {
       // Log but don't fail the request if notification fails
       console.warn('Failed to send application notification:', err)
