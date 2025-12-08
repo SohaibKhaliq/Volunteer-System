@@ -43,9 +43,7 @@ test.group('Admin Panel', (group) => {
   })
 
   test('admin dashboard returns stats', async ({ client, assert }) => {
-    const response = await client
-      .get('/admin/dashboard')
-      .loginAs(adminUser)
+    const response = await client.get('/admin/dashboard').loginAs(adminUser)
 
     response.assertStatus(200)
     assert.property(response.body(), 'organizations')
@@ -54,17 +52,13 @@ test.group('Admin Panel', (group) => {
   })
 
   test('non-admin cannot access admin dashboard', async ({ client }) => {
-    const response = await client
-      .get('/admin/dashboard')
-      .loginAs(regularUser)
+    const response = await client.get('/admin/dashboard').loginAs(regularUser)
 
     response.assertStatus(401)
   })
 
   test('admin can list all organizations', async ({ client, assert }) => {
-    const response = await client
-      .get('/admin/organizations')
-      .loginAs(adminUser)
+    const response = await client.get('/admin/organizations').loginAs(adminUser)
 
     response.assertStatus(200)
     assert.property(response.body(), 'data')
@@ -76,7 +70,7 @@ test.group('Admin Panel', (group) => {
       .loginAs(adminUser)
 
     response.assertStatus(200)
-    
+
     await testOrg.refresh()
     assert.equal(testOrg.status, 'active')
   })
@@ -88,7 +82,7 @@ test.group('Admin Panel', (group) => {
       .loginAs(adminUser)
 
     response.assertStatus(200)
-    
+
     await testOrg.refresh()
     assert.equal(testOrg.status, 'suspended')
   })
@@ -99,7 +93,7 @@ test.group('Admin Panel', (group) => {
       .loginAs(adminUser)
 
     response.assertStatus(200)
-    
+
     await testOrg.refresh()
     assert.equal(testOrg.status, 'active')
   })
@@ -110,15 +104,13 @@ test.group('Admin Panel', (group) => {
       .loginAs(adminUser)
 
     response.assertStatus(200)
-    
+
     await testOrg.refresh()
     assert.equal(testOrg.status, 'archived')
   })
 
   test('admin can list all users', async ({ client, assert }) => {
-    const response = await client
-      .get('/admin/users')
-      .loginAs(adminUser)
+    const response = await client.get('/admin/users').loginAs(adminUser)
 
     response.assertStatus(200)
     assert.property(response.body(), 'data')
@@ -131,18 +123,16 @@ test.group('Admin Panel', (group) => {
       .loginAs(adminUser)
 
     response.assertStatus(200)
-    
+
     await regularUser.refresh()
     assert.equal(regularUser.isDisabled, true)
   })
 
   test('admin can enable a user', async ({ client, assert }) => {
-    const response = await client
-      .post(`/admin/users/${regularUser.id}/enable`)
-      .loginAs(adminUser)
+    const response = await client.post(`/admin/users/${regularUser.id}/enable`).loginAs(adminUser)
 
     response.assertStatus(200)
-    
+
     await regularUser.refresh()
     assert.equal(regularUser.isDisabled, false)
   })
@@ -158,10 +148,7 @@ test.group('Admin Panel', (group) => {
   })
 
   test('admin can view system analytics', async ({ client, assert }) => {
-    const response = await client
-      .get('/admin/analytics')
-      .qs({ range: '30days' })
-      .loginAs(adminUser)
+    const response = await client.get('/admin/analytics').qs({ range: '30days' }).loginAs(adminUser)
 
     response.assertStatus(200)
     assert.property(response.body(), 'userGrowth')
@@ -169,18 +156,13 @@ test.group('Admin Panel', (group) => {
   })
 
   test('admin can view recent activity', async ({ client, assert }) => {
-    const response = await client
-      .get('/admin/activity')
-      .loginAs(adminUser)
+    const response = await client.get('/admin/activity').loginAs(adminUser)
 
     response.assertStatus(200)
   })
 
   test('admin can export summary', async ({ client }) => {
-    const response = await client
-      .get('/admin/export')
-      .qs({ format: 'json' })
-      .loginAs(adminUser)
+    const response = await client.get('/admin/export').qs({ format: 'json' }).loginAs(adminUser)
 
     response.assertStatus(200)
   })
@@ -221,17 +203,19 @@ test.group('Volunteer Panel', (group) => {
   })
 
   group.teardown(async () => {
-    await Database.rawQuery('DELETE FROM applications WHERE opportunity_id = ?', [testOpportunity?.id])
+    await Database.rawQuery('DELETE FROM applications WHERE opportunity_id = ?', [
+      testOpportunity?.id
+    ])
     await Database.rawQuery('DELETE FROM opportunities WHERE slug LIKE ?', ['test-volunteer%'])
-    await Database.rawQuery('DELETE FROM organization_volunteers WHERE organization_id = ?', [testOrg?.id])
+    await Database.rawQuery('DELETE FROM organization_volunteers WHERE organization_id = ?', [
+      testOrg?.id
+    ])
     await Database.rawQuery('DELETE FROM organizations WHERE slug LIKE ?', ['volunteer-test%'])
     await Database.rawQuery('DELETE FROM users WHERE email = ?', ['volunteer@test.com'])
   })
 
   test('volunteer can view dashboard', async ({ client, assert }) => {
-    const response = await client
-      .get('/volunteer/dashboard')
-      .loginAs(volunteerUser)
+    const response = await client.get('/volunteer/dashboard').loginAs(volunteerUser)
 
     response.assertStatus(200)
     assert.property(response.body(), 'stats')
@@ -239,9 +223,7 @@ test.group('Volunteer Panel', (group) => {
   })
 
   test('volunteer can view profile', async ({ client, assert }) => {
-    const response = await client
-      .get('/volunteer/profile')
-      .loginAs(volunteerUser)
+    const response = await client.get('/volunteer/profile').loginAs(volunteerUser)
 
     response.assertStatus(200)
     assert.equal(response.body().email, 'volunteer@test.com')
@@ -262,9 +244,7 @@ test.group('Volunteer Panel', (group) => {
   })
 
   test('volunteer can browse opportunities', async ({ client, assert }) => {
-    const response = await client
-      .get('/volunteer/opportunities')
-      .loginAs(volunteerUser)
+    const response = await client.get('/volunteer/opportunities').loginAs(volunteerUser)
 
     response.assertStatus(200)
   })
@@ -279,34 +259,26 @@ test.group('Volunteer Panel', (group) => {
   })
 
   test('volunteer can view their applications', async ({ client }) => {
-    const response = await client
-      .get('/volunteer/applications')
-      .loginAs(volunteerUser)
+    const response = await client.get('/volunteer/applications').loginAs(volunteerUser)
 
     response.assertStatus(200)
   })
 
   test('volunteer can view their attendance', async ({ client }) => {
-    const response = await client
-      .get('/volunteer/attendance')
-      .loginAs(volunteerUser)
+    const response = await client.get('/volunteer/attendance').loginAs(volunteerUser)
 
     response.assertStatus(200)
   })
 
   test('volunteer can view their hours', async ({ client, assert }) => {
-    const response = await client
-      .get('/volunteer/hours')
-      .loginAs(volunteerUser)
+    const response = await client.get('/volunteer/hours').loginAs(volunteerUser)
 
     response.assertStatus(200)
     assert.property(response.body(), 'summary')
   })
 
   test('volunteer can view their organizations', async ({ client }) => {
-    const response = await client
-      .get('/volunteer/organizations')
-      .loginAs(volunteerUser)
+    const response = await client.get('/volunteer/organizations').loginAs(volunteerUser)
 
     response.assertStatus(200)
   })
@@ -345,9 +317,7 @@ test.group('Volunteer Panel', (group) => {
   })
 
   test('volunteer can view bookmarked opportunities', async ({ client, assert }) => {
-    const response = await client
-      .get('/volunteer/bookmarks')
-      .loginAs(volunteerUser)
+    const response = await client.get('/volunteer/bookmarks').loginAs(volunteerUser)
 
     response.assertStatus(200)
     assert.property(response.body(), 'opportunities')
@@ -362,9 +332,7 @@ test.group('Volunteer Panel', (group) => {
   })
 
   test('volunteer can view their achievements', async ({ client, assert }) => {
-    const response = await client
-      .get('/volunteer/achievements')
-      .loginAs(volunteerUser)
+    const response = await client.get('/volunteer/achievements').loginAs(volunteerUser)
 
     response.assertStatus(200)
     assert.property(response.body(), 'achievements')
@@ -435,61 +403,81 @@ test.group('Permission Model', (group) => {
 
     // Add users to organization with different roles
     await Database.table('organization_volunteers').insert([
-      { organization_id: testOrg.id, user_id: orgOwner.id, role: 'owner', status: 'active', joined_at: new Date() },
-      { organization_id: testOrg.id, user_id: orgAdmin.id, role: 'admin', status: 'active', joined_at: new Date() },
-      { organization_id: testOrg.id, user_id: manager.id, role: 'manager', status: 'active', joined_at: new Date() },
-      { organization_id: testOrg.id, user_id: coordinator.id, role: 'coordinator', status: 'active', joined_at: new Date() },
-      { organization_id: testOrg.id, user_id: volunteer.id, role: 'volunteer', status: 'active', joined_at: new Date() }
+      {
+        organization_id: testOrg.id,
+        user_id: orgOwner.id,
+        role: 'owner',
+        status: 'active',
+        joined_at: new Date()
+      },
+      {
+        organization_id: testOrg.id,
+        user_id: orgAdmin.id,
+        role: 'admin',
+        status: 'active',
+        joined_at: new Date()
+      },
+      {
+        organization_id: testOrg.id,
+        user_id: manager.id,
+        role: 'manager',
+        status: 'active',
+        joined_at: new Date()
+      },
+      {
+        organization_id: testOrg.id,
+        user_id: coordinator.id,
+        role: 'coordinator',
+        status: 'active',
+        joined_at: new Date()
+      },
+      {
+        organization_id: testOrg.id,
+        user_id: volunteer.id,
+        role: 'volunteer',
+        status: 'active',
+        joined_at: new Date()
+      }
     ])
   })
 
   group.teardown(async () => {
-    await Database.rawQuery('DELETE FROM organization_volunteers WHERE organization_id = ?', [testOrg?.id])
+    await Database.rawQuery('DELETE FROM organization_volunteers WHERE organization_id = ?', [
+      testOrg?.id
+    ])
     await Database.rawQuery('DELETE FROM organizations WHERE slug = ?', ['permission-test-org'])
     await Database.rawQuery('DELETE FROM users WHERE email LIKE ?', ['perm-%@test.com'])
   })
 
   test('super admin can access admin panel', async ({ client }) => {
-    const response = await client
-      .get('/admin/dashboard')
-      .loginAs(adminUser)
+    const response = await client.get('/admin/dashboard').loginAs(adminUser)
 
     response.assertStatus(200)
   })
 
   test('org owner cannot access admin panel', async ({ client }) => {
-    const response = await client
-      .get('/admin/dashboard')
-      .loginAs(orgOwner)
+    const response = await client.get('/admin/dashboard').loginAs(orgOwner)
 
     response.assertStatus(401)
   })
 
   test('volunteer cannot access admin panel', async ({ client }) => {
-    const response = await client
-      .get('/admin/dashboard')
-      .loginAs(volunteer)
+    const response = await client.get('/admin/dashboard').loginAs(volunteer)
 
     response.assertStatus(401)
   })
 
   test('all users can access volunteer panel', async ({ client }) => {
     // Volunteer
-    const volResponse = await client
-      .get('/volunteer/dashboard')
-      .loginAs(volunteer)
+    const volResponse = await client.get('/volunteer/dashboard').loginAs(volunteer)
     volResponse.assertStatus(200)
 
     // Manager
-    const mgrResponse = await client
-      .get('/volunteer/dashboard')
-      .loginAs(manager)
+    const mgrResponse = await client.get('/volunteer/dashboard').loginAs(manager)
     mgrResponse.assertStatus(200)
 
     // Admin
-    const adminResponse = await client
-      .get('/volunteer/dashboard')
-      .loginAs(adminUser)
+    const adminResponse = await client.get('/volunteer/dashboard').loginAs(adminUser)
     adminResponse.assertStatus(200)
   })
 })
@@ -543,7 +531,9 @@ test.group('Calendar Export', (group) => {
 
   group.teardown(async () => {
     await Database.rawQuery('DELETE FROM opportunities WHERE slug = ?', ['calendar-test-event'])
-    await Database.rawQuery('DELETE FROM organization_volunteers WHERE organization_id = ?', [testOrg.id])
+    await Database.rawQuery('DELETE FROM organization_volunteers WHERE organization_id = ?', [
+      testOrg.id
+    ])
     await Database.rawQuery('DELETE FROM organizations WHERE slug = ?', ['calendar-test-org'])
     await Database.rawQuery('DELETE FROM users WHERE email = ?', ['calendar-test@test.com'])
   })
@@ -556,27 +546,24 @@ test.group('Calendar Export', (group) => {
   })
 
   test('authenticated user can get my schedule calendar', async ({ client, assert }) => {
-    const response = await client
-      .get('/calendar/my-schedule')
-      .loginAs(testUser)
+    const response = await client.get('/calendar/my-schedule').loginAs(testUser)
 
     response.assertStatus(200)
     assert.include(response.header('content-type'), 'text/calendar')
   })
 
-  test('authenticated user can get organization opportunities calendar', async ({ client, assert }) => {
-    const response = await client
-      .get('/calendar/organization-opportunities')
-      .loginAs(testUser)
+  test('authenticated user can get organization opportunities calendar', async ({
+    client,
+    assert
+  }) => {
+    const response = await client.get('/calendar/organization-opportunities').loginAs(testUser)
 
     response.assertStatus(200)
     assert.include(response.header('content-type'), 'text/calendar')
   })
 
   test('authenticated user can get subscription URLs', async ({ client, assert }) => {
-    const response = await client
-      .get('/calendar/subscription-urls')
-      .loginAs(testUser)
+    const response = await client.get('/calendar/subscription-urls').loginAs(testUser)
 
     response.assertStatus(200)
     assert.property(response.body(), 'myScheduleUrl')
@@ -615,9 +602,7 @@ test.group('Notification Templates', (group) => {
   })
 
   test('admin can list notification templates', async ({ client, assert }) => {
-    const response = await client
-      .get('/admin/templates')
-      .loginAs(adminUser)
+    const response = await client.get('/admin/templates').loginAs(adminUser)
 
     response.assertStatus(200)
     assert.property(response.body(), 'templates')
@@ -625,17 +610,13 @@ test.group('Notification Templates', (group) => {
   })
 
   test('regular user cannot access notification templates', async ({ client }) => {
-    const response = await client
-      .get('/admin/templates')
-      .loginAs(regularUser)
+    const response = await client.get('/admin/templates').loginAs(regularUser)
 
     response.assertStatus(401)
   })
 
   test('admin can get a specific template', async ({ client, assert }) => {
-    const response = await client
-      .get('/admin/templates/invite_email')
-      .loginAs(adminUser)
+    const response = await client.get('/admin/templates/invite_email').loginAs(adminUser)
 
     response.assertStatus(200)
     assert.equal(response.body().key, 'invite_email')
@@ -671,9 +652,7 @@ test.group('Notification Templates', (group) => {
   })
 
   test('admin can reset a template to default', async ({ client }) => {
-    const response = await client
-      .post('/admin/templates/invite_email/reset')
-      .loginAs(adminUser)
+    const response = await client.post('/admin/templates/invite_email/reset').loginAs(adminUser)
 
     response.assertStatus(200)
     response.assertBodyContains({ message: 'Template reset to default' })
@@ -694,9 +673,7 @@ test.group('Notification Templates', (group) => {
   })
 
   test('admin can delete a custom template', async ({ client }) => {
-    const response = await client
-      .delete('/admin/templates/custom_template_test')
-      .loginAs(adminUser)
+    const response = await client.delete('/admin/templates/custom_template_test').loginAs(adminUser)
 
     response.assertStatus(200)
     response.assertBodyContains({ message: 'Template deleted successfully' })
@@ -733,9 +710,7 @@ test.group('Admin System Settings', (group) => {
   })
 
   test('admin can get system settings', async ({ client, assert }) => {
-    const response = await client
-      .get('/admin/system-settings')
-      .loginAs(adminUser)
+    const response = await client.get('/admin/system-settings').loginAs(adminUser)
 
     response.assertStatus(200)
     assert.property(response.body(), 'platform_name')
@@ -743,9 +718,7 @@ test.group('Admin System Settings', (group) => {
   })
 
   test('regular user cannot access system settings', async ({ client }) => {
-    const response = await client
-      .get('/admin/system-settings')
-      .loginAs(regularUser)
+    const response = await client.get('/admin/system-settings').loginAs(regularUser)
 
     response.assertStatus(401)
   })
@@ -779,9 +752,7 @@ test.group('Admin System Settings', (group) => {
   })
 
   test('admin can request a backup', async ({ client, assert }) => {
-    const response = await client
-      .get('/admin/backup')
-      .loginAs(adminUser)
+    const response = await client.get('/admin/backup').loginAs(adminUser)
 
     response.assertStatus(200)
     assert.property(response.body(), 'id')
@@ -789,9 +760,7 @@ test.group('Admin System Settings', (group) => {
   })
 
   test('admin can check backup status', async ({ client, assert }) => {
-    const response = await client
-      .get('/admin/backup/status')
-      .loginAs(adminUser)
+    const response = await client.get('/admin/backup/status').loginAs(adminUser)
 
     response.assertStatus(200)
     assert.property(response.body(), 'recentBackups')

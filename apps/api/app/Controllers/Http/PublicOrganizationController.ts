@@ -65,15 +65,11 @@ export default class PublicOrganizationController {
   public async index({ request, response }: HttpContextContract) {
     const { page = 1, limit = 12, search, city, country, type } = request.qs()
 
-    let query = Organization.query()
-      .where('status', 'active')
-      .where('publicProfile', true)
+    let query = Organization.query().where('status', 'active').where('publicProfile', true)
 
     if (search) {
       query = query.where((builder) => {
-        builder
-          .where('name', 'like', `%${search}%`)
-          .orWhere('description', 'like', `%${search}%`)
+        builder.where('name', 'like', `%${search}%`).orWhere('description', 'like', `%${search}%`)
       })
     }
 
@@ -89,9 +85,7 @@ export default class PublicOrganizationController {
       query = query.where('type', type)
     }
 
-    const orgs = await query
-      .orderBy('name', 'asc')
-      .paginate(page, limit)
+    const orgs = await query.orderBy('name', 'asc').paginate(page, limit)
 
     // Resolve logos for each org
     const orgsWithLogos = await Promise.all(
@@ -144,9 +138,7 @@ export default class PublicOrganizationController {
       query = query.where('start_at', '>=', DateTime.now().toSQL())
     }
 
-    const opportunities = await query
-      .orderBy('start_at', 'asc')
-      .paginate(page, limit)
+    const opportunities = await query.orderBy('start_at', 'asc').paginate(page, limit)
 
     return response.ok({
       data: opportunities.all().map((opp) => ({

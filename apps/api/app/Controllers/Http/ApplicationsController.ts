@@ -2,6 +2,7 @@ import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Application from 'App/Models/Application'
 import Opportunity from 'App/Models/Opportunity'
 import OrganizationTeamMember from 'App/Models/OrganizationTeamMember'
+import Notification from 'App/Models/Notification'
 import { DateTime } from 'luxon'
 import Database from '@ioc:Adonis/Lucid/Database'
 
@@ -76,6 +77,33 @@ export default class ApplicationsController {
     await application.load('user')
     await application.load('opportunity')
 
+    // Send real-time notification to organization team members
+    try {
+      const orgTeamMembers = await OrganizationTeamMember.query()
+        .where('organization_id', opportunity.organizationId)
+        .select('user_id')
+
+      // Create notifications in parallel for better performance
+      await Promise.all(
+        orgTeamMembers.map((member) =>
+          Notification.create({
+            userId: member.userId,
+            type: 'new_application',
+            payload: JSON.stringify({
+              applicationId: application.id,
+              opportunityId: opportunity.id,
+              opportunityTitle: opportunity.title,
+              volunteerId: user.id,
+              volunteerName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email
+            })
+          })
+        )
+      )
+    } catch (err) {
+      // Log but don't fail the request if notification fails
+      console.warn('Failed to send application notification:', err)
+    }
+
     return response.created({
       message: 'Application submitted successfully',
       application
@@ -121,6 +149,24 @@ export default class ApplicationsController {
     await application.save()
 
     await application.load('user')
+
+    // Send real-time notification to volunteer about application status change
+    try {
+      const opportunity = await Opportunity.find(application.opportunityId)
+      await Notification.create({
+        userId: application.userId,
+        type: status === 'accepted' ? 'application_accepted' : 'application_rejected',
+        payload: JSON.stringify({
+          applicationId: application.id,
+          opportunityId: application.opportunityId,
+          opportunityTitle: opportunity?.title || 'Opportunity',
+          status
+        })
+      })
+    } catch (err) {
+      // Log but don't fail the request if notification fails
+      console.warn('Failed to send application status notification:', err)
+    }
 
     return response.ok({
       message: `Application ${status}`,

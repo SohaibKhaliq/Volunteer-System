@@ -54,7 +54,7 @@ export default class OrganizationComplianceController {
     // Ideally, this logic should be in a service or shared
 
     // Scope stats to the authenticated user's organization (preferred) or fall back to global counts
-    let orgId: number | undefined = undefined
+    let orgId: number | undefined
     if (auth?.user) {
       const OrganizationTeamMember = await import('App/Models/OrganizationTeamMember')
       const member = await OrganizationTeamMember.default

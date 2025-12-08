@@ -66,7 +66,17 @@ export default class ExportController {
     const volunteers = await query.orderBy('organization_volunteers.created_at', 'desc')
 
     // Generate CSV
-    const headers = ['ID', 'Email', 'First Name', 'Last Name', 'Role', 'Status', 'Hours', 'Rating', 'Joined At']
+    const headers = [
+      'ID',
+      'Email',
+      'First Name',
+      'Last Name',
+      'Role',
+      'Status',
+      'Hours',
+      'Rating',
+      'Joined At'
+    ]
     const rows = volunteers.map((v) => [
       v.id,
       this.escapeCsv(v.email),
@@ -97,7 +107,6 @@ export default class ExportController {
       return response.notFound({ message: 'User is not part of any organization' })
     }
 
-    
     if (!allowedRoles.includes(memberRecord.role || '')) {
       return response.forbidden({ message: 'You do not have permission to export data' })
     }
@@ -122,7 +131,19 @@ export default class ExportController {
 
     const opportunities = await query.orderBy('start_at', 'desc')
 
-    const headers = ['ID', 'Title', 'Description', 'Location', 'Team', 'Type', 'Status', 'Visibility', 'Capacity', 'Start At', 'End At']
+    const headers = [
+      'ID',
+      'Title',
+      'Description',
+      'Location',
+      'Team',
+      'Type',
+      'Status',
+      'Visibility',
+      'Capacity',
+      'Start At',
+      'End At'
+    ]
     const rows = opportunities.map((o) => [
       o.id,
       this.escapeCsv(o.title),
@@ -155,7 +176,6 @@ export default class ExportController {
       return response.notFound({ message: 'User is not part of any organization' })
     }
 
-    
     if (!allowedRoles.includes(memberRecord.role || '')) {
       return response.forbidden({ message: 'You do not have permission to export data' })
     }
@@ -196,7 +216,17 @@ export default class ExportController {
 
     const applications = await query.orderBy('applications.applied_at', 'desc')
 
-    const headers = ['ID', 'Opportunity', 'Email', 'First Name', 'Last Name', 'Status', 'Applied At', 'Responded At', 'Notes']
+    const headers = [
+      'ID',
+      'Opportunity',
+      'Email',
+      'First Name',
+      'Last Name',
+      'Status',
+      'Applied At',
+      'Responded At',
+      'Notes'
+    ]
     const rows = applications.map((a) => [
       a.id,
       this.escapeCsv(a.opportunity_title),
@@ -227,7 +257,6 @@ export default class ExportController {
       return response.notFound({ message: 'User is not part of any organization' })
     }
 
-    
     if (!allowedRoles.includes(memberRecord.role || '')) {
       return response.forbidden({ message: 'You do not have permission to export data' })
     }
@@ -263,13 +292,24 @@ export default class ExportController {
 
     const attendances = await query.orderBy('attendances.check_in_at', 'desc')
 
-    const headers = ['ID', 'Opportunity', 'Email', 'First Name', 'Last Name', 'Check-in At', 'Check-out At', 'Method', 'Duration (hours)']
+    const headers = [
+      'ID',
+      'Opportunity',
+      'Email',
+      'First Name',
+      'Last Name',
+      'Check-in At',
+      'Check-out At',
+      'Method',
+      'Duration (hours)'
+    ]
     const rows = attendances.map((a) => {
       const checkIn = a.check_in_at ? new Date(a.check_in_at) : null
       const checkOut = a.check_out_at ? new Date(a.check_out_at) : null
-      const durationHours = checkIn && checkOut
-        ? Math.round((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60) * 100) / 100
-        : ''
+      const durationHours =
+        checkIn && checkOut
+          ? Math.round(((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60)) * 100) / 100
+          : ''
 
       return [
         a.id,
@@ -302,7 +342,6 @@ export default class ExportController {
       return response.notFound({ message: 'User is not part of any organization' })
     }
 
-    
     if (!allowedRoles.includes(memberRecord.role || '')) {
       return response.forbidden({ message: 'You do not have permission to export data' })
     }
@@ -344,7 +383,17 @@ export default class ExportController {
 
     const hours = await query.orderBy('volunteer_hours.date', 'desc')
 
-    const headers = ['ID', 'Email', 'First Name', 'Last Name', 'Hours', 'Date', 'Description', 'Status', 'Event']
+    const headers = [
+      'ID',
+      'Email',
+      'First Name',
+      'Last Name',
+      'Hours',
+      'Date',
+      'Description',
+      'Status',
+      'Event'
+    ]
     const rows = hours.map((h) => [
       h.id,
       this.escapeCsv(h.email),
@@ -360,7 +409,10 @@ export default class ExportController {
     const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n')
 
     response.header('Content-Type', 'text/csv')
-    response.header('Content-Disposition', `attachment; filename="volunteer-hours-${Date.now()}.csv"`)
+    response.header(
+      'Content-Disposition',
+      `attachment; filename="volunteer-hours-${Date.now()}.csv"`
+    )
     return response.send(csv)
   }
 

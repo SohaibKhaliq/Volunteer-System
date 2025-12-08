@@ -3,8 +3,15 @@ import Attendance from 'App/Models/Attendance'
 import Opportunity from 'App/Models/Opportunity'
 import Application from 'App/Models/Application'
 import OrganizationTeamMember from 'App/Models/OrganizationTeamMember'
+import VolunteerHour from 'App/Models/VolunteerHour'
+import Notification from 'App/Models/Notification'
+import Event from 'App/Models/Event'
 import { DateTime } from 'luxon'
 import Database from '@ioc:Adonis/Lucid/Database'
+
+// Placeholder event ID used when opportunities are not yet linked to events
+// TODO: Implement opportunity-event linking and use actual event IDs
+const PLACEHOLDER_EVENT_ID = 0
 
 export default class AttendancesController {
   /**
@@ -56,6 +63,32 @@ export default class AttendancesController {
     await attendance.load('user')
     await attendance.load('opportunity')
 
+    // Send real-time notification to organization team members
+    try {
+      const orgTeamMembers = await OrganizationTeamMember.query()
+        .where('organization_id', opportunity.organizationId)
+        .select('user_id')
+
+      // Create notifications in parallel for better performance
+      await Promise.all(
+        orgTeamMembers.map((member) =>
+          Notification.create({
+            userId: member.userId,
+            type: 'volunteer_checked_in',
+            payload: JSON.stringify({
+              attendanceId: attendance.id,
+              opportunityId: opportunity.id,
+              opportunityTitle: opportunity.title,
+              volunteerId: user.id,
+              volunteerName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email
+            })
+          })
+        )
+      )
+    } catch (err) {
+      console.warn('Failed to send check-in notification:', err)
+    }
+
     return response.created({
       message: 'Checked in successfully',
       attendance
@@ -86,10 +119,54 @@ export default class AttendancesController {
 
     const duration = attendance.getDurationHours()
 
+    // Create volunteer hours record (pending approval)
+    let volunteerHour = null
+    if (duration && duration > 0) {
+      try {
+        volunteerHour = await VolunteerHour.create({
+          userId: user.id,
+          eventId: PLACEHOLDER_EVENT_ID,
+          date: attendance.checkInAt!.toJSDate(),
+          hours: duration,
+          status: 'Pending'
+        })
+
+        // Send notification to organization team members about pending hours
+        const opportunity = attendance.opportunity || (await Opportunity.find(opportunityId))
+        if (opportunity && volunteerHour) {
+          const orgTeamMembers = await OrganizationTeamMember.query()
+            .where('organization_id', opportunity.organizationId)
+            .select('user_id')
+
+          // Create notifications in parallel for better performance
+          await Promise.all(
+            orgTeamMembers.map((member) =>
+              Notification.create({
+                userId: member.userId,
+                type: 'hours_pending_approval',
+                payload: JSON.stringify({
+                  volunteerHourId: volunteerHour.id,
+                  opportunityId: opportunity.id,
+                  opportunityTitle: opportunity.title,
+                  volunteerId: user.id,
+                  volunteerName:
+                    `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+                  hours: duration
+                })
+              })
+            )
+          )
+        }
+      } catch (err) {
+        console.warn('Failed to create volunteer hours or send notification:', err)
+      }
+    }
+
     return response.ok({
       message: 'Checked out successfully',
       attendance,
-      duration_hours: duration
+      duration_hours: duration,
+      volunteer_hour: volunteerHour
     })
   }
 

@@ -23,7 +23,11 @@ test.group('Admin invite send jobs endpoints', () => {
       invitedBy: inviter.id
     })
 
-    const job = await InviteSendJob.create({ organizationInviteId: invite.id, status: 'failed', attempts: 3 } as any)
+    const job = await InviteSendJob.create({
+      organizationInviteId: invite.id,
+      status: 'failed',
+      attempts: 3
+    } as any)
 
     const resp = await client.loginAs(admin).get('/admin/invite-send-jobs')
     resp.assertStatus(200)

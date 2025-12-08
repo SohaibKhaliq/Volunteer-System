@@ -1,8 +1,11 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import VolunteerHour from 'App/Models/VolunteerHour'
 import AuditLog from 'App/Models/AuditLog'
+import Notification from 'App/Models/Notification'
+import Achievement from 'App/Models/Achievement'
+import UserAchievement from 'App/Models/UserAchievement'
 import Database from '@ioc:Adonis/Lucid/Database'
-import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import { DateTime } from 'luxon'
 
 export default class VolunteerHoursController {
   public async index({ request, response }: HttpContextContract) {
@@ -62,6 +65,26 @@ export default class VolunteerHoursController {
     // return a normalized shape
     const rec = record.toJSON() as any
 
+    // Send notification to volunteer when hours are approved
+    if (record.status === 'Approved' && previousStatus !== 'Approved') {
+      try {
+        await Notification.create({
+          userId: record.userId,
+          type: 'hours_approved',
+          payload: JSON.stringify({
+            volunteerHourId: record.id,
+            hours: record.hours,
+            date: record.date
+          })
+        })
+
+        // Check for achievement milestones (10, 25, 50, 100, 500, 1000 hours)
+        await this.checkAndAwardAchievements(record.userId)
+      } catch (err) {
+        console.warn('Failed to send hours approved notification or award achievements:', err)
+      }
+    }
+
     // Log this action so admins can audit status changes
     try {
       const user = auth.user!
@@ -91,9 +114,144 @@ export default class VolunteerHoursController {
     return response.ok({ id: rec.id, status: rec.status })
   }
 
+  /**
+   * Check total approved hours and award milestone achievements
+   */
+  private async checkAndAwardAchievements(userId: number) {
+    try {
+      // Calculate total approved hours
+      const result = await VolunteerHour.query()
+        .where('user_id', userId)
+        .where('status', 'Approved')
+        .sum('hours as total')
+
+      const totalHours = Number(result[0]?.$extras?.total || 0)
+
+      // Define achievement thresholds (in hours)
+      const milestones = [
+        {
+          hours: 10,
+          key: 'hours_10',
+          title: '10 Hours',
+          description: 'Completed 10 volunteer hours'
+        },
+        {
+          hours: 25,
+          key: 'hours_25',
+          title: '25 Hours',
+          description: 'Completed 25 volunteer hours'
+        },
+        {
+          hours: 50,
+          key: 'hours_50',
+          title: '50 Hours',
+          description: 'Completed 50 volunteer hours'
+        },
+        {
+          hours: 100,
+          key: 'hours_100',
+          title: '100 Hours',
+          description: 'Completed 100 volunteer hours'
+        },
+        {
+          hours: 500,
+          key: 'hours_500',
+          title: '500 Hours',
+          description: 'Completed 500 volunteer hours'
+        },
+        {
+          hours: 1000,
+          key: 'hours_1000',
+          title: '1000 Hours',
+          description: 'Completed 1000 volunteer hours'
+        }
+      ]
+
+      // Get all milestone keys to check which achievements exist
+      const milestoneKeys = milestones.map((m) => m.key)
+      const existingAchievements = await Achievement.query().whereIn('key', milestoneKeys)
+      const achievementMap = new Map(existingAchievements.map((a) => [a.key, a]))
+
+      // Get user's existing achievements in one query
+      const userAchievementIds = await UserAchievement.query()
+        .where('user_id', userId)
+        .select('achievement_id')
+      const userAchievementIdSet = new Set(userAchievementIds.map((ua) => ua.achievementId))
+
+      // Process each milestone
+      for (const milestone of milestones) {
+        if (totalHours >= milestone.hours) {
+          // Get or create achievement
+          let achievement = achievementMap.get(milestone.key)
+          if (!achievement) {
+            achievement = await Achievement.create({
+              key: milestone.key,
+              title: milestone.title,
+              description: milestone.description,
+              criteria: JSON.stringify({ hours: milestone.hours }),
+              isEnabled: true
+            })
+            achievementMap.set(milestone.key, achievement)
+          }
+
+          // Award if not already earned
+          if (!userAchievementIdSet.has(achievement.id)) {
+            // Award achievement
+            await UserAchievement.create({
+              userId,
+              achievementId: achievement.id,
+              awardedAt: DateTime.now()
+            })
+
+            // Send notification
+            await Notification.create({
+              userId,
+              type: 'achievement_earned',
+              payload: JSON.stringify({
+                achievementId: achievement.id,
+                achievementTitle: achievement.title,
+                achievementDescription: achievement.description
+              })
+            })
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to check and award achievements:', err)
+    }
+  }
+
   public async bulkUpdate({ auth, request, response }: HttpContextContract) {
     const { ids, status } = request.only(['ids', 'status'])
     await VolunteerHour.query().whereIn('id', ids).update({ status })
+
+    // If approving hours, send notifications and check achievements
+    if (status === 'Approved') {
+      try {
+        const hours = await VolunteerHour.query().whereIn('id', ids)
+        const userIds = [...new Set(hours.map((h) => h.userId))]
+
+        for (const userId of userIds) {
+          // Send notification
+          const userHours = hours.filter((h) => h.userId === userId)
+          const totalHours = userHours.reduce((sum, h) => sum + h.hours, 0)
+
+          await Notification.create({
+            userId,
+            type: 'hours_approved',
+            payload: JSON.stringify({
+              count: userHours.length,
+              totalHours
+            })
+          })
+
+          // Check and award achievements
+          await this.checkAndAwardAchievements(userId)
+        }
+      } catch (err) {
+        console.warn('Failed to send bulk approval notifications or award achievements:', err)
+      }
+    }
 
     // Log bulk change
     try {

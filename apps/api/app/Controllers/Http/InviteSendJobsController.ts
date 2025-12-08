@@ -193,8 +193,11 @@ export default class InviteSendJobsController {
 
     try {
       // Count how many failed jobs we'll requeue and record a start audit entry
-      const toRequeueCountRow: any = await Database.from('invite_send_jobs').where('status', 'failed').count('* as cnt')
-      const toRequeueCount = (toRequeueCountRow && toRequeueCountRow[0] && Number(toRequeueCountRow[0].cnt)) || 0
+      const toRequeueCountRow: any = await Database.from('invite_send_jobs')
+        .where('status', 'failed')
+        .count('* as cnt')
+      const toRequeueCount =
+        (toRequeueCountRow && toRequeueCountRow[0] && Number(toRequeueCountRow[0].cnt)) || 0
 
       await AuditLog.safeCreate({
         userId: user.id,

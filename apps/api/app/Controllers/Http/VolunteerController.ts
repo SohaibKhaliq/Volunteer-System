@@ -11,7 +11,7 @@ import UserAchievement from 'App/Models/UserAchievement'
 
 /**
  * VolunteerController - Volunteer Panel endpoints
- * 
+ *
  * Features:
  * - Profile management
  * - View & search opportunities
@@ -150,12 +150,7 @@ export default class VolunteerController {
       await auth.use('api').authenticate()
       const user = await User.findOrFail(auth.user!.id)
 
-      const payload = request.only([
-        'firstName',
-        'lastName',
-        'phone',
-        'profileMetadata'
-      ])
+      const payload = request.only(['firstName', 'lastName', 'phone', 'profileMetadata'])
 
       // Map to DB columns
       if (payload.firstName !== undefined) user.firstName = payload.firstName
@@ -163,9 +158,10 @@ export default class VolunteerController {
       if (payload.phone !== undefined) user.phone = payload.phone
       if (payload.profileMetadata !== undefined) {
         // profileMetadata can include skills, bio, interests, etc.
-        user.profileMetadata = typeof payload.profileMetadata === 'string'
-          ? payload.profileMetadata
-          : JSON.stringify(payload.profileMetadata)
+        user.profileMetadata =
+          typeof payload.profileMetadata === 'string'
+            ? payload.profileMetadata
+            : JSON.stringify(payload.profileMetadata)
       }
 
       await user.save()
@@ -210,6 +206,9 @@ export default class VolunteerController {
       const query = Opportunity.query()
         .where('status', 'published')
         .andWhere('visibility', 'public')
+        .whereHas('organization', (orgQuery) => {
+          orgQuery.where('status', 'active')
+        })
         .preload('organization')
 
       // Search filter
@@ -275,6 +274,9 @@ export default class VolunteerController {
 
       const opportunity = await Opportunity.query()
         .where('id', params.id)
+        .whereHas('organization', (orgQuery) => {
+          orgQuery.where('status', 'active')
+        })
         .preload('organization')
         .preload('team')
         .firstOrFail()
@@ -300,7 +302,11 @@ export default class VolunteerController {
           .first()
 
         if (attendance) {
-          attendanceStatus = attendance.checkInAt ? (attendance.checkOutAt ? 'completed' : 'checked_in') : null
+          attendanceStatus = attendance.checkInAt
+            ? attendance.checkOutAt
+              ? 'completed'
+              : 'checked_in'
+            : null
         }
       }
 
@@ -387,7 +393,7 @@ export default class VolunteerController {
 
       return response.ok({
         ...attendances.toJSON(),
-        totalHours: Math.round(totalMinutes / 60 * 10) / 10
+        totalHours: Math.round((totalMinutes / 60) * 10) / 10
       })
     } catch (error) {
       Logger.error('My attendance error: %o', error)
@@ -445,7 +451,10 @@ export default class VolunteerController {
         summary: {
           totalApproved,
           totalPending: Number(totalPending[0]?.$extras?.total || 0),
-          monthlyBreakdown: Object.entries(monthlyData).map(([month, total]) => ({ month, hours: total }))
+          monthlyBreakdown: Object.entries(monthlyData).map(([month, total]) => ({
+            month,
+            hours: total
+          }))
         }
       })
     } catch (error) {
