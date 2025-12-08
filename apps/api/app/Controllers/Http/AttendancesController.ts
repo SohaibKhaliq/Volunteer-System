@@ -9,6 +9,10 @@ import Event from 'App/Models/Event'
 import { DateTime } from 'luxon'
 import Database from '@ioc:Adonis/Lucid/Database'
 
+// Placeholder event ID used when opportunities are not yet linked to events
+// TODO: Implement opportunity-event linking and use actual event IDs
+const PLACEHOLDER_EVENT_ID = 0
+
 export default class AttendancesController {
   /**
    * Check in to an opportunity
@@ -119,10 +123,6 @@ export default class AttendancesController {
     let volunteerHour = null
     if (duration && duration > 0) {
       try {
-        // Placeholder for eventId when opportunity-event linking is not yet implemented
-        // TODO: Link opportunities to events and use actual event ID
-        const PLACEHOLDER_EVENT_ID = 0
-
         volunteerHour = await VolunteerHour.create({
           userId: user.id,
           eventId: PLACEHOLDER_EVENT_ID,
@@ -133,7 +133,7 @@ export default class AttendancesController {
 
         // Send notification to organization team members about pending hours
         const opportunity = attendance.opportunity || (await Opportunity.find(opportunityId))
-        if (opportunity) {
+        if (opportunity && volunteerHour) {
           const orgTeamMembers = await OrganizationTeamMember.query()
             .where('organization_id', opportunity.organizationId)
             .select('user_id')
@@ -145,7 +145,7 @@ export default class AttendancesController {
                 userId: member.userId,
                 type: 'hours_pending_approval',
                 payload: JSON.stringify({
-                  volunteerHourId: volunteerHour!.id,
+                  volunteerHourId: volunteerHour.id,
                   opportunityId: opportunity.id,
                   opportunityTitle: opportunity.title,
                   volunteerId: user.id,
