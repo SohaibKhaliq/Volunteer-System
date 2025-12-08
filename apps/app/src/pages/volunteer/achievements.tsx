@@ -14,14 +14,14 @@ import confetti from 'canvas-confetti';
 export default function VolunteerAchievements() {
   const { data: achievements, isLoading } = useQuery({
     queryKey: ['volunteer', 'achievements'],
-    queryFn: volunteerApi.getMyAchievements,
+    queryFn: volunteerApi.getMyAchievements
   });
 
   const handleShare = async (achievement: any) => {
     const shareData = {
       title: `${achievement.name} Achievement`,
       text: `I just earned the "${achievement.name}" badge on the volunteer platform!`,
-      url: window.location.href,
+      url: window.location.href
     };
 
     try {
@@ -43,19 +43,19 @@ export default function VolunteerAchievements() {
     confetti({
       particleCount: 100,
       spread: 70,
-      origin: { y: 0.6 },
+      origin: { y: 0.6 }
     });
-    
+
     toast.success('Certificate downloaded!', {
-      description: 'Your achievement certificate has been downloaded.',
+      description: 'Your achievement certificate has been downloaded.'
     });
-    
+
     // In production, this would generate a real certificate
     console.log('Downloading certificate for:', achievement.name);
   };
 
-  const achievementsList = Array.isArray(achievements) 
-    ? achievements 
+  const achievementsList = Array.isArray(achievements)
+    ? achievements
     : (achievements as any)?.data || (achievements as any)?.achievements || [];
 
   const earned = achievementsList.filter((a: any) => a.earned || a.earnedAt);
@@ -80,9 +80,7 @@ export default function VolunteerAchievements() {
           <Trophy className="h-8 w-8 text-yellow-500" />
           My Achievements
         </h1>
-        <p className="text-muted-foreground">
-          Track your volunteer journey and showcase your accomplishments
-        </p>
+        <p className="text-muted-foreground">Track your volunteer journey and showcase your accomplishments</p>
       </div>
 
       {/* Stats */}
@@ -96,7 +94,7 @@ export default function VolunteerAchievements() {
             <div className="text-2xl font-bold">{achievementsList.length}</div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Earned</CardTitle>
@@ -106,7 +104,7 @@ export default function VolunteerAchievements() {
             <div className="text-2xl font-bold text-green-600">{earned.length}</div>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">In Progress</CardTitle>
@@ -133,9 +131,7 @@ export default function VolunteerAchievements() {
                         {achievement.name || achievement.title}
                       </CardTitle>
                       {achievement.earnedAt && (
-                        <CardDescription>
-                          Earned {new Date(achievement.earnedAt).toLocaleDateString()}
-                        </CardDescription>
+                        <CardDescription>Earned {new Date(achievement.earnedAt).toLocaleDateString()}</CardDescription>
                       )}
                     </div>
                     <Badge variant="secondary" className="bg-yellow-500 text-white">
@@ -147,15 +143,10 @@ export default function VolunteerAchievements() {
                   <p className="text-sm text-muted-foreground">
                     {achievement.description || 'Keep up the great work!'}
                   </p>
-                  
+
                   {/* Action buttons */}
                   <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleShare(achievement)}
-                      className="flex-1"
-                    >
+                    <Button variant="outline" size="sm" onClick={() => handleShare(achievement)} className="flex-1">
                       <Share2 className="h-4 w-4 mr-2" />
                       Share
                     </Button>
@@ -190,9 +181,7 @@ export default function VolunteerAchievements() {
                         <Lock className="h-5 w-5 text-gray-400" />
                         {achievement.name || achievement.title}
                       </CardTitle>
-                      {achievement.requirement && (
-                        <CardDescription>{achievement.requirement}</CardDescription>
-                      )}
+                      {achievement.requirement && <CardDescription>{achievement.requirement}</CardDescription>}
                     </div>
                   </div>
                 </CardHeader>
@@ -200,7 +189,7 @@ export default function VolunteerAchievements() {
                   <p className="text-sm text-muted-foreground">
                     {achievement.description || 'Complete the requirements to unlock this achievement.'}
                   </p>
-                  
+
                   {/* Progress bar */}
                   {achievement.progress !== undefined && (
                     <div className="space-y-1">
@@ -230,9 +219,7 @@ export default function VolunteerAchievements() {
             <Trophy className="h-16 w-16 mx-auto text-gray-300" />
             <div>
               <h3 className="text-lg font-semibold">No achievements yet</h3>
-              <p className="text-muted-foreground">
-                Start volunteering to earn your first achievement!
-              </p>
+              <p className="text-muted-foreground">Start volunteering to earn your first achievement!</p>
             </div>
           </div>
         </Card>

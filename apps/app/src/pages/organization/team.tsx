@@ -10,16 +10,10 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogTrigger
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Users, UserPlus, Mail, Trash2, Edit, Shield } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Users, UserPlus, Mail, Trash2, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
@@ -31,11 +25,10 @@ import { Badge } from '@/components/ui/badge';
 export default function OrganizationTeam() {
   const queryClient = useQueryClient();
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
-  const [editingMember, setEditingMember] = useState<any>(null);
 
   const { data: team, isLoading } = useQuery({
     queryKey: ['organization', 'team'],
-    queryFn: organizationApi.listTeam,
+    queryFn: organizationApi.listTeam
   });
 
   const inviteMutation = useMutation({
@@ -43,30 +36,28 @@ export default function OrganizationTeam() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organization', 'team'] });
       toast.success('Invitation sent!', {
-        description: 'Team member will receive an email invitation.',
+        description: 'Team member will receive an email invitation.'
       });
       setInviteDialogOpen(false);
     },
     onError: (error: any) => {
       toast.error('Failed to send invitation', {
-        description: error.message || 'Please try again.',
+        description: error.message || 'Please try again.'
       });
-    },
+    }
   });
 
   const updateMemberMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) =>
-      organizationApi.updateTeamMember(id, data),
+    mutationFn: ({ id, data }: { id: number; data: any }) => organizationApi.updateTeamMember(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organization', 'team'] });
       toast.success('Team member updated');
-      setEditingMember(null);
     },
     onError: (error: any) => {
       toast.error('Failed to update member', {
-        description: error.message,
+        description: error.message
       });
-    },
+    }
   });
 
   const removeMemberMutation = useMutation({
@@ -77,9 +68,9 @@ export default function OrganizationTeam() {
     },
     onError: (error: any) => {
       toast.error('Failed to remove member', {
-        description: error.message,
+        description: error.message
       });
-    },
+    }
   });
 
   const handleInvite = (e: React.FormEvent<HTMLFormElement>) => {
@@ -88,7 +79,7 @@ export default function OrganizationTeam() {
     const data = {
       email: formData.get('email'),
       role: formData.get('role'),
-      name: formData.get('name'),
+      name: formData.get('name')
     };
     inviteMutation.mutate(data);
   };
@@ -109,7 +100,7 @@ export default function OrganizationTeam() {
     const roleMap: Record<string, { label: string; variant: any }> = {
       admin: { label: 'Admin', variant: 'destructive' },
       manager: { label: 'Manager', variant: 'default' },
-      viewer: { label: 'Viewer', variant: 'secondary' },
+      viewer: { label: 'Viewer', variant: 'secondary' }
     };
     const config = roleMap[role?.toLowerCase()] || { label: role, variant: 'outline' };
     return <Badge variant={config.variant}>{config.label}</Badge>;
@@ -136,10 +127,10 @@ export default function OrganizationTeam() {
             Team Management
           </h1>
           <p className="text-muted-foreground">
-            Manage your organization's team members and their roles
+            Manage your organization&apos;s team members and their roles
           </p>
         </div>
-        
+
         <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
           <DialogTrigger asChild>
             <Button>
@@ -150,9 +141,7 @@ export default function OrganizationTeam() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Invite Team Member</DialogTitle>
-              <DialogDescription>
-                Send an invitation to join your organization team
-              </DialogDescription>
+              <DialogDescription>Send an invitation to join your organization team</DialogDescription>
             </DialogHeader>
             <form onSubmit={handleInvite} className="space-y-4">
               <div className="space-y-2">
@@ -161,13 +150,7 @@ export default function OrganizationTeam() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="john@example.com"
-                  required
-                />
+                <Input id="email" name="email" type="email" placeholder="john@example.com" required />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="role">Role</Label>
@@ -209,18 +192,14 @@ export default function OrganizationTeam() {
                     <Users className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg">
-                      {member.name || member.user?.name || 'Team Member'}
-                    </CardTitle>
+                    <CardTitle className="text-lg">{member.name || member.user?.name || 'Team Member'}</CardTitle>
                     <CardDescription className="flex items-center gap-2">
                       <Mail className="h-3 w-3" />
                       {member.email || member.user?.email}
                     </CardDescription>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  {getRoleBadge(member.role)}
-                </div>
+                <div className="flex items-center gap-2">{getRoleBadge(member.role)}</div>
               </div>
             </CardHeader>
             <CardContent>
@@ -234,10 +213,7 @@ export default function OrganizationTeam() {
                   )}
                 </div>
                 <div className="flex gap-2">
-                  <Select
-                    value={member.role}
-                    onValueChange={(value) => handleUpdateRole(member.id, value)}
-                  >
+                  <Select value={member.role} onValueChange={(value) => handleUpdateRole(member.id, value)}>
                     <SelectTrigger className="w-32">
                       <Shield className="h-4 w-4 mr-2" />
                       <SelectValue />
@@ -270,9 +246,7 @@ export default function OrganizationTeam() {
             <Users className="h-16 w-16 mx-auto text-gray-300" />
             <div>
               <h3 className="text-lg font-semibold">No team members yet</h3>
-              <p className="text-muted-foreground">
-                Invite your first team member to get started
-              </p>
+              <p className="text-muted-foreground">Invite your first team member to get started</p>
             </div>
             <Button onClick={() => setInviteDialogOpen(true)}>
               <UserPlus className="h-4 w-4 mr-2" />

@@ -36,50 +36,46 @@ export function QRScanner({ onScan, onClose, isOpen = true }: QRScannerProps) {
 
         // Get available video devices
         const videoInputDevices = await codeReader.listVideoInputDevices();
-        
+
         if (videoInputDevices.length === 0) {
           throw new Error('No camera found on this device');
         }
 
         // Prefer back camera on mobile
-        const selectedDevice = videoInputDevices.find(device => 
-          device.label.toLowerCase().includes('back') || 
-          device.label.toLowerCase().includes('rear')
-        ) || videoInputDevices[0];
+        const selectedDevice =
+          videoInputDevices.find(
+            (device) => device.label.toLowerCase().includes('back') || device.label.toLowerCase().includes('rear')
+          ) || videoInputDevices[0];
 
         // Start scanning
-        await codeReader.decodeFromVideoDevice(
-          selectedDevice.deviceId,
-          videoRef.current!,
-          (result, error) => {
-            if (!isMounted) return;
+        await codeReader.decodeFromVideoDevice(selectedDevice.deviceId, videoRef.current!, (result, error) => {
+          if (!isMounted) return;
 
-            if (result) {
-              const scannedText = result.getText();
-              console.log('[QRScanner] Scanned:', scannedText);
-              
-              // Success feedback
-              toast.success('QR Code Scanned', {
-                description: 'Processing check-in...',
-              });
-              
-              // Call the onScan callback
-              onScan(scannedText);
-              
-              // Stop scanning after successful scan
-              handleStop();
-            }
+          if (result) {
+            const scannedText = result.getText();
+            console.log('[QRScanner] Scanned:', scannedText);
 
-            if (error && !(error instanceof NotFoundException)) {
-              console.error('[QRScanner] Scan error:', error);
-            }
+            // Success feedback
+            toast.success('QR Code Scanned', {
+              description: 'Processing check-in...'
+            });
+
+            // Call the onScan callback
+            onScan(scannedText);
+
+            // Stop scanning after successful scan
+            handleStop();
           }
-        );
+
+          if (error && !(error instanceof NotFoundException)) {
+            console.error('[QRScanner] Scan error:', error);
+          }
+        });
       } catch (err: any) {
         console.error('[QRScanner] Error starting scanner:', err);
         setError(err.message || 'Failed to access camera');
         toast.error('Camera Error', {
-          description: err.message || 'Could not access camera. Please check permissions.',
+          description: err.message || 'Could not access camera. Please check permissions.'
         });
       }
     };
@@ -111,12 +107,7 @@ export function QRScanner({ onScan, onClose, isOpen = true }: QRScannerProps) {
     <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
       <Card className="relative w-full max-w-md p-6 space-y-4">
         {/* Close button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="absolute top-2 right-2"
-          onClick={handleClose}
-        >
+        <Button variant="ghost" size="icon" className="absolute top-2 right-2" onClick={handleClose}>
           <X className="h-4 w-4" />
         </Button>
 
@@ -128,21 +119,13 @@ export function QRScanner({ onScan, onClose, isOpen = true }: QRScannerProps) {
             </div>
           </div>
           <h2 className="text-xl font-semibold">Scan QR Code</h2>
-          <p className="text-sm text-muted-foreground">
-            Position the QR code within the frame to check in
-          </p>
+          <p className="text-sm text-muted-foreground">Position the QR code within the frame to check in</p>
         </div>
 
         {/* Video preview */}
         <div className="relative aspect-square bg-black rounded-lg overflow-hidden">
-          <video
-            ref={videoRef}
-            className="w-full h-full object-cover"
-            autoPlay
-            playsInline
-            muted
-          />
-          
+          <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
+
           {/* Scanning overlay */}
           {isScanning && (
             <div className="absolute inset-0 flex items-center justify-center">
@@ -162,9 +145,7 @@ export function QRScanner({ onScan, onClose, isOpen = true }: QRScannerProps) {
         </div>
 
         {/* Help text */}
-        <p className="text-xs text-center text-muted-foreground">
-          Make sure the QR code is well lit and in focus
-        </p>
+        <p className="text-xs text-center text-muted-foreground">Make sure the QR code is well lit and in focus</p>
 
         {/* Cancel button */}
         <Button variant="outline" className="w-full" onClick={handleClose}>

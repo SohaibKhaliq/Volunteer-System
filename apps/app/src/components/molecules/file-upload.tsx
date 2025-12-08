@@ -27,7 +27,7 @@ export function FileUpload({
   maxFiles = 5,
   multiple = true,
   className,
-  showPreview = true,
+  showPreview = true
 }: FileUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -93,7 +93,7 @@ export function FileUpload({
     maxSize,
     maxFiles,
     multiple,
-    disabled: uploading,
+    disabled: uploading
   });
 
   const removeFile = (index: number) => {
@@ -130,19 +130,17 @@ export function FileUpload({
         )}
       >
         <input {...getInputProps()} />
-        
+
         <div className="flex flex-col items-center space-y-2">
           <div className="rounded-full bg-primary/10 p-4">
             <Upload className="h-8 w-8 text-primary" />
           </div>
-          
+
           {isDragActive ? (
             <p className="text-sm font-medium">Drop files here...</p>
           ) : (
             <>
-              <p className="text-sm font-medium">
-                Drag & drop files here, or click to select
-              </p>
+              <p className="text-sm font-medium">Drag & drop files here, or click to select</p>
               <p className="text-xs text-muted-foreground">
                 {multiple ? `Up to ${maxFiles} files` : 'Single file'} • Max {formatFileSize(maxSize)} each
               </p>
@@ -155,18 +153,12 @@ export function FileUpload({
       {uploading && (
         <div className="space-y-2">
           <Progress value={progress} className="h-2" />
-          <p className="text-xs text-center text-muted-foreground">
-            Uploading... {progress}%
-          </p>
+          <p className="text-xs text-center text-muted-foreground">Uploading... {progress}%</p>
         </div>
       )}
 
       {/* Error message */}
-      {error && (
-        <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md">
-          {error}
-        </div>
-      )}
+      {error && <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md">{error}</div>}
 
       {/* Uploaded files preview */}
       {showPreview && uploadedFiles.length > 0 && (
@@ -174,23 +166,13 @@ export function FileUpload({
           <h4 className="text-sm font-medium">Uploaded Files</h4>
           <div className="space-y-2">
             {uploadedFiles.map((file, index) => (
-              <div
-                key={index}
-                className="flex items-center space-x-3 p-3 bg-gray-50 rounded-md"
-              >
+              <div key={index} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-md">
                 {getFileIcon(file)}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{file.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatFileSize(file.size)}
-                  </p>
+                  <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeFile(index)}
-                  className="flex-shrink-0"
-                >
+                <Button variant="ghost" size="icon" onClick={() => removeFile(index)} className="flex-shrink-0">
                   <X className="h-4 w-4" />
                 </Button>
               </div>
