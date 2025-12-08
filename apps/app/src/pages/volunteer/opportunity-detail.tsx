@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -118,13 +119,56 @@ export default function VolunteerOpportunityDetail() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto p-4 md:p-6 min-h-screen flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="h-12 w-12 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
-            <Calendar className="h-6 w-6 text-primary animate-pulse" />
-          </div>
-          <p className="text-muted-foreground">Loading opportunity...</p>
-        </div>
+      <div className="container mx-auto p-4 md:p-6 space-y-6">
+        {/* Back button skeleton */}
+        <Skeleton className="h-10 w-48" />
+
+        {/* Hero Card skeleton */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1 space-y-3">
+                <Skeleton className="h-10 w-3/4" />
+                <Skeleton className="h-6 w-1/2" />
+              </div>
+              <div className="flex gap-2">
+                <Skeleton className="h-10 w-10 rounded-md" />
+                <Skeleton className="h-10 w-10 rounded-md" />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex gap-2">
+              <Skeleton className="h-6 w-24" />
+              <Skeleton className="h-6 w-20" />
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <Skeleton className="h-5 w-5 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-4 w-32" />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <Separator />
+
+            <div className="space-y-2">
+              <Skeleton className="h-6 w-48" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-3/4" />
+            </div>
+
+            <div className="flex gap-3">
+              <Skeleton className="h-11 flex-1" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
