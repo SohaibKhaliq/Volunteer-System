@@ -4,6 +4,7 @@ import { ReactNode } from 'react';
 import { I18nextProvider } from 'react-i18next';
 import { Toaster } from 'sonner';
 import ThemeProvider from './theme-provider';
+import SocketProvider from './socket-provider';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,8 +22,10 @@ const Providers = ({ children }: { children: ReactNode }) => {
       <QueryClientProvider client={queryClient}>
         <I18nextProvider i18n={i18n} defaultNS={'common'}>
           <ThemeProvider defaultTheme="light" storageKey="theme">
-            {children}
-            <Toaster position="top-right" richColors />
+            <SocketProvider>
+              {children}
+              <Toaster position="top-right" richColors />
+            </SocketProvider>
           </ThemeProvider>
         </I18nextProvider>
       </QueryClientProvider>
