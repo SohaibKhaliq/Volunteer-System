@@ -37,8 +37,18 @@ export default class MatchingService {
    * Update User's Vector based on their bio/skills
    */
   public async updateUserVector(user: User) {
-    // Combine relevant fields
-    const text = \`\${user.bio || ''} \${user.skills || ''}\`.trim()
+    // Correctly serialize skills if it's an array or relation
+    // We assume skills might be loaded or we just use bio for now if skills is complex
+    // If skills is a ManyToMany, we should map it.
+    // For now, handling string or array safely.
+    let skillsText = ''
+    if (Array.isArray((user as any).skills)) {
+        skillsText = (user as any).skills.map(s => s.name || s).join(' ')
+    } else if (typeof (user as any).skills === 'string') {
+        skillsText = (user as any).skills
+    }
+
+    const text = \`\${user.bio || ''} \${skillsText}\`.trim()
     if (!text) return
 
     const embedding = await this.gemini.getEmbedding(text)
@@ -60,8 +70,6 @@ export default class MatchingService {
     // If no vector, generate it on the fly (lazy load)
     let userVec: number[] = []
     if (!userVectorRecord) {
-        // Fallback: If no vector and no bio, we can't do vector matching effectively
-        // For now, we'll proceed with heuristic only or attempt generation
         await this.updateUserVector(user)
         const fresh = await SkillVector.findBy('userId', user.id)
         if (fresh) userVec = fresh.vector
@@ -70,15 +78,11 @@ export default class MatchingService {
     }
 
     // 2. Fetch all active opportunities
-    // In a real app with 10k+ items, we'd use a Vector DB (Pinecone/Weaviate).
-    // Here we iterate in-memory as requested for the prototype scope.
     const opportunities = await Opportunity.query().where('status', 'published')
 
     // 3. Score each opportunity
     const scored = await Promise.all(opportunities.map(async (opp) => {
-        // Mocking Opportunity Vector for now since we didn't add a table for it explicitly in the plan
-        // In a real scenario, Opportunity would have a `description_vector` column.
-        // We will generate a consistent "Mock" vector based on the ID to simulate variety
+        // Optimally, we would cache this vector in the DB
         const oppVec = await this.gemini.getEmbedding(opp.description || opp.title)
 
         let aiScore = 0
@@ -86,19 +90,14 @@ export default class MatchingService {
             aiScore = this.cosineSimilarity(userVec, oppVec)
         }
 
-        // Heuristic Scoring
-        // Example: Boost if in same city (mock check)
-        // Example: Boost if causes match (mock check)
         let heuristicScore = 0.5 // Base score
 
-        // Final Weighted Score
-        // 70% AI, 30% Heuristics
         const totalScore = (aiScore * 0.7) + (heuristicScore * 0.3)
 
         return {
             ...opp.serialize(),
             matchScore: totalScore,
-            aiReasoning: \`Match based on overlap in skills.\` // Placeholder
+            aiReasoning: \`Match based on overlap in skills.\`
         }
     }))
 

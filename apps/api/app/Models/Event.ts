@@ -1,7 +1,8 @@
-import { BaseModel, column, belongsTo, BelongsTo, hasMany, HasMany } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, column, belongsTo, BelongsTo, hasMany, HasMany, manyToMany, ManyToMany } from '@ioc:Adonis/Lucid/Orm'
 import { DateTime } from 'luxon'
 import Organization from './Organization'
 import Task from './Task'
+import Tag from './Tag'
 
 export default class Event extends BaseModel {
   @column({ isPrimary: true })
@@ -39,6 +40,16 @@ export default class Event extends BaseModel {
 
   @hasMany(() => Task)
   public tasks: HasMany<typeof Task>
+
+  @manyToMany(() => Tag, {
+    pivotTable: 'event_tags',
+    localKey: 'id',
+    pivotForeignKey: 'event_id',
+    relatedKey: 'id',
+    pivotRelatedForeignKey: 'tag_id',
+    pivotTimestamps: true
+  })
+  public tags: ManyToMany<typeof Tag>
 
   @column({ columnName: 'latitude' })
   public latitude?: number

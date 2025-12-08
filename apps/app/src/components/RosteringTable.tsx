@@ -11,30 +11,35 @@ import { Button } from "@/components/ui/button"
 import { Check, X } from "lucide-react"
 import api from "@/lib/api"
 import { toast } from "sonner"
-import { useState } from "react"
-
-// Mock Data Initial State (In real app, fetch via useQuery)
-const INITIAL_VOLUNTEERS = [
-  { id: 1, name: "Alice Johnson", status: "Applied", reliability: "High", hours: 120 },
-  { id: 2, name: "Bob Smith", status: "Approved", reliability: "Medium", hours: 45 },
-  { id: 3, name: "Charlie Brown", status: "Applied", reliability: "Low", hours: 5 },
-]
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 
 export function RosteringTable() {
-  const [volunteers, setVolunteers] = useState(INITIAL_VOLUNTEERS)
+  const queryClient = useQueryClient()
 
-  const handleStatusUpdate = async (id: number, status: 'approved' | 'rejected') => {
-      try {
-          // Optimistic UI Update
-          setVolunteers(prev => prev.map(v => v.id === id ? { ...v, status: status === 'approved' ? 'Approved' : 'Rejected' } : v))
-
-          await api.patch(\`/organization-volunteers/\${id}/status\`, { status })
-          toast.success(\`Volunteer \${status}\`)
-      } catch (e) {
-          toast.error("Failed to update status")
-          // Revert on failure would go here
+  // Fetch real volunteers associated with the logged-in organization
+  const { data: volunteers } = useQuery({
+      queryKey: ['org-volunteers'],
+      queryFn: async () => {
+          const res = await api.get('/organization-volunteers')
+          return res.data
       }
+  })
+
+  const updateStatusMutation = useMutation({
+      mutationFn: async ({ id, status }: { id: number, status: string }) => {
+          await api.patch(\`/organization-volunteers/\${id}/status\`, { status })
+      },
+      onSuccess: (_, variables) => {
+          toast.success(\`Volunteer \${variables.status}\`)
+          queryClient.invalidateQueries(['org-volunteers'])
+      }
+  })
+
+  const handleStatusUpdate = (id: number, status: 'approved' | 'rejected') => {
+      updateStatusMutation.mutate({ id, status })
   }
+
+  const list = Array.isArray(volunteers) ? volunteers : []
 
   return (
     <div className="rounded-md border">
@@ -49,18 +54,23 @@ export function RosteringTable() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {volunteers.map((v) => (
+          {list.length === 0 && (
+              <TableRow>
+                  <TableCell colSpan={5} className="text-center text-muted-foreground">No volunteers found.</TableCell>
+              </TableRow>
+          )}
+          {list.map((v: any) => (
             <TableRow key={v.id}>
               <TableCell className="font-medium">{v.name}</TableCell>
               <TableCell>
-                <Badge variant={v.reliability === 'High' ? 'default' : v.reliability === 'Low' ? 'destructive' : 'secondary'}>
-                    {v.reliability}
+                <Badge variant="secondary">
+                    {v.rating || 'N/A'}
                 </Badge>
               </TableCell>
-              <TableCell>{v.hours} hrs</TableCell>
+              <TableCell>{v.hours || 0} hrs</TableCell>
               <TableCell>{v.status}</TableCell>
               <TableCell className="text-right">
-                {v.status === 'Applied' && (
+                {v.status === 'pending' && (
                     <div className="flex justify-end gap-2">
                         <Button
                             onClick={() => handleStatusUpdate(v.id, 'approved')}

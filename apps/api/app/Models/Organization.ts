@@ -1,6 +1,8 @@
 import {
   BaseModel,
   column,
+  belongsTo,
+  BelongsTo,
   hasMany,
   HasMany,
   manyToMany,
@@ -19,6 +21,12 @@ import Logger from '@ioc:Adonis/Core/Logger'
 export default class Organization extends BaseModel {
   @column({ isPrimary: true })
   public id: number
+
+  @column({ columnName: 'owner_id' })
+  public ownerId: number
+
+  @belongsTo(() => User, { foreignKey: 'ownerId' })
+  public owner: BelongsTo<typeof User>
 
   @column()
   public name: string

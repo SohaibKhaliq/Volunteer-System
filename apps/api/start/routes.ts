@@ -98,7 +98,8 @@ Route.put(
   '/organizations/:id/volunteers/:userId',
   'OrganizationsController.updateVolunteer'
 ).middleware(['auth'])
-// Rostering Status Update (using OrganizationVolunteersController logic directly or via alias)
+// Rostering: List and Status Update
+Route.get('/organization-volunteers', 'OrganizationVolunteersController.index').middleware(['auth'])
 Route.patch('/organization-volunteers/:id/status', 'OrganizationVolunteersController.updateStatus').middleware(['auth'])
 Route.delete(
   '/organizations/:id/volunteers/:userId',
@@ -357,6 +358,10 @@ Route.group(() => {
   Route.post('/invite-send-jobs/:id/retry', 'InviteSendJobsController.retry')
   Route.get('/backup', 'AdminController.createBackup')
   Route.get('/backup/status', 'AdminController.backupStatus')
+
+  // Phase 2: Global Settings
+  Route.resource('tags', 'TagsController').apiOnly()
+  Route.resource('skills', 'SkillsController').apiOnly()
 })
   .prefix('/admin')
   .middleware(['auth'])

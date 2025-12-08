@@ -10,6 +10,9 @@ export default class Role extends BaseModel {
   public name: string
 
   @column()
+  public slug: string
+
+  @column()
   public description?: string
 
   @manyToMany(() => User, {

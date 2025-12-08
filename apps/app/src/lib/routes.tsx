@@ -7,8 +7,8 @@ import Help from '@/pages/help';
 import HelpOfferForm from '@/pages/help-offer-form';
 import HelpRequestForm from '@/pages/help-request-form';
 import Home from '@/pages/home';
-import Login from '@/pages/login';
-import Register from '@/pages/register';
+import { LoginPage } from '@/pages/auth/LoginPage';
+import { RegisterPage } from '@/pages/auth/RegisterPage';
 import Map from '@/pages/map';
 import Organizations from '@/pages/organizations';
 import OrganizationRegister from '@/pages/organization-register';
@@ -19,55 +19,9 @@ import NotificationsPage from '@/pages/notifications';
 import { RouteObject } from 'react-router-dom';
 import AdminLayout from '@/components/templates/AdminLayout';
 import AppProvider from '@/providers/app-provider';
-import AdminDashboard from '@/pages/admin/dashboard';
-import AdminUsers from '@/pages/admin/users';
-import AdminOrganizations from '@/pages/admin/organizations';
-import AdminOrganizationInvites from '@/pages/admin/organization-invites';
-import AdminAchievements from '@/pages/admin/achievements';
-import AdminEvents from '@/pages/admin/events';
-import AdminTasks from '@/pages/admin/tasks';
-import AdminHours from '@/pages/admin/hours'; // Added this import based on the instruction's context
-import AdminCertifications from '@/pages/admin/certifications';
-import AdminPendingHours from '@/pages/admin/pending-hours';
-import AdminNotifications from '@/pages/admin/notifications';
-import AdminCompliance from '@/pages/admin/compliance';
-import AdminReports from '@/pages/admin/reports';
-import AdminCommunications from '@/pages/admin/communications';
-import AdminResources from '@/pages/admin/resources';
-import AdminResourcesDashboard from '@/pages/admin/resources-dashboard';
-import AdminImports from '@/pages/admin/imports';
-import AdminPendingHoursByOrg from '@/pages/admin/pending-hours-orgs';
-import AdminTemplates from '@/pages/admin/templates';
-import AdminBackgroundChecks from '@/pages/admin/background-checks';
-import AdminScheduling from '@/pages/admin/scheduling';
-import AdminMonitoring from '@/pages/admin/monitoring';
-import AdminScheduledJobs from '@/pages/admin/scheduled-jobs';
-import AdminInviteSendJobs from '@/pages/admin/invite-send-jobs';
-import AdminBackup from '@/pages/admin/backup';
-import AdminAnalytics from '@/pages/admin/analytics';
-import AdminCalendar from '@/pages/admin/calendar';
-import AdminFeedback from '@/pages/admin/feedback';
-import AdminFeedbackCreate from '@/pages/admin/feedback/create';
-import AdminFeedbackResults from '@/pages/admin/feedback/[id]/results';
-import AdminExports from '@/pages/admin/exports';
-import AdminShifts from '@/pages/admin/shifts';
-import AdminRoles from '@/pages/admin/roles';
-import AdminTypes from '@/pages/admin/types';
-import AdminAuditLogs from '@/pages/admin/audit-logs';
-import AdminSettings from '@/pages/admin/settings';
-import AdminVolunteerProfile from '@/pages/admin/volunteer-profile';
+import { AdminDashboard } from '@/pages/admin/AdminDashboard';
 import OrganizationLayout from '@/components/templates/OrganizationLayout';
-import OrganizationDashboard from '@/pages/organization/dashboard';
-import OrganizationProfile from '@/pages/organization/profile';
-import OrganizationEvents from '@/pages/organization/events';
-import OrganizationAchievements from '@/pages/organization/achievements';
-import OrganizationVolunteers from '@/pages/organization/volunteers';
-import OrganizationResources from '@/pages/organization/resources';
-import OrganizationHoursApproval from '@/pages/organization/hours-approval';
-import OrganizationCompliance from '@/pages/organization/compliance';
-import OrganizationReports from '@/pages/organization/reports';
-import OrganizationCommunications from '@/pages/organization/communications';
-import OrganizationSettings from '@/pages/organization/settings';
+import { OrgDashboard } from '@/pages/org/OrgDashboard';
 import About from '@/pages/about';
 import Contact from '@/pages/contact';
 import Privacy from '@/pages/privacy';
@@ -110,47 +64,13 @@ const routes: RouteObject[] = [
     ),
     errorElement: <ErrorBoundary />,
     children: [
+      { path: 'dashboard', element: <AdminDashboard /> },
+      // ... keep other existing admin routes if needed, but linking to our new Dashboard
       { index: true, element: <AdminDashboard /> },
-      { path: 'users', element: <AdminUsers /> },
-      { path: 'organizations', element: <AdminOrganizations /> },
-      { path: 'organizations/:id/invites', element: <AdminOrganizationInvites /> },
-      { path: 'achievements', element: <AdminAchievements /> },
-      { path: 'events', element: <AdminEvents /> },
-      { path: 'shifts', element: <AdminShifts /> },
-      { path: 'tasks', element: <AdminTasks /> },
-      { path: 'hours', element: <AdminHours /> },
-      { path: 'pending-hours', element: <AdminPendingHours /> },
-      { path: 'pending-hours/orgs', element: <AdminPendingHoursByOrg /> },
-      { path: 'compliance', element: <AdminCompliance /> },
-      { path: 'certifications', element: <AdminCertifications /> },
-      { path: 'notifications', element: <AdminNotifications /> },
-      { path: 'background-checks', element: <AdminBackgroundChecks /> },
-      { path: 'templates', element: <AdminTemplates /> },
-      { path: 'communications', element: <AdminCommunications /> },
-      { path: 'backup', element: <AdminBackup /> },
-      { path: 'analytics', element: <AdminAnalytics /> },
-      { path: 'calendar', element: <AdminCalendar /> },
-      { path: 'monitoring', element: <AdminMonitoring /> },
-      { path: 'scheduled-jobs', element: <AdminScheduledJobs /> },
-      { path: 'invite-send-jobs', element: <AdminInviteSendJobs /> },
-      { path: 'reports', element: <AdminReports /> },
-      { path: 'exports', element: <AdminExports /> },
-      { path: 'resources', element: <AdminResources /> },
-      { path: 'resources/dashboard', element: <AdminResourcesDashboard /> },
-      { path: 'imports', element: <AdminImports /> },
-      { path: 'scheduling', element: <AdminScheduling /> },
-      { path: 'feedback', element: <AdminFeedback /> },
-      { path: 'feedback/create', element: <AdminFeedbackCreate /> },
-      { path: 'feedback/:id/results', element: <AdminFeedbackResults /> },
-      { path: 'audit-logs', element: <AdminAuditLogs /> },
-      { path: 'roles', element: <AdminRoles /> },
-      { path: 'types', element: <AdminTypes /> },
-      { path: 'settings', element: <AdminSettings /> },
-      { path: 'volunteer-profile', element: <AdminVolunteerProfile /> }
     ]
   },
   {
-    path: 'organization',
+    path: 'org', // New dedicated Org path to distinguish from legacy 'organization'
     element: (
       <AdminScrollWrapper>
         <AppProvider>
@@ -160,17 +80,8 @@ const routes: RouteObject[] = [
     ),
     errorElement: <ErrorBoundary />,
     children: [
-      { index: true, element: <OrganizationDashboard /> },
-      { path: 'profile', element: <OrganizationProfile /> },
-      { path: 'events', element: <OrganizationEvents /> },
-      { path: 'resources', element: <OrganizationResources /> },
-      { path: 'achievements', element: <OrganizationAchievements /> },
-      { path: 'volunteers', element: <OrganizationVolunteers /> },
-      { path: 'hours-approval', element: <OrganizationHoursApproval /> },
-      { path: 'compliance', element: <OrganizationCompliance /> },
-      { path: 'reports', element: <OrganizationReports /> },
-      { path: 'communications', element: <OrganizationCommunications /> },
-      { path: 'settings', element: <OrganizationSettings /> }
+      { index: true, element: <OrgDashboard /> },
+      { path: 'dashboard', element: <OrgDashboard /> }
     ]
   },
   {
@@ -185,8 +96,8 @@ const routes: RouteObject[] = [
     errorElement: <ErrorBoundary />,
     children: [
       { index: true, element: <Home /> },
-      { path: 'login', element: <Login /> },
-      { path: 'register', element: <Register /> },
+      { path: 'login', element: <LoginPage /> }, // Use new Login
+      { path: 'register', element: <RegisterPage /> }, // Use new Register
       { path: 'map', element: <Map /> },
       { path: 'organizations', element: <Organizations /> },
       { path: 'organizations/register', element: <OrganizationRegister /> },

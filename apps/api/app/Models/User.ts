@@ -1,6 +1,8 @@
 import {
   BaseModel,
   column,
+  BelongsTo,
+  belongsTo,
   HasMany,
   hasMany,
   ManyToMany,
@@ -21,6 +23,12 @@ import UserBadge from './UserBadge'
 export default class User extends BaseModel {
   @column({ isPrimary: true })
   public id: number
+
+  @column({ columnName: 'role_id' })
+  public roleId: number
+
+  @column()
+  public status: string // 'active', 'banned', 'pending'
 
   @column({ columnName: 'is_admin' })
   public isAdmin: boolean
@@ -90,6 +98,9 @@ export default class User extends BaseModel {
     pivotTimestamps: true
   })
   public organizations: ManyToMany<typeof Organization>
+
+  @belongsTo(() => Role)
+  public role: BelongsTo<typeof Role>
 
   @hasMany(() => UserBadge)
   public badges: HasMany<typeof UserBadge>
