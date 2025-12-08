@@ -98,6 +98,8 @@ Route.put(
   '/organizations/:id/volunteers/:userId',
   'OrganizationsController.updateVolunteer'
 ).middleware(['auth'])
+// Rostering Status Update (using OrganizationVolunteersController logic directly or via alias)
+Route.patch('/organization-volunteers/:id/status', 'OrganizationVolunteersController.updateStatus').middleware(['auth'])
 Route.delete(
   '/organizations/:id/volunteers/:userId',
   'OrganizationsController.removeVolunteer'
@@ -154,6 +156,9 @@ Route.resource('events', 'EventsController')
     destroy: ['auth']
   })
   .apiOnly()
+
+Route.get('/discovery/recommended', 'DiscoveryController.recommended').middleware(['auth'])
+Route.post('/ai/generate-description', 'MagicContentController.generateDescription').middleware(['auth'])
 
 Route.resource('tasks', 'TasksController')
   .middleware({ '*': ['auth'] })
@@ -386,6 +391,7 @@ Route.group(() => {
 
   // Achievements
   Route.get('/achievements', 'VolunteerController.myAchievements')
+  Route.get('/gamification/stats', 'VolunteerController.gamificationStats')
 })
   .prefix('/volunteer')
   .middleware(['auth'])

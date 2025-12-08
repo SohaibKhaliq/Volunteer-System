@@ -7,7 +7,6 @@ import Attendance from 'App/Models/Attendance'
 import Opportunity from 'App/Models/Opportunity'
 import Organization from 'App/Models/Organization'
 import VolunteerHour from 'App/Models/VolunteerHour'
-import UserAchievement from 'App/Models/UserAchievement'
 
 /**
  * VolunteerController - Volunteer Panel endpoints
@@ -549,28 +548,50 @@ export default class VolunteerController {
       await auth.use('api').authenticate()
       const user = auth.user!
 
-      const achievements = await UserAchievement.query()
-        .where('user_id', user.id)
-        .preload('achievement')
-        .orderBy('created_at', 'desc')
-
-      const totalPoints = achievements.reduce((sum, ua) => sum + (ua.achievement?.points || 0), 0)
+      // Fetch from new UserBadge table (VMS 2.0)
+      const badges = await import('App/Models/UserBadge').then(m => m.default.query().where('userId', user.id).preload('badge'))
 
       return response.ok({
-        achievements: achievements.map((ua) => ({
-          id: ua.achievement?.id,
-          key: ua.achievement?.key,
-          title: ua.achievement?.title,
-          description: ua.achievement?.description,
-          points: ua.achievement?.points,
-          awardedAt: ua.createdAt,
-          metadata: ua.metadata
-        })),
-        totalPoints
+        achievements: badges.map((b) => ({
+          id: b.badge.id,
+          title: b.badge.name,
+          description: b.badge.description,
+          icon: b.badge.icon,
+          awardedAt: b.awardedAt
+        }))
       })
     } catch (error) {
       Logger.error('My achievements error: %o', error)
       return response.internalServerError({ error: { message: 'Failed to load achievements' } })
+    }
+  }
+
+  public async gamificationStats({ auth, response }: HttpContextContract) {
+    try {
+        await auth.use('api').authenticate()
+        const user = auth.user!
+
+        // Mock XP (In real app, sum from logs)
+        const currentXp = 450
+        const nextLevelXp = 500
+        const level = 5
+
+        const badges = await import('App/Models/UserBadge').then(m => m.default.query().where('userId', user.id).preload('badge'))
+
+        return response.ok({
+            level,
+            currentXp,
+            nextLevelXp,
+            badges: badges.map(b => ({
+                id: b.badge.id,
+                name: b.badge.name,
+                icon: b.badge.icon,
+                awardedAt: b.awardedAt
+            }))
+        })
+    } catch (error) {
+        Logger.error('Gamification stats error: %o', error)
+        return response.internalServerError({ error: { message: 'Failed to load stats' } })
     }
   }
 

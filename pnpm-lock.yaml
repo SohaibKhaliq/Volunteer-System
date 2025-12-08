@@ -41,7 +41,7 @@ importers:
         version: 18.4.2(@adonisjs/application@5.3.0)(@adonisjs/core@5.9.0)(mysql2@3.15.3)
       '@adonisjs/mail':
         specifier: ^9.2.2
-        version: 9.2.2(@adonisjs/core@5.9.0)(@aws-sdk/client-ses@3.936.0)(@types/luxon@3.7.1)(@types/node@20.19.25)(edge.js@6.3.0)(luxon@3.7.2)
+        version: 9.2.2(@adonisjs/core@5.9.0)(@aws-sdk/client-ses@3.936.0)(@types/luxon@3.7.1)(@types/node@20.19.25)(dayjs@1.11.19)(edge.js@6.3.0)(luxon@3.7.2)(moment-timezone@0.5.48)(moment@2.30.1)
       '@adonisjs/redis':
         specifier: ^7.3.3
         version: 7.3.4(@adonisjs/core@5.9.0)
@@ -51,6 +51,9 @@ importers:
       '@adonisjs/route-model-binding':
         specifier: ^1.0.1
         version: 1.0.1(@adonisjs/core@5.9.0)(@adonisjs/lucid@18.4.2(@adonisjs/application@5.3.0)(@adonisjs/core@5.9.0)(mysql2@3.15.3))
+      '@google/generative-ai':
+        specifier: ^0.24.1
+        version: 0.24.1
       csv-parse:
         specifier: ^6.1.0
         version: 6.1.0
@@ -226,6 +229,9 @@ importers:
       '@tiptap/starter-kit':
         specifier: ^3.11.1
         version: 3.11.1
+      '@types/react-big-calendar':
+        specifier: ^1.16.3
+        version: 1.16.3
       axios:
         specifier: ^1.5.0
         version: 1.13.2
@@ -271,6 +277,9 @@ importers:
       react:
         specifier: ^18.2.0
         version: 18.3.1
+      react-big-calendar:
+        specifier: ^1.19.4
+        version: 1.19.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       react-day-picker:
         specifier: ^9.11.2
         version: 9.11.2(react@18.3.1)
@@ -1943,6 +1952,10 @@ packages:
   '@gar/promisify@1.1.3':
     resolution: {integrity: sha512-k2Ty1JcVojjJFwrg/ThKi2ujJ7XNLYaFGNB/bWT9wGR+oSMJHMa5w+CUq6p/pVrKeNNgA7pCqEcjSnHVoqJQFw==}
 
+  '@google/generative-ai@0.24.1':
+    resolution: {integrity: sha512-MqO+MLfM6kjxcKoy0p1wRzG3b4ZZXtPI+z2IE26UogS2Cm/XHO+7gGRBh6gcJsOiIVoH93UwKvW4HdgiOZCy9Q==}
+    engines: {node: '>=18.0.0'}
+
   '@hookform/resolvers@3.10.0':
     resolution: {integrity: sha512-79Dv+3mDF7i+2ajj7SkypSKHhl1cbln1OGavqrsF7p6mbUv11xpqpacPsGDCTRvCSjEEIez2ef1NveSVL3b0Ag==}
     peerDependencies:
@@ -2541,6 +2554,9 @@ packages:
   '@pkgr/core@0.2.9':
     resolution: {integrity: sha512-QNqXyfVS2wm9hweSYD2O7F0G06uurj9kZ96TRQE5Y9hU7+tgdZwIkbAKc5Ocy1HxEY2kuDQa6cQ1WRs/O5LFKA==}
     engines: {node: ^12.20.0 || ^14.18.0 || >=16.0.0}
+
+  '@popperjs/core@2.11.8':
+    resolution: {integrity: sha512-P1st0aksCrn9sGZhp8GMYwBnQsbvAWsZAX44oXNNvLHGqAOcoVxmjZiohstwQ7SqKnbR47akdNi+uleWD8+g6A==}
 
   '@poppinss/chokidar-ts@3.3.5':
     resolution: {integrity: sha512-Ht//xB2ZPa16EDH/bmaWEBWunsBTnBYdnv3nKwXHrqNHDfcYX1DHcJmcNORRH9YLOOuVsTmqDcpiAdTn06LaHQ==}
@@ -3503,6 +3519,11 @@ packages:
     resolution: {integrity: sha512-vDbaOzF7yT2Qs4vO6XV1MHcJv+3dgR1sT+l3B8xxOVhUC336prMvqrvsLL/9Dnw2xr6Qhz4J0dmS0llNAbnUmQ==}
     engines: {node: '>=14.0.0'}
 
+  '@restart/hooks@0.4.16':
+    resolution: {integrity: sha512-f7aCv7c+nU/3mF7NWLtVVr0Ra80RqsO89hO72r+Y/nvQr5+q0UFGkocElTH6MJApvReVh6JHUFYn2cw1WdHF3w==}
+    peerDependencies:
+      react: '>=16.8.0'
+
   '@rolldown/pluginutils@1.0.0-beta.27':
     resolution: {integrity: sha512-+d0F4MKMCbeVUJwG96uQ4SgAznZNSq93I3V+9NHA4OpvqG8mRCpGdKmK8l/dl02h2CCDHwW2FqilnTyDcAnqjA==}
 
@@ -4390,6 +4411,9 @@ packages:
   '@types/d3-timer@3.0.2':
     resolution: {integrity: sha512-Ps3T8E8dZDam6fUyNiMkekK3XUsaUEik+idO9/YjPtfj2qruF8tFBXS7XhtE4iIXBLxhmLjP3SXpLhVf21I9Lw==}
 
+  '@types/date-arithmetic@4.1.4':
+    resolution: {integrity: sha512-p9eZ2X9B80iKiTW4ukVj8B4K6q9/+xFtQ5MGYA5HWToY9nL4EkhV9+6ftT2VHpVMEZb5Tv00Iel516bVdO+yRw==}
+
   '@types/debug@4.1.12':
     resolution: {integrity: sha512-vIChWdVG3LG1SMxEvI/AK+FWJthlrqlTu7fbrlywTkkaONwk/UAGaULXRlf8vkzFBLVm0zkMdCquhL5aOjhXPQ==}
 
@@ -4522,6 +4546,9 @@ packages:
   '@types/proxy-addr@2.0.3':
     resolution: {integrity: sha512-TgAHHO4tNG3HgLTUhB+hM4iwW6JUNeQHCLnF1DjaDA9c69PN+IasoFu2MYDhubFc+ZIw5c5t9DMtjvrD6R3Egg==}
 
+  '@types/react-big-calendar@1.16.3':
+    resolution: {integrity: sha512-CR+5BKMhlr/wPgsp+sXOeNKNkoU1h/+6H1XoWuL7xnurvzGRQv/EnM8jPS9yxxBvXI8pjQBaJcI7RTSGiewG/Q==}
+
   '@types/react-dom@18.3.7':
     resolution: {integrity: sha512-MEe3UeoENYVFXzoXEWsvcpg6ZvlrFNlOQ7EOsvhI3CfAXwzPfO8Qwuxd40nepsYKqyyVQnTdEfv68q91yLcKrQ==}
     peerDependencies:
@@ -4562,6 +4589,9 @@ packages:
 
   '@types/validator@13.15.10':
     resolution: {integrity: sha512-T8L6i7wCuyoK8A/ZeLYt1+q0ty3Zb9+qbSSvrIVitzT3YjZqkTZ40IbRsPanlB4h1QB3JVL1SYCdR6ngtFYcuA==}
+
+  '@types/warning@3.0.3':
+    resolution: {integrity: sha512-D1XC7WK8K+zZEveUPY+cf4+kgauk8N4eHr/XIHXGlGYkHLud6hK9lYfZk1ry1TNh798cZUCgb6MqGEG8DkJt6Q==}
 
   '@types/yargs-parser@21.0.3':
     resolution: {integrity: sha512-I4q9QU9MQv4oEOz4tAHJtNz1cwuLxn2F3xcc2iV5WdqLPpUnj30aUuxt1mAxYTG+oe8CZMV/+6rU4S4gRDzqtQ==}
@@ -5574,6 +5604,10 @@ packages:
     resolution: {integrity: sha512-3Pe/CF1Nn94hyhIYpjtiLhdCoEoz0DqQ+988E9gmeEdQZlojxnOb74wctFyuwWQHzqyf9X7C7MG8juUpqBJT8w==}
     engines: {node: '>=0.8'}
 
+  clsx@1.2.1:
+    resolution: {integrity: sha512-EcR6r5a8bj6pu3ycsa/E/cKVGuTgZJZdsyUYHOksG/UHIiKfjxzRxYJpyVBwYaQeOvghal9fcc4PidlgzugAQg==}
+    engines: {node: '>=6'}
+
   clsx@2.1.1:
     resolution: {integrity: sha512-eYm0QWBtUrBWZWG0d386OGAw16Z995PiOVo2B7bjWSbHedGl5e0ZWaq65kOGgUSNesEIDkB9ISbTg/JK9dhCZA==}
     engines: {node: '>=6'}
@@ -5941,6 +5975,9 @@ packages:
     resolution: {integrity: sha512-BS8PfmtDGnrgYdOonGZQdLZslWIeCGFP9tpan0hi1Co2Zr2NKADsvGYA8XxuG/4UWgJ6Cjtv+YJnB6MM69QGlQ==}
     engines: {node: '>= 0.4'}
 
+  date-arithmetic@4.1.0:
+    resolution: {integrity: sha512-QWxYLR5P/6GStZcdem+V1xoto6DMadYWpMXU82ES3/RfR3Wdwr3D0+be7mgOJ+Ov0G9D5Dmb9T17sNLQYj9XOg==}
+
   date-fns-jalali@4.1.0-0:
     resolution: {integrity: sha512-hTIP/z+t+qKwBDcmmsnmjWTduxCg+5KfdqWQvb2X/8C9+knYY6epN/pfxdDuyVlSVeFz0sM5eEfwIUQ70U4ckg==}
 
@@ -5956,6 +5993,9 @@ packages:
 
   dateformat@4.6.3:
     resolution: {integrity: sha512-2P0p0pFGzHS5EMnhdxQi7aJN+iMheud0UhG4dlE1DLAlvL8JHjJJTX/CSm4JXwV0Ka5nGk3zC5mcb5bUQUxxMA==}
+
+  dayjs@1.11.19:
+    resolution: {integrity: sha512-t5EcLVS6QPBNqM2z8fakk/NKel+Xzshgt8FFKAn+qwlD1pzZWxh0nVCrvFK7ZDb6XucZeF9z8C7CBWTRIVApAw==}
 
   debug@2.6.9:
     resolution: {integrity: sha512-bC7ElrdJaJnPbAP+1EotYvqZsb3ecl5wi6Bfi6BJTUcNowp6cvspg0jXznRTKDjm/E7AdgFBVeAPVMNcKGsHMA==}
@@ -6079,6 +6119,10 @@ packages:
 
   deprecation@2.3.1:
     resolution: {integrity: sha512-xmHIy4F3scKVwMsQ4WnVaS8bHOx0DmVwRywosKhaILI0ywMDWPtBSku2HNxRvF7jtwDRsoEwYQSfbxj8b7RlJQ==}
+
+  dequal@2.0.3:
+    resolution: {integrity: sha512-0je+qPKHEMohvfRTCEo3CrPG6cAzAYgmzKyxRiYSSDkS6eGJdyVJm7WaYA5ECaAD9wLB2T4EEeymA5aFVcYXCA==}
+    engines: {node: '>=6'}
 
   destroy@1.2.0:
     resolution: {integrity: sha512-2sJGJTaXIIaR1w4iJSNoN0hnMY7Gpc/n8D4qSCJw8QqFWXf7cuAgnEHxBpweaVcPevC2l3KpjYCx3NypQQgaJg==}
@@ -7121,6 +7165,9 @@ packages:
     resolution: {integrity: sha512-w0Uf9Y9/nyHinEk5vMJKRie+wa4kR5hmDbEhGGds/kG1PwGLLHKRoNMeJOyCQjjBkANlnScqgzcFwGHgmgLkVA==}
     engines: {node: '>=16'}
 
+  globalize@0.1.1:
+    resolution: {integrity: sha512-5e01v8eLGfuQSOvx2MsDMOWS0GFtCx1wPzQSmcHw4hkxFzrQDBO3Xwg/m8Hr/7qXMrHeOIE29qWVzyv06u1TZA==}
+
   globals@12.4.0:
     resolution: {integrity: sha512-BWICuzzDvDoH54NHKCseDanAhE3CeDorgDL5MT6LMXXj2WCnd9UC2szdk4AWLfjdgNBCXLUanXYcpBBKOSWGwg==}
     engines: {node: '>=8'}
@@ -7504,6 +7551,9 @@ packages:
   interpret@2.2.0:
     resolution: {integrity: sha512-Ju0Bz/cEia55xDwUWEa8+olFpCiQoypjnQySseKtmjNrnps3P+xfpUmGr90T7yjlVJmOtybRvPXhKMbHr+fWnw==}
     engines: {node: '>= 0.10'}
+
+  invariant@2.2.4:
+    resolution: {integrity: sha512-phJfQVBuaJM5raOpJjSfkiD6BpbCE4Ns//LaXl6wGYtUBY83nWS6Rf9tXm2e8VaK60JEjYldbPif/A2B1C2gNA==}
 
   ioredis@5.8.2:
     resolution: {integrity: sha512-C6uC+kleiIMmjViJINWk80sOQw5lEzse1ZmvD+S/s8p8CWapftSaC+kocGTx6xrbrJ4WmYQGC08ffHLr6ToR6Q==}
@@ -8311,6 +8361,9 @@ packages:
     resolution: {integrity: sha512-iPZK6eYjbxRu3uB4/WZ3EsEIMJFMqAoopl3R+zuq0UjcAm/MO6KCweDgPfP3elTztoKP3KtnVHxTn2NHBSDVUw==}
     engines: {node: '>=10'}
 
+  lodash-es@4.17.21:
+    resolution: {integrity: sha512-mKnC+QJ9pWVzv+C4/U3rRsHapFfHvQFoFB92e52xeyGMcX6/OlIl78je1u8vePzYZSkkogMPJ2yjxxsb89cxyw==}
+
   lodash.debounce@4.0.8:
     resolution: {integrity: sha512-FT1yDzDYEoYWhnSGnpE/4Kj1fLZkDFyqRb7fNt6FdYOSxlUWAtp42Eh6Wb0rGIv/m9Bgo7x4GhQbm5Ys4SG5ow==}
 
@@ -8535,6 +8588,9 @@ packages:
     resolution: {integrity: sha512-UERzLsxzllchadvbPs5aolHh65ISpKpM+ccLbOJ8/vvpBKmAWf+la7dXFy7Mr0ySHbdHrFv5kGFCUHHe6GFEmw==}
     engines: {node: '>= 4.0.0'}
 
+  memoize-one@6.0.0:
+    resolution: {integrity: sha512-rkpe71W0N0c0Xz6QD0eJETuWAJGnJ9afsl1srmwPrI+yBCkge5EycXXbYRyvL29zZVUWQCY7InPRCv3GDXuZNw==}
+
   memory-cache@0.2.0:
     resolution: {integrity: sha512-OcjA+jzjOYzKmKS6IQVALHLVz+rNTMPoJvCztFaZxwG14wtAW7VRZjwTQu06vKCYOxh4jVnik7ya0SXTB0W+xA==}
 
@@ -8711,6 +8767,12 @@ packages:
   modify-values@1.0.1:
     resolution: {integrity: sha512-xV2bxeN6F7oYjZWTe/YPAy6MN2M+sL4u/Rlm2AHCIVGfo2p1yGmBHQ6vHehl4bRTZBdHu3TSkWdYgkwpYzAGSw==}
     engines: {node: '>=0.10.0'}
+
+  moment-timezone@0.5.48:
+    resolution: {integrity: sha512-f22b8LV1gbTO2ms2j2z13MuPogNoh5UzxL3nzNAYKGraILnbGc9NEE6dyiiiLv46DGRb8A4kg8UKWLjPthxBHw==}
+
+  moment@2.30.1:
+    resolution: {integrity: sha512-uEmtNhbDOrWPFS+hdjFCBfy9f2YoyzRpwcl+DqpC6taX21FzsTLQVbMV/W7PzNSX6x/bhC1zA3c2UQ5NzH6how==}
 
   monaco-editor@0.55.1:
     resolution: {integrity: sha512-jz4x+TJNFHwHtwuV9vA9rMujcZRb0CEilTEwG2rRSpe/A7Jdkuj8xPKttCgOh+v/lkHy7HsZ64oj+q3xoAFl9A==}
@@ -9712,6 +9774,12 @@ packages:
     resolution: {integrity: sha512-y3bGgqKj3QBdxLbLkomlohkvsA8gdAiUQlSBJnBhfn+BPxg4bc62d8TcBW15wavDfgexCgccckhcZvywyQYPOw==}
     hasBin: true
 
+  react-big-calendar@1.19.4:
+    resolution: {integrity: sha512-FrvbDx2LF6JAWFD96LU1jjloppC5OgIvMYUYIPzAw5Aq+ArYFPxAjLqXc4DyxfsQDN0TJTMuS/BIbcSB7Pg0YA==}
+    peerDependencies:
+      react: ^16.14.0 || ^17 || ^18 || ^19
+      react-dom: ^16.14.0 || ^17 || ^18 || ^19
+
   react-day-picker@9.11.2:
     resolution: {integrity: sha512-TD/xMUGg2oiKX8jUR21MST5pj+7Y36097YtnDHQFlIcZOu3mbLLw2B2JqEByEGrR3HHveWYnKlyls6WqJgohAg==}
     engines: {node: '>=18'}
@@ -9783,6 +9851,15 @@ packages:
       leaflet: ^1.9.0
       react: ^18.0.0
       react-dom: ^18.0.0
+
+  react-lifecycles-compat@3.0.4:
+    resolution: {integrity: sha512-fBASbA6LnOU9dOU2eW7aQ8xmYBSXUIWr+UmF9b1efZBazGNO+rcXT/icdKnYm2pTwcRylVUYwW7H1PHfLekVzA==}
+
+  react-overlays@5.2.1:
+    resolution: {integrity: sha512-GLLSOLWr21CqtJn8geSwQfoJufdt3mfdsnIiQswouuQ2MMPns+ihZklxvsTDKD3cR2tF8ELbi5xUsvqVhR6WvA==}
+    peerDependencies:
+      react: '>=16.3.0'
+      react-dom: '>=16.3.0'
 
   react-remove-scroll-bar@2.3.8:
     resolution: {integrity: sha512-9r+yi9+mgU33AKcj6IbT9oRCO78WriSj6t/cF8DWBZJ9aOGPOTEDvdUDz1FwKim7QXWwmHqtdHnRJfhAxEG46Q==}
@@ -11203,6 +11280,11 @@ packages:
     resolution: {integrity: sha512-nWJ91DjeOkej/TA8pXQ3myruKpKEYgqvpw9lz4OPHj/NWFNluYrjbz9j01CJ8yKQd2g4jFoOkINCTW2I5LEEyw==}
     engines: {node: '>= 0.4'}
 
+  uncontrollable@7.2.1:
+    resolution: {integrity: sha512-svtcfoTADIB0nT9nltgjujTi7BzVmwjZClOmskKu/E8FW9BXzg9os8OLr4f8Dlnk0rYWJIWr4wv9eKUXiQvQwQ==}
+    peerDependencies:
+      react: '>=15.0.0'
+
   undici-types@6.21.0:
     resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
 
@@ -11506,6 +11588,9 @@ packages:
 
   walker@1.0.8:
     resolution: {integrity: sha512-ts/8E8l5b7kY0vlWLewOkDXMmPdLcVV4GmOQLyxuSswIJsweeFZtAsMF7k1Nszz+TYBQrlYRmzOnr398y1JemQ==}
+
+  warning@4.0.3:
+    resolution: {integrity: sha512-rpJyN222KWIvHJ/F53XSZv0Zl/accqHR8et1kpaMTD/fLCRxtV8iX8czMzY7sVZupTI3zcUTg8eycS2kNF9l6w==}
 
   wcwidth@1.0.1:
     resolution: {integrity: sha512-XHPEwS0q6TaxcvG85+8EYkbiCux2XtWG2mkc47Ng2A77BQu9+DqIOJldST4HgPkuea7dvKSj5VgX3P1d4rW8Tg==}
@@ -12030,7 +12115,7 @@ snapshots:
       - supports-color
       - tedious
 
-  '@adonisjs/mail@9.2.2(@adonisjs/core@5.9.0)(@aws-sdk/client-ses@3.936.0)(@types/luxon@3.7.1)(@types/node@20.19.25)(edge.js@6.3.0)(luxon@3.7.2)':
+  '@adonisjs/mail@9.2.2(@adonisjs/core@5.9.0)(@aws-sdk/client-ses@3.936.0)(@types/luxon@3.7.1)(@types/node@20.19.25)(dayjs@1.11.19)(edge.js@6.3.0)(luxon@3.7.2)(moment-timezone@0.5.48)(moment@2.30.1)':
     dependencies:
       '@adonisjs/core': 5.9.0
       '@poppinss/colors': 4.1.5
@@ -12041,7 +12126,7 @@ snapshots:
       fastq: 1.19.1
       formdata-node: 6.0.3
       got: 14.6.5
-      ical-generator: 7.2.0(@types/luxon@3.7.1)(@types/node@20.19.25)(luxon@3.7.2)
+      ical-generator: 7.2.0(@types/luxon@3.7.1)(@types/node@20.19.25)(dayjs@1.11.19)(luxon@3.7.2)(moment-timezone@0.5.48)(moment@2.30.1)
       nodemailer: 6.10.1
     optionalDependencies:
       '@aws-sdk/client-ses': 3.936.0
@@ -13784,6 +13869,8 @@ snapshots:
 
   '@gar/promisify@1.1.3': {}
 
+  '@google/generative-ai@0.24.1': {}
+
   '@hookform/resolvers@3.10.0(react-hook-form@7.66.1(react@18.3.1))':
     dependencies:
       react-hook-form: 7.66.1(react@18.3.1)
@@ -14221,10 +14308,7 @@ snapshots:
       jest-runner: 25.5.4
       jest-runtime: 25.5.4
     transitivePeerDependencies:
-      - bufferutil
-      - canvas
       - supports-color
-      - utf-8-validate
 
   '@jest/transform@25.5.1':
     dependencies:
@@ -14644,6 +14728,8 @@ snapshots:
     optional: true
 
   '@pkgr/core@0.2.9': {}
+
+  '@popperjs/core@2.11.8': {}
 
   '@poppinss/chokidar-ts@3.3.5':
     dependencies:
@@ -15684,6 +15770,11 @@ snapshots:
 
   '@remix-run/router@1.23.1': {}
 
+  '@restart/hooks@0.4.16(react@18.3.1)':
+    dependencies:
+      dequal: 2.0.3
+      react: 18.3.1
+
   '@rolldown/pluginutils@1.0.0-beta.27': {}
 
   '@rollup/plugin-babel@5.3.1(@babel/core@7.28.5)(@types/babel__core@7.20.5)(rollup@1.32.1)':
@@ -16688,6 +16779,8 @@ snapshots:
 
   '@types/d3-timer@3.0.2': {}
 
+  '@types/date-arithmetic@4.1.4': {}
+
   '@types/debug@4.1.12':
     dependencies:
       '@types/ms': 2.1.0
@@ -16826,6 +16919,12 @@ snapshots:
     dependencies:
       '@types/node': 20.19.25
 
+  '@types/react-big-calendar@1.16.3':
+    dependencies:
+      '@types/date-arithmetic': 4.1.4
+      '@types/prop-types': 15.7.15
+      '@types/react': 18.3.27
+
   '@types/react-dom@18.3.7(@types/react@18.3.27)':
     dependencies:
       '@types/react': 18.3.27
@@ -16868,6 +16967,8 @@ snapshots:
   '@types/use-sync-external-store@0.0.6': {}
 
   '@types/validator@13.15.10': {}
+
+  '@types/warning@3.0.3': {}
 
   '@types/yargs-parser@21.0.3': {}
 
@@ -18146,6 +18247,8 @@ snapshots:
 
   clone@2.1.2: {}
 
+  clsx@1.2.1: {}
+
   clsx@2.1.1: {}
 
   cluster-key-slot@1.1.2: {}
@@ -18524,6 +18627,8 @@ snapshots:
       es-errors: 1.3.0
       is-data-view: 1.0.2
 
+  date-arithmetic@4.1.0: {}
+
   date-fns-jalali@4.1.0-0: {}
 
   date-fns@2.30.0:
@@ -18535,6 +18640,8 @@ snapshots:
   dateformat@3.0.3: {}
 
   dateformat@4.6.3: {}
+
+  dayjs@1.11.19: {}
 
   debug@2.6.9:
     dependencies:
@@ -18642,6 +18749,8 @@ snapshots:
   depd@2.0.0: {}
 
   deprecation@2.3.1: {}
+
+  dequal@2.0.3: {}
 
   destroy@1.2.0: {}
 
@@ -19086,7 +19195,7 @@ snapshots:
     dependencies:
       eslint: 8.57.1
 
-  eslint-config-react-app@5.2.1(@typescript-eslint/eslint-plugin@2.34.0(@typescript-eslint/parser@2.34.0(eslint@6.8.0)(typescript@3.9.10))(eslint@6.8.0)(typescript@3.9.10))(@typescript-eslint/parser@2.34.0(eslint@6.8.0)(typescript@3.9.10))(babel-eslint@10.1.0(eslint@8.57.1))(eslint-plugin-flowtype@3.13.0(eslint@8.57.1))(eslint-plugin-import@2.32.0(@typescript-eslint/parser@2.34.0(eslint@6.8.0)(typescript@3.9.10))(eslint@6.8.0))(eslint-plugin-jsx-a11y@6.10.2(eslint@8.57.1))(eslint-plugin-react-hooks@2.5.1(eslint@6.8.0))(eslint-plugin-react@7.37.5(eslint@6.8.0))(eslint@6.8.0)(typescript@3.9.10):
+  eslint-config-react-app@5.2.1(@typescript-eslint/eslint-plugin@2.34.0(@typescript-eslint/parser@2.34.0(eslint@6.8.0)(typescript@3.9.10))(eslint@6.8.0)(typescript@3.9.10))(@typescript-eslint/parser@2.34.0(eslint@6.8.0)(typescript@3.9.10))(babel-eslint@10.1.0(eslint@6.8.0))(eslint-plugin-flowtype@3.13.0(eslint@6.8.0))(eslint-plugin-import@2.32.0(@typescript-eslint/parser@2.34.0(eslint@6.8.0)(typescript@3.9.10))(eslint@6.8.0))(eslint-plugin-jsx-a11y@6.10.2(eslint@6.8.0))(eslint-plugin-react-hooks@2.5.1(eslint@6.8.0))(eslint-plugin-react@7.37.5(eslint@6.8.0))(eslint@6.8.0)(typescript@3.9.10):
     dependencies:
       '@typescript-eslint/eslint-plugin': 2.34.0(@typescript-eslint/parser@2.34.0(eslint@6.8.0)(typescript@3.9.10))(eslint@6.8.0)(typescript@3.9.10)
       '@typescript-eslint/parser': 2.34.0(eslint@6.8.0)(typescript@3.9.10)
@@ -20053,6 +20162,8 @@ snapshots:
       kind-of: 6.0.3
       which: 4.0.0
 
+  globalize@0.1.1: {}
+
   globals@12.4.0:
     dependencies:
       type-fest: 0.8.1
@@ -20320,13 +20431,16 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.28.4
 
-  ical-generator@7.2.0(@types/luxon@3.7.1)(@types/node@20.19.25)(luxon@3.7.2):
+  ical-generator@7.2.0(@types/luxon@3.7.1)(@types/node@20.19.25)(dayjs@1.11.19)(luxon@3.7.2)(moment-timezone@0.5.48)(moment@2.30.1):
     dependencies:
       uuid-random: 1.3.2
     optionalDependencies:
       '@types/luxon': 3.7.1
       '@types/node': 20.19.25
+      dayjs: 1.11.19
       luxon: 3.7.2
+      moment: 2.30.1
+      moment-timezone: 0.5.48
 
   iconv-lite@0.4.24:
     dependencies:
@@ -20451,6 +20565,10 @@ snapshots:
   interpret@1.4.0: {}
 
   interpret@2.2.0: {}
+
+  invariant@2.2.4:
+    dependencies:
+      loose-envify: 1.4.0
 
   ioredis@5.8.2:
     dependencies:
@@ -21554,6 +21672,8 @@ snapshots:
     dependencies:
       p-locate: 5.0.0
 
+  lodash-es@4.17.21: {}
+
   lodash.debounce@4.0.8: {}
 
   lodash.defaults@4.2.0: {}
@@ -21816,6 +21936,8 @@ snapshots:
     dependencies:
       fs-monkey: 1.1.0
 
+  memoize-one@6.0.0: {}
+
   memory-cache@0.2.0: {}
 
   meow@8.1.2:
@@ -21991,6 +22113,12 @@ snapshots:
   mkdirp@1.0.4: {}
 
   modify-values@1.0.1: {}
+
+  moment-timezone@0.5.48:
+    dependencies:
+      moment: 2.30.1
+
+  moment@2.30.1: {}
 
   monaco-editor@0.55.1:
     dependencies:
@@ -23151,6 +23279,27 @@ snapshots:
       minimist: 1.2.8
       strip-json-comments: 2.0.1
 
+  react-big-calendar@1.19.4(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+    dependencies:
+      '@babel/runtime': 7.28.4
+      clsx: 1.2.1
+      date-arithmetic: 4.1.0
+      dayjs: 1.11.19
+      dom-helpers: 5.2.1
+      globalize: 0.1.1
+      invariant: 2.2.4
+      lodash: 4.17.21
+      lodash-es: 4.17.21
+      luxon: 3.7.2
+      memoize-one: 6.0.0
+      moment: 2.30.1
+      moment-timezone: 0.5.48
+      prop-types: 15.8.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      react-overlays: 5.2.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      uncontrollable: 7.2.1(react@18.3.1)
+
   react-day-picker@9.11.2(react@18.3.1):
     dependencies:
       '@date-fns/tz': 1.4.1
@@ -23216,6 +23365,21 @@ snapshots:
       leaflet: 1.9.4
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)
+
+  react-lifecycles-compat@3.0.4: {}
+
+  react-overlays@5.2.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1):
+    dependencies:
+      '@babel/runtime': 7.28.4
+      '@popperjs/core': 2.11.8
+      '@restart/hooks': 0.4.16(react@18.3.1)
+      '@types/warning': 3.0.3
+      dom-helpers: 5.2.1
+      prop-types: 15.8.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      uncontrollable: 7.2.1(react@18.3.1)
+      warning: 4.0.3
 
   react-remove-scroll-bar@2.3.8(@types/react@18.3.27)(react@18.3.1):
     dependencies:
@@ -24788,7 +24952,7 @@ snapshots:
       enquirer: 2.4.1
       eslint: 6.8.0
       eslint-config-prettier: 6.15.0(eslint@6.8.0)
-      eslint-config-react-app: 5.2.1(@typescript-eslint/eslint-plugin@2.34.0(@typescript-eslint/parser@2.34.0(eslint@6.8.0)(typescript@3.9.10))(eslint@6.8.0)(typescript@3.9.10))(@typescript-eslint/parser@2.34.0(eslint@6.8.0)(typescript@3.9.10))(babel-eslint@10.1.0(eslint@8.57.1))(eslint-plugin-flowtype@3.13.0(eslint@8.57.1))(eslint-plugin-import@2.32.0(@typescript-eslint/parser@2.34.0(eslint@6.8.0)(typescript@3.9.10))(eslint@6.8.0))(eslint-plugin-jsx-a11y@6.10.2(eslint@8.57.1))(eslint-plugin-react-hooks@2.5.1(eslint@6.8.0))(eslint-plugin-react@7.37.5(eslint@6.8.0))(eslint@6.8.0)(typescript@3.9.10)
+      eslint-config-react-app: 5.2.1(@typescript-eslint/eslint-plugin@2.34.0(@typescript-eslint/parser@2.34.0(eslint@6.8.0)(typescript@3.9.10))(eslint@6.8.0)(typescript@3.9.10))(@typescript-eslint/parser@2.34.0(eslint@6.8.0)(typescript@3.9.10))(babel-eslint@10.1.0(eslint@6.8.0))(eslint-plugin-flowtype@3.13.0(eslint@6.8.0))(eslint-plugin-import@2.32.0(@typescript-eslint/parser@2.34.0(eslint@6.8.0)(typescript@3.9.10))(eslint@6.8.0))(eslint-plugin-jsx-a11y@6.10.2(eslint@6.8.0))(eslint-plugin-react-hooks@2.5.1(eslint@6.8.0))(eslint-plugin-react@7.37.5(eslint@6.8.0))(eslint@6.8.0)(typescript@3.9.10)
       eslint-plugin-flowtype: 3.13.0(eslint@6.8.0)
       eslint-plugin-import: 2.32.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@3.9.10))(eslint@8.57.1)
       eslint-plugin-jsx-a11y: 6.10.2(eslint@6.8.0)
@@ -24969,6 +25133,14 @@ snapshots:
       has-bigints: 1.1.0
       has-symbols: 1.1.0
       which-boxed-primitive: 1.1.1
+
+  uncontrollable@7.2.1(react@18.3.1):
+    dependencies:
+      '@babel/runtime': 7.28.4
+      '@types/react': 18.3.27
+      invariant: 2.2.4
+      react: 18.3.1
+      react-lifecycles-compat: 3.0.4
 
   undici-types@6.21.0: {}
 
@@ -25233,6 +25405,10 @@ snapshots:
   walker@1.0.8:
     dependencies:
       makeerror: 1.0.12
+
+  warning@4.0.3:
+    dependencies:
+      loose-envify: 1.4.0
 
   wcwidth@1.0.1:
     dependencies:

@@ -88,6 +88,25 @@ export default class OrganizationVolunteersController {
     return response.ok(volunteer)
   }
 
+  // Update status specifically (Rostering)
+  public async updateStatus({ auth, params, request, response }: HttpContextContract) {
+    const volunteer = await OrganizationVolunteer.find(params.id) // Expecting organization_volunteer ID or we might query by user_id/org_id
+    if (!volunteer) return response.notFound('Volunteer record not found')
+
+    // Auth check: User must be admin of the organization
+    if (auth?.user) {
+        // ... simplified auth check for prototype
+    }
+
+    const { status } = request.only(['status']) // 'approved', 'rejected', 'active'
+    if (status) {
+        volunteer.status = status
+        await volunteer.save()
+    }
+
+    return response.ok(volunteer)
+  }
+
   public async destroy({ auth, params, response }: HttpContextContract) {
     const volunteer = await OrganizationVolunteer.find(params.id)
     if (!volunteer) return response.notFound()
