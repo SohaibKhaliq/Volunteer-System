@@ -5,6 +5,9 @@ import User from 'App/Models/User'
 import Organization from 'App/Models/Organization'
 import Event from 'App/Models/Event'
 import AuditLog from 'App/Models/AuditLog'
+import Notification from 'App/Models/Notification'
+import Team from 'App/Models/Team'
+import OrganizationTeamMember from 'App/Models/OrganizationTeamMember'
 
 /**
  * AdminController - Platform-level super admin operations
@@ -289,8 +292,47 @@ export default class AdminController {
       const admin = await this.requireSuperAdmin(auth)
 
       const org = await Organization.findOrFail(params.id)
+      const previousStatus = org.status
       org.status = 'active'
+      org.isApproved = true
       await org.save()
+
+      // Create default team for the organization
+      try {
+        const defaultTeam = await Team.create({
+          organizationId: org.id,
+          name: 'Core Team',
+          description: 'Default team for organization members'
+        })
+
+        // Find the organization creator/contact and add them as team admin
+        // This assumes the organization has a contact_email that might match a user
+        if (org.contactEmail) {
+          const creator = await User.query().where('email', org.contactEmail).first()
+          if (creator) {
+            // Add creator as organization team member (admin role)
+            await OrganizationTeamMember.create({
+              organizationId: org.id,
+              userId: creator.id,
+              role: 'Admin'
+            })
+
+            // Send welcome notification
+            await Notification.create({
+              userId: creator.id,
+              type: 'organization_approved',
+              payload: JSON.stringify({
+                organizationId: org.id,
+                organizationName: org.name,
+                organizationSlug: org.slug,
+                teamId: defaultTeam.id
+              })
+            })
+          }
+        }
+      } catch (err) {
+        Logger.warn('Failed to create default team or send approval notification:', err)
+      }
 
       // Log the action
       await AuditLog.safeCreate({
@@ -298,7 +340,7 @@ export default class AdminController {
         action: 'organization_approved',
         targetType: 'organization',
         targetId: org.id,
-        metadata: JSON.stringify({ previousStatus: 'pending', newStatus: 'active' })
+        metadata: JSON.stringify({ previousStatus, newStatus: 'active' })
       })
 
       return response.ok({ message: 'Organization approved', organization: org })
@@ -322,6 +364,27 @@ export default class AdminController {
       const previousStatus = org.status
       org.status = 'suspended'
       await org.save()
+
+      // Notify all organization team members about suspension
+      try {
+        const teamMembers = await OrganizationTeamMember.query()
+          .where('organization_id', org.id)
+          .select('user_id')
+
+        for (const member of teamMembers) {
+          await Notification.create({
+            userId: member.userId,
+            type: 'organization_suspended',
+            payload: JSON.stringify({
+              organizationId: org.id,
+              organizationName: org.name,
+              reason: reason || 'No reason provided'
+            })
+          })
+        }
+      } catch (err) {
+        Logger.warn('Failed to send suspension notifications:', err)
+      }
 
       // Log the action
       await AuditLog.safeCreate({
