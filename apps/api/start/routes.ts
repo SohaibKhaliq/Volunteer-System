@@ -82,7 +82,13 @@ Route.resource('roles', 'RolesController')
   .apiOnly()
 
 Route.resource('events', 'EventsController')
-  .middleware({ '*': ['auth'] })
+  .middleware({
+    store: ['auth'],
+    update: ['auth'],
+    destroy: ['auth'],
+    index: [],
+    show: []
+  })
   .apiOnly()
 
 Route.resource('tasks', 'TasksController')
@@ -92,6 +98,11 @@ Route.resource('tasks', 'TasksController')
 Route.resource('assignments', 'AssignmentsController')
   .middleware({ '*': ['auth'] })
   .apiOnly()
+
+// Attendance
+Route.get('/events/:eventId/qr', 'AttendanceController.generateQr').middleware(['auth'])
+Route.post('/attendance/check-in', 'AttendanceController.checkIn').middleware(['auth'])
+Route.post('/attendance/check-out', 'AttendanceController.checkOut').middleware(['auth'])
 
 Route.resource('compliance', 'ComplianceController')
   .middleware({ '*': ['auth'] })

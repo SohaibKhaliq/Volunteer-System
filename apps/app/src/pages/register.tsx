@@ -14,6 +14,7 @@ export default function Register() {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState<'volunteer' | 'organization'>('volunteer');
   const { setToken } = useStore();
   const navigate = useNavigate();
 
@@ -42,7 +43,7 @@ export default function Register() {
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    mutation.mutate({ firstName, lastName, email, password });
+    mutation.mutate({ firstName, lastName, email, password, role });
   };
 
   return (
@@ -80,6 +81,28 @@ export default function Register() {
                   required
                   className="h-11"
                 />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>I want to join as a</Label>
+              <div className="grid grid-cols-2 gap-4">
+                <Button
+                  type="button"
+                  variant={role === 'volunteer' ? 'default' : 'outline'}
+                  onClick={() => setRole('volunteer')}
+                  className="h-11"
+                >
+                  Volunteer
+                </Button>
+                <Button
+                  type="button"
+                  variant={role === 'organization' ? 'default' : 'outline'}
+                  onClick={() => setRole('organization')}
+                  className="h-11"
+                >
+                  Organization
+                </Button>
               </div>
             </div>
 

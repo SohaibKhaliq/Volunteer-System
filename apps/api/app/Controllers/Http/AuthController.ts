@@ -15,11 +15,44 @@ export default class AuthController {
         password: schema.string({}, [rules.minLength(8)]),
         firstName: schema.string.optional({ trim: true }),
         lastName: schema.string.optional({ trim: true }),
+        role: schema.enum.optional(['volunteer', 'organization'] as const),
       })
 
       const data = await request.validate({ schema: userSchema })
 
-      const user = await User.create(data)
+      // Extract role before creating user to avoid dirty data if not in model directly (though it's not in user table, it's a relation)
+      const { role, ...userData } = data as any
+
+      const user = await User.create(userData)
+
+      // Assign role
+      const Role = (await import('App/Models/Role')).default
+      let roleName = role === 'organization' ? 'Organization Owner' : 'Volunteer'
+      const roleRecord = await Role.findBy('name', roleName)
+
+      // Fallback if seeded roles are different or missing
+      if (roleRecord) {
+        await user.related('roles').attach([roleRecord.id])
+      }
+
+      // If Organization, create a placeholder org
+      if (role === 'organization') {
+         const Organization = (await import('App/Models/Organization')).default
+         const OrganizationTeamMember = (await import('App/Models/OrganizationTeamMember')).default
+
+         const org = await Organization.create({
+            name: `${user.firstName}'s Organization`,
+            contactEmail: user.email,
+            isApproved: false // Requires Admin approval
+         })
+
+         await OrganizationTeamMember.create({
+            organizationId: org.id,
+            userId: user.id,
+            role: 'owner'
+         })
+      }
+
       const token = await auth.use('api').generate(user)
 
       return response.json({ token })

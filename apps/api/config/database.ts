@@ -7,6 +7,7 @@
 
 import Env from '@ioc:Adonis/Core/Env'
 import type { DatabaseConfig } from '@ioc:Adonis/Lucid/Database'
+import Application from '@ioc:Adonis/Core/Application'
 
 const databaseConfig: DatabaseConfig = {
   /*
@@ -22,6 +23,15 @@ const databaseConfig: DatabaseConfig = {
   connection: Env.get('DB_CONNECTION'),
 
   connections: {
+    sqlite: {
+      client: 'sqlite3',
+      connection: {
+        filename: Application.tmpPath('db.sqlite'),
+      },
+      useNullAsDefault: true,
+      healthCheck: true,
+      debug: true,
+    },
     mysql: {
       client: 'mysql2',
       connection: {
