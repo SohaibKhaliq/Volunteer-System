@@ -35,35 +35,59 @@ export default class VolunteerController {
         .where('user_id', user.id)
         .andWhere('status', 'approved')
         .sum('hours as total')
-      const totalHours = Number(hoursResult[0]?.$extras?.total || 0)
+      // Lucid may return aggregation results in different shapes depending on DB adapter.
+      const rawTotal = Array.isArray(hoursResult)
+        ? (hoursResult[0]?.$extras?.total ??
+          hoursResult[0]?.total ??
+          Object.values(hoursResult[0])[0])
+        : ((hoursResult as any)?.total ?? 0)
+      const totalHours = Number(rawTotal || 0)
 
       // Events attended (distinct events from volunteer_hours or attendances)
       const eventsAttendedResult = await Attendance.query()
         .where('user_id', user.id)
         .whereNotNull('check_in_at')
         .select(Database.raw('COUNT(DISTINCT opportunity_id) as count'))
-      const eventsAttended = Number(eventsAttendedResult[0]?.$extras?.count || 0)
+      const rawEvents = Array.isArray(eventsAttendedResult)
+        ? (eventsAttendedResult[0]?.$extras?.count ??
+          eventsAttendedResult[0]?.count ??
+          Object.values(eventsAttendedResult[0])[0])
+        : ((eventsAttendedResult as any)?.count ?? 0)
+      const eventsAttended = Number(rawEvents || 0)
 
       // Pending applications
       const pendingApps = await Application.query()
         .where('user_id', user.id)
         .andWhere('status', 'applied')
         .count('* as total')
-      const pendingApplications = Number(pendingApps[0]?.$extras?.total || 0)
+      const rawPending = Array.isArray(pendingApps)
+        ? (pendingApps[0]?.$extras?.total ??
+          pendingApps[0]?.total ??
+          Object.values(pendingApps[0])[0])
+        : ((pendingApps as any)?.total ?? 0)
+      const pendingApplications = Number(rawPending || 0)
 
       // Accepted applications
       const acceptedApps = await Application.query()
         .where('user_id', user.id)
         .andWhere('status', 'accepted')
         .count('* as total')
-      const acceptedApplications = Number(acceptedApps[0]?.$extras?.total || 0)
+      const rawAccepted = Array.isArray(acceptedApps)
+        ? (acceptedApps[0]?.$extras?.total ??
+          acceptedApps[0]?.total ??
+          Object.values(acceptedApps[0])[0])
+        : ((acceptedApps as any)?.total ?? 0)
+      const acceptedApplications = Number(rawAccepted || 0)
 
       // Organizations they belong to
       const orgsResult = await Database.from('organization_volunteers')
         .where('user_id', user.id)
         .andWhere('status', 'active')
         .count('* as total')
-      const organizationCount = Number(orgsResult[0]?.total || 0)
+      const rawOrgs = Array.isArray(orgsResult)
+        ? (orgsResult[0]?.total ?? Object.values(orgsResult[0])[0])
+        : ((orgsResult as any)?.total ?? 0)
+      const organizationCount = Number(rawOrgs || 0)
 
       // Upcoming events (opportunities with accepted applications in the future)
       const now = new Date()
@@ -106,8 +130,16 @@ export default class VolunteerController {
           awardedAt: ua.createdAt
         }))
       })
-    } catch (error) {
-      Logger.error('Volunteer dashboard error: %o', error)
+    } catch (error: any) {
+      // Log stack and useful properties; stringify to avoid empty object logs
+      try {
+        Logger.error(
+          'Volunteer dashboard error: %s',
+          error?.stack ?? JSON.stringify(error, Object.getOwnPropertyNames(error))
+        )
+      } catch (e) {
+        Logger.error('Volunteer dashboard error (unable to stringify): %o', error)
+      }
       return response.internalServerError({ error: { message: 'Failed to load dashboard' } })
     }
   }
