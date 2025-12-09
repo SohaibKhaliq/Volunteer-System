@@ -8,7 +8,6 @@ import storage from './storage';
 
 const authRequestInterceptor = (config: AxiosRequestConfig) => {
   const token = storage.getToken();
-  console.log('AuthRequestInterceptor: token', token);
   if (config.headers) {
     // use standard Authorization header so backend auth middleware recognizes it
     if (token) config.headers.Authorization = `Bearer ${token}`;
