@@ -66,13 +66,7 @@ export default function AdminLayout() {
       ))
   );
 
-  // Debug logging (remove in production)
-  useEffect(() => {
-    console.log('AdminLayout - User:', user);
-    console.log('AdminLayout - Authenticated:', authenticated);
-    console.log('AdminLayout - IsAdmin:', isAdmin);
-    console.log('AdminLayout - User roles:', user?.roles);
-  }, [user, authenticated, isAdmin]);
+  // Keep admin checks quiet in production — no debug logs here
 
   // If user is not authed, redirect to login (run in effect to avoid synchronous navigation during render)
   useEffect(() => {
