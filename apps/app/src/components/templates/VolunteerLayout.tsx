@@ -30,7 +30,7 @@ const VolunteerLayout = () => {
     { name: 'Opportunities', href: '/volunteer/opportunities', icon: List },
     { name: 'History', href: '/volunteer/history', icon: History },
     { name: 'Achievements', href: '/volunteer/achievements', icon: Award },
-    { name: 'Profile', href: '/volunteer/profile', icon: User },
+    { name: 'Profile', href: '/volunteer/dashboard#profile', icon: User },
     { name: 'Settings', href: '/volunteer/settings', icon: Settings }
   ];
 
