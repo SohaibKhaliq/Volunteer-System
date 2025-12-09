@@ -86,7 +86,7 @@ export default function AppProvider({ children }: AppProviderProps) {
         } else {
           // For public routes, just clear the token silently or with a subtle notification
           // Don't redirect, let the user continue browsing
-          console.log('Invalid token cleared from public route');
+          // intentionally quiet in production
         }
       }
     }
