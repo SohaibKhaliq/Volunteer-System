@@ -26,6 +26,19 @@ socket.on('my-custom-event', (data: any) => {
 });
 ```
 
+### Notification mapping (server -> client)
+
+The backend posts Notification model changes to the socket server's internal endpoint which emits a single `notification` event. The client `useSocket` hook will parse the incoming payload's `type` and dispatch to the appropriate UI behaviour (toasts, confetti, and React Query invalidations).
+
+Common server notification types and client behaviour:
+- `new_application` → same as `new-application` handler (toast + invalidate `['organization','applications']`)
+- `application_accepted` / `application_rejected` → application status notification for volunteers (toast + invalidate `['volunteer','applications']`)
+- `hours_approved` / `hours_rejected` → hours notifications (toast + invalidate `['volunteer','hours']` and `['hours']`)
+- `volunteer_checked_in` → live check-in (toast + invalidate `['organization','attendances']` and `['admin','monitoring']`)
+- `achievement_earned` → confetti + invalidate `['volunteer','achievements']`
+
+If you add a new notification type on the API, update `useSocket` to handle it or ensure the frontend notification bell picks it up via the generic handler.
+
 2. **Listen in component** (if needed):
 ```typescript
 import { useSocketContext } from '@/providers/socket-provider';
