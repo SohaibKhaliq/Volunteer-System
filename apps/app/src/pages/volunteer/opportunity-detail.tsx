@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import volunteerApi from '@/lib/api/volunteerApi';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -194,15 +194,17 @@ export default function VolunteerOpportunityDetail() {
 
   return (
     <div className="container mx-auto p-4 md:p-6 space-y-6">
-      {/* Back button */}
-      <Button
-        variant="ghost"
-        onClick={() => navigate('/volunteer/opportunities')}
-        aria-label="Back to opportunities list"
-      >
-        <ArrowLeft className="h-4 w-4 mr-2" aria-hidden="true" />
-        Back to Opportunities
-      </Button>
+      {/* Breadcrumbs */}
+      <div className="flex items-center gap-3 text-sm text-gray-600">
+        <Link to="/volunteer/opportunities" className="inline-flex items-center hover:text-gray-900">
+          <ArrowLeft className="h-4 w-4 mr-2" aria-hidden="true" />
+          Opportunities
+        </Link>
+        <span className="text-muted-foreground">/</span>
+        <div aria-current="page" className="font-medium truncate">
+          {opp?.title || 'Opportunity'}
+        </div>
+      </div>
 
       {/* Hero Card */}
       <Card>
