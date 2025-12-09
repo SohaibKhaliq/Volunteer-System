@@ -14,7 +14,10 @@ import {
   LogOut,
   Bell,
   MessageSquare,
-  Briefcase
+  Briefcase,
+  Package,
+  Award,
+  List
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Providers from '@/providers';
@@ -28,11 +31,16 @@ export default function OrganizationLayout() {
   const navItems = [
     { path: '/organization', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/organization/profile', icon: Building2, label: 'Profile' },
+    { path: '/organization/opportunities', icon: List, label: 'Opportunities' },
     { path: '/organization/events', icon: Calendar, label: 'Events & Tasks' },
     { path: '/organization/volunteers', icon: Users, label: 'Volunteers' },
+    { path: '/organization/teams', icon: Users, label: 'Teams' },
+    { path: '/organization/attendances', icon: Clock, label: 'Attendances' },
     { path: '/organization/hours-approval', icon: Clock, label: 'Hours Approval' },
     { path: '/organization/compliance', icon: ShieldCheck, label: 'Compliance' },
     { path: '/organization/reports', icon: FileBarChart, label: 'Reports' },
+    { path: '/organization/resources', icon: Package, label: 'Resources' },
+    { path: '/organization/achievements', icon: Award, label: 'Achievements' },
     { path: '/organization/communications', icon: MessageSquare, label: 'Communications' },
     { path: '/organization/settings', icon: Settings, label: 'Settings' }
   ];
