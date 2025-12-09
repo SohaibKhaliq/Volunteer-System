@@ -3,8 +3,8 @@
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { User, Clock, Award } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
+import { User, Clock, Award, ArrowLeft } from 'lucide-react';
+import { useLocation, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 
@@ -24,6 +24,13 @@ export default function AdminVolunteerProfile() {
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto p-4">
+      {/* Breadcrumb / back to list */}
+      <div className="mb-2">
+        <Link to="/admin/users" className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900">
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Users
+        </Link>
+      </div>
       <Card>
         <CardHeader className="flex flex-col items-center text-center">
           <User className="h-16 w-16 text-blue-600 mb-2" />
