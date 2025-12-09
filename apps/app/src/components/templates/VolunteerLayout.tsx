@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { LayoutDashboard, History, User, Settings, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, History, User, Settings, LogOut, Menu, X, List, Award } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import NotificationBell from '@/components/molecules/notification-bell';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -27,7 +27,9 @@ const VolunteerLayout = () => {
 
   const navigation = [
     { name: 'Dashboard', href: '/volunteer/dashboard', icon: LayoutDashboard },
+    { name: 'Opportunities', href: '/volunteer/opportunities', icon: List },
     { name: 'History', href: '/volunteer/history', icon: History },
+    { name: 'Achievements', href: '/volunteer/achievements', icon: Award },
     { name: 'Profile', href: '/volunteer/profile', icon: User },
     { name: 'Settings', href: '/volunteer/settings', icon: Settings }
   ];
@@ -69,7 +71,9 @@ const VolunteerLayout = () => {
 
           <nav className="space-y-1">
             {navigation.map((item) => {
-              const isActive = location.pathname === item.href;
+              // treat subroutes as active as well (e.g. /volunteer/opportunities/:id)
+              const isActive =
+                location.pathname === item.href || (item.href !== '/' && location.pathname.startsWith(item.href + '/'));
               return (
                 <Link
                   key={item.name}
