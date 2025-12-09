@@ -51,25 +51,24 @@ export function QRScanner({ onScan, onClose, isOpen = true }: QRScannerProps) {
         await codeReader.decodeFromVideoDevice(selectedDevice.deviceId, videoRef.current!, (result, error) => {
           if (!isMounted) return;
 
-          if (result) {
-            const scannedText = result.getText();
-            console.log('[QRScanner] Scanned:', scannedText);
+            if (result) {
+              const scannedText = result.getText();
 
-            // Success feedback
-            toast.success('QR Code Scanned', {
-              description: 'Processing check-in...'
-            });
+              // Success feedback
+              toast.success('QR Code Scanned', {
+                description: 'Processing check-in...'
+              });
 
-            // Call the onScan callback
-            onScan(scannedText);
+              // Call the onScan callback
+              onScan(scannedText);
 
-            // Stop scanning after successful scan
-            handleStop();
-          }
+              // Stop scanning after successful scan
+              handleStop();
+            }
 
-          if (error && !(error instanceof NotFoundException)) {
-            console.error('[QRScanner] Scan error:', error);
-          }
+            if (error && !(error instanceof NotFoundException)) {
+              if (process.env.NODE_ENV === 'development') console.error('[QRScanner] Scan error:', error);
+            }
         });
       } catch (err: any) {
         console.error('[QRScanner] Error starting scanner:', err);
