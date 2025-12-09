@@ -2,12 +2,14 @@ import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 import LoadingSpinner from './components/atoms/loading-spinner';
 import routes from './lib/routes';
 import Providers from './providers';
+import OfflineBanner from './components/molecules/offline-banner';
 
 const router = createBrowserRouter(routes);
 
 const App = () => {
   return (
     <Providers>
+      <OfflineBanner />
       <RouterProvider router={router} fallbackElement={<LoadingSpinner />} />
     </Providers>
   );

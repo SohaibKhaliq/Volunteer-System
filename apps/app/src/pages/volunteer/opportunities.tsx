@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar, MapPin, Building2, Users, Clock, Search, Bookmark, Loader2, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
 
 const VolunteerOpportunitiesPage = () => {
   const { t } = useTranslation();
@@ -30,29 +31,61 @@ const VolunteerOpportunitiesPage = () => {
   const [selectedOpportunity, setSelectedOpportunity] = useState<any>(null);
   const [applicationNotes, setApplicationNotes] = useState('');
 
-  // Fetch opportunities
-  const { data: opportunitiesData, isLoading } = useQuery({
+  // Intersection observer for infinite scroll
+  const observerTarget = useRef<HTMLDivElement>(null);
+
+  // Fetch opportunities with infinite scroll
+  const {
+    data: opportunitiesData,
+    isLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage
+  } = useInfiniteQuery({
     queryKey: ['browse-opportunities', search, city, sortBy],
-    queryFn: async () => {
+    queryFn: async ({ pageParam = 1 }) => {
       try {
-        const params: any = { perPage: 50, sortBy };
+        const params: any = { page: pageParam, perPage: 20, sortBy };
         if (search) params.search = search;
         if (city) params.city = city;
         const res = await api.browseOpportunities(params);
-        return (res as any)?.data || [];
+        const data = (res as any)?.data || [];
+        return {
+          items: Array.isArray(data) ? data : [],
+          nextPage: Array.isArray(data) && data.length === 20 ? pageParam + 1 : undefined
+        };
       } catch {
-        // Fallback to public organizations opportunities
-        try {
-          await api.getPublicOrganizations({ perPage: 10 });
-          return [];
-        } catch {
-          return [];
-        }
+        return { items: [], nextPage: undefined };
       }
-    }
+    },
+    getNextPageParam: (lastPage) => lastPage.nextPage,
+    initialPageParam: 1
   });
 
-  // Fetch bookmarked opportunities
+  // Intersection Observer for infinite scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const currentTarget = observerTarget.current;
+    if (currentTarget) {
+      observer.observe(currentTarget);
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget);
+      }
+    };
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  // Fetch bookmarked opportunities (unchanged)
   const { data: bookmarksData } = useQuery({
     queryKey: ['bookmarked-opportunities'],
     queryFn: async () => {
@@ -97,7 +130,8 @@ const VolunteerOpportunitiesPage = () => {
     }
   });
 
-  const opportunities = opportunitiesData || [];
+  // Flatten paginated data
+  const opportunities = opportunitiesData?.pages.flatMap((page) => page.items) || [];
   const bookmarkedIds = bookmarksData || [];
 
   const formatDate = (dateString: string) => {
@@ -266,8 +300,12 @@ const VolunteerOpportunitiesPage = () => {
                 </div>
 
                 <div className="flex gap-2 pt-2">
+                  <Link to={`/volunteer/opportunities/${opp.id}`} className="flex-1">
+                    <Button variant="outline" className="w-full">
+                      View Details
+                    </Button>
+                  </Link>
                   <Button
-                    className="flex-1"
                     onClick={() => handleApply(opp)}
                     disabled={opp.userApplicationStatus === 'applied' || opp.userApplicationStatus === 'accepted'}
                   >
@@ -282,13 +320,25 @@ const VolunteerOpportunitiesPage = () => {
                         {t('Accepted')}
                       </>
                     ) : (
-                      t('Apply Now')
+                      t('Apply')
                     )}
                   </Button>
                 </div>
               </CardContent>
             </Card>
           ))}
+        </div>
+      )}
+
+      {/* Infinite Scroll Trigger */}
+      {!isLoading && opportunities.length > 0 && (
+        <div ref={observerTarget} className="h-10 flex items-center justify-center">
+          {isFetchingNextPage && (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Loading more opportunities...</span>
+            </div>
+          )}
         </div>
       )}
 
