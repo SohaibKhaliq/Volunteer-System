@@ -26,7 +26,6 @@ const FileInput = forwardRef<HTMLInputElement, FileProps>((props, ref) => {
         multiple
         onChange={(event) => {
           if (!event.target.files) return;
-          console.log(event.target.files);
           onChange(
             Array.from({ length: event.target.files?.length }, (_, i) => event.target.files?.item(i)).filter(
               Boolean
