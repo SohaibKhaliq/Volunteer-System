@@ -78,7 +78,6 @@ import OrganizationDetail from '@/pages/organization-detail';
 import VolunteerLayout from '@/components/templates/VolunteerLayout';
 import VolunteerDashboard from '@/pages/volunteer/dashboard';
 import VolunteerHistory from '@/pages/volunteer/history';
-import VolunteerProfile from '@/pages/volunteer/profile';
 import VolunteerSettings from '@/pages/volunteer/settings';
 import VolunteerAchievements from '@/pages/volunteer/achievements';
 import VolunteerOpportunityDetail from '@/pages/volunteer/opportunity-detail';
@@ -226,7 +225,7 @@ const routes: RouteObject[] = [
     children: [
       { path: 'dashboard', element: <VolunteerDashboard /> },
       { path: 'history', element: <VolunteerHistory /> },
-      { path: 'profile', element: <VolunteerProfile /> },
+      // /volunteer/profile removed — consolidated into dashboard
       { path: 'settings', element: <VolunteerSettings /> },
       { path: 'achievements', element: <VolunteerAchievements /> },
       { path: 'opportunities/:id', element: <VolunteerOpportunityDetail /> }
