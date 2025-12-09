@@ -57,7 +57,7 @@ const FilterButton = ({}: FilterProps) => {
             placeholder={t('Select an option')}
             position="left"
             value={''}
-            onChange={(v) => console.log(v)}
+            onChange={() => {}}
             options={[]}
           />
           <div className="flex gap-2 items-center">
@@ -71,7 +71,7 @@ const FilterButton = ({}: FilterProps) => {
             placeholder={t('Select an option')}
             position="left"
             value={''}
-            onChange={(v) => console.log(v)}
+            onChange={() => {}}
             options={[]}
           />
         </div>
