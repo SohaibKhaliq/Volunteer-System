@@ -33,10 +33,14 @@ export const SocketProvider = ({ children, enabled = true }: SocketProviderProps
   const { socket, isConnected } = useSocket({
     enabled,
     onConnect: () => {
-      console.log('[SocketProvider] Connected to Socket.IO');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[SocketProvider] Connected to Socket.IO');
+      }
     },
     onDisconnect: () => {
-      console.log('[SocketProvider] Disconnected from Socket.IO');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[SocketProvider] Disconnected from Socket.IO');
+      }
     },
     onError: (error) => {
       console.error('[SocketProvider] Socket.IO error:', error);
