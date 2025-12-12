@@ -8,6 +8,8 @@ import Notification from 'App/Models/Notification'
 import Event from 'App/Models/Event'
 import { DateTime } from 'luxon'
 import Database from '@ioc:Adonis/Lucid/Database'
+import GeolocationService from 'App/Services/GeolocationService'
+import Logger from '@ioc:Adonis/Core/Logger'
 
 // Placeholder event ID used when opportunities are not yet linked to events
 // TODO: Implement opportunity-event linking and use actual event IDs
@@ -15,7 +17,7 @@ const PLACEHOLDER_EVENT_ID = 0
 
 export default class AttendancesController {
   /**
-   * Check in to an opportunity
+   * Check in to an opportunity with geolocation validation
    */
   public async checkIn({ params, request, response, auth }: HttpContextContract) {
     const { id: opportunityId } = params
@@ -50,14 +52,93 @@ export default class AttendancesController {
       return response.conflict({ message: 'You are already checked in' })
     }
 
-    const { method, metadata } = request.only(['method', 'metadata'])
+    const {
+      method,
+      metadata,
+      latitude,
+      longitude,
+      accuracy,
+      exceptionReason
+    } = request.only([
+      'method',
+      'metadata',
+      'latitude',
+      'longitude',
+      'accuracy',
+      'exceptionReason'
+    ])
+
+    // Geolocation validation
+    let geolocationData: any = null
+    let geolocationValid = false
+
+    if (latitude !== undefined && longitude !== undefined) {
+      // Validate coordinates format
+      const coordValidation = GeolocationService.validateCoordinates(latitude, longitude)
+
+      if (!coordValidation.valid) {
+        return response.badRequest({
+          message: coordValidation.message
+        })
+      }
+
+      // Create geolocation metadata
+      geolocationData = GeolocationService.createGeolocationMetadata(
+        latitude,
+        longitude,
+        accuracy,
+        new Date()
+      )
+
+      // Check if opportunity has location
+      if (opportunity.latitude && opportunity.longitude) {
+        const proximityCheck = GeolocationService.isWithinRadius(
+          latitude,
+          longitude,
+          opportunity.latitude,
+          opportunity.longitude,
+          200 // 200m radius for Australian workplace safety
+        )
+
+        geolocationData.proximityCheck = proximityCheck
+        geolocationValid = proximityCheck.within
+
+        // If outside radius, require exception reason
+        if (!proximityCheck.within && !exceptionReason) {
+          return response.status(422).send({
+            message: 'You are outside the shift location radius',
+            error: proximityCheck.message,
+            distance: proximityCheck.distance,
+            requiresException: true
+          })
+        }
+
+        if (!proximityCheck.within && exceptionReason) {
+          geolocationData.exceptionReason = exceptionReason
+          geolocationData.exceptionGranted = true
+          Logger.info(
+            `Geolocation exception granted for user ${user.id} at opportunity ${opportunityId}: ${exceptionReason}`
+          )
+        }
+      } else {
+        // No opportunity location set, log warning
+        Logger.warn(
+          `Opportunity ${opportunityId} has no location set for geolocation validation`
+        )
+        geolocationData.warning = 'Opportunity location not configured'
+      }
+    }
 
     const attendance = await Attendance.create({
       opportunityId: parseInt(opportunityId),
       userId: user.id,
       checkInAt: DateTime.now(),
       method: method || 'manual',
-      metadata
+      metadata: {
+        ...(metadata || {}),
+        geolocation: geolocationData,
+        geolocationValid
+      }
     })
 
     await attendance.load('user')
@@ -80,7 +161,9 @@ export default class AttendancesController {
               opportunityId: opportunity.id,
               opportunityTitle: opportunity.title,
               volunteerId: user.id,
-              volunteerName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email
+              volunteerName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.email,
+              geolocationValid,
+              distance: geolocationData?.proximityCheck?.distance
             })
           })
         )
@@ -91,7 +174,8 @@ export default class AttendancesController {
 
     return response.created({
       message: 'Checked in successfully',
-      attendance
+      attendance,
+      geolocationValid
     })
   }
 
