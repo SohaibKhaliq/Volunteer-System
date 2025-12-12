@@ -260,6 +260,17 @@ Route.get('/centrelink/su462/:userId/csv', 'CentrelinkController.exportSU462CSV'
   'auth'
 ])
 
+// Document Library with Read & Acknowledge
+Route.get('/documents', 'DocumentsController.index').middleware(['auth'])
+Route.get('/documents/required', 'DocumentsController.required').middleware(['auth'])
+Route.get('/documents/my-acknowledgments', 'DocumentsController.myAcknowledgments').middleware(['auth'])
+Route.get('/documents/:id', 'DocumentsController.show').middleware(['auth'])
+Route.post('/documents', 'DocumentsController.store').middleware(['auth'])
+Route.put('/documents/:id', 'DocumentsController.update').middleware(['auth'])
+Route.delete('/documents/:id', 'DocumentsController.destroy').middleware(['auth'])
+Route.post('/documents/:id/acknowledge', 'DocumentsController.acknowledge').middleware(['auth'])
+Route.get('/documents/:id/download', 'DocumentsController.download').middleware(['auth'])
+
 // Analytics & Reports
 Route.get('/reports', 'ReportsController.index').middleware(['auth'])
 Route.get('/reports/volunteers', 'ReportsController.volunteerStats').middleware(['auth'])
