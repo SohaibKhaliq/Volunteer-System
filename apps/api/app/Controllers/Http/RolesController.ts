@@ -1,36 +1,20 @@
-import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Role from 'App/Models/Role'
+import BaseController from './BaseController'
 
-export default class RolesController {
-  public async index({ response }: HttpContextContract) {
-    const roles = await Role.all()
-    return response.ok(roles)
+export default class RolesController extends BaseController {
+  protected get model() {
+    return Role
   }
 
-  public async store({ request, response }: HttpContextContract) {
-    const payload = request.only(['name', 'description'])
-    const role = await Role.create(payload)
-    return response.created(role)
+  protected get createFields() {
+    return ['name', 'description']
   }
 
-  public async show({ params, response }: HttpContextContract) {
-    const role = await Role.find(params.id)
-    if (!role) return response.notFound()
-    return response.ok(role)
+  protected get updateFields() {
+    return ['name', 'description']
   }
 
-  public async update({ params, request, response }: HttpContextContract) {
-    const role = await Role.find(params.id)
-    if (!role) return response.notFound()
-    role.merge(request.only(['name', 'description']))
-    await role.save()
-    return response.ok(role)
-  }
-
-  public async destroy({ params, response }: HttpContextContract) {
-    const role = await Role.find(params.id)
-    if (!role) return response.notFound()
-    await role.delete()
-    return response.noContent()
+  protected get defaultOrderBy() {
+    return { column: 'id', direction: 'asc' as const }
   }
 }
