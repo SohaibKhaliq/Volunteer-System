@@ -1,56 +1,80 @@
-import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Type from 'App/Models/Type'
+import BaseController from './BaseController'
+import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 
-export default class TypesController {
-  public async index({ response }: HttpContextContract) {
-    const items = await Type.query().orderBy('id', 'asc')
-    return response.ok(items)
+export default class TypesController extends BaseController {
+  protected get model() {
+    return Type
   }
 
-  public async store({ request, response }: HttpContextContract) {
-    const payload = request.only(['type', 'name', 'category', 'description'])
-    // Keep DB enum compatibility: if client doesn't pass a known enum `type`, default to 'other'
-    const allowed = Object.values((await import('../../contracts/requests')).RequestTypes)
-    const t = payload.type && allowed.includes(payload.type) ? payload.type : 'other'
-    const item = await Type.create({
-      type: t,
-      name: payload.name || null,
-      category: payload.category || 'General',
-      description: payload.description || null
-    } as any)
-    return response.created(item)
+  protected get createFields() {
+    return ['type', 'name', 'category', 'description']
   }
 
-  public async show({ params, response }: HttpContextContract) {
-    const item = await Type.find(params.id)
-    if (!item) return response.notFound()
-    return response.ok(item)
+  protected get updateFields() {
+    return ['type', 'name', 'category', 'description']
   }
 
-  public async update({ params, request, response }: HttpContextContract) {
-    const item = await Type.find(params.id)
-    if (!item) return response.notFound()
-    const payload = request.only(['type', 'name', 'category', 'description'])
-    // respect enum constraint: only allow known values
-    if (payload.type) {
-      const allowed = Object.values((await import('../../contracts/requests')).RequestTypes)
-      if (allowed.includes(payload.type)) {
-        item.type = payload.type
+  protected get defaultOrderBy() {
+    return { column: 'id', direction: 'asc' as const }
+  }
+
+  /**
+   * Transform data before creation - ensure type is a valid enum value
+   */
+  protected transformCreateData(data: any): any {
+    const allowed = Object.values(require('../../contracts/requests').RequestTypes)
+    const validType = data.type && allowed.includes(data.type) ? data.type : 'other'
+
+    return {
+      type: validType,
+      name: data.name || null,
+      category: data.category || 'General',
+      description: data.description || null
+    }
+  }
+
+  /**
+   * Transform data before update - ensure type is a valid enum value
+   */
+  protected async transformUpdateData(data: any): Promise<any> {
+    const result: any = {}
+
+    if (data.type) {
+      const allowed = Object.values(require('../../contracts/requests').RequestTypes)
+      if (allowed.includes(data.type)) {
+        result.type = data.type
       }
     }
-    item.merge({
-      name: payload.name ?? item.name,
-      category: payload.category ?? item.category,
-      description: payload.description ?? item.description
-    } as any)
-    await item.save()
-    return response.ok(item)
+
+    if (data.name !== undefined) result.name = data.name
+    if (data.category !== undefined) result.category = data.category
+    if (data.description !== undefined) result.description = data.description
+
+    return result
   }
 
-  public async destroy({ params, response }: HttpContextContract) {
-    const item = await Type.find(params.id)
-    if (!item) return response.notFound()
-    await item.delete()
-    return response.noContent()
+  /**
+   * Override update to handle async transform
+   */
+  public async update({ params, request, response, auth }: HttpContextContract) {
+    const resource = await this.model.find(params.id)
+
+    if (!resource) {
+      return response.notFound({ error: { message: 'Resource not found' } })
+    }
+
+    if (!(await this.authorize({ request, response, auth } as any, 'update', resource))) {
+      return response.unauthorized({ error: { message: 'Not authorized' } })
+    }
+
+    const payload = request.only(this.updateFields)
+    const transformedData = await this.transformUpdateData(payload)
+    resource.merge(transformedData)
+    await resource.save()
+
+    await this.afterUpdate(resource, { request, response, auth } as any)
+
+    return response.ok(resource)
   }
 }

@@ -44,10 +44,7 @@ export default class AuthorizationHelper {
   /**
    * Check if user is admin of a specific organization team
    */
-  public static async isTeamAdmin(
-    userId: number,
-    organizationId: number
-  ): Promise<boolean> {
+  public static async isTeamAdmin(userId: number, organizationId: number): Promise<boolean> {
     const member = await Database.from('organization_team_members')
       .where({ user_id: userId, organization_id: organizationId })
       .first()
@@ -59,10 +56,7 @@ export default class AuthorizationHelper {
    * Check if user can manage resource for organization
    * User must be either system admin or organization team member
    */
-  public static async canManageOrganization(
-    user: User,
-    organizationId: number
-  ): Promise<boolean> {
+  public static async canManageOrganization(user: User, organizationId: number): Promise<boolean> {
     if (this.isAdmin(user)) {
       return true
     }
