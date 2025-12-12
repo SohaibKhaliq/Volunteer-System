@@ -34,8 +34,17 @@ export const volunteerApi = {
   // ATTENDANCE & CHECK-IN/OUT
   // ==========================================
   getMyAttendance: async (params?: any) => axios.get('/volunteer/attendance', { params }),
-  checkInToOpportunity: async (opportunityId: number, method?: string, metadata?: any) =>
-    axios.post(`/opportunities/${opportunityId}/checkin`, { method, metadata }),
+  checkInToOpportunity: async (
+    opportunityId: number,
+    options?: {
+      method?: string;
+      metadata?: any;
+      latitude?: number;
+      longitude?: number;
+      accuracy?: number;
+      exceptionReason?: string;
+    }
+  ) => axios.post(`/opportunities/${opportunityId}/checkin`, options || {}),
   checkOutFromOpportunity: async (opportunityId: number) => 
     axios.post(`/opportunities/${opportunityId}/checkout`),
   qrCheckIn: async (code: string) => axios.post('/checkin/qr', { code }),
