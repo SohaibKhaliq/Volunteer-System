@@ -246,7 +246,19 @@ Route.post('/users/:id/activate', 'UsersController.activate').middleware(['auth'
 
 Route.post('/events/:id/ai-match', 'EventsController.aiMatch').middleware(['auth'])
 Route.post('/events/:id/join', 'EventsController.join').middleware(['auth'])
+
+// Australian Compliance - WWCC validation
+Route.post('/compliance/validate-wwcc', 'ComplianceController.validateWWCC').middleware(['auth'])
 Route.post('/compliance/remind/:userId', 'ComplianceController.remind').middleware(['auth'])
+
+// Centrelink reporting
+Route.get('/centrelink/fortnight/:userId', 'CentrelinkController.getCurrentFortnight').middleware([
+  'auth'
+])
+Route.get('/centrelink/su462/:userId', 'CentrelinkController.generateSU462').middleware(['auth'])
+Route.get('/centrelink/su462/:userId/csv', 'CentrelinkController.exportSU462CSV').middleware([
+  'auth'
+])
 
 // Analytics & Reports
 Route.get('/reports', 'ReportsController.index').middleware(['auth'])
