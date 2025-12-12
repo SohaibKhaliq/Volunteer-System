@@ -292,8 +292,11 @@ Route.resource('achievements', 'AchievementsController')
 // Shift scheduling routes
 Route.get('/shifts', 'ShiftsController.index').middleware(['auth'])
 Route.post('/shifts', 'ShiftsController.store').middleware(['auth'])
+Route.post('/shifts/recurring', 'ShiftsController.createRecurring').middleware(['auth'])
 Route.get('/shifts/:id', 'ShiftsController.show').middleware(['auth'])
 Route.get('/shifts/:id/suggestions', 'ShiftsController.suggest').middleware(['auth'])
+Route.post('/shifts/:id/check-conflicts', 'ShiftsController.checkConflicts').middleware(['auth'])
+Route.post('/shifts/:id/assign', 'ShiftsController.assignWithConflictCheck').middleware(['auth'])
 Route.put('/shifts/:id', 'ShiftsController.update').middleware(['auth'])
 Route.delete('/shifts/:id', 'ShiftsController.destroy').middleware(['auth'])
 
