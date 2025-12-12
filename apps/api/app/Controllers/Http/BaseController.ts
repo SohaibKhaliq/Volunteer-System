@@ -101,7 +101,7 @@ export default abstract class BaseController {
    * List all resources
    */
   public async index({ request, response, auth }: HttpContextContract) {
-    if (!(await this.authorize({ request, response, auth } as any, 'index'))) {
+    if (!(await this.authorize({ request, response, auth } as HttpContextContract, 'index'))) {
       return response.unauthorized({ error: { message: 'Not authorized' } })
     }
 
@@ -114,8 +114,8 @@ export default abstract class BaseController {
     // Apply filters
     query = this.applyFilters(query, filters)
 
-    // Apply pagination if requested
-    if (page || perPage) {
+    // Apply pagination if requested (check for truthy values properly)
+    if (page != null || perPage != null) {
       const result = await this.applyPagination(query, Number(page) || 1, Number(perPage) || 20)
       return response.ok(result)
     }
@@ -134,7 +134,9 @@ export default abstract class BaseController {
       return response.notFound({ error: { message: 'Resource not found' } })
     }
 
-    if (!(await this.authorize({ request, response, auth } as any, 'show', resource))) {
+    if (
+      !(await this.authorize({ request, response, auth } as HttpContextContract, 'show', resource))
+    ) {
       return response.unauthorized({ error: { message: 'Not authorized' } })
     }
 
@@ -145,7 +147,7 @@ export default abstract class BaseController {
    * Create a new resource
    */
   public async store({ request, response, auth }: HttpContextContract) {
-    if (!(await this.authorize({ request, response, auth } as any, 'store'))) {
+    if (!(await this.authorize({ request, response, auth } as HttpContextContract, 'store'))) {
       return response.unauthorized({ error: { message: 'Not authorized' } })
     }
 
@@ -153,7 +155,7 @@ export default abstract class BaseController {
     const transformedData = this.transformCreateData(payload)
     const resource = await this.model.create(transformedData)
 
-    await this.afterCreate(resource, { request, response, auth } as any)
+    await this.afterCreate(resource, { request, response, auth } as HttpContextContract)
 
     return response.created(resource)
   }
@@ -168,7 +170,13 @@ export default abstract class BaseController {
       return response.notFound({ error: { message: 'Resource not found' } })
     }
 
-    if (!(await this.authorize({ request, response, auth } as any, 'update', resource))) {
+    if (
+      !(await this.authorize(
+        { request, response, auth } as HttpContextContract,
+        'update',
+        resource
+      ))
+    ) {
       return response.unauthorized({ error: { message: 'Not authorized' } })
     }
 
@@ -177,7 +185,7 @@ export default abstract class BaseController {
     resource.merge(transformedData)
     await resource.save()
 
-    await this.afterUpdate(resource, { request, response, auth } as any)
+    await this.afterUpdate(resource, { request, response, auth } as HttpContextContract)
 
     return response.ok(resource)
   }
@@ -192,13 +200,19 @@ export default abstract class BaseController {
       return response.notFound({ error: { message: 'Resource not found' } })
     }
 
-    if (!(await this.authorize({ request, response, auth } as any, 'destroy', resource))) {
+    if (
+      !(await this.authorize(
+        { request, response, auth } as HttpContextContract,
+        'destroy',
+        resource
+      ))
+    ) {
       return response.unauthorized({ error: { message: 'Not authorized' } })
     }
 
     await resource.delete()
 
-    await this.afterDestroy(resource, { request, response, auth } as any)
+    await this.afterDestroy(resource, { request, response, auth } as HttpContextContract)
 
     return response.noContent()
   }

@@ -43,7 +43,7 @@ export default class FileUploadHelper {
         if (file.size && file.size > maxSize) {
           return {
             success: false,
-            error: `File "${file.clientName}" exceeds maximum size of ${maxSize / (1024 * 1024)}MB`
+            error: `File exceeds maximum size of ${maxSize / (1024 * 1024)}MB`
           }
         }
 
@@ -70,7 +70,7 @@ export default class FileUploadHelper {
     } catch (error) {
       return {
         success: false,
-        error: `Failed to upload files: ${error.message}`
+        error: 'Failed to upload files. Please try again.'
       }
     }
   }
