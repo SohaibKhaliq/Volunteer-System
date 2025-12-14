@@ -62,19 +62,34 @@ const Header = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-56">
-                <DropdownMenuItem onClick={() => navigate('/profile#overview')} className="cursor-pointer">
+                <DropdownMenuItem
+                  onClick={() => navigate('/profile', { state: { scrollTo: 'overview' } })}
+                  className="cursor-pointer"
+                >
                   Overview
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/profile#schedule')} className="cursor-pointer">
+                <DropdownMenuItem
+                  onClick={() => navigate('/profile', { state: { scrollTo: 'schedule' } })}
+                  className="cursor-pointer"
+                >
                   My Schedule
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/profile#history')} className="cursor-pointer">
+                <DropdownMenuItem
+                  onClick={() => navigate('/profile', { state: { scrollTo: 'history' } })}
+                  className="cursor-pointer"
+                >
                   History
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/profile#achievements')} className="cursor-pointer">
+                <DropdownMenuItem
+                  onClick={() => navigate('/profile', { state: { scrollTo: 'achievements' } })}
+                  className="cursor-pointer"
+                >
                   Achievements
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/profile#settings')} className="cursor-pointer">
+                <DropdownMenuItem
+                  onClick={() => navigate('/profile', { state: { scrollTo: 'settings' } })}
+                  className="cursor-pointer"
+                >
                   Settings
                 </DropdownMenuItem>
                 <div className="h-px bg-border my-1" />

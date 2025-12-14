@@ -28,7 +28,7 @@ import {
   Users
 } from 'lucide-react';
 import { useStore } from '@/lib/store';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import volunteerApi from '@/lib/api/volunteerApi';
 import { AssignmentStatus } from '@/lib/constants/assignmentStatus';
 import { useNavigate } from 'react-router-dom';
@@ -39,33 +39,35 @@ export default function Profile() {
   const { data: meResponse, isLoading } = useQuery(['me'], () => api.getVolunteerDashboard());
   const { setToken } = useStore();
   const navigate = useNavigate();
+  const location = useLocation();
   const { token } = useStore();
   // tab state for compact navigation
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Sync tab with URL hash so header dropdown links work
+  // Initialize active tab from localStorage or navigation state (scroll instruction)
   useEffect(() => {
-    const map: Record<string, string> = {
-      '#overview': 'overview',
-      '#schedule': 'schedule',
-      '#history': 'history',
-      '#resources': 'resources',
-      '#settings': 'settings'
-    };
-    const initial = map[window.location.hash] || 'overview';
+    const saved = localStorage.getItem('profile.activeTab');
+    const stateScrollTo = (location.state as any)?.scrollTo as string | undefined;
+    const initial = saved || stateScrollTo || 'overview';
     setActiveTab(initial);
+
+    // If navigation sent a scroll instruction, scroll to that section once
+    if (stateScrollTo) {
+      // clear the navigation state so repeated navigations don't re-trigger
+      navigate(location.pathname, { replace: true, state: {} });
+      setTimeout(() => {
+        const el = document.getElementById(stateScrollTo);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 60);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Persist active tab across reloads
   useEffect(() => {
-    const hashMap: Record<string, string> = {
-      overview: '#overview',
-      schedule: '#schedule',
-      history: '#history',
-      resources: '#resources',
-      settings: '#settings'
-    };
-    const h = hashMap[activeTab] || '#overview';
-    if (window.location.hash !== h) window.history.replaceState(null, '', h);
+    try {
+      localStorage.setItem('profile.activeTab', activeTab);
+    } catch (e) {}
   }, [activeTab]);
 
   const [formData, setFormData] = useState({
