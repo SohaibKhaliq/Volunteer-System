@@ -207,6 +207,14 @@ export default function Profile() {
       return a.startAt.getTime() - b.startAt.getTime();
     });
 
+  // Pagination state for schedule
+  const [schedulePage, setSchedulePage] = useState(1);
+  const schedulePerPage = 5;
+  // Reset page when source changes
+  useEffect(() => {
+    setSchedulePage(1);
+  }, [meResponse, assignments]);
+
   // Transform volunteer-hours into history rows
   const history = (myHours ?? []).map((h: any) => ({
     id: h.id,
@@ -351,33 +359,76 @@ export default function Profile() {
                   <CardDescription>Your next commitments</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {((meResponse as any)?.dashboard?.upcomingEvents ?? upcomingShifts).map((shift: any) => (
-                    <div
-                      key={shift.id}
-                      className="flex items-center justify-between p-4 border rounded-lg bg-slate-50/50"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                          {shift.date.split(' ')[1]}
-                        </div>
-                        <div>
-                          <h4 className="font-semibold">{shift.title}</h4>
-                          <p className="text-sm text-muted-foreground flex items-center gap-2">
-                            <Clock className="h-3 w-3" /> {shift.time} • <MapPin className="h-3 w-3" /> {shift.location}
-                          </p>
-                        </div>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          navigate(shift.eventId ? `/detail/event/${shift.eventId}` : `/events/${shift.id}`)
-                        }
-                      >
-                        View
-                      </Button>
-                    </div>
-                  ))}
+                  {/* Paginate upcoming schedule */}
+                  {(() => {
+                    const source = (meResponse as any)?.dashboard?.upcomingEvents ?? upcomingShifts;
+                    const total = Array.isArray(source) ? source.length : 0;
+                    const totalPages = Math.max(1, Math.ceil(total / schedulePerPage));
+                    const start = (schedulePage - 1) * schedulePerPage;
+                    const paged = Array.isArray(source) ? source.slice(start, start + schedulePerPage) : [];
+                    return (
+                      <>
+                        {paged.map((shift: any) => (
+                          <div
+                            key={shift.id}
+                            className="flex items-center justify-between p-4 border rounded-lg bg-slate-50/50"
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                                {shift.date.split(' ')[1]}
+                              </div>
+                              <div>
+                                <h4 className="font-semibold">{shift.title}</h4>
+                                <p className="text-sm text-muted-foreground flex items-center gap-2">
+                                  <Clock className="h-3 w-3" /> {shift.time} • <MapPin className="h-3 w-3" />{' '}
+                                  {shift.location}
+                                </p>
+                              </div>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() =>
+                                navigate(shift.eventId ? `/detail/event/${shift.eventId}` : `/events/${shift.id}`)
+                              }
+                            >
+                              View
+                            </Button>
+                          </div>
+                        ))}
+
+                        {/* Pagination controls */}
+                        {total > schedulePerPage && (
+                          <div className="flex items-center justify-between">
+                            <div className="text-sm text-muted-foreground">
+                              Showing {start + 1}-{Math.min(start + schedulePerPage, total)} of {total}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setSchedulePage((p) => Math.max(1, p - 1))}
+                                disabled={schedulePage === 1}
+                              >
+                                Prev
+                              </Button>
+                              <div className="text-sm">
+                                {schedulePage} / {totalPages}
+                              </div>
+                              <Button
+                                size="sm"
+                                onClick={() => setSchedulePage((p) => Math.min(totalPages, p + 1))}
+                                variant="outline"
+                                disabled={schedulePage === totalPages}
+                              >
+                                Next
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </CardContent>
               </Card>
 
