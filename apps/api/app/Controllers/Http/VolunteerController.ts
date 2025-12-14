@@ -175,6 +175,135 @@ export default class VolunteerController {
   }
 
   /**
+   * Combined endpoint returning both profile and dashboard data
+   */
+  public async dashboardProfile({ auth, request, response }: HttpContextContract) {
+    try {
+      await auth.use('api').authenticate()
+      const user = auth.user!
+
+      // --- Profile portion ---
+      const userRecord = await User.query()
+        .where('id', user.id)
+        .preload('organizations')
+        .firstOrFail()
+
+      const { password, ...safeUser } = userRecord.toJSON() as any
+
+      const orgStatuses = await Database.from('organization_volunteers')
+        .where('user_id', user.id)
+        .select('organization_id', 'status', 'role', 'joined_at')
+
+      // --- Dashboard portion ---
+      const hoursResult = await VolunteerHour.query()
+        .where('user_id', user.id)
+        .andWhere('status', 'approved')
+        .sum('hours as total')
+      const rawTotal = Array.isArray(hoursResult)
+        ? (hoursResult[0]?.$extras?.total ??
+          hoursResult[0]?.total ??
+          Object.values(hoursResult[0])[0])
+        : ((hoursResult as any)?.total ?? 0)
+      const totalHours = Number(rawTotal || 0)
+
+      const eventsAttendedResult = await Attendance.query()
+        .where('user_id', user.id)
+        .whereNotNull('check_in_at')
+        .select(Database.raw('COUNT(DISTINCT opportunity_id) as count'))
+      const rawEvents = Array.isArray(eventsAttendedResult)
+        ? (eventsAttendedResult[0]?.$extras?.count ??
+          eventsAttendedResult[0]?.count ??
+          Object.values(eventsAttendedResult[0])[0])
+        : ((eventsAttendedResult as any)?.count ?? 0)
+      const eventsAttended = Number(rawEvents || 0)
+
+      const pendingApps = await Application.query()
+        .where('user_id', user.id)
+        .andWhere('status', 'applied')
+        .count('* as total')
+      const rawPending = Array.isArray(pendingApps)
+        ? (pendingApps[0]?.$extras?.total ??
+          pendingApps[0]?.total ??
+          Object.values(pendingApps[0])[0])
+        : ((pendingApps as any)?.total ?? 0)
+      const pendingApplications = Number(rawPending || 0)
+
+      const acceptedApps = await Application.query()
+        .where('user_id', user.id)
+        .andWhere('status', 'accepted')
+        .count('* as total')
+      const rawAccepted = Array.isArray(acceptedApps)
+        ? (acceptedApps[0]?.$extras?.total ??
+          acceptedApps[0]?.total ??
+          Object.values(acceptedApps[0])[0])
+        : ((acceptedApps as any)?.total ?? 0)
+      const acceptedApplications = Number(rawAccepted || 0)
+
+      const orgsResult = await Database.from('organization_volunteers')
+        .where('user_id', user.id)
+        .andWhere('status', 'active')
+        .count('* as total')
+      const rawOrgs = Array.isArray(orgsResult)
+        ? (orgsResult[0]?.total ?? Object.values(orgsResult[0])[0])
+        : ((orgsResult as any)?.total ?? 0)
+      const organizationCount = Number(rawOrgs || 0)
+
+      const now = new Date()
+      const upcomingOpps = await Opportunity.query()
+        .whereHas('applications', (q) => {
+          q.where('user_id', user.id).andWhere('status', 'accepted')
+        })
+        .andWhere('start_at', '>', now.toISOString())
+        .andWhere('status', 'published')
+        .orderBy('start_at', 'asc')
+        .limit(5)
+
+      const achievements = await UserAchievement.query()
+        .where('user_id', user.id)
+        .preload('achievement')
+        .orderBy('created_at', 'desc')
+        .limit(5)
+
+      return response.ok({
+        profile: {
+          ...safeUser,
+          firstName: safeUser.firstName ?? safeUser.first_name,
+          lastName: safeUser.lastName ?? safeUser.last_name,
+          organizationStatuses: orgStatuses
+        },
+        dashboard: {
+          stats: {
+            totalHours,
+            eventsAttended,
+            pendingApplications,
+            acceptedApplications,
+            organizationCount
+          },
+          upcomingEvents: upcomingOpps.map((o) => ({
+            id: o.id,
+            title: o.title,
+            slug: o.slug,
+            startAt: o.startAt,
+            endAt: o.endAt,
+            location: o.location
+          })),
+          recentAchievements: achievements.map((ua) => ({
+            id: ua.achievement?.id,
+            title: ua.achievement?.title,
+            description: ua.achievement?.description,
+            awardedAt: ua.createdAt
+          }))
+        }
+      })
+    } catch (error) {
+      Logger.error('DashboardProfile error: %o', error)
+      return response.internalServerError({
+        error: { message: 'Failed to load profile + dashboard' }
+      })
+    }
+  }
+
+  /**
    * Update volunteer profile
    */
   public async updateProfile({ auth, request, response }: HttpContextContract) {
