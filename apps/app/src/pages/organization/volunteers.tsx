@@ -63,6 +63,57 @@ export default function OrganizationVolunteers() {
     }
   });
 
+  // per-item loading map for approve/reject actions
+  const [loadingById, setLoadingById] = useState<Record<string | number, boolean>>({});
+
+  // Approve Volunteer Mutation
+  const approveVolunteerMutation = useMutation({
+    mutationFn: (id: number | string) => api.updateOrganizationVolunteer(id, { status: 'Active' }),
+    onMutate: (id: number | string) => {
+      setLoadingById((s) => ({ ...s, [id]: true }));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['organizationVolunteers'] });
+      queryClient.invalidateQueries({ queryKey: ['myOrganizations'] });
+      queryClient.invalidateQueries({ queryKey: ['me'] });
+      toast.success('Volunteer approved');
+    },
+    onError: () => {
+      toast.error('Failed to approve volunteer');
+    },
+    onSettled: (data, err, id: any) => {
+      setLoadingById((s) => {
+        const ns = { ...s };
+        delete ns[id];
+        return ns;
+      });
+    }
+  });
+
+  // Reject Volunteer Mutation
+  const rejectVolunteerMutation = useMutation({
+    mutationFn: (id: number | string) => api.updateOrganizationVolunteer(id, { status: 'Rejected' }),
+    onMutate: (id: number | string) => {
+      setLoadingById((s) => ({ ...s, [id]: true }));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['organizationVolunteers'] });
+      queryClient.invalidateQueries({ queryKey: ['myOrganizations'] });
+      queryClient.invalidateQueries({ queryKey: ['me'] });
+      toast.success('Volunteer rejected');
+    },
+    onError: () => {
+      toast.error('Failed to reject volunteer');
+    },
+    onSettled: (data, err, id: any) => {
+      setLoadingById((s) => {
+        const ns = { ...s };
+        delete ns[id];
+        return ns;
+      });
+    }
+  });
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -214,6 +265,38 @@ export default function OrganizationVolunteers() {
                         <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(volunteer)}>
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
+
+                        {volunteer.status && volunteer.status.toLowerCase() === 'pending' && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              disabled={!!loadingById[volunteer.id]}
+                              onClick={() => approveVolunteerMutation.mutate(volunteer.id)}
+                              title="Approve"
+                            >
+                              {loadingById[volunteer.id] ? (
+                                <Loader2 className="h-4 w-4 animate-spin text-green-600" />
+                              ) : (
+                                <Plus className="h-4 w-4 text-green-600" />
+                              )}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              disabled={!!loadingById[volunteer.id]}
+                              onClick={() => rejectVolunteerMutation.mutate(volunteer.id)}
+                              title="Reject"
+                            >
+                              {loadingById[volunteer.id] ? (
+                                <Loader2 className="h-4 w-4 animate-spin text-red-600" />
+                              ) : (
+                                <Trash2 className="h-4 w-4 text-red-600" />
+                              )}
+                            </Button>
+                          </>
+                        )}
+
                         <Button
                           variant="ghost"
                           size="icon"

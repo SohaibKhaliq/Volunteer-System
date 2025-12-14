@@ -81,6 +81,22 @@ export default class OrganizationVolunteersController {
       if (member && volunteer.organizationId !== member.organizationId) {
         return response.forbidden({ message: 'Volunteer does not belong to your organization' })
       }
+
+      // Only allow privileged roles to change membership status for other users
+      const payload = request.only(['status', 'role', 'hours', 'rating', 'skills'])
+      const changingStatus = Object.prototype.hasOwnProperty.call(payload, 'status')
+      if (changingStatus) {
+        const allowedRoles = ['admin', 'owner', 'manager']
+        const memberRole = (member?.role || '').toLowerCase()
+        const isPrivileged = allowedRoles.includes(memberRole)
+        // allow a user to update their own volunteer record (e.g., update hours/profile),
+        // but only privileged users may change another user's membership status
+        if (!isPrivileged && auth.user!.id !== volunteer.userId) {
+          return response.forbidden({
+            message: 'Insufficient permissions to change membership status'
+          })
+        }
+      }
     }
     const payload = request.only(['status', 'role', 'hours', 'rating', 'skills'])
     volunteer.merge(payload)
