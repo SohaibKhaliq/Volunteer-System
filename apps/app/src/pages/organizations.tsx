@@ -12,7 +12,6 @@ import { Search, MapPin, Users, ArrowRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
-import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 
 const Organizations = () => {
