@@ -69,6 +69,25 @@ const MapPage = () => {
     }
   });
 
+  const [loadingByEvent, setLoadingByEvent] = useState<Record<number, boolean>>({});
+
+  const joinItemMutation = useMutation({
+    mutationFn: (eventId: number) => api.joinEvent(eventId),
+    onMutate: (eventId: number) => {
+      setLoadingByEvent((s) => ({ ...s, [eventId]: true }));
+    },
+    onSettled: (data, err, eventId: number) => {
+      setLoadingByEvent((s) => ({ ...s, [eventId]: false }));
+      queryClient.invalidateQueries(['map-events']);
+    },
+    onSuccess: () => {
+      toast({ title: 'Joined', description: 'You joined the event' });
+    },
+    onError: (err: any) => {
+      toast({ title: 'Failed', description: err?.response?.data?.message || 'Unable to join' });
+    }
+  });
+
   return (
     <div className="flex flex-col h-[calc(100vh-64px)]">
       {/* Filters Bar */}
@@ -168,10 +187,11 @@ const MapPage = () => {
                           window.location.href = `/login?returnTo=${returnTo}`;
                           return;
                         }
-                        joinMutation.mutate(event.id);
+                        joinItemMutation.mutate(event.id);
                       }}
+                      disabled={!!loadingByEvent[event.id]}
                     >
-                      {joinMutation.isLoading ? t('Joining...') : t('Join Now')}
+                      {loadingByEvent[event.id] ? t('Joining...') : t('Join Now')}
                     </Button>
                   </div>
                 </div>
@@ -211,10 +231,11 @@ const MapPage = () => {
                               window.location.href = `/login?returnTo=${returnTo}`;
                               return;
                             }
-                            joinMutation.mutate(event.id);
+                            joinItemMutation.mutate(event.id);
                           }}
+                          disabled={!!loadingByEvent[event.id]}
                         >
-                          {joinMutation.isLoading ? t('Joining...') : t('Join')}
+                          {loadingByEvent[event.id] ? t('Joining...') : t('Join')}
                         </Button>
                       </div>
                     </div>

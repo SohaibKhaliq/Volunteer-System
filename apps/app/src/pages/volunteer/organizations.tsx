@@ -42,11 +42,19 @@ const VolunteerOrganizationsPage = () => {
   });
 
   // Join organization mutation
+  const [loadingByOrg, setLoadingByOrg] = useState<Record<number, boolean>>({});
+
   const joinMutation = useMutation({
     mutationFn: (id: number) => api.joinVolunteerOrganization(id),
+    onMutate: (id: number) => {
+      setLoadingByOrg((s) => ({ ...s, [id]: true }));
+    },
+    onSettled: (data, err, id: number) => {
+      setLoadingByOrg((s) => ({ ...s, [id]: false }));
+      queryClient.invalidateQueries({ queryKey: ['my-organizations'] });
+    },
     onSuccess: () => {
       toast.success(t('Membership request submitted'));
-      queryClient.invalidateQueries({ queryKey: ['my-organizations'] });
     },
     onError: () => {
       toast.error(t('Failed to join organization'));
@@ -56,9 +64,15 @@ const VolunteerOrganizationsPage = () => {
   // Leave organization mutation
   const leaveMutation = useMutation({
     mutationFn: (id: number) => api.leaveVolunteerOrganization(id),
+    onMutate: (id: number) => {
+      setLoadingByOrg((s) => ({ ...s, [id]: true }));
+    },
+    onSettled: (data, err, id: number) => {
+      setLoadingByOrg((s) => ({ ...s, [id]: false }));
+      queryClient.invalidateQueries({ queryKey: ['my-organizations'] });
+    },
     onSuccess: () => {
       toast.success(t('Left organization'));
-      queryClient.invalidateQueries({ queryKey: ['my-organizations'] });
     },
     onError: () => {
       toast.error(t('Failed to leave organization'));
@@ -183,9 +197,13 @@ const VolunteerOrganizationsPage = () => {
                           size="icon"
                           className="text-red-500 hover:text-red-600 hover:bg-red-50"
                           onClick={() => handleLeave(org.id, org.name)}
-                          disabled={leaveMutation.isPending}
+                          disabled={!!loadingByOrg[org.id]}
                         >
-                          <LogOut className="h-4 w-4" />
+                          {loadingByOrg[org.id] ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <LogOut className="h-4 w-4" />
+                          )}
                         </Button>
                       )}
                     </div>
@@ -260,10 +278,10 @@ const VolunteerOrganizationsPage = () => {
                       </Link>
                       <Button
                         onClick={() => joinMutation.mutate(org.id)}
-                        disabled={joinMutation.isPending}
+                        disabled={!!loadingByOrg[org.id]}
                         className="flex-1"
                       >
-                        {joinMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : t('Join')}
+                        {loadingByOrg[org.id] ? <Loader2 className="h-4 w-4 animate-spin" /> : t('Join')}
                       </Button>
                     </div>
                   </CardContent>
