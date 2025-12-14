@@ -489,8 +489,10 @@ export default function OrganizationProfile() {
                     <div className="flex items-center gap-4">
                       <Badge variant={member.role === 'Admin' ? 'default' : 'secondary'}>{member.role}</Badge>
                       <Badge
-                        variant={member.status === 'Active' ? 'outline' : 'secondary'}
-                        className={member.status === 'Active' ? 'text-green-600 border-green-200 bg-green-50' : ''}
+                        variant={member.status?.toLowerCase() === 'active' ? 'outline' : 'secondary'}
+                        className={
+                          member.status?.toLowerCase() === 'active' ? 'text-green-600 border-green-200 bg-green-50' : ''
+                        }
                       >
                         {member.status}
                       </Badge>

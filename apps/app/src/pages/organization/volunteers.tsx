@@ -68,7 +68,7 @@ export default function OrganizationVolunteers() {
 
   // Approve Volunteer Mutation
   const approveVolunteerMutation = useMutation({
-    mutationFn: (id: number | string) => api.updateOrganizationVolunteer(id, { status: 'Active' }),
+    mutationFn: (id: number | string) => api.approveOrganizationVolunteer(id),
     onMutate: (id: number | string) => {
       setLoadingById((s) => ({ ...s, [id]: true }));
     },
@@ -92,8 +92,10 @@ export default function OrganizationVolunteers() {
 
   // Reject Volunteer Mutation
   const rejectVolunteerMutation = useMutation({
-    mutationFn: (id: number | string) => api.updateOrganizationVolunteer(id, { status: 'Rejected' }),
-    onMutate: (id: number | string) => {
+    mutationFn: (payload: { id: number | string; reason?: string }) =>
+      api.rejectOrganizationVolunteer(payload.id, payload.reason),
+    onMutate: (payload: { id: number | string }) => {
+      const id = payload.id;
       setLoadingById((s) => ({ ...s, [id]: true }));
     },
     onSuccess: () => {
@@ -119,7 +121,7 @@ export default function OrganizationVolunteers() {
     email: '',
     phone: '',
     role: 'Volunteer',
-    status: 'Active',
+    status: 'active',
     skills: ''
   });
 
@@ -130,7 +132,7 @@ export default function OrganizationVolunteers() {
       email: '',
       phone: '',
       role: 'Volunteer',
-      status: 'Active',
+      status: 'active',
       skills: ''
     });
     setIsAddOpen(true);
@@ -148,6 +150,11 @@ export default function OrganizationVolunteers() {
     });
     setIsAddOpen(true);
   };
+
+  // Reject confirmation dialog state
+  const [isRejectConfirmOpen, setIsRejectConfirmOpen] = useState(false);
+  const [rejectTarget, setRejectTarget] = useState<any>(null);
+  const [rejectReason, setRejectReason] = useState('');
 
   const handleSubmit = () => {
     const payload = {
@@ -239,7 +246,7 @@ export default function OrganizationVolunteers() {
                     </TableCell>
                     <TableCell>{volunteer.role}</TableCell>
                     <TableCell>
-                      <Badge variant={volunteer.status === 'Active' ? 'default' : 'secondary'}>
+                      <Badge variant={volunteer.status?.toLowerCase() === 'active' ? 'default' : 'secondary'}>
                         {volunteer.status}
                       </Badge>
                     </TableCell>
@@ -285,7 +292,11 @@ export default function OrganizationVolunteers() {
                               variant="ghost"
                               size="icon"
                               disabled={!!loadingById[volunteer.id]}
-                              onClick={() => rejectVolunteerMutation.mutate(volunteer.id)}
+                              onClick={() => {
+                                setRejectTarget(volunteer);
+                                setRejectReason('');
+                                setIsRejectConfirmOpen(true);
+                              }}
                               title="Reject"
                             >
                               {loadingById[volunteer.id] ? (
@@ -337,6 +348,45 @@ export default function OrganizationVolunteers() {
               Cancel
             </Button>
             <Button onClick={() => setIsMessageOpen(false)}>Send Message</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reject Confirmation Dialog */}
+      <Dialog open={isRejectConfirmOpen} onOpenChange={setIsRejectConfirmOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reject membership request</DialogTitle>
+            <DialogDescription>
+              Provide an optional reason for rejecting this membership request. The volunteer will be notified.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="reject-reason">Reason (optional)</Label>
+              <Textarea
+                id="reject-reason"
+                placeholder="Optional: brief reason for rejection"
+                value={rejectReason}
+                onChange={(e) => setRejectReason((e.target as HTMLTextAreaElement).value)}
+                className="h-28"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsRejectConfirmOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (rejectTarget) {
+                  rejectVolunteerMutation.mutate({ id: rejectTarget.id, reason: rejectReason });
+                }
+                setIsRejectConfirmOpen(false);
+              }}
+            >
+              Confirm Reject
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -79,6 +79,12 @@ Route.group(() => {
   Route.post('/volunteers', 'OrganizationVolunteersController.store').middleware(['auth'])
   Route.put('/volunteers/:id', 'OrganizationVolunteersController.update').middleware(['auth'])
   Route.delete('/volunteers/:id', 'OrganizationVolunteersController.destroy').middleware(['auth'])
+  Route.post('/volunteers/:id/approve', 'OrganizationVolunteersController.approve').middleware([
+    'auth'
+  ])
+  Route.post('/volunteers/:id/reject', 'OrganizationVolunteersController.reject').middleware([
+    'auth'
+  ])
 
   // Compliance
   Route.get('/documents', 'OrganizationComplianceController.index').middleware(['auth'])

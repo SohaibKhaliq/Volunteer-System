@@ -34,6 +34,9 @@ export default class OrganizationVolunteer extends BaseModel {
   @column()
   public skills?: string
 
+  @column.dateTime({ columnName: 'joined_at' })
+  public joinedAt?: DateTime
+
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
 

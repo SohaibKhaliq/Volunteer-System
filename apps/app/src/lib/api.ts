@@ -430,6 +430,9 @@ const api = {
   addOrganizationVolunteer: async (data: any) => axios.post('/organization/volunteers', data),
   updateOrganizationVolunteer: async (id: number, data: any) => axios.put(`/organization/volunteers/${id}`, data),
   deleteOrganizationVolunteer: async (id: number) => axios.delete(`/organization/volunteers/${id}`),
+  approveOrganizationVolunteer: async (id: number) => axios.post(`/organization/volunteers/${id}/approve`),
+  rejectOrganizationVolunteer: async (id: number, reason?: string) =>
+    axios.post(`/organization/volunteers/${id}/reject`, { reason }),
 
   // Compliance
   listOrganizationDocuments: async () => axios.get('/organization/documents'),
