@@ -17,25 +17,26 @@ export default class AlterResourcesAddFields extends BaseSchema {
       // 1. Handle quantity -> quantity_total
       if (!hasQuantityTotal) {
         if (hasQuantity) {
-          console.log('DEBUG_MIGRATION: Renaming quantity to quantity_total')
+          // safer path: instead of attempting to CHANGE the column (which can fail on some engines),
+          // add the new column and copy values across when available
+          console.log('DEBUG_MIGRATION: Adding quantity_total instead of rename (safer)')
           try {
             await this.schema.raw(
-              `ALTER TABLE \`${this.tableName}\` CHANGE COLUMN \`quantity\` \`quantity_total\` INT DEFAULT 0`
+              `ALTER TABLE \`${this.tableName}\` ADD COLUMN \`quantity_total\` INT DEFAULT 0`
             )
+            await this.schema.raw(`UPDATE \`${this.tableName}\` SET quantity_total = quantity`)
           } catch (e) {
-            console.warn('DEBUG_MIGRATION: Rename failed, checking if need to create', e.message)
-            // If rename failed (e.g. unknown column despite check), just add new column
-            try {
-              await this.schema.raw(
-                `ALTER TABLE \`${this.tableName}\` ADD COLUMN \`quantity_total\` INT DEFAULT 0`
-              )
-            } catch (ignored) {}
+            console.warn('DEBUG_MIGRATION: Add quantity_total failed or already exists', e.message)
           }
         } else {
           console.log('DEBUG_MIGRATION: Creating quantity_total')
-          await this.schema.raw(
-            `ALTER TABLE \`${this.tableName}\` ADD COLUMN \`quantity_total\` INT DEFAULT 0`
-          )
+          try {
+            await this.schema.raw(
+              `ALTER TABLE \`${this.tableName}\` ADD COLUMN \`quantity_total\` INT DEFAULT 0`
+            )
+          } catch (e) {
+            console.warn('DEBUG_MIGRATION: add quantity_total failed', e.message)
+          }
         }
       } else {
         console.log('DEBUG_MIGRATION: quantity_total already exists')
