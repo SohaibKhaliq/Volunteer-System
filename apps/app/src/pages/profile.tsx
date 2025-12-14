@@ -6,10 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+// Render volunteer sections as stacked content instead of tabs
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/components/atoms/use-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Award,
   Clock,
@@ -21,19 +22,51 @@ import {
   Shield,
   Heart,
   CheckCircle2,
-  History
+  History,
+  ArrowRight,
+  Building2,
+  Users
 } from 'lucide-react';
 import { useStore } from '@/lib/store';
+import { Link } from 'react-router-dom';
+import volunteerApi from '@/lib/api/volunteerApi';
 import { AssignmentStatus } from '@/lib/constants/assignmentStatus';
 import { useNavigate } from 'react-router-dom';
 
 export default function Profile() {
   const queryClient = useQueryClient();
-  const { data: user, isLoading } = useQuery(['me'], () => api.getCurrentUser());
+  // use combined endpoint (profile + dashboard)
+  const { data: meResponse, isLoading } = useQuery(['me'], () => api.getVolunteerDashboard());
   const { setToken } = useStore();
   const navigate = useNavigate();
   const { token } = useStore();
+  // tab state for compact navigation
   const [activeTab, setActiveTab] = useState('overview');
+
+  // Sync tab with URL hash so header dropdown links work
+  useEffect(() => {
+    const map: Record<string, string> = {
+      '#overview': 'overview',
+      '#schedule': 'schedule',
+      '#history': 'history',
+      '#resources': 'resources',
+      '#settings': 'settings'
+    };
+    const initial = map[window.location.hash] || 'overview';
+    setActiveTab(initial);
+  }, []);
+
+  useEffect(() => {
+    const hashMap: Record<string, string> = {
+      overview: '#overview',
+      schedule: '#schedule',
+      history: '#history',
+      resources: '#resources',
+      settings: '#settings'
+    };
+    const h = hashMap[activeTab] || '#overview';
+    if (window.location.hash !== h) window.history.replaceState(null, '', h);
+  }, [activeTab]);
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -44,24 +77,24 @@ export default function Profile() {
   });
 
   useEffect(() => {
-    if (user) {
-      const u = (user as any).data || user;
+    const u = (meResponse as any)?.profile ?? (meResponse as any)?.data ?? (meResponse as any) ?? null;
+    if (u) {
       setFormData({
         firstName: u.firstName || u.first_name || '',
         lastName: u.lastName || u.last_name || '',
         email: u.email || '',
         phone: u.phone || '',
-        bio: u.profileMetadata?.bio || ''
+        bio: u.profileMetadata?.bio || u.bio || ''
       });
     }
-  }, [user]);
+  }, [meResponse]);
 
   // Normalize user payload early so hooks can be declared in stable order
-  const userDataEarly = (user as any)?.data ?? (user as any) ?? undefined;
-  const userId = userDataEarly?.id ?? (user as any)?.id ?? undefined;
+  const userDataEarly = (meResponse as any)?.profile ?? (meResponse as any)?.data ?? (meResponse as any) ?? undefined;
+  const userId = userDataEarly?.id ?? undefined;
 
   const updateMutation = useMutation({
-    mutationFn: (data: any) => api.updateUser((user as any).id, data),
+    mutationFn: (data: any) => api.updateUser(userId as any, data),
     onSuccess: () => {
       queryClient.invalidateQueries(['me']);
       toast({ title: 'Profile updated', description: 'Your changes have been saved successfully.' });
@@ -108,6 +141,19 @@ export default function Profile() {
     { enabled: !!userId }
   );
 
+  // Browse opportunities (show a few suggestions on profile)
+  const { data: opportunitiesData } = useQuery({
+    queryKey: ['volunteer-browse-opportunities'],
+    queryFn: async () => {
+      try {
+        const res = await volunteerApi.browseOpportunities({ perPage: 6 });
+        return (res as any)?.data || [];
+      } catch {
+        return [];
+      }
+    }
+  });
+
   if (isLoading)
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -122,7 +168,8 @@ export default function Profile() {
     return null;
   }
 
-  if (!user) {
+  const meRaw = (meResponse as any)?.profile ?? (meResponse as any)?.data ?? (meResponse as any) ?? null;
+  if (!meRaw) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
         <h2 className="text-2xl font-bold">Please log in to view your profile</h2>
@@ -130,8 +177,7 @@ export default function Profile() {
       </div>
     );
   }
-
-  const userData = (user as any).data || user;
+  const userData = (meResponse as any)?.profile ?? (meResponse as any)?.data ?? (meResponse as any) ?? {};
 
   // Transform assignments into the UI's expected `upcomingShifts` structure
   const upcomingShifts = (assignments ?? [])
@@ -232,7 +278,7 @@ export default function Profile() {
 
       <div className="container mx-auto max-w-5xl px-4 -mt-12">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="bg-white shadow-sm p-1 h-12 w-full md:w-auto grid grid-cols-4 md:flex">
+          <TabsList className="bg-white shadow-sm p-1 h-12 w-full md:w-auto grid grid-cols-3 md:flex">
             <TabsTrigger value="overview" className="flex gap-2">
               <User className="h-4 w-4" /> <span className="hidden md:inline">Overview</span>
             </TabsTrigger>
@@ -242,15 +288,14 @@ export default function Profile() {
             <TabsTrigger value="history" className="flex gap-2">
               <History className="h-4 w-4" /> <span className="hidden md:inline">History</span>
             </TabsTrigger>
-            <TabsTrigger value="settings" className="flex gap-2">
-              <Settings className="h-4 w-4" /> <span className="hidden md:inline">Settings</span>
-            </TabsTrigger>
             <TabsTrigger value="resources" className="flex gap-2">
               <Award className="h-4 w-4" /> <span className="hidden md:inline">Resources</span>
             </TabsTrigger>
+            <TabsTrigger value="settings" className="flex gap-2">
+              <Settings className="h-4 w-4" /> <span className="hidden md:inline">Settings</span>
+            </TabsTrigger>
           </TabsList>
 
-          {/* OVERVIEW TAB */}
           <TabsContent value="overview" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Stats Cards */}
@@ -304,7 +349,7 @@ export default function Profile() {
                   <CardDescription>Your next commitments</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {upcomingShifts.map((shift: any) => (
+                  {((meResponse as any)?.dashboard?.upcomingEvents ?? upcomingShifts).map((shift: any) => (
                     <div
                       key={shift.id}
                       className="flex items-center justify-between p-4 border rounded-lg bg-slate-50/50"
@@ -341,8 +386,9 @@ export default function Profile() {
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
-                    {userData.achievements && userData.achievements.length > 0 ? (
-                      userData.achievements.map((a: any) => (
+                    {((meResponse as any)?.dashboard?.recentAchievements ?? userData.achievements) &&
+                    ((meResponse as any)?.dashboard?.recentAchievements ?? userData.achievements).length > 0 ? (
+                      ((meResponse as any)?.dashboard?.recentAchievements ?? userData.achievements).map((a: any) => (
                         <Badge key={a.id} variant="secondary" className="px-3 py-1">
                           <Award className="h-3 w-3 mr-1 text-yellow-500" /> {a.title}
                         </Badge>
@@ -364,9 +410,58 @@ export default function Profile() {
                 </CardContent>
               </Card>
             </div>
+
+            {/* Browse Opportunities */}
+            <div>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold">Browse Opportunities</h2>
+                <Link to="/organizations">
+                  <Button variant="ghost" size="sm">
+                    View All <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {(opportunitiesData || []).slice(0, 6).map((opp: any) => (
+                  <div
+                    key={opp.id}
+                    className="bg-white border rounded-xl overflow-hidden hover:shadow-md transition-shadow"
+                  >
+                    <div className="h-32 bg-gradient-to-r from-blue-500 to-indigo-600 relative">
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+                      <div className="absolute bottom-3 left-3 text-white font-semibold">{opp.title}</div>
+                      {opp.organization && (
+                        <div className="absolute top-3 left-3">
+                          <Badge className="bg-white/20 text-white border-0">{opp.organization.name}</Badge>
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-4">
+                      <p className="text-sm text-slate-600 line-clamp-2 mb-3">{opp.description}</p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
+                        <Calendar className="h-3 w-3" />
+                        <span>{opp.startAt ? new Date(opp.startAt || opp.start_at).toLocaleDateString() : 'TBD'}</span>
+                        {opp.capacity && (
+                          <>
+                            <Users className="h-3 w-3 ml-2" />
+                            <span>{opp.capacity} spots</span>
+                          </>
+                        )}
+                      </div>
+                      <Link to={`/opportunities/${opp.id}`}>
+                        <Button className="w-full" variant="outline">
+                          View Details
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </TabsContent>
 
-          {/* SCHEDULE TAB */}
+          {/* SCHEDULE SECTION */}
           <TabsContent value="schedule">
             <Card>
               <CardHeader>
@@ -441,7 +536,7 @@ export default function Profile() {
             </Card>
           </TabsContent>
 
-          {/* HISTORY TAB */}
+          {/* HISTORY SECTION */}
           <TabsContent value="history">
             <Card>
               <CardHeader>
@@ -488,8 +583,7 @@ export default function Profile() {
             </Card>
           </TabsContent>
 
-          {/* SETTINGS TAB */}
-          {/* RESOURCES TAB */}
+          {/* RESOURCES SECTION */}
           <TabsContent value="resources">
             <Card>
               <CardHeader>
@@ -525,7 +619,7 @@ export default function Profile() {
             </Card>
           </TabsContent>
 
-          {/* SETTINGS TAB */}
+          {/* SETTINGS SECTION */}
           <TabsContent value="settings">
             <Card>
               <CardHeader>

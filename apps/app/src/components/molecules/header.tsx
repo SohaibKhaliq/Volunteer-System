@@ -54,6 +54,36 @@ const Header = () => {
           </Link>
 
           <nav className="hidden md:flex items-center gap-6">
+            {/* Volunteer top-level menu to access consolidated volunteer sections */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className={cn('text-sm font-medium transition-colors')}>
+                  Volunteer
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                <DropdownMenuItem onClick={() => navigate('/profile#overview')} className="cursor-pointer">
+                  Overview
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/profile#schedule')} className="cursor-pointer">
+                  My Schedule
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/profile#history')} className="cursor-pointer">
+                  History
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/profile#achievements')} className="cursor-pointer">
+                  Achievements
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/profile#settings')} className="cursor-pointer">
+                  Settings
+                </DropdownMenuItem>
+                <div className="h-px bg-border my-1" />
+                <DropdownMenuItem onClick={() => navigate('/map')} className="cursor-pointer">
+                  Find Opportunities
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <Link
               to="/"
               className={cn(

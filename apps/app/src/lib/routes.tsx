@@ -75,12 +75,7 @@ import Privacy from '@/pages/privacy';
 import Terms from '@/pages/terms';
 import Cookies from '@/pages/cookies';
 import OrganizationDetail from '@/pages/organization-detail';
-import VolunteerLayout from '@/components/templates/VolunteerLayout';
-import VolunteerDashboard from '@/pages/volunteer/dashboard';
-import VolunteerHistory from '@/pages/volunteer/history';
-import VolunteerSettings from '@/pages/volunteer/settings';
-import VolunteerAchievements from '@/pages/volunteer/achievements';
-import VolunteerOpportunityDetail from '@/pages/volunteer/opportunity-detail';
+// Volunteer-specific layout/pages removed: profile now rendered inside main Layout
 import FeedbackDashboard from '@/pages/feedback';
 import TakeSurvey from '@/pages/feedback/[id]/take';
 
@@ -212,25 +207,7 @@ const routes: RouteObject[] = [
       { path: 'events/:id', element: <Detail /> }
     ]
   },
-  {
-    path: 'volunteer',
-    element: (
-      <ScrollWrapper>
-        <AppProvider>
-          <VolunteerLayout />
-        </AppProvider>
-      </ScrollWrapper>
-    ),
-    errorElement: <ErrorBoundary />,
-    children: [
-      { path: 'dashboard', element: <VolunteerDashboard /> },
-      { path: 'history', element: <VolunteerHistory /> },
-      // /volunteer/profile removed — consolidated into dashboard
-      { path: 'settings', element: <VolunteerSettings /> },
-      { path: 'achievements', element: <VolunteerAchievements /> },
-      { path: 'opportunities/:id', element: <VolunteerOpportunityDetail /> }
-    ]
-  },
+  // Volunteer route group removed; volunteer pages consolidated into `/profile`
   {
     path: 'detail',
     element: (
