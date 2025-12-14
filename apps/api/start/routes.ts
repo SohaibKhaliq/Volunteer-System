@@ -246,7 +246,30 @@ Route.post('/users/:id/activate', 'UsersController.activate').middleware(['auth'
 
 Route.post('/events/:id/ai-match', 'EventsController.aiMatch').middleware(['auth'])
 Route.post('/events/:id/join', 'EventsController.join').middleware(['auth'])
+
+// Australian Compliance - WWCC validation
+Route.post('/compliance/validate-wwcc', 'ComplianceController.validateWWCC').middleware(['auth'])
 Route.post('/compliance/remind/:userId', 'ComplianceController.remind').middleware(['auth'])
+
+// Centrelink reporting
+Route.get('/centrelink/fortnight/:userId', 'CentrelinkController.getCurrentFortnight').middleware([
+  'auth'
+])
+Route.get('/centrelink/su462/:userId', 'CentrelinkController.generateSU462').middleware(['auth'])
+Route.get('/centrelink/su462/:userId/csv', 'CentrelinkController.exportSU462CSV').middleware([
+  'auth'
+])
+
+// Document Library with Read & Acknowledge
+Route.get('/documents', 'DocumentsController.index').middleware(['auth'])
+Route.get('/documents/required', 'DocumentsController.required').middleware(['auth'])
+Route.get('/documents/my-acknowledgments', 'DocumentsController.myAcknowledgments').middleware(['auth'])
+Route.get('/documents/:id', 'DocumentsController.show').middleware(['auth'])
+Route.post('/documents', 'DocumentsController.store').middleware(['auth'])
+Route.put('/documents/:id', 'DocumentsController.update').middleware(['auth'])
+Route.delete('/documents/:id', 'DocumentsController.destroy').middleware(['auth'])
+Route.post('/documents/:id/acknowledge', 'DocumentsController.acknowledge').middleware(['auth'])
+Route.get('/documents/:id/download', 'DocumentsController.download').middleware(['auth'])
 
 // Analytics & Reports
 Route.get('/reports', 'ReportsController.index').middleware(['auth'])
@@ -280,8 +303,11 @@ Route.resource('achievements', 'AchievementsController')
 // Shift scheduling routes
 Route.get('/shifts', 'ShiftsController.index').middleware(['auth'])
 Route.post('/shifts', 'ShiftsController.store').middleware(['auth'])
+Route.post('/shifts/recurring', 'ShiftsController.createRecurring').middleware(['auth'])
 Route.get('/shifts/:id', 'ShiftsController.show').middleware(['auth'])
 Route.get('/shifts/:id/suggestions', 'ShiftsController.suggest').middleware(['auth'])
+Route.post('/shifts/:id/check-conflicts', 'ShiftsController.checkConflicts').middleware(['auth'])
+Route.post('/shifts/:id/assign', 'ShiftsController.assignWithConflictCheck').middleware(['auth'])
 Route.put('/shifts/:id', 'ShiftsController.update').middleware(['auth'])
 Route.delete('/shifts/:id', 'ShiftsController.destroy').middleware(['auth'])
 

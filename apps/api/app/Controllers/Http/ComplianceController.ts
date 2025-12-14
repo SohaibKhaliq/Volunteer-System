@@ -3,6 +3,7 @@ import ComplianceDocument from 'App/Models/ComplianceDocument'
 import { DateTime } from 'luxon'
 import Drive from '@ioc:Adonis/Core/Drive'
 import Logger from '@ioc:Adonis/Core/Logger'
+import ComplianceService from 'App/Services/ComplianceService'
 
 export default class ComplianceController {
   public async index({ response }: HttpContextContract) {
@@ -10,9 +11,58 @@ export default class ComplianceController {
     return response.ok(docs)
   }
 
-  public async store({ request, response }: HttpContextContract) {
+  /**
+   * Validate WWCC number
+   */
+  public async validateWWCC({ request, response }: HttpContextContract) {
+    const { wwccNumber, state } = request.only(['wwccNumber', 'state'])
+
+    if (!wwccNumber || !state) {
+      return response.badRequest({
+        error: 'WWCC number and state are required'
+      })
+    }
+
+    const validation = ComplianceService.validateWWCC(wwccNumber, state)
+
+    if (!validation.valid) {
+      return response.status(422).send({
+        error: validation.message
+      })
+    }
+
+    return response.ok({
+      valid: true,
+      formatted: ComplianceService.formatWWCC(wwccNumber, state),
+      state
+    })
+  }
+
+  public async store({ request, response, auth }: HttpContextContract) {
     try {
-      const payload = request.only(['user_id', 'doc_type', 'issued_at', 'expires_at'])
+      await auth.use('api').authenticate()
+      const payload = request.only([
+        'user_id',
+        'doc_type',
+        'issued_at',
+        'expires_at',
+        'wwcc_number',
+        'wwcc_state'
+      ])
+
+      // Validate WWCC if provided
+      if (payload.doc_type === 'wwcc' && payload.wwcc_number && payload.wwcc_state) {
+        const validation = ComplianceService.validateWWCC(
+          payload.wwcc_number,
+          payload.wwcc_state
+        )
+
+        if (!validation.valid) {
+          return response.status(422).send({
+            error: validation.message
+          })
+        }
+      }
 
       // Normalize incoming ISO date strings to Luxon DateTime so Lucid converts them
       if (payload.issued_at) {
@@ -26,12 +76,18 @@ export default class ComplianceController {
         else delete payload.expires_at
       }
 
-      // handle optional file upload
+      // handle optional file upload - Privacy Act compliant storage
       const file = request.file('file')
       const metadata = request.input('metadata') || {}
+
       if (file) {
-        await file.moveToDisk('local', { dirname: 'compliance' })
-        // store path and original filename in metadata
+        // Store in private location for Privacy Act compliance
+        await file.moveToDisk('local', {
+          dirname: 'compliance',
+          visibility: 'private'
+        } as any)
+
+        // Store path and original filename in metadata
         metadata.file = {
           originalName: file.clientName,
           storedName: file.fileName,
@@ -39,8 +95,32 @@ export default class ComplianceController {
         }
       }
 
+      // Add WWCC data to metadata
+      if (payload.wwcc_number) {
+        metadata.wwcc = {
+          number: payload.wwcc_number,
+          state: payload.wwcc_state,
+          formatted: ComplianceService.formatWWCC(payload.wwcc_number, payload.wwcc_state)
+        }
+      }
+
       payload['metadata'] = metadata
+
+      // Set initial status
+      if (!payload['status']) {
+        payload['status'] = 'pending'
+      }
+
       const doc = await ComplianceDocument.create(payload)
+
+      // Log compliance creation for audit
+      await ComplianceService.logComplianceCheck(
+        payload.user_id,
+        payload.doc_type,
+        'pass',
+        { action: 'document_created', docId: doc.id }
+      )
+
       return response.created(doc)
     } catch (err) {
       Logger.error('ComplianceController.store failed: ' + String(err))

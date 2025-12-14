@@ -96,10 +96,26 @@ export const adminApi = {
     axios.put(`/compliance/${id}`, data, { headers: { 'Content-Type': 'multipart/form-data' } }),
   sendComplianceReminder: async (userId: number) => axios.post(`/compliance/remind/${userId}`),
 
+  // Australian Compliance - WWCC Validation
+  validateWWCC: async (wwccNumber: string, state: string) =>
+    axios.post('/compliance/validate-wwcc', { wwccNumber, state }),
+
   listBackgroundChecks: async () => axios.get('/background-checks'),
   createBackgroundCheck: async (data: any) => axios.post('/background-checks', data),
   updateBackgroundCheck: async (id: number, data: any) => axios.put(`/background-checks/${id}`, data),
   deleteBackgroundCheck: async (id: number) => axios.delete(`/background-checks/${id}`),
+
+  // ==========================================
+  // CENTRELINK REPORTING
+  // ==========================================
+  getCentrelinkFortnight: async (userId: number) => axios.get(`/centrelink/fortnight/${userId}`),
+  generateSU462: async (userId: number, period?: number) =>
+    axios.get(`/centrelink/su462/${userId}`, { params: period ? { period } : undefined }),
+  exportSU462CSV: async (userId: number, period?: number) =>
+    axios.get(`/centrelink/su462/${userId}/csv`, {
+      params: period ? { period } : undefined,
+      responseType: 'blob'
+    }),
 
   // ==========================================
   // NOTIFICATION TEMPLATES

@@ -4,6 +4,10 @@ import { createShiftSchema, updateShiftSchema } from 'App/Validators/shiftValida
 import User from 'App/Models/User'
 import ShiftAssignment from 'App/Models/ShiftAssignment'
 import Database from '@ioc:Adonis/Lucid/Database'
+import RecurringShiftsService from 'App/Services/RecurringShiftsService'
+import ConflictDetectionService from 'App/Services/ConflictDetectionService'
+import { DateTime } from 'luxon'
+import Logger from '@ioc:Adonis/Core/Logger'
 
 export default class ShiftsController {
   public async index({ request }: HttpContextContract) {
@@ -107,6 +111,180 @@ export default class ShiftsController {
     }
     const shift = await Shift.create(payload as any)
     return shift
+  }
+
+  /**
+   * Create recurring shifts
+   */
+  public async createRecurring({ request, response, auth }: HttpContextContract) {
+    try {
+      await auth.use('api').authenticate()
+
+      const {
+        title,
+        description,
+        eventId,
+        startAt,
+        endAt,
+        capacity,
+        recurrenceRule,
+        endDate,
+        organizationId
+      } = request.only([
+        'title',
+        'description',
+        'eventId',
+        'startAt',
+        'endAt',
+        'capacity',
+        'recurrenceRule',
+        'endDate',
+        'organizationId'
+      ])
+
+      if (!recurrenceRule) {
+        return response.badRequest({
+          message: 'recurrenceRule is required for recurring shifts'
+        })
+      }
+
+      if (!endDate) {
+        return response.badRequest({
+          message: 'endDate is required for recurring shifts'
+        })
+      }
+
+      const shifts = await RecurringShiftsService.createRecurringShifts(
+        {
+          title,
+          description,
+          eventId: eventId ? Number(eventId) : undefined,
+          startAt: DateTime.fromISO(startAt),
+          endAt: DateTime.fromISO(endAt),
+          capacity: capacity ? Number(capacity) : undefined,
+          organizationId: organizationId ? Number(organizationId) : undefined,
+          templateName: `${title}-${Date.now()}`
+        },
+        recurrenceRule,
+        DateTime.fromISO(endDate)
+      )
+
+      return response.created({
+        message: `Created ${shifts.length} recurring shift instances`,
+        count: shifts.length,
+        shifts
+      })
+    } catch (error) {
+      Logger.error('Failed to create recurring shifts:', error)
+      return response.status(500).send({
+        message: 'Failed to create recurring shifts',
+        error: error.message
+      })
+    }
+  }
+
+  /**
+   * Check for conflicts when assigning a user to a shift
+   */
+  public async checkConflicts({ params, request, response }: HttpContextContract) {
+    try {
+      const shiftId = params.id
+      const userId = request.input('userId')
+
+      if (!userId) {
+        return response.badRequest({ message: 'userId is required' })
+      }
+
+      const shift = await Shift.find(shiftId)
+      if (!shift) {
+        return response.notFound({ message: 'Shift not found' })
+      }
+
+      const conflictCheck = await ConflictDetectionService.checkShiftConflicts(
+        Number(userId),
+        shift.startAt,
+        shift.endAt
+      )
+
+      return response.ok({
+        hasConflict: conflictCheck.hasConflict,
+        conflicts: conflictCheck.conflicts,
+        message: ConflictDetectionService.formatConflictMessage(conflictCheck.conflicts)
+      })
+    } catch (error) {
+      Logger.error('Failed to check conflicts:', error)
+      return response.status(500).send({
+        message: 'Failed to check conflicts',
+        error: error.message
+      })
+    }
+  }
+
+  /**
+   * Assign a user to a shift with conflict detection
+   */
+  public async assignWithConflictCheck({ params, request, response, auth }: HttpContextContract) {
+    try {
+      await auth.use('api').authenticate()
+
+      const shiftId = params.id
+      const { userId, ignoreConflicts } = request.only(['userId', 'ignoreConflicts'])
+
+      if (!userId) {
+        return response.badRequest({ message: 'userId is required' })
+      }
+
+      const shift = await Shift.find(shiftId)
+      if (!shift) {
+        return response.notFound({ message: 'Shift not found' })
+      }
+
+      // Check for conflicts
+      const conflictCheck = await ConflictDetectionService.checkShiftConflicts(
+        Number(userId),
+        shift.startAt,
+        shift.endAt
+      )
+
+      if (conflictCheck.hasConflict && !ignoreConflicts) {
+        return response.status(409).send({
+          message: 'User has conflicting commitments',
+          hasConflict: true,
+          conflicts: conflictCheck.conflicts,
+          conflictMessage: ConflictDetectionService.formatConflictMessage(conflictCheck.conflicts)
+        })
+      }
+
+      // Check if already assigned
+      const existing = await ShiftAssignment.query()
+        .where('shift_id', shiftId)
+        .where('user_id', userId)
+        .first()
+
+      if (existing) {
+        return response.conflict({ message: 'User is already assigned to this shift' })
+      }
+
+      // Create assignment
+      const assignment = await ShiftAssignment.create({
+        shiftId: Number(shiftId),
+        userId: Number(userId),
+        status: 'confirmed'
+      })
+
+      return response.created({
+        message: 'User assigned to shift successfully',
+        assignment,
+        hadConflicts: conflictCheck.hasConflict,
+        conflictsIgnored: ignoreConflicts || false
+      })
+    } catch (error) {
+      Logger.error('Failed to assign user to shift:', error)
+      return response.status(500).send({
+        message: 'Failed to assign user to shift',
+        error: error.message
+      })
+    }
   }
 
   public async update({ params, request }: HttpContextContract) {
