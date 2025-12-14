@@ -3,6 +3,7 @@ import { DateTime } from 'luxon'
 import Organization from './Organization'
 import Team from './Team'
 import User from './User'
+import Application from './Application'
 import crypto from 'crypto'
 
 export default class Opportunity extends BaseModel {
@@ -67,6 +68,9 @@ export default class Opportunity extends BaseModel {
     foreignKey: 'createdBy'
   })
   public creator: BelongsTo<typeof User>
+
+  @hasMany(() => Application)
+  public applications: HasMany<typeof Application>
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
