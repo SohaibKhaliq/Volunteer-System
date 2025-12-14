@@ -238,8 +238,27 @@ export default function Profile() {
       queryClient.invalidateQueries(['me']);
       toast({ title: 'Request submitted', description: 'Your request to join the organization was submitted.' });
     },
-    onError: () => {
-      toast({ title: 'Request failed', description: 'Could not submit join request', variant: 'destructive' });
+    onError: (error: any) => {
+      const status = error?.response?.status;
+      const serverMessage = error?.response?.data?.message;
+      if (status === 401) {
+        toast({ title: 'Login required', description: 'Please sign in to join organizations', variant: 'destructive' });
+        queryClient.invalidateQueries(['me']);
+        return;
+      }
+      if (status === 409) {
+        toast({
+          title: 'Already a member',
+          description: serverMessage || 'You are already a member of this organization'
+        });
+        queryClient.invalidateQueries(['me']);
+        return;
+      }
+      toast({
+        title: 'Request failed',
+        description: serverMessage || 'Could not submit join request',
+        variant: 'destructive'
+      });
     }
   });
 

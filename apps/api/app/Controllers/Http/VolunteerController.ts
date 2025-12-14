@@ -661,7 +661,10 @@ export default class VolunteerController {
       await auth.use('api').authenticate()
       const user = auth.user!
 
-      const org = await Organization.findOrFail(params.id)
+      const org = await Organization.find(params.id)
+      if (!org) {
+        return response.notFound({ error: { message: 'Organization not found' } })
+      }
 
       // Check if already a member
       const existing = await Database.from('organization_volunteers')
@@ -670,7 +673,7 @@ export default class VolunteerController {
         .first()
 
       if (existing) {
-        return response.badRequest({ error: { message: 'Already a member of this organization' } })
+        return response.conflict({ error: { message: 'Already a member of this organization' } })
       }
 
       // Add as pending volunteer
@@ -684,10 +687,14 @@ export default class VolunteerController {
         updated_at: new Date()
       })
 
-      return response.ok({ message: 'Membership request submitted' })
+      return response.created({ message: 'Membership request submitted' })
     } catch (error) {
       Logger.error('Join organization error: %o', error)
-      return response.badRequest({ error: { message: 'Failed to join organization' } })
+      // If auth failed, return 401
+      if ((error as any)?.name === 'InvalidJwtToken' || (error as any)?.code === 'E_INVALID_JWT') {
+        return response.unauthorized({ error: { message: 'Unauthenticated' } })
+      }
+      return response.internalServerError({ error: { message: 'Failed to join organization' } })
     }
   }
 
@@ -699,15 +706,22 @@ export default class VolunteerController {
       await auth.use('api').authenticate()
       const user = auth.user!
 
-      await Database.from('organization_volunteers')
+      const deleted = await Database.from('organization_volunteers')
         .where('organization_id', params.id)
         .andWhere('user_id', user.id)
         .delete()
 
+      if (!deleted) {
+        return response.notFound({ error: { message: 'Membership not found' } })
+      }
+
       return response.ok({ message: 'Left organization' })
     } catch (error) {
       Logger.error('Leave organization error: %o', error)
-      return response.badRequest({ error: { message: 'Failed to leave organization' } })
+      if ((error as any)?.name === 'InvalidJwtToken' || (error as any)?.code === 'E_INVALID_JWT') {
+        return response.unauthorized({ error: { message: 'Unauthenticated' } })
+      }
+      return response.internalServerError({ error: { message: 'Failed to leave organization' } })
     }
   }
 

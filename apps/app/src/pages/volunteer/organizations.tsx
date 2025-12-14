@@ -56,7 +56,20 @@ const VolunteerOrganizationsPage = () => {
     onSuccess: () => {
       toast.success(t('Membership request submitted'));
     },
-    onError: () => {
+    onError: (error: any) => {
+      const status = error?.response?.status;
+      const serverMessage = error?.response?.data?.message;
+      if (status === 401) {
+        toast.error(t('Please sign in to perform this action'));
+        queryClient.invalidateQueries({ queryKey: ['me'] });
+        return;
+      }
+      if (status === 409) {
+        toast.error(serverMessage || t('You are already a member of this organization'));
+        queryClient.invalidateQueries({ queryKey: ['my-organizations'] });
+        queryClient.invalidateQueries({ queryKey: ['organizations'] });
+        return;
+      }
       toast.error(t('Failed to join organization'));
     }
   });
@@ -74,7 +87,19 @@ const VolunteerOrganizationsPage = () => {
     onSuccess: () => {
       toast.success(t('Left organization'));
     },
-    onError: () => {
+    onError: (error: any) => {
+      const status = error?.response?.status;
+      const serverMessage = error?.response?.data?.message;
+      if (status === 401) {
+        toast.error(t('Please sign in to perform this action'));
+        queryClient.invalidateQueries({ queryKey: ['me'] });
+        return;
+      }
+      if (status === 404) {
+        toast.error(serverMessage || t('Membership not found'));
+        queryClient.invalidateQueries({ queryKey: ['my-organizations'] });
+        return;
+      }
       toast.error(t('Failed to leave organization'));
     }
   });

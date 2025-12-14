@@ -47,12 +47,34 @@ const OrganizationDetail = () => {
       queryClient.invalidateQueries({ queryKey: ['me'] });
     },
     onError: (error: any) => {
-      const message = error?.response?.data?.message || t('Failed to join organization');
-      toast({
-        title: t('Error'),
-        description: message,
-        variant: 'destructive'
-      });
+      const status = error?.response?.status;
+      const serverMessage = error?.response?.data?.message;
+      if (status === 401) {
+        toast({ title: t('Login Required'), description: t('Please sign in to join.'), variant: 'destructive' });
+        // Let axios interceptor or existing flow redirect the user; also invalidate auth-related queries
+        queryClient.invalidateQueries({ queryKey: ['me'] });
+        return;
+      }
+
+      if (status === 409) {
+        toast({ title: t('Already a member'), description: serverMessage || t('You are already a member.') });
+        queryClient.invalidateQueries({ queryKey: ['me'] });
+        queryClient.invalidateQueries({ queryKey: ['myOrganizations'] });
+        queryClient.invalidateQueries({ queryKey: ['organization', id] });
+        return;
+      }
+
+      if (status === 404) {
+        toast({
+          title: t('Not found'),
+          description: serverMessage || t('Organization not found'),
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      const message = serverMessage || t('Failed to join organization');
+      toast({ title: t('Error'), description: message, variant: 'destructive' });
     }
   });
 
