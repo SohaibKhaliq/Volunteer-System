@@ -56,6 +56,15 @@ const OrganizationDetail = () => {
     }
   });
 
+  // Fetch current user's memberships so we can avoid duplicate join attempts
+  const { data: myOrgs } = useQuery({
+    queryKey: ['myOrganizations'],
+    queryFn: async () => volunteerApi.getMyOrganizations(),
+    enabled: !!token
+  });
+
+  const membership = Array.isArray(myOrgs) && id ? (myOrgs as any[]).find((m) => String(m.id) === String(id)) : null;
+
   const handleJoinOrganization = () => {
     // If we have a stored auth token, allow the action — don't redirect
     // the user back to login while their profile is still being loaded.
@@ -118,9 +127,21 @@ const OrganizationDetail = () => {
                     )}
                   </div>
                 </div>
-                <Button size="lg" onClick={handleJoinOrganization} disabled={joinMutation.isPending}>
-                  {joinMutation.isPending ? t('Joining...') : t('Join Organization')}
-                </Button>
+                {membership ? (
+                  membership.status === 'active' ? (
+                    <Button size="lg" variant="outline" disabled>
+                      {t('Member')}
+                    </Button>
+                  ) : (
+                    <Button size="lg" variant="outline" disabled>
+                      {t('Requested')}
+                    </Button>
+                  )
+                ) : (
+                  <Button size="lg" onClick={handleJoinOrganization} disabled={joinMutation.isPending}>
+                    {joinMutation.isPending ? t('Joining...') : t('Join Organization')}
+                  </Button>
+                )}
               </div>
             </div>
           </div>

@@ -639,7 +639,7 @@ export default class VolunteerController {
           'organizations.id',
           'organizations.name',
           'organizations.slug',
-          'organizations.logo_url',
+          'organizations.logo as logo_url',
           'organizations.status as org_status',
           'organization_volunteers.role',
           'organization_volunteers.status',
