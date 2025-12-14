@@ -231,6 +231,29 @@ export default function Profile() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['my-assignments', userId] })
   });
 
+  // Organization join/leave mutations
+  const joinOrgMutation = useMutation({
+    mutationFn: (id: number) => volunteerApi.joinOrganization(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['me']);
+      toast({ title: 'Request submitted', description: 'Your request to join the organization was submitted.' });
+    },
+    onError: () => {
+      toast({ title: 'Request failed', description: 'Could not submit join request', variant: 'destructive' });
+    }
+  });
+
+  const leaveOrgMutation = useMutation({
+    mutationFn: (id: number) => volunteerApi.leaveOrganization(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['me']);
+      toast({ title: 'Left organization', description: 'You have left the organization.' });
+    },
+    onError: () => {
+      toast({ title: 'Action failed', description: 'Could not leave organization', variant: 'destructive' });
+    }
+  });
+
   return (
     <div className="min-h-screen bg-slate-50/50 pb-12">
       {/* Header / Banner */}
@@ -458,6 +481,82 @@ export default function Profile() {
                           <Award className="h-3 w-3 mr-1 text-green-500" /> Eco Warrior
                         </Badge>
                       </>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Organization Memberships */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Organization Memberships</CardTitle>
+                  <CardDescription>Your current organizations and pending requests</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {(((meResponse as any)?.profile?.organizations ?? userData.organizations) || []).length === 0 &&
+                    (((meResponse as any)?.profile?.organizationStatuses ?? []) || []).length === 0 ? (
+                      <div className="text-sm text-muted-foreground">You are not a member of any organizations.</div>
+                    ) : (
+                      // Build a union of organizations + any status-only entries
+                      (() => {
+                        const orgs = (meResponse as any)?.profile?.organizations ?? userData.organizations ?? [];
+                        const statuses = (meResponse as any)?.profile?.organizationStatuses ?? [];
+                        // Map statuses by organization id for quick lookup
+                        const statusMap: Record<string | number, any> = {};
+                        statuses.forEach((s: any) => {
+                          statusMap[s.organization_id ?? s.organizationId ?? s.id] = s;
+                        });
+
+                        // Combine orgs with any status-only entries (e.g., pending requests where org not preloaded)
+                        const extraStatuses = statuses.filter(
+                          (s: any) => !orgs.find((o: any) => o.id === (s.organization_id ?? s.organizationId ?? s.id))
+                        );
+
+                        const rows: any[] = [...orgs, ...extraStatuses];
+
+                        return rows.map((o: any) => {
+                          const id = o.id ?? o.organization_id ?? o.organizationId;
+                          const status = (statusMap[id] && statusMap[id].status) || 'not_member';
+                          const name = o.name || o.title || 'Organization';
+                          return (
+                            <div key={String(id)} className="flex items-center justify-between p-3 border rounded-lg">
+                              <div>
+                                <div className="font-medium">{name}</div>
+                                <div className="text-sm text-muted-foreground">
+                                  {status === 'active'
+                                    ? 'Member'
+                                    : status === 'pending'
+                                      ? 'Pending approval'
+                                      : 'Not a member'}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                {status === 'active' ? (
+                                  <Button
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => leaveOrgMutation.mutate(id)}
+                                    disabled={leaveOrgMutation.isLoading}
+                                  >
+                                    Leave
+                                  </Button>
+                                ) : status === 'pending' ? (
+                                  <div className="text-sm text-muted-foreground">Request pending</div>
+                                ) : (
+                                  <Button
+                                    size="sm"
+                                    onClick={() => joinOrgMutation.mutate(id)}
+                                    disabled={joinOrgMutation.isLoading}
+                                  >
+                                    Request to join
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        });
+                      })()
                     )}
                   </div>
                 </CardContent>

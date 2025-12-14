@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { axios } from '@/lib/axios';
 import api from '@/lib/api';
+import volunteerApi from '@/lib/api/volunteerApi';
 import { Button } from '@/components/ui/button';
 import { MapPin, Globe, Mail, Phone, Calendar, Users, ArrowRight, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -36,13 +37,14 @@ const OrganizationDetail = () => {
   });
 
   const joinMutation = useMutation({
-    mutationFn: () => api.joinOrganization(Number(id)),
+    mutationFn: () => volunteerApi.joinOrganization(Number(id)),
     onSuccess: () => {
       toast({
         title: t('Success'),
         description: t('Successfully joined the organization! Your request is pending approval.')
       });
       queryClient.invalidateQueries({ queryKey: ['organization', id] });
+      queryClient.invalidateQueries({ queryKey: ['me'] });
     },
     onError: (error: any) => {
       const message = error?.response?.data?.message || t('Failed to join organization');

@@ -1,4 +1,9 @@
 import { useState } from 'react';
+import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
+import volunteerApi from '@/lib/api/volunteerApi';
+import { useToast } from '@/components/atoms/use-toast';
+import { useNavigate } from 'react-router-dom';
+import { useStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +22,76 @@ const Organizations = () => {
     ['organizations'],
     () => api.listOrganizations() as unknown as Promise<any[]>
   );
+
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const { token } = useStore();
+
+  // per-org loading state
+  const [loadingByOrg, setLoadingByOrg] = useState<Record<number, 'joining' | 'leaving' | undefined>>({});
+
+  // Fetch current user's organization memberships to show per-org status
+  const { data: myOrgs } = useQuery(['myOrganizations'], () => volunteerApi.getMyOrganizations(), { enabled: !!token });
+
+  const membershipMap: Record<number, any> = {};
+  if (Array.isArray(myOrgs)) {
+    (myOrgs as any[]).forEach((m: any) => {
+      membershipMap[m.id] = m;
+    });
+  }
+
+  const joinMutation = useMutation({
+    mutationFn: (orgId: number) => volunteerApi.joinOrganization(orgId),
+    onMutate: async (orgId: number) => {
+      setLoadingByOrg((s) => ({ ...s, [orgId]: 'joining' }));
+      return { orgId };
+    },
+    onSuccess: (_data, orgId: any) => {
+      toast({ title: 'Request submitted', description: 'Your request to join the organization was submitted.' });
+      queryClient.invalidateQueries({ queryKey: ['organizations'] });
+      queryClient.invalidateQueries({ queryKey: ['me'] });
+      queryClient.invalidateQueries({ queryKey: ['myOrganizations'] });
+    },
+    onError: (_err: any, orgId: any) => {
+      const msg = (_err as any)?.response?.data?.message || 'Failed to submit request';
+      toast({ title: 'Error', description: msg, variant: 'destructive' });
+      setLoadingByOrg((s) => ({ ...s, [orgId as number]: undefined }));
+    },
+    onSettled: (_data, _err, orgId: any) => {
+      setLoadingByOrg((s) => {
+        const copy = { ...s };
+        delete copy[orgId as number];
+        return copy;
+      });
+    }
+  });
+
+  const leaveMutation = useMutation({
+    mutationFn: (orgId: number) => volunteerApi.leaveOrganization(orgId),
+    onMutate: async (orgId: number) => {
+      setLoadingByOrg((s) => ({ ...s, [orgId]: 'leaving' }));
+      return { orgId };
+    },
+    onSuccess: (_data, orgId: any) => {
+      toast({ title: 'Left organization', description: 'You have left the organization.' });
+      queryClient.invalidateQueries({ queryKey: ['organizations'] });
+      queryClient.invalidateQueries({ queryKey: ['me'] });
+      queryClient.invalidateQueries({ queryKey: ['myOrganizations'] });
+    },
+    onError: (_err: any, orgId: any) => {
+      const msg = (_err as any)?.response?.data?.message || 'Failed to leave organization';
+      toast({ title: 'Error', description: msg, variant: 'destructive' });
+      setLoadingByOrg((s) => ({ ...s, [orgId as number]: undefined }));
+    },
+    onSettled: (_data, _err, orgId: any) => {
+      setLoadingByOrg((s) => {
+        const copy = { ...s };
+        delete copy[orgId as number];
+        return copy;
+      });
+    }
+  });
 
   const filteredOrgs =
     organizations?.filter(
@@ -89,13 +164,62 @@ const Organizations = () => {
                       </div>
                     </div>
                   </CardContent>
-                  <CardFooter className="border-t bg-slate-50/50 p-4">
-                    <Link to={`/organizations/${org.id}`} className="w-full">
+                  <CardFooter className="border-t bg-slate-50/50 p-4 flex gap-2">
+                    <Link to={`/organizations/${org.id}`} className="flex-1">
                       <Button variant="ghost" className="w-full justify-between group">
                         {t('View Profile')}
                         <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                       </Button>
                     </Link>
+                    <div className="w-44">
+                      {(() => {
+                        const membership = membershipMap[org.id];
+                        const status = membership ? membership.status : 'not_member';
+                        if (status === 'active') {
+                          const isLeaving = loadingByOrg[org.id] === 'leaving';
+                          return (
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="w-full"
+                              onClick={() => leaveMutation.mutate(org.id)}
+                              disabled={isLeaving}
+                            >
+                              {isLeaving ? 'Leaving...' : t('Leave')}
+                            </Button>
+                          );
+                        }
+                        if (status === 'pending') {
+                          const isJoining = loadingByOrg[org.id] === 'joining';
+                          return (
+                            <Button size="sm" className="w-full" disabled>
+                              {isJoining ? 'Requesting...' : t('Requested')}
+                            </Button>
+                          );
+                        }
+
+                        // not a member
+                        return (
+                          <Button
+                            size="sm"
+                            className="w-full"
+                            onClick={() => {
+                              if (!token) {
+                                const returnTo = encodeURIComponent(
+                                  window.location.pathname + window.location.search + window.location.hash
+                                );
+                                navigate(`/login?returnTo=${returnTo}`);
+                                return;
+                              }
+                              joinMutation.mutate(org.id);
+                            }}
+                            disabled={loadingByOrg[org.id] === 'joining'}
+                          >
+                            {loadingByOrg[org.id] === 'joining' ? 'Requesting...' : t('Join')}
+                          </Button>
+                        );
+                      })()}
+                    </div>
                   </CardFooter>
                 </Card>
               ))}
