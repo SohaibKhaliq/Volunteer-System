@@ -22,6 +22,8 @@ const api = {
     return axios.post('/help-requests', data);
   },
   listHelpRequests: async (params?: any) => axios.get('/help-requests', { params }),
+  assignVolunteer: async (requestId: number, volunteerId: number) =>
+    axios.post(`/help-requests/${requestId}/assign`, { volunteerId }),
 
   createHelpOffer: async (data: FormData) => {
     return axios.post('/offers', data);

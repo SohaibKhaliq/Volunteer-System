@@ -21,7 +21,8 @@ import {
   ListOrdered,
   LogOut,
   User,
-  Bell
+  Bell,
+  Siren
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import api from '@/lib/api';
@@ -161,7 +162,10 @@ export default function AdminLayout() {
   }[] = [
     {
       title: 'Overview',
-      items: [{ path: '/admin', icon: Home, label: 'Dashboard' }]
+      items: [
+        { path: '/admin', icon: Home, label: 'Dashboard' },
+        { path: '/admin/emergency-requests', icon: Siren, label: 'Emergency Requests', showBadge: true }
+      ]
     },
     {
       title: 'Management',

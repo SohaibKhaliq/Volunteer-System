@@ -26,11 +26,21 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 
+// ... imports
+import { RequestDetailsModal } from '@/components/organisms/RequestDetailsModal';
+import { AssignVolunteerModal } from '@/components/organisms/AssignVolunteerModal';
+
 const AdminEmergencyRequests = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  
+  // Modal states
+  const [selectedRequest, setSelectedRequest] = useState<HelpRequest | null>(null);
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
 
+  // ... existing query ...
   const { data: requests, isLoading } = useQuery({
     queryKey: ['help-requests'],
     queryFn: () => api.listHelpRequests()
@@ -96,10 +106,10 @@ const AdminEmergencyRequests = () => {
                   </TableRow>
                 ) : filteredRequests?.length === 0 ? (
                   <TableRow>
-                  <TableCell colSpan={8} className="h-24 text-center">
-                    {t('No requests found.')}
-                  </TableCell>
-                </TableRow>
+                   <TableCell colSpan={8} className="h-24 text-center">
+                     {t('No requests found.')}
+                   </TableCell>
+                 </TableRow>
                 ) : (
                   filteredRequests?.map((request: any) => (
                     <TableRow key={request.id}>
@@ -144,10 +154,18 @@ const AdminEmergencyRequests = () => {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>{t('Actions')}</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => navigate(`/detail/request/${request.id}`)}>
+                            <DropdownMenuItem onClick={() => {
+                                setSelectedRequest(request);
+                                setDetailsModalOpen(true);
+                            }}>
                               {t('View Details')}
                             </DropdownMenuItem>
-                            <DropdownMenuItem>{t('Assign Volunteer')}</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => {
+                                setSelectedRequest(request);
+                                setAssignModalOpen(true);
+                            }}>
+                              {t('Assign Volunteer')}
+                            </DropdownMenuItem>
                             <DropdownMenuItem className="text-red-600">{t('Close Case')}</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -160,6 +178,24 @@ const AdminEmergencyRequests = () => {
           </div>
         </CardContent>
       </Card>
+
+      <RequestDetailsModal 
+        request={selectedRequest}
+        open={detailsModalOpen}
+        onClose={() => {
+          setDetailsModalOpen(false);
+          setSelectedRequest(null);
+        }}
+      />
+      
+      <AssignVolunteerModal
+        requestId={selectedRequest?.id || null}
+        open={assignModalOpen}
+        onClose={() => {
+          setAssignModalOpen(false);
+          setSelectedRequest(null);
+        }}
+      />
     </div>
   );
 };

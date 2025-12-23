@@ -21,4 +21,10 @@ export interface HelpRequest {
   status: string;
   contactMethod?: string;
   isVerified?: boolean;
+  email?: string;
+  metaData?: any;
+  location?: {
+    lat: number;
+    lng: number;
+  };
 }

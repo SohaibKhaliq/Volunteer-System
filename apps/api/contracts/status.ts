@@ -1,5 +1,6 @@
 export enum HelpRequestStatus {
   Requested = 'requested',
+  Assigned = 'assigned',
   Completed = 'completed'
 }
 

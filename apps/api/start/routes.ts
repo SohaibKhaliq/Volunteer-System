@@ -60,6 +60,8 @@ Route.resource('help-requests', 'HelpRequestsController')
   })
   .apiOnly()
 
+Route.post('/help-requests/:id/assign', 'HelpRequestsController.assign').middleware(['auth'])
+
 Route.resource('types', 'TypesController')
   .middleware({
     // store: ['auth:api'],
