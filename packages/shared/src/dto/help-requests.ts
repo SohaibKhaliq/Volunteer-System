@@ -14,7 +14,11 @@ export const createHelpRequestSchema = z.object({
   name: z.string().nonempty(),
   email: z.string().email().optional(),
   phone: z.string().nonempty(),
-  files: z.array(z.any()).optional().default([])
+  files: z.array(z.any()).optional().default([]),
+  severity: z.enum(['low', 'medium', 'high', 'critical'] as const).default('medium'),
+  contactMethod: z.enum(['phone', 'email', 'sms', 'whatsapp'] as const).default('phone'),
+  consentGiven: z.boolean().default(false),
+  metaData: z.any().optional()
 });
 
 export type CreateHelpRequestDto = z.infer<typeof createHelpRequestSchema>;

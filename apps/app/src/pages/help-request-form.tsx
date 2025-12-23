@@ -36,7 +36,13 @@ const formSchema = z.object({
   name: z.string().nonempty(),
   email: z.string().email().optional(),
   phone: z.string().nonempty(),
-  files: z.array(imageSchema).optional().default([])
+  files: z.array(imageSchema).optional().default([]),
+  severity: z.enum(['low', 'medium', 'high', 'critical'] as const),
+  contactMethod: z.enum(['phone', 'email', 'sms', 'whatsapp'] as const),
+  consentGiven: z.boolean().refine((val) => val === true, {
+    message: 'You must consent to proceed'
+  }),
+  metaData: z.any().optional()
 });
 
 const HelpRequestForm = () => {
@@ -57,7 +63,11 @@ const HelpRequestForm = () => {
       name: '',
       email: undefined,
       phone: '',
-      files: []
+      files: [],
+      severity: 'medium',
+      contactMethod: 'phone',
+      consentGiven: false,
+      metaData: {}
     },
     mode: 'onChange'
   });
@@ -99,6 +109,12 @@ const HelpRequestForm = () => {
     formData.append('name', values.name);
     if (values.email) formData.append('email', values.email);
     formData.append('phone', values.phone);
+    
+    // New Fields
+    formData.append('severity', values.severity);
+    formData.append('contactMethod', values.contactMethod);
+    formData.append('consentGiven', String(values.consentGiven));
+    formData.append('metaData', JSON.stringify(values.metaData || {}));
 
     values.files.forEach((file) => {
       formData.append('files', file);
@@ -139,6 +155,28 @@ const HelpRequestForm = () => {
                   <FormItem>
                     <FormControl>
                       <AssistanceTypeInput label={t('What are your needs?')} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="severity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <RadioInput
+                        label={t('Severity Level')}
+                        options={[
+                          { label: t('Low - Need help but safe for now'), value: 'low' },
+                          { label: t('Medium - Urgent but not life threatening'), value: 'medium' },
+                          { label: t('High - Immediate assistance needed'), value: 'high' },
+                          { label: t('Critical - Life threatening emergency'), value: 'critical' }
+                        ]}
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -310,6 +348,56 @@ const HelpRequestForm = () => {
                   )}
                 />
               </div>
+
+              <FormField
+                control={form.control}
+                name="contactMethod"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <RadioInput
+                        label={t('Preferred Contact Method')}
+                        options={[
+                          { label: t('Phone Call'), value: 'phone' },
+                          { label: t('SMS'), value: 'sms' },
+                          { label: t('WhatsApp'), value: 'whatsapp' },
+                          { label: t('Email'), value: 'email' }
+                        ]}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="consentGiven"
+                render={({ field }) => (
+                  <FormItem>
+                     <div className="flex items-start space-x-2 pt-2">
+                      <FormControl>
+                        <input
+                           type="checkbox"
+                           className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary mt-1"
+                           checked={field.value}
+                           onChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <label className="text-sm font-medium leading-none text-gray-700">
+                          {t('I consent to sharing this information for emergency assistance purposes.')}
+                        </label>
+                        <p className="text-xs text-gray-500">
+                          {t('Your data will be shared with verified volunteers and emergency services if necessary.')}
+                        </p>
+                      </div>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
             <Navbar asSubmit disabled={!isDirty || !isValid} loading={isSubmitting || isLoading} />

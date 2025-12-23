@@ -5,6 +5,7 @@ import Type from 'App/Models/Type'
 import { HelpRequestStatus } from 'Contracts/status'
 import { createHelpRequestSchema } from 'shared'
 import HelpRequest from '../../Models/HelpRequest'
+import TriageService from 'App/Services/TriageService'
 
 export default class HelpRequestController {
   public async store({ request, response }: HttpContextContract) {
@@ -18,13 +19,20 @@ export default class HelpRequestController {
         'email',
         'name',
         'phone',
-        'files'
+        'files',
+        'severity',
+        'contactMethod',
+        'consentGiven',
+        'metaData'
       ])
 
+      // Parse payload with validated schema (including defaults)
       const parsedPayload = createHelpRequestSchema.parse({
         ...payload,
-        types: JSON.parse(payload.types),
-        location: JSON.parse(payload.location)
+        types: typeof payload.types === 'string' ? JSON.parse(payload.types) : payload.types,
+        location: typeof payload.location === 'string' ? JSON.parse(payload.location) : payload.location,
+        metaData: typeof payload.metaData === 'string' ? JSON.parse(payload.metaData) : payload.metaData,
+        consentGiven: payload.consentGiven === 'true' || payload.consentGiven === true
       })
 
       // Handle files safely similar to other upload endpoints
@@ -50,7 +58,23 @@ export default class HelpRequestController {
         })
       }
 
+      // Triage Logic
+      const urgencyScore = TriageService.calculateUrgencyScore({
+        severity: parsedPayload.severity,
+        description: parsedPayload.description,
+        source: parsedPayload.source
+      } as HelpRequest, parsedPayload.types)
+
+      const caseId = TriageService.generateCaseId()
+
       const helpRequest = await HelpRequest.create({
+        caseId,
+        urgencyScore,
+        severity: parsedPayload.severity,
+        contactMethod: parsedPayload.contactMethod,
+        consentGiven: parsedPayload.consentGiven,
+        metaData: parsedPayload.metaData,
+        isVerified: false,
         longitude: parsedPayload.location.lng,
         latitude: parsedPayload.location.lat,
         address: parsedPayload.location.address,
@@ -74,7 +98,7 @@ export default class HelpRequestController {
       console.error(error)
       return response.badRequest({
         message: 'Failed to create help request',
-        error: error.messages
+        error: error.messages || error.message
       })
     }
   }
@@ -156,7 +180,9 @@ export default class HelpRequestController {
 
   public async index({ response }: HttpContextContract) {
     try {
-      const helpRequests = await HelpRequest.all()
+      const helpRequests = await HelpRequest.query()
+        .preload('types')
+        .orderBy('created_at', 'desc')
 
       return helpRequests
     } catch (error) {

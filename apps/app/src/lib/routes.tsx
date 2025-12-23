@@ -56,6 +56,7 @@ import AdminTypes from '@/pages/admin/types';
 import AdminAuditLogs from '@/pages/admin/audit-logs';
 import AdminSettings from '@/pages/admin/settings';
 import AdminVolunteerProfile from '@/pages/admin/volunteer-profile';
+import AdminEmergencyRequests from '@/pages/admin/emergency-requests';
 import OrganizationLayout from '@/components/templates/OrganizationLayout';
 import OrganizationDashboard from '@/pages/organization/dashboard';
 import OrganizationProfile from '@/pages/organization/profile';
@@ -143,7 +144,8 @@ const routes: RouteObject[] = [
       { path: 'roles', element: <AdminRoles /> },
       { path: 'types', element: <AdminTypes /> },
       { path: 'settings', element: <AdminSettings /> },
-      { path: 'volunteer-profile', element: <AdminVolunteerProfile /> }
+      { path: 'volunteer-profile', element: <AdminVolunteerProfile /> },
+      { path: 'emergency-requests', element: <AdminEmergencyRequests /> }
     ]
   },
   {

@@ -60,6 +60,33 @@ export default class HelpRequest extends BaseModel {
   @column()
   public files: string
 
+  @column()
+  public caseId: string
+
+  @column()
+  public severity: 'low' | 'medium' | 'high' | 'critical'
+
+  @column()
+  public urgencyScore: number
+
+  @column()
+  public isVerified: boolean
+
+  @column()
+  public contactMethod: 'phone' | 'email' | 'sms' | 'whatsapp'
+
+  @column()
+  public consentGiven: boolean
+
+  @column()
+  public metaData: any
+
+  @column()
+  public assignedTeamId: number
+
+  @column()
+  public assignedVolunteerId: number
+
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
 
