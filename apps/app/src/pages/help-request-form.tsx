@@ -114,168 +114,208 @@ const HelpRequestForm = () => {
   }, []);
 
   return (
-    <div className="flex flex-col w-full gap-4 px-6 overflow-y-auto pb-28">
-      <h1 className="text-2xl">{t('Request Help')}</h1>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" encType="multipart/form-data">
-          <FormField
-            control={form.control}
-            name="types"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <AssistanceTypeInput label={t('What are your needs?')} {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+    <div className="flex flex-col w-full min-h-screen bg-gray-50/50">
+      <div className="w-full max-w-2xl mx-auto px-4 sm:px-6 py-8 pb-32">
+        <div className="mb-8 text-center sm:text-left">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">{t('Request Help')}</h1>
+          <p className="mt-2 text-sm text-gray-500 max-w-lg">
+            {t('Please provide details about your situation so we can coordinate the right assistance for you.')}
+          </p>
+        </div>
 
-          <FormField
-            control={form.control}
-            name="location"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <AddressInput label={t('Address')} placeholder={t('Full address')} {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8" encType="multipart/form-data">
+            
+            {/* Section 1: Assistance & Location */}
+            <div className="bg-white p-6 rounded-xl border shadow-sm space-y-6">
+              <div className="border-b pb-3">
+                <h2 className="text-lg font-semibold text-gray-900">{t('Assistance & Location')}</h2>
+              </div>
+              
+              <FormField
+                control={form.control}
+                name="types"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <AssistanceTypeInput label={t('What are your needs?')} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <FormField
-            control={form.control}
-            name="location"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <MapInput label={t('Pin point the exact location on map if you can')} optional {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+              <div className="grid gap-6 sm:grid-cols-1">
+                <FormField
+                  control={form.control}
+                  name="location"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <AddressInput label={t('Address')} placeholder={t('Enter the full address')} {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-          <FormField
-            control={form.control}
-            name="isOnSite"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <RadioInput
-                    label={t('Are you located on site?')}
-                    options={[
-                      {
-                        label: 'Yes',
-                        value: 'yes'
-                      },
-                      {
-                        label: 'No',
-                        value: 'no'
-                      }
-                    ]}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+                <FormField
+                  control={form.control}
+                  name="location"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <MapInput label={t('Pin point the exact location')} optional {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-          <FormField
-            control={form.control}
-            name="description"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <TextAreaInput
-                    label={t('Can you give us more info about the situation?')}
-                    placeholder={t('Type your message here')}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+              <FormField
+                control={form.control}
+                name="isOnSite"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <RadioInput
+                        label={t('Are you currently at this location?')}
+                        options={[
+                          { label: t('Yes'), value: 'yes' },
+                          { label: t('No'), value: 'no' }
+                        ]}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-          <FormField
-            control={form.control}
-            name="source"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <TextAreaInput
-                    label={t('Source of information')}
-                    placeholder={t('Type your message here')}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+            {/* Section 2: Situation Details */}
+            <div className="bg-white p-6 rounded-xl border shadow-sm space-y-6">
+              <div className="border-b pb-3">
+                <h2 className="text-lg font-semibold text-gray-900">{t('Situation Details')}</h2>
+              </div>
+              
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <TextAreaInput
+                        label={t('Describe the situation')}
+                        placeholder={t('Please provide as much detail as possible about what is happening...')}
+                        className="min-h-[120px]"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <TextInput
-                    label={t(`Your name or the on-site person's name`)}
-                    placeholder={t('Full Name')}
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+              <FormField
+                control={form.control}
+                name="source"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <TextAreaInput
+                        label={t('Source of information')}
+                        placeholder={t('e.g., Self, Neighbor, Local News')}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <TextInput label={t('Email')} type="email" placeholder={t('Email')} optional {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+               <FormField
+                control={form.control}
+                name="files"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <FileInput label={t('Upload photos (optional)')} optional {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-          <FormField
-            control={form.control}
-            name="phone"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <TextInput label={t('Phone Number')} placeholder={t('Phone Number')} type="tel" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+            {/* Section 3: Contact Information */}
+            <div className="bg-white p-6 rounded-xl border shadow-sm space-y-6">
+              <div className="border-b pb-3">
+                <h2 className="text-lg font-semibold text-gray-900">{t('Contact Information')}</h2>
+              </div>
 
-          <FormField
-            control={form.control}
-            name="files"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <FileInput label={t('Upload pictures')} optional {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <TextInput
+                        label={t('Contact Name')}
+                        placeholder={t('Full Name')}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <Navbar asSubmit disabled={!isDirty || !isValid} loading={isSubmitting || isLoading} />
-        </form>
-      </Form>
+              <div className="grid gap-6 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <TextInput 
+                          label={t('Phone Number')} 
+                          placeholder={t('e.g. +123...')} 
+                          type="tel" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <TextInput 
+                          label={t('Email (Optional)')} 
+                          type="email" 
+                          placeholder={t('example@email.com')} 
+                          optional 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            <Navbar asSubmit disabled={!isDirty || !isValid} loading={isSubmitting || isLoading} />
+          </form>
+        </Form>
+      </div>
     </div>
   );
 };
