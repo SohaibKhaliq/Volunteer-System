@@ -528,7 +528,8 @@ export default class OrganizationsController {
         'users.*',
         'organization_volunteers.role as org_role',
         'organization_volunteers.status as org_status',
-        'organization_volunteers.joined_at'
+        'organization_volunteers.joined_at',
+        'organization_volunteers.skills as skills'
       )
 
     // Filters
@@ -563,8 +564,32 @@ export default class OrganizationsController {
           .whereNotNull('tasks.event_id')
           .countDistinct('tasks.event_id as event_count')
 
+        // Normalize skills: could be JSON string or comma-separated
+        let skills: string[] = []
+        try {
+          if (volunteer.skills) {
+            if (typeof volunteer.skills === 'string') {
+              try {
+                const parsed = JSON.parse(volunteer.skills)
+                if (Array.isArray(parsed)) skills = parsed
+                else if (typeof parsed === 'string') skills = [parsed]
+              } catch (e) {
+                skills = String(volunteer.skills)
+                  .split(',')
+                  .map((s) => s.trim())
+                  .filter(Boolean)
+              }
+            } else if (Array.isArray(volunteer.skills)) {
+              skills = volunteer.skills
+            }
+          }
+        } catch (e) {
+          skills = []
+        }
+
         return {
           ...volunteer,
+          skills,
           total_hours: hoursResult[0]?.total_hours || 0,
           events_attended: eventsResult[0]?.event_count || 0
         }

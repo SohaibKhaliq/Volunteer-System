@@ -40,6 +40,19 @@ export default class Task extends BaseModel {
   @column()
   public priority?: string
 
+  @column({
+    columnName: 'required_skills',
+    prepare: (value: any) => (value ? JSON.stringify(value) : null),
+    consume: (value: any) => {
+      try {
+        return value ? JSON.parse(value) : null
+      } catch (e) {
+        return value
+      }
+    }
+  })
+  public requiredSkills?: any
+
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
 

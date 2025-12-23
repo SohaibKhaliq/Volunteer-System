@@ -319,10 +319,8 @@ export default class VolunteerController {
       if (payload.phone !== undefined) user.phone = payload.phone
       if (payload.profileMetadata !== undefined) {
         // profileMetadata can include skills, bio, interests, etc.
-        user.profileMetadata =
-          typeof payload.profileMetadata === 'string'
-            ? payload.profileMetadata
-            : JSON.stringify(payload.profileMetadata)
+        // The User model handles JSON prepare/consume, so store the object directly.
+        user.profileMetadata = payload.profileMetadata
       }
 
       await user.save()
@@ -768,18 +766,13 @@ export default class VolunteerController {
 
       // Store bookmark in user's profile metadata
       const userRecord = await User.findOrFail(user.id)
-      let metadata = {}
-      try {
-        metadata = userRecord.profileMetadata ? JSON.parse(userRecord.profileMetadata) : {}
-      } catch {
-        metadata = {}
-      }
+      const metadata = userRecord.profileMetadata || {}
 
       const bookmarks = (metadata as any).bookmarkedOpportunities || []
       if (!bookmarks.includes(params.id)) {
         bookmarks.push(parseInt(params.id, 10))
         ;(metadata as any).bookmarkedOpportunities = bookmarks
-        userRecord.profileMetadata = JSON.stringify(metadata)
+        userRecord.profileMetadata = metadata
         await userRecord.save()
       }
 
@@ -799,12 +792,7 @@ export default class VolunteerController {
       const user = auth.user!
 
       const userRecord = await User.findOrFail(user.id)
-      let metadata = {}
-      try {
-        metadata = userRecord.profileMetadata ? JSON.parse(userRecord.profileMetadata) : {}
-      } catch {
-        metadata = {}
-      }
+      const metadata = userRecord.profileMetadata || {}
 
       const bookmarks = (metadata as any).bookmarkedOpportunities || []
       const oppId = parseInt(params.id, 10)
@@ -812,7 +800,7 @@ export default class VolunteerController {
       if (index > -1) {
         bookmarks.splice(index, 1)
         ;(metadata as any).bookmarkedOpportunities = bookmarks
-        userRecord.profileMetadata = JSON.stringify(metadata)
+        userRecord.profileMetadata = metadata
         await userRecord.save()
       }
 
@@ -832,12 +820,7 @@ export default class VolunteerController {
       const user = auth.user!
 
       const userRecord = await User.findOrFail(user.id)
-      let metadata = {}
-      try {
-        metadata = userRecord.profileMetadata ? JSON.parse(userRecord.profileMetadata) : {}
-      } catch {
-        metadata = {}
-      }
+      const metadata = userRecord.profileMetadata || {}
 
       const bookmarks = (metadata as any).bookmarkedOpportunities || []
 

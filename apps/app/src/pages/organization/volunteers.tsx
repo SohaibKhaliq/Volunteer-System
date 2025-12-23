@@ -4,6 +4,7 @@ import api from '@/lib/api';
 import { toast } from '@/components/atoms/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import TagInput from '@/components/molecules/tag-input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -122,7 +123,7 @@ export default function OrganizationVolunteers() {
     phone: '',
     role: 'Volunteer',
     status: 'active',
-    skills: ''
+    skills: [] as string[]
   });
 
   const handleOpenAdd = () => {
@@ -133,7 +134,7 @@ export default function OrganizationVolunteers() {
       phone: '',
       role: 'Volunteer',
       status: 'active',
-      skills: ''
+      skills: []
     });
     setIsAddOpen(true);
   };
@@ -146,7 +147,7 @@ export default function OrganizationVolunteers() {
       phone: volunteer.phone ?? '',
       role: volunteer.role,
       status: volunteer.status,
-      skills: volunteer.skills ? volunteer.skills.join(', ') : ''
+      skills: volunteer.skills ? volunteer.skills : []
     });
     setIsAddOpen(true);
   };
@@ -159,10 +160,7 @@ export default function OrganizationVolunteers() {
   const handleSubmit = () => {
     const payload = {
       ...formData,
-      skills: formData.skills
-        .split(',')
-        .map((s: string) => s.trim())
-        .filter((s: string) => s)
+      skills: Array.isArray(formData.skills) ? formData.skills : []
     };
     saveVolunteerMutation.mutate(payload);
   };
@@ -449,13 +447,14 @@ export default function OrganizationVolunteers() {
               <Label htmlFor="skills" className="text-right">
                 Skills
               </Label>
-              <Input
-                id="skills"
-                className="col-span-3"
-                placeholder="Comma separated"
-                value={formData.skills}
-                onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
-              />
+              <div className="col-span-3">
+                <TagInput
+                  id="skills"
+                  value={formData.skills as string[]}
+                  onChange={(v) => setFormData({ ...formData, skills: v })}
+                  placeholder="Add skill and press Enter"
+                />
+              </div>
             </div>
           </div>
           <DialogFooter>

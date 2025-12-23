@@ -33,6 +33,9 @@ Route.get('/health', async ({ response }) => {
   return report.healthy ? response.ok(report) : response.badRequest(report)
 })
 
+// Skills search (public)
+Route.get('/skills', 'SkillsController.search')
+
 Route.resource('offers', 'OffersController')
   .middleware({
     // store: ['auth:api'],

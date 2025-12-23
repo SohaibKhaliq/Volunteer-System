@@ -53,12 +53,14 @@ export const publicApi = {
 
   // Organizations list (for public viewing)
   listOrganizations: async (params?: Record<string, unknown>) => axios.get('/organizations', { params }),
-  
+
   // Events list (public)
   listEvents: async (params?: any) => axios.get('/events', { params }),
 
   // Types (public)
   listTypes: async () => axios.get('/types'),
+  // Skills search for autocomplete
+  searchSkills: async (q: string) => axios.get('/skills', { params: { q } })
 };
 
 export default publicApi;

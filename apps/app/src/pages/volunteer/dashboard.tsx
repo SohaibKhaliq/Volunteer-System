@@ -3,10 +3,11 @@ import { useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import TagInput from '@/components/molecules/tag-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useState } from 'react';
@@ -114,6 +115,9 @@ const VolunteerDashboard = () => {
     const queryClient = useQueryClient();
     const { user } = useStore();
     const [isSaving, setIsSaving] = useState(false);
+    const [skills, setSkills] = useState<string[]>(
+      () => (user as any)?.skills || (user as any)?.profileMetadata?.skills || []
+    );
 
     const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -127,6 +131,10 @@ const VolunteerDashboard = () => {
           bio: formData.get('bio') || undefined
         };
 
+        // Include skills from TagInput state
+        const existingMeta = (user as any)?.profileMetadata || {};
+        payload.profileMetadata = { ...existingMeta, skills };
+
         await volunteerApi.updateProfile(payload);
         toast.success(t('Profile updated successfully'));
         queryClient.invalidateQueries({ queryKey: ['me'] });
@@ -137,6 +145,18 @@ const VolunteerDashboard = () => {
         setIsSaving(false);
       }
     };
+
+    const skillsMutation = useMutation({
+      mutationFn: (newSkills: string[]) => volunteerApi.updateMySkills(newSkills),
+      onSuccess: () => {
+        toast.success(t('Skills updated'));
+        queryClient.invalidateQueries({ queryKey: ['me'] });
+        queryClient.invalidateQueries({ queryKey: ['volunteer-dashboard'] });
+      },
+      onError: (err: any) => {
+        toast.error(err?.message || t('Failed to update skills'));
+      }
+    });
 
     return (
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -165,6 +185,30 @@ const VolunteerDashboard = () => {
         <div>
           <Label htmlFor="bio">{t('Bio')}</Label>
           <Textarea id="bio" name="bio" defaultValue={(user as any)?.bio || ''} />
+        </div>
+
+        <div>
+          <Label htmlFor="skills">{t('Skills')}</Label>
+          <div className="flex items-start gap-3">
+            <div className="flex-1">
+              <TagInput
+                id="skills"
+                placeholder="Add a skill and press Enter"
+                value={skills}
+                onChange={(v) => setSkills(v)}
+              />
+            </div>
+            <div className="mt-8">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => skillsMutation.mutate(skills)}
+                disabled={skillsMutation.isLoading}
+              >
+                {skillsMutation.isLoading ? 'Saving...' : 'Save Skills'}
+              </Button>
+            </div>
+          </div>
         </div>
 
         <div className="flex justify-end">

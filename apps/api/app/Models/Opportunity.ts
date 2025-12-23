@@ -1,4 +1,12 @@
-import { BaseModel, column, belongsTo, BelongsTo, hasMany, HasMany } from '@ioc:Adonis/Lucid/Orm'
+import {
+  BaseModel,
+  column,
+  belongsTo,
+  BelongsTo,
+  hasMany,
+  HasMany,
+  computed
+} from '@ioc:Adonis/Lucid/Orm'
 import { DateTime } from 'luxon'
 import Organization from './Organization'
 import Team from './Team'
@@ -77,6 +85,23 @@ export default class Opportunity extends BaseModel {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   public updatedAt: DateTime
+
+  @computed()
+  public get skills(): string[] {
+    // Opportunity may not have a dedicated skills column. If the controller
+    // or query attaches `skills` on the model (extras) or a `requiredSkills`
+    // field was loaded, normalize that into an array for the frontend.
+    const anyThis: any = this as any
+    const raw = anyThis.skills || anyThis.requiredSkills || anyThis.$extras?.skills || []
+    if (!raw) return []
+    if (Array.isArray(raw)) return raw.map((s) => String(s).trim()).filter(Boolean)
+    if (typeof raw === 'string')
+      return raw
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+    return []
+  }
 
   /**
    * Generate a unique slug from title using crypto for better uniqueness

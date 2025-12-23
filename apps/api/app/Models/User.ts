@@ -5,7 +5,8 @@ import {
   hasMany,
   ManyToMany,
   manyToMany,
-  beforeSave
+  beforeSave,
+  computed
 } from '@ioc:Adonis/Lucid/Orm'
 import { DateTime } from 'luxon'
 import Hash from '@ioc:Adonis/Core/Hash'
@@ -43,8 +44,33 @@ export default class User extends BaseModel {
   @column()
   public phone?: string
 
-  @column({ columnName: 'profile_metadata' })
-  public profileMetadata?: string
+  @column({
+    columnName: 'profile_metadata',
+    prepare: (value: any) => (value ? JSON.stringify(value) : null),
+    consume: (value: any) => {
+      try {
+        return value ? JSON.parse(value) : null
+      } catch (e) {
+        return value
+      }
+    }
+  })
+  public profileMetadata?: any
+
+  @computed()
+  public get skills(): string[] {
+    const meta = this.profileMetadata || {}
+    const raw = meta.skills || meta.skill_tags || []
+    if (!raw) return []
+    if (Array.isArray(raw)) return raw.map((s) => String(s).trim()).filter(Boolean)
+    if (typeof raw === 'string') {
+      return raw
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+    }
+    return []
+  }
 
   @column.dateTime({ columnName: 'last_active_at' })
   public lastLoginAt?: DateTime

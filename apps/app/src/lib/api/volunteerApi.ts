@@ -12,6 +12,8 @@ export const volunteerApi = {
   getDashboard: async () => axios.get('/volunteer/dashboard'),
   getProfile: async () => axios.get('/volunteer/profile'),
   updateProfile: async (data: any) => axios.put('/volunteer/profile', data),
+  // Convenience helper to update only skills (accepts array of strings)
+  updateMySkills: async (skills: string[]) => axios.put('/volunteer/profile', { profileMetadata: { skills } }),
 
   // ==========================================
   // OPPORTUNITIES
@@ -45,8 +47,7 @@ export const volunteerApi = {
       exceptionReason?: string;
     }
   ) => axios.post(`/opportunities/${opportunityId}/checkin`, options || {}),
-  checkOutFromOpportunity: async (opportunityId: number) => 
-    axios.post(`/opportunities/${opportunityId}/checkout`),
+  checkOutFromOpportunity: async (opportunityId: number) => axios.post(`/opportunities/${opportunityId}/checkout`),
   qrCheckIn: async (code: string) => axios.post('/checkin/qr', { code }),
 
   // ==========================================
@@ -71,7 +72,7 @@ export const volunteerApi = {
   // ==========================================
   getMyScheduleCalendar: async (params?: { from?: string; to?: string }) =>
     axios.get('/calendar/my-schedule', { params, responseType: 'blob' }),
-  getCalendarSubscriptionUrls: async () => axios.get('/calendar/subscription-urls'),
+  getCalendarSubscriptionUrls: async () => axios.get('/calendar/subscription-urls')
 };
 
 export default volunteerApi;
