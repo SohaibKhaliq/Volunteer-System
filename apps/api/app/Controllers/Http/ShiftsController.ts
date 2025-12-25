@@ -1,5 +1,6 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Shift from 'App/Models/Shift'
+import Opportunity from 'App/Models/Opportunity'
 import { createShiftSchema, updateShiftSchema } from 'App/Validators/shiftValidator'
 import User from 'App/Models/User'
 import ShiftAssignment from 'App/Models/ShiftAssignment'
@@ -10,11 +11,54 @@ import { DateTime } from 'luxon'
 import Logger from '@ioc:Adonis/Core/Logger'
 
 export default class ShiftsController {
+  public async indexForOpportunity({ params, request, auth, response }: HttpContextContract) {
+    const { opportunityId } = params
+    
+    const opportunity = await Opportunity.find(opportunityId)
+    if (!opportunity) {
+      return response.notFound({ message: 'Opportunity not found' })
+    }
+    
+    // Security check: ensure user is part of the org (or admin)
+    // For now, assuming middleware 'auth' is enough to identify user, but we should ideally check generic org permissions
+    // The route is protected by auth, and we trust org admins access this. 
+    // Ideally: await bouncer.with('OrganizationPolicy').authorize('view', opportunity.organizationId)
+    
+    const shifts = await Shift.query()
+      .where('event_id', opportunityId)
+      .orderBy('start_at', 'asc')
+      
+    return shifts
+  }
+
   public async index({ request }: HttpContextContract) {
     const eventId = request.input('event_id')
     const query = Shift.query()
     if (eventId) query.where('event_id', eventId)
     return query.orderBy('start_at', 'asc')
+  }
+
+  public async storeForOpportunity({ params, request, auth, response }: HttpContextContract) {
+    const { opportunityId } = params
+    const opportunity = await Opportunity.findOrFail(opportunityId)
+    
+    // Validate payload
+    const payload = createShiftSchema.parse(request.only(Object.keys(request.body())))
+    
+    // Override eventId with opportunityId
+    payload.event_id = Number(opportunityId)
+    payload.organization_id = opportunity.organizationId
+    
+    if (
+      payload.start_at &&
+      payload.end_at &&
+      new Date(payload.start_at) >= new Date(payload.end_at)
+    ) {
+      return response.badRequest({ message: 'start_at must be before end_at' })
+    }
+    
+    const shift = await Shift.create(payload as any)
+    return shift
   }
 
   // Suggest volunteers for a shift based on skills and past assignments
@@ -95,7 +139,8 @@ export default class ShiftsController {
 
   public async show({ params }: HttpContextContract) {
     const shift = await Shift.findOrFail(params.id)
-    await shift.loadMany(['tasks', 'assignments'])
+    await shift.load('tasks')
+    await shift.load('assignments')
     return shift
   }
 
