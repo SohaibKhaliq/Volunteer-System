@@ -174,7 +174,26 @@ Route.group(() => {
     '/reports/volunteer-retention',
     'OrganizationReportsController.volunteerRetention'
   ).middleware(['auth'])
+
+  // Organization Dashboard (new analytics endpoints)
+  Route.get('/dashboard', 'OrganizationDashboardController.all').middleware(['auth'])
+  Route.get('/dashboard/overview', 'OrganizationDashboardController.overview').middleware(['auth'])
+  Route.get('/dashboard/hours-trend', 'OrganizationDashboardController.hoursTrend').middleware(['auth'])
+  Route.get('/dashboard/participation', 'OrganizationDashboardController.participation').middleware(['auth'])
+  Route.get('/dashboard/events', 'OrganizationDashboardController.events').middleware(['auth'])
+  Route.get('/dashboard/compliance', 'OrganizationDashboardController.compliance').middleware(['auth'])
+  Route.get('/dashboard/engagement', 'OrganizationDashboardController.engagement').middleware(['auth'])
+  Route.get('/dashboard/top-volunteers', 'OrganizationDashboardController.topVolunteers').middleware(['auth'])
 }).prefix('/organization')
+
+// Organization-scoped report exports (with organization ID in path)
+Route.group(() => {
+  Route.get('/reports/volunteer-hours-export', 'OrganizationReportsExportController.volunteerHoursReport').middleware(['auth'])
+  Route.get('/reports/volunteer-summary-export', 'OrganizationReportsExportController.volunteerSummaryReport').middleware(['auth'])
+  Route.get('/reports/event-performance-export', 'OrganizationReportsExportController.eventPerformanceReport').middleware(['auth'])
+  Route.get('/reports/compliance-export', 'OrganizationReportsExportController.complianceReport').middleware(['auth'])
+  Route.get('/reports/list', 'OrganizationReportsExportController.listReports').middleware(['auth'])
+}).prefix('/organizations/:id')
 
 // Public organization pages (no auth required)
 Route.group(() => {
