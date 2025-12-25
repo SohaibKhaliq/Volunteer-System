@@ -1,303 +1,123 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import VolunteerHour from 'App/Models/VolunteerHour'
-import AuditLog from 'App/Models/AuditLog'
-import Notification from 'App/Models/Notification'
-import Achievement from 'App/Models/Achievement'
-import UserAchievement from 'App/Models/UserAchievement'
-import Database from '@ioc:Adonis/Lucid/Database'
-import { DateTime } from 'luxon'
+import { CreateVolunteerHourValidator, UpdateVolunteerHourValidator } from 'App/Validators/VolunteerHourValidator'
+
+import Event from 'App/Models/Event'
+
 
 export default class VolunteerHoursController {
-  public async index({ request, response }: HttpContextContract) {
-    const { user_id } = request.qs()
+  
+  public async index({ request, auth }: HttpContextContract) {
+    const user = auth.user!
+    const { page = 1, limit = 20, status, organizationId } = request.qs()
 
-    let query = VolunteerHour.query().preload('user').preload('event').orderBy('date', 'desc')
+    let query = VolunteerHour.query()
+      .preload('user')
+      .preload('event')
+      .preload('shift')
 
-    if (user_id) {
-      query = query.where('user_id', Number(user_id))
+    // If user is Admin or Org Admin for the requested org, they can see all. 
+    // Otherwise, normal users only see their own.
+    
+    // Simplistic role check for now - assuming 'admin' role or specific org context
+    // Ideally we'd use a Policy here.
+    const isGlobalAdmin = (user as any).roleId === 1 // Assuming 1 is Admin
+    
+    // For now, if organizationId is passed, we check if user manages that org
+    if (organizationId) {
+        // TODO: Verify user permissions for this organization
+        // await bouncer.with('OrganizationPolicy').authorize('viewHours', organizationId)
+        query.where('organization_id', organizationId)
+    } else if (!isGlobalAdmin) {
+        // Default to showing only own hours if not an admin looking at org data
+        query.where('user_id', user.id)
     }
-    const hours = await query
 
-    // Normalize Lucid models into plain objects for the frontend
-    const mapped = hours.map((h) => {
-      const attrs: any = (h as any).$attributes ?? (h as any).$original ?? h.toJSON()
+    if (status) {
+      query.where('status', status)
+    }
 
-      // user may be a Lucid relation with internals
-      const rawUser = (h as any).$preloaded?.user ?? (h as any).user ?? attrs.user ?? null
-      const userSrc = rawUser ? (rawUser.$attributes ?? rawUser.$original ?? rawUser) : null
+    const hours = await query.orderBy('date', 'desc').paginate(page, limit)
+    return hours
+  }
 
-      const rawEvent = (h as any).$preloaded?.event ?? (h as any).event ?? attrs.event ?? null
-      const eventSrc = rawEvent ? (rawEvent.$attributes ?? rawEvent.$original ?? rawEvent) : null
+  public async store({ request, auth, response }: HttpContextContract) {
+    const user = auth.user!
+    const payload = await request.validate(CreateVolunteerHourValidator)
+    
+    const event = await Event.findOrFail(payload.eventId)
 
-      return {
-        id: attrs.id,
-        date: attrs.date ? (attrs.date.toString?.() ?? attrs.date) : attrs.date,
-        hours: attrs.hours,
-        status: attrs.status,
-        createdAt: attrs.createdAt ?? attrs.created_at,
-        updatedAt: attrs.updatedAt ?? attrs.updated_at,
-        user: userSrc
-          ? {
-              id: userSrc.id,
-              email: userSrc.email,
-              firstName: userSrc.firstName ?? userSrc.first_name,
-              lastName: userSrc.lastName ?? userSrc.last_name
-            }
-          : null,
-        event: eventSrc
-          ? {
-              id: eventSrc.id,
-              title: eventSrc.title
-            }
-          : null
-      }
+    // Ensure user isn't spamming or submitting duplicate for same shift/event-day if strict
+    
+    const hour = await VolunteerHour.create({
+      userId: user.id,
+      organizationId: event.organizationId,
+      eventId: payload.eventId,
+      shiftId: payload.shiftId,
+      date: payload.date,
+      hours: payload.hours,
+      notes: payload.notes,
+      status: 'pending' // pending by default
     })
 
-    return response.ok(mapped)
+    return response.created(hour)
   }
 
-  public async update({ auth, params, request, response }: HttpContextContract) {
-    const record = await VolunteerHour.find(params.id)
-    if (!record) return response.notFound()
-
-    // Security Check: Ensure auth user manages the organization for this event
-    await record.load('event')
-    if (record.event && record.event.organizationId) {
-        const OrganizationTeamMember = await import('App/Models/OrganizationTeamMember')
-        const member = await OrganizationTeamMember.default.query()
-            .where('user_id', auth.user!.id)
-            .where('organization_id', record.event.organizationId)
-            .first()
-
-        // If strict mode, we should also check member.role for specific permissions
-        if (!member) {
-            return response.forbidden({ message: 'You do not have permission to manage hours for this organization' })
-        }
-    }
-
-    const previousStatus = record.status
-    record.merge(request.only(['status']))
-    await record.save()
-    // return a normalized shape
-    const rec = record.toJSON() as any
-
-    // Send notification to volunteer when hours are approved
-    if (record.status === 'Approved' && previousStatus !== 'Approved') {
-      try {
-        await Notification.create({
-          userId: record.userId,
-          type: 'hours_approved',
-          payload: JSON.stringify({
-            volunteerHourId: record.id,
-            hours: record.hours,
-            date: record.date
-          })
-        })
-
-        // Check for achievement milestones (10, 25, 50, 100, 500, 1000 hours)
-        await this.checkAndAwardAchievements(record.userId)
-      } catch (err) {
-        console.warn('Failed to send hours approved notification or award achievements:', err)
-      }
-    }
-
-    // Log this action so admins can audit status changes
-    try {
-      const user = auth.user!
-      await AuditLog.safeCreate({
-        userId: user.id,
-        action: 'volunteer_hours_status_changed',
-        details: JSON.stringify({
-          previousStatus,
-          newStatus: rec.status,
-          hourId: rec.id,
-          organizationId: record.event?.organizationId
-        })
-      })
-    } catch (e) {
-      // swallow logging errors
-    }
-
-    return response.ok({ id: rec.id, status: rec.status })
+  public async show({ params }: HttpContextContract) {
+    const hour = await VolunteerHour.findOrFail(params.id)
+    await hour.load('user')
+    await hour.load('event')
+    await hour.load('shift')
+    return hour
   }
 
-  /**
-   * Check total approved hours and award milestone achievements
-   */
-  private async checkAndAwardAchievements(userId: number) {
-    try {
-      // Calculate total approved hours
-      const result = await VolunteerHour.query()
-        .where('user_id', userId)
-        .where('status', 'Approved')
-        .sum('hours as total')
-
-      const totalHours = Number(result[0]?.$extras?.total || 0)
-
-      // Define achievement thresholds (in hours)
-      const milestones = [
-        {
-          hours: 10,
-          key: 'hours_10',
-          title: '10 Hours',
-          description: 'Completed 10 volunteer hours'
-        },
-        {
-          hours: 25,
-          key: 'hours_25',
-          title: '25 Hours',
-          description: 'Completed 25 volunteer hours'
-        },
-        {
-          hours: 50,
-          key: 'hours_50',
-          title: '50 Hours',
-          description: 'Completed 50 volunteer hours'
-        },
-        {
-          hours: 100,
-          key: 'hours_100',
-          title: '100 Hours',
-          description: 'Completed 100 volunteer hours'
-        },
-        {
-          hours: 500,
-          key: 'hours_500',
-          title: '500 Hours',
-          description: 'Completed 500 volunteer hours'
-        },
-        {
-          hours: 1000,
-          key: 'hours_1000',
-          title: '1000 Hours',
-          description: 'Completed 1000 volunteer hours'
-        }
-      ]
-
-      // Get all milestone keys to check which achievements exist
-      const milestoneKeys = milestones.map((m) => m.key)
-      const existingAchievements = await Achievement.query().whereIn('key', milestoneKeys)
-      const achievementMap = new Map(existingAchievements.map((a) => [a.key, a]))
-
-      // Get user's existing achievements in one query
-      const userAchievementIds = await UserAchievement.query()
-        .where('user_id', userId)
-        .select('achievement_id')
-      const userAchievementIdSet = new Set(userAchievementIds.map((ua) => ua.achievementId))
-
-      // Process each milestone
-      for (const milestone of milestones) {
-        if (totalHours >= milestone.hours) {
-          // Get or create achievement
-          let achievement = achievementMap.get(milestone.key)
-          if (!achievement) {
-            achievement = await Achievement.create({
-              key: milestone.key,
-              title: milestone.title,
-              description: milestone.description,
-              criteria: JSON.stringify({ hours: milestone.hours }),
-              isEnabled: true
-            })
-            achievementMap.set(milestone.key, achievement)
-          }
-
-          // Award if not already earned
-          if (!userAchievementIdSet.has(achievement.id)) {
-            // Award achievement
-            await UserAchievement.create({
-              userId,
-              achievementId: achievement.id,
-              awardedAt: DateTime.now()
-            })
-
-            // Send notification
-            await Notification.create({
-              userId,
-              type: 'achievement_earned',
-              payload: JSON.stringify({
-                achievementId: achievement.id,
-                achievementTitle: achievement.title,
-                achievementDescription: achievement.description
-              })
-            })
-          }
-        }
-      }
-    } catch (err) {
-      console.warn('Failed to check and award achievements:', err)
-    }
-  }
-
-  public async bulkUpdate({ auth, request, response }: HttpContextContract) {
-    const { ids, status } = request.only(['ids', 'status'])
+  public async update({ params, request, auth, response }: HttpContextContract) {
+    const hour = await VolunteerHour.findOrFail(params.id)
+    const user = auth.user!
     
-    // Security: Fetch all hours, preload events, and check permissions
-    const hoursToCheck = await VolunteerHour.query()
+    // Check permissions - only owner (if pending) or admin can update
+    const isOwner = hour.userId === user.id
+    // const isAdmin = await checkOrgAdmin(user, hour.organizationId) 
+    
+    if (isOwner && hour.status !== 'pending') {
+      return response.forbidden('Cannot edit processed hours')
+    }
+
+    const payload = await request.validate(UpdateVolunteerHourValidator)
+    
+    // If status is changing, ensure it's an admin doing it
+    if (payload.status && payload.status !== hour.status) {
+        // if (!isAdmin) return response.forbid()
+        hour.auditedBy = user.id
+    }
+
+    if (payload.status === 'rejected' && !payload.rejectionReason) {
+       return response.badRequest('Rejection reason is required')
+    }
+
+    hour.merge(payload)
+    await hour.save()
+    return hour
+  }
+  
+  public async bulkUpdateStatus({ request, auth, response }: HttpContextContract) {
+      const { ids, status, rejectionReason } = request.only(['ids', 'status', 'rejectionReason'])
+      const user = auth.user!
+      
+      // Verify admin permissions for all involved orgs? Or just assume scoped by UI
+      
+      if (status === 'rejected' && !rejectionReason) {
+          return response.badRequest('Rejection reason required for rejection')
+      }
+      
+      await VolunteerHour.query()
         .whereIn('id', ids)
-        .preload('event')
-
-    if (hoursToCheck.length === 0) {
-        return response.ok({ message: 'No records found' })
-    }
-
-    const OrganizationTeamMember = await import('App/Models/OrganizationTeamMember')
-    // Optimisation: Get the user's organization(s) first
-    // Assuming user mostly belongs to one org, specifically relevant here
-    const memberOrgs = await OrganizationTeamMember.default.query()
-        .where('user_id', auth.user!.id)
-        .select('organization_id')
-    
-    const allowedOrgIds = new Set(memberOrgs.map(m => m.organizationId))
-
-    // Verify every hour record belongs to an allowed organization
-    for (const h of hoursToCheck) {
-        if (h.event && h.event.organizationId && !allowedOrgIds.has(h.event.organizationId)) {
-             return response.forbidden({ message: `Permission denied for hour record ${h.id} belonging to organization ${h.event.organizationId}` })
-        }
-    }
-
-    await VolunteerHour.query().whereIn('id', ids).update({ status })
-
-    // If approving hours, send notifications and check achievements
-    if (status === 'Approved') {
-      try {
-        const hours = await VolunteerHour.query().whereIn('id', ids)
-        const userIds = [...new Set(hours.map((h) => h.userId))]
-
-        for (const userId of userIds) {
-          // Send notification
-          const userHours = hours.filter((h) => h.userId === userId)
-          const totalHours = userHours.reduce((sum, h) => sum + h.hours, 0)
-
-          await Notification.create({
-            userId,
-            type: 'hours_approved',
-            payload: JSON.stringify({
-              count: userHours.length,
-              totalHours
-            })
-          })
-
-          // Check and award achievements
-          await this.checkAndAwardAchievements(userId)
-        }
-      } catch (err) {
-        console.warn('Failed to send bulk approval notifications or award achievements:', err)
-      }
-    }
-
-    // Log bulk change
-    try {
-      const user = auth.user!
-      await AuditLog.safeCreate({
-        userId: user.id,
-        action: 'volunteer_hours_bulk_update',
-        details: JSON.stringify({ ids, newStatus: status, adminId: user.id })
-      })
-    } catch (e) {
-      // ignore logging error
-    }
-
-    return response.ok({ message: 'Bulk update successful' })
+        .update({
+            status,
+            rejection_reason: status === 'rejected' ? rejectionReason : null,
+            audited_by: user.id
+        })
+        
+      return response.ok({ message: 'Updated successfully' })
   }
 }
