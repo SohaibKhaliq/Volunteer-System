@@ -1,6 +1,8 @@
-import { BaseModel, column, hasMany, HasMany } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, column, hasMany, HasMany, belongsTo, BelongsTo } from '@ioc:Adonis/Lucid/Orm'
 import { DateTime } from 'luxon'
 import UserAchievement from './UserAchievement'
+import AchievementCategory from './AchievementCategory'
+import AchievementProgress from './AchievementProgress'
 
 export default class Achievement extends BaseModel {
   @column({ isPrimary: true })
@@ -8,6 +10,12 @@ export default class Achievement extends BaseModel {
 
   @column({ columnName: 'organization_id' })
   public organizationId?: number
+
+  @column({ columnName: 'category_id' })
+  public categoryId?: number
+
+  @belongsTo(() => AchievementCategory)
+  public category: BelongsTo<typeof AchievementCategory>
 
   @column()
   public key: string
@@ -21,8 +29,17 @@ export default class Achievement extends BaseModel {
   @column()
   public criteria?: any
 
+  @column({ columnName: 'rule_type' })
+  public ruleType?: 'hours' | 'events' | 'frequency' | 'certification' | 'custom'
+
+  @column({ columnName: 'is_milestone' })
+  public isMilestone: boolean
+
   @column()
   public icon?: string
+
+  @column({ columnName: 'badge_image_url' })
+  public badgeImageUrl?: string
 
   @column()
   public points?: number
@@ -32,6 +49,9 @@ export default class Achievement extends BaseModel {
 
   @hasMany(() => UserAchievement)
   public awards: HasMany<typeof UserAchievement>
+
+  @hasMany(() => AchievementProgress)
+  public progress: HasMany<typeof AchievementProgress>
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
