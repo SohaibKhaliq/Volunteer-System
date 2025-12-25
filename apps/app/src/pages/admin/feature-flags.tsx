@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from 'react'
-import adminApi from '@/lib/api'
+import React, { useEffect, useState } from 'react';
+import adminApi from '@/lib/api';
 
 export default function AdminFeatureFlags() {
-  const [flags, setFlags] = useState<any[]>([])
+  const [flags, setFlags] = useState<any[]>([]);
 
   useEffect(() => {
-    adminApi.listFeatureFlags().then((res: any) => setFlags(res.data ?? res))
-  }, [])
+    adminApi.listFeatureFlags().then((res: any) => setFlags(res.data ?? res));
+  }, []);
 
   return (
     <div>
@@ -23,5 +23,5 @@ export default function AdminFeatureFlags() {
         ))}
       </ul>
     </div>
-  )
+  );
 }

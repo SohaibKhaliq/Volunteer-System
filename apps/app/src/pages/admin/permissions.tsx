@@ -1,17 +1,17 @@
-import React, { useEffect, useState } from 'react'
-import adminApi from '@/lib/api'
+import React, { useEffect, useState } from 'react';
+import adminApi from '@/lib/api';
 
 export default function AdminPermissions() {
-  const [permissions, setPermissions] = useState<any[]>([])
-  const [loading, setLoading] = useState(false)
+  const [permissions, setPermissions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setLoading(true)
+    setLoading(true);
     adminApi.listPermissions().then((res: any) => {
-      setPermissions(res.data ?? res)
-      setLoading(false)
-    })
-  }, [])
+      setPermissions(res.data ?? res);
+      setLoading(false);
+    });
+  }, []);
 
   return (
     <div>
@@ -28,5 +28,5 @@ export default function AdminPermissions() {
         </ul>
       )}
     </div>
-  )
+  );
 }
