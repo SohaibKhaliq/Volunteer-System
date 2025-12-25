@@ -491,6 +491,7 @@ Route.group(() => {
 
   Route.get('/backup', 'AdminController.createBackup')
   Route.get('/backup/status', 'AdminController.backupStatus')
+  Route.get('/backup/:id/download', 'AdminController.downloadBackup')
 })
   .prefix('/admin')
   .middleware(['auth'])

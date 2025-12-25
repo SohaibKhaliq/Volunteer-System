@@ -156,6 +156,7 @@ export const adminApi = {
   // ==========================================
   createBackup: async () => axios.get('/admin/backup'),
   getBackupStatus: async () => axios.get('/admin/backup/status'),
+  downloadBackup: async (id: number) => axios.get(`/admin/backup/${id}/download`, { responseType: 'blob' }),
 
   // ==========================================
   // INVITE SEND JOBS
