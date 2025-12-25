@@ -400,6 +400,8 @@ Route.group(() => {
   // Opportunities
   Route.get('/opportunities', 'VolunteerController.browseOpportunities')
   Route.get('/opportunities/:id', 'VolunteerController.opportunityDetail')
+  Route.post('/opportunities/:id/apply', 'VolunteerController.apply')
+  Route.post('/opportunities/:id/withdraw', 'VolunteerController.withdraw')
   Route.post('/opportunities/:id/bookmark', 'VolunteerController.bookmarkOpportunity')
   Route.delete('/opportunities/:id/bookmark', 'VolunteerController.unbookmarkOpportunity')
   Route.get('/bookmarks', 'VolunteerController.bookmarkedOpportunities')
