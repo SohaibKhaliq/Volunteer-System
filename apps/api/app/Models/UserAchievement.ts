@@ -22,6 +22,15 @@ export default class UserAchievement extends BaseModel {
   @column()
   public metadata?: any
 
+  @column({ columnName: 'granted_by' })
+  public grantedBy?: number
+
+  @belongsTo(() => User, { foreignKey: 'grantedBy' })
+  public granter: BelongsTo<typeof User>
+
+  @column({ columnName: 'grant_reason' })
+  public grantReason?: string
+
   @column.dateTime({ columnName: 'awarded_at' })
   public awardedAt: DateTime
 
