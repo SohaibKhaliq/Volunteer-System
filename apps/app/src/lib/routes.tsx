@@ -83,6 +83,7 @@ import FeedbackDashboard from '@/pages/feedback';
 import TakeSurvey from '@/pages/feedback/[id]/take';
 import VolunteerOpportunities from '@/pages/volunteer/opportunities';
 import VolunteerOpportunityDetail from '@/pages/volunteer/opportunities/detail';
+import VolunteerAttendance from '@/pages/volunteer/attendance';
 
 // Simple wrappers to ensure pages are vertically scrollable
 const ScrollWrapper = ({ children }: any) => (
@@ -215,6 +216,7 @@ const routes: RouteObject[] = [
       { path: 'organizations/:id', element: <OrganizationDetail /> },
       { path: 'volunteer/opportunities', element: <VolunteerOpportunities /> },
       { path: 'volunteer/opportunities/:id', element: <VolunteerOpportunityDetail /> },
+      { path: 'volunteer/attendance', element: <VolunteerAttendance /> },
       { path: 'events/:id', element: <Detail /> }
     ]
   },
