@@ -37,6 +37,12 @@ export default class Opportunity extends BaseModel {
   public location?: string
 
   @column()
+  public latitude?: number
+
+  @column()
+  public longitude?: number
+
+  @column()
   public capacity: number
 
   @column()
