@@ -6,5 +6,7 @@
  */
 
 declare module '@ioc:Adonis/Addons/Mail' {
-  // No additional configuration needed
+  import { MailManager } from '@adonisjs/mail'
+  const Mail: MailManager<any>
+  export default Mail
 }
