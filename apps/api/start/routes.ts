@@ -483,11 +483,23 @@ Route.group(() => {
   Route.get('/audit-logs/target-types', 'AuditLogsController.targetTypes')
 
   // System Monitoring
-  Route.get('/monitoring/background-jobs', 'SystemMonitoringController.backgroundJobsStatus')
-  Route.get('/monitoring/imports', 'SystemMonitoringController.importOperations')
-  Route.get('/monitoring/notifications', 'SystemMonitoringController.notificationDelivery')
-  Route.get('/monitoring/errors', 'SystemMonitoringController.errorLogs')
-  Route.get('/monitoring/health', 'SystemMonitoringController.systemHealth')
+  Route.get(
+    '/monitoring/background-jobs',
+    'SystemMonitoringController.backgroundJobsStatus'
+  ).middleware(['permission:monitoring.view'])
+  Route.get('/monitoring/imports', 'SystemMonitoringController.importOperations').middleware([
+    'permission:monitoring.view'
+  ])
+  Route.get(
+    '/monitoring/notifications',
+    'SystemMonitoringController.notificationDelivery'
+  ).middleware(['permission:monitoring.view'])
+  Route.get('/monitoring/errors', 'SystemMonitoringController.errorLogs').middleware([
+    'permission:monitoring.view'
+  ])
+  Route.get('/monitoring/health', 'SystemMonitoringController.systemHealth').middleware([
+    'permission:monitoring.view'
+  ])
 
   Route.get('/backup', 'AdminController.createBackup')
   Route.get('/backup/status', 'AdminController.backupStatus')
