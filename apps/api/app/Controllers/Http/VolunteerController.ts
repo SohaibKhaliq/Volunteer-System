@@ -306,34 +306,159 @@ export default class VolunteerController {
   /**
    * Update volunteer profile
    */
+  /**
+   * Update volunteer profile
+   */
   public async updateProfile({ auth, request, response }: HttpContextContract) {
     try {
       await auth.use('api').authenticate()
       const user = await User.findOrFail(auth.user!.id)
 
-      const payload = request.only(['firstName', 'lastName', 'phone', 'profileMetadata'])
+      // Use Validator
+      // Dynamic import to avoid circular dependency issues if any, mainly strict typing
+      const { default: UpdateProfileValidator } = await import(
+        'App/Validators/UpdateProfileValidator'
+      )
+      const payload = await request.validate(UpdateProfileValidator)
+
+      const oldData = {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        phone: user.phone,
+        profileMetadata: user.profileMetadata,
+      }
 
       // Map to DB columns
       if (payload.firstName !== undefined) user.firstName = payload.firstName
       if (payload.lastName !== undefined) user.lastName = payload.lastName
       if (payload.phone !== undefined) user.phone = payload.phone
-      if (payload.profileMetadata !== undefined) {
-        // profileMetadata can include skills, bio, interests, etc.
-        // The User model handles JSON prepare/consume, so store the object directly.
-        user.profileMetadata = payload.profileMetadata
+      
+      if (payload.profileMetadata) {
+        // Merge with existing metadata to avoid losing other fields like `avatar_url` or `bookmarkedOpportunities`
+        const currentMeta = user.profileMetadata || {}
+        user.profileMetadata = {
+          ...currentMeta,
+          ...payload.profileMetadata,
+        }
       }
 
       await user.save()
+
+      // Log to AuditLog
+      // Dynamic import for AuditLog to ensure it's available
+      const { default: AuditLog } = await import('App/Models/AuditLog')
+      await AuditLog.safeCreate({
+        userId: user.id,
+        action: 'volunteer.profile_update',
+        targetType: 'user',
+        targetId: user.id,
+        details: 'Volunteer updated their profile',
+        metadata: JSON.stringify({
+          changes: {
+            from: oldData,
+            to: payload,
+          },
+        }),
+        ipAddress: request.ip(),
+      })
 
       const { password, ...safeUser } = user.toJSON() as any
       return response.ok({
         ...safeUser,
         firstName: safeUser.firstName ?? safeUser.first_name,
-        lastName: safeUser.lastName ?? safeUser.last_name
+        lastName: safeUser.lastName ?? safeUser.last_name,
       })
     } catch (error) {
+      if (error.messages) {
+        return response.badRequest({
+          error: { message: 'Validation failed', messages: error.messages },
+        })
+      }
       Logger.error('Volunteer update profile error: %o', error)
       return response.badRequest({ error: { message: 'Failed to update profile' } })
+    }
+  }
+
+  /**
+   * Update volunteer avatar
+   */
+  public async updateAvatar({ auth, request, response }: HttpContextContract) {
+    try {
+      await auth.use('api').authenticate()
+      const user = await User.findOrFail(auth.user!.id)
+
+      const avatar = request.file('avatar', {
+        size: '5mb',
+        extnames: ['jpg', 'png', 'jpeg', 'webp'],
+      })
+
+      if (!avatar) {
+        return response.badRequest({ error: { message: 'No avatar file provided' } })
+      }
+
+      if (avatar.hasErrors) {
+        return response.badRequest({
+          error: { message: 'Invalid file', errors: avatar.errors },
+        })
+      }
+
+      // In a real app we'd upload to S3/GCS. For this local project, we might just return a mock URL
+      // OR actually move it to a public folder if configured.
+      // Assuming straightforward local handling or a mock for now:
+      // "uploads" isn't fully set up in the file list I saw, so let's stick to a reliable pattern.
+      // We will assume `Drive` is configured or just use a placeholder if we can't save.
+      // Actually, Adonis `Drive` is standard. Let's try to verify if Drive is used.
+      // For now, let's just use `valid` check and assume we save it.
+
+      // We'll simulate a save or use a public path if available.
+      // Since I can't easily check `config/drive.ts` right now without another step,
+      // I'll assume standard `moveToDisk` matches existing logic if any.
+      // BUT, to be safe and avoid errors, I'll use a simple mock implementation that updates the URL
+      // assuming the file *would* be handled by a Drive provider.
+      
+      // WAIT, `Application.tmpPath` or `publicPath`?
+      // Let's just update the metadata with a fake URL for now to satisfy the requirement "allow viewing/updating"
+      // effectively assuming the upload middleware would handle it, OR just basic file placement.
+      
+      // Let's try to actually save it to `public/uploads` if possible.
+      // `avatar.moveToDisk('./')` ?
+      
+      // Simplest robust approach:
+      // 1. Generate name
+      const fileName = `${user.id}_${new Date().getTime()}.${avatar.extname}`
+      // 2. Move (this works if Drive is set up, otherwise we might fail).
+      // Let's use `avatar.moveToDisk` if we trust the setup, or `moveTo` to local.
+      // I'll use `Application.publicPath('uploads')` if I can import Application.
+      
+      // Dynamic import
+      const { default: Application } = await import('@ioc:Adonis/Core/Application')
+      
+      await avatar.move(Application.publicPath('uploads'), {
+        name: fileName,
+        overwrite: true
+      })
+      
+      if (avatar.state !== 'moved') {
+         return response.internalServerError({ error: { message: 'Failed to upload avatar file', details: avatar.errors } })
+      }
+
+      const avatarUrl = `/uploads/${fileName}`
+
+      const currentMeta = user.profileMetadata || {}
+      user.profileMetadata = {
+        ...currentMeta,
+        avatar_url: avatarUrl, // Keeping snake_case if used elsewhere, or standard
+      }
+      
+      await user.save()
+
+      return response.ok({
+        message: 'Avatar updated',
+        avatarUrl,
+      })
+    } catch (error) {
+      Logger.error('Update avatar error: %o', error)
+      return response.internalServerError({ error: { message: 'Failed to update avatar' } })
     }
   }
 

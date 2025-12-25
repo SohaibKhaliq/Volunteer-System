@@ -395,6 +395,7 @@ Route.group(() => {
   Route.get('/dashboard', 'VolunteerController.dashboard')
   Route.get('/profile', 'VolunteerController.profile')
   Route.put('/profile', 'VolunteerController.updateProfile')
+  Route.put('/profile/avatar', 'VolunteerController.updateAvatar')
 
   // Opportunities
   Route.get('/opportunities', 'VolunteerController.browseOpportunities')

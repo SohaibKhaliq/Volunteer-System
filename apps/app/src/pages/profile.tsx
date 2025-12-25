@@ -25,8 +25,11 @@ import {
   History,
   ArrowRight,
   Building2,
-  Users
+  Users,
+  Camera,
+  AlertCircle
 } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useStore } from '@/lib/store';
 import { Link, useLocation } from 'react-router-dom';
 import volunteerApi from '@/lib/api/volunteerApi';
@@ -34,6 +37,7 @@ import { AssignmentStatus } from '@/lib/constants/assignmentStatus';
 import { useNavigate } from 'react-router-dom';
 
 export default function Profile() {
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   // use combined endpoint (profile + dashboard)
   const { data: meResponse, isLoading } = useQuery(['me'], () => api.getVolunteerDashboard());
@@ -75,7 +79,11 @@ export default function Profile() {
     lastName: '',
     email: '',
     phone: '',
-    bio: ''
+    bio: '',
+    address: '',
+    skills: '',
+    interests: '',
+    availability: ''
   });
 
   useEffect(() => {
@@ -86,7 +94,15 @@ export default function Profile() {
         lastName: u.lastName || u.last_name || '',
         email: u.email || '',
         phone: u.phone || '',
-        bio: u.profileMetadata?.bio || u.bio || ''
+        bio: u.profileMetadata?.bio || u.bio || '',
+        address: u.profileMetadata?.address || '',
+        skills: Array.isArray(u.profileMetadata?.skills)
+          ? u.profileMetadata.skills.join(', ')
+          : u.profileMetadata?.skills || '',
+        interests: Array.isArray(u.profileMetadata?.interests)
+          ? u.profileMetadata.interests.join(', ')
+          : u.profileMetadata?.interests || '',
+        availability: u.profileMetadata?.availability || ''
       });
     }
   }, [meResponse]);
@@ -798,60 +814,197 @@ export default function Profile() {
                 <CardDescription>Update your personal information</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">First name</Label>
-                    <Input
-                      id="firstName"
-                      value={formData.firstName}
-                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                    />
+                {/* Incomplete Profile Warning */}
+                {(!formData.phone || !formData.address || !formData.skills) && (
+                  <Alert variant="destructive" className="mb-4">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Profile Incomplete</AlertTitle>
+                    <AlertDescription>
+                      Please complete your profile (Phone, Address, Skills) to be eligible for all opportunities.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                <div className="flex flex-col md:flex-row gap-6">
+                  {/* Avatar Upload Section */}
+                  <div className="flex flex-col items-center space-y-3">
+                    <div className="relative">
+                      <Avatar className="h-32 w-32 border-4 border-white shadow-xl">
+                        <AvatarImage src={userData.profileImageUrl || userData.profileMetadata?.avatar_url} />
+                        <AvatarFallback className="bg-primary text-white text-4xl font-bold">
+                          {userData.firstName?.[0]}
+                          {userData.lastName?.[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <Button
+                        size="icon"
+                        variant="secondary"
+                        className="absolute bottom-0 right-0 rounded-full shadow-md"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <Camera className="h-4 w-4" />
+                      </Button>
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        className="hidden"
+                        accept="image/*"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+
+                          const fd = new FormData();
+                          fd.append('avatar', file);
+
+                          try {
+                            await api.updateVolunteerAvatar(fd);
+                            queryClient.invalidateQueries(['me']);
+                            toast({ title: 'Avatar updated', description: 'Your profile picture has been updated.' });
+                          } catch (err) {
+                            toast({
+                              title: 'Upload failed',
+                              description: 'Could not upload avatar.',
+                              variant: 'destructive'
+                            });
+                          }
+                        }}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">Click camera icon to change</p>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">Last name</Label>
-                    <Input
-                      id="lastName"
-                      value={formData.lastName}
-                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                    />
+
+                  {/* Main Form */}
+                  <div className="flex-1 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="firstName">First name</Label>
+                        <Input
+                          id="firstName"
+                          value={formData.firstName}
+                          onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="lastName">Last name</Label>
+                        <Input
+                          id="lastName"
+                          value={formData.lastName}
+                          onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email <span className="text-xs text-muted-foreground">(Read-only)</span></Label>
+                        <Input id="email" value={formData.email} disabled className="bg-slate-50" />
+                        {userData.emailVerifiedAt && (
+                           <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
+                             <CheckCircle2 className="h-3 w-3" /> Email Verified
+                           </p>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="phone">Phone number {formData.phone ? '' : '*'}</Label>
+                        <Input
+                          id="phone"
+                          value={formData.phone}
+                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                          placeholder="+1234567890"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="address">Address {formData.address ? '' : '*'}</Label>
+                      <Input
+                        id="address"
+                        value={formData.address}
+                        onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                        placeholder="123 Volunteer Lane, City"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="bio">Bio</Label>
+                      <Textarea
+                        id="bio"
+                        rows={3}
+                        value={formData.bio}
+                        onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                        placeholder="Tell us about yourself..."
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="skills">Skills (comma separated) {formData.skills ? '' : '*'}</Label>
+                        <Input
+                          id="skills"
+                          value={formData.skills}
+                          onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
+                          placeholder="Teaching, First Aid, Driving..."
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="interests">Interests (comma separated)</Label>
+                        <Input
+                          id="interests"
+                          value={formData.interests}
+                          onChange={(e) => setFormData({ ...formData, interests: e.target.value })}
+                          placeholder="Education, Environment, Health..."
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="availability">General Availability</Label>
+                      <Input
+                        id="availability"
+                        value={formData.availability}
+                        onChange={(e) => setFormData({ ...formData, availability: e.target.value })}
+                        placeholder="Weekends, Evenings, Mon-Fri 9-5..."
+                      />
+                    </div>
+
+                    {/* Read-only System Fields */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+                      <div className="space-y-1">
+                        <Label className="text-muted-foreground">Background Check</Label>
+                        <div className="flex items-center gap-2">
+                           <Shield className={userData.isBackgroundChecked ? "h-4 w-4 text-green-500" : "h-4 w-4 text-slate-400"} />
+                           <span className="text-sm">{userData.isBackgroundChecked ? 'Verified' : 'Not Verified / Pending'}</span>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-muted-foreground">Certified Volunteer</Label>
+                         <div className="flex items-center gap-2">
+                           <Award className={userData.isCertified ? "h-4 w-4 text-blue-500" : "h-4 w-4 text-slate-400"} />
+                           <span className="text-sm">{userData.isCertified ? 'Yes' : 'No'}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end gap-4 pt-4">
+                      <Button
+                        onClick={() =>
+                          updateMutation.mutate({
+                            firstName: formData.firstName,
+                            lastName: formData.lastName,
+                            phone: formData.phone,
+                            profileMetadata: {
+                              ...userData.profileMetadata,
+                              bio: formData.bio,
+                              address: formData.address,
+                              skills: formData.skills.split(',').map(s => s.trim()).filter(Boolean),
+                              interests: formData.interests.split(',').map(s => s.trim()).filter(Boolean),
+                              availability: formData.availability
+                            }
+                          })
+                        }
+                        disabled={updateMutation.isLoading}
+                      >
+                        {updateMutation.isLoading ? 'Saving...' : 'Save Changes'}
+                      </Button>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" value={formData.email} disabled className="bg-slate-50" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Phone number</Label>
-                    <Input
-                      id="phone"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="bio">Bio</Label>
-                    <Textarea
-                      id="bio"
-                      rows={4}
-                      value={formData.bio}
-                      onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                      placeholder="Tell us about yourself..."
-                    />
-                  </div>
-                </div>
-                <div className="flex justify-end gap-4">
-                  <Button
-                    onClick={() =>
-                      updateMutation.mutate({
-                        firstName: formData.firstName,
-                        lastName: formData.lastName,
-                        phone: formData.phone,
-                        profileMetadata: { ...userData.profileMetadata, bio: formData.bio }
-                      })
-                    }
-                    disabled={updateMutation.isLoading}
-                  >
-                    {updateMutation.isLoading ? 'Saving...' : 'Save Changes'}
-                  </Button>
                 </div>
               </CardContent>
               <CardFooter className="bg-red-50 border-t border-red-100 p-6 flex justify-between items-center mt-6">
