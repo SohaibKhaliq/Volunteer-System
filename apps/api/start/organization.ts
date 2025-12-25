@@ -97,6 +97,12 @@ Route.group(() => {
   Route.post('/documents', 'OrganizationComplianceController.store').middleware(['auth'])
   Route.delete('/documents/:id', 'OrganizationComplianceController.destroy').middleware(['auth'])
   Route.get('/compliance/stats', 'OrganizationComplianceController.stats').middleware(['auth'])
+  
+  // Compliance Requirements
+  Route.get('/compliance-requirements', 'ComplianceRequirementsController.index').middleware(['auth'])
+  Route.post('/compliance-requirements', 'ComplianceRequirementsController.store').middleware(['auth'])
+  Route.put('/compliance-requirements/:id', 'ComplianceRequirementsController.update').middleware(['auth'])
+  Route.delete('/compliance-requirements/:id', 'ComplianceRequirementsController.destroy').middleware(['auth'])
 
   // Hours Management
   Route.get('/hours/pending', 'VolunteerHoursManagementController.pending').middleware(['auth'])
