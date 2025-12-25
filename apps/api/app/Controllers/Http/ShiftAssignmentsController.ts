@@ -5,6 +5,8 @@ import ShiftTask from 'App/Models/ShiftTask'
 import Notification from 'App/Models/Notification'
 import { createAssignmentSchema, bulkAssignSchema } from 'App/Validators/assignmentValidator'
 import { DateTime } from 'luxon'
+import VolunteerHour from 'App/Models/VolunteerHour'
+
 
 export default class ShiftAssignmentsController {
   public async index({ request }: HttpContextContract) {
@@ -17,7 +19,7 @@ export default class ShiftAssignmentsController {
   }
 
   // single assignment
-  public async store({ request, auth, response }: HttpContextContract) {
+  public async store({ request, response }: HttpContextContract) {
     const payload = createAssignmentSchema.parse(request.only(Object.keys(request.body())))
 
     const shift = await Shift.find(payload.shift_id)
@@ -95,7 +97,7 @@ export default class ShiftAssignmentsController {
   }
 
   // bulk assign multiple users to the same shift/task
-  public async bulk({ request, auth, response }: HttpContextContract) {
+  public async bulk({ request, response }: HttpContextContract) {
     const payload = bulkAssignSchema.parse(request.only(Object.keys(request.body())))
     const shift = await Shift.find(payload.shift_id)
     if (!shift) return response.badRequest({ message: 'Shift not found' })
@@ -176,7 +178,7 @@ export default class ShiftAssignmentsController {
    */
   public async checkIn({ request, auth, response }: HttpContextContract) {
       const user = auth.user!
-      const { shiftId, latitude, longitude } = request.only(['shiftId', 'latitude', 'longitude'])
+      const { shiftId } = request.only(['shiftId'])
 
       const assignment = await ShiftAssignment.query()
         .where('shift_id', shiftId)
@@ -228,6 +230,21 @@ export default class ShiftAssignmentsController {
       assignment.hours = Math.round(duration * 100) / 100
       
       await assignment.save()
+
+      // Auto-create volunteer hour record
+      const shift = await Shift.find(shiftId)
+      if (shift) {
+         await VolunteerHour.create({
+             userId: user.id,
+             organizationId: shift.organizationId,
+             eventId: shift.eventId,
+             shiftId: shift.id,
+             date: DateTime.now(),
+             hours: assignment.hours,
+             notes: 'Automatically logged via shift check-out',
+             status: 'pending' 
+         })
+      }
 
       return assignment
   }
