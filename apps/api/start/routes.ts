@@ -316,6 +316,17 @@ Route.resource('achievements', 'AchievementsController')
   .middleware({ '*': ['auth'] })
   .apiOnly()
 
+// Achievement Categories
+Route.resource('achievement-categories', 'AchievementCategoriesController')
+  .middleware({ '*': ['auth'] })
+  .apiOnly()
+
+// Achievement management endpoints
+Route.post('/achievements/grant', 'AchievementsController.grantAchievement').middleware(['auth'])
+Route.delete('/achievements/revoke/:id', 'AchievementsController.revokeAchievement').middleware(['auth'])
+Route.get('/achievements/progress', 'AchievementsController.getProgress').middleware(['auth'])
+Route.post('/achievements/evaluate', 'AchievementsController.triggerEvaluation').middleware(['auth'])
+
 // Shift scheduling routes
 Route.get('/shifts', 'ShiftsController.index').middleware(['auth'])
 Route.post('/shifts', 'ShiftsController.store').middleware(['auth'])
