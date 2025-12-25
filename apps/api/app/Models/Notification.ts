@@ -1,4 +1,4 @@
-import { BaseModel, column, belongsTo, BelongsTo, afterCreate } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, column, belongsTo, BelongsTo } from '@ioc:Adonis/Lucid/Orm'
 import { DateTime } from 'luxon'
 import User from './User'
 
@@ -21,11 +21,80 @@ export default class Notification extends BaseModel {
   @column()
   public read?: boolean
 
+  // Enhanced fields
+  @column()
+  public title?: string
+
+  @column()
+  public priority: 'low' | 'normal' | 'high' | 'urgent'
+
+  @column()
+  public category?: string
+
+  @column()
+  public actionUrl?: string
+
+  @column()
+  public actionText?: string
+
+  @column.dateTime()
+  public expiresAt?: DateTime
+
+  @column()
+  public sentViaEmail: boolean
+
+  @column.dateTime()
+  public emailSentAt?: DateTime
+
+  @column()
+  public emailError?: string
+
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   public updatedAt: DateTime
+
+  /**
+   * Mark notification as read
+   */
+  public async markAsRead(): Promise<void> {
+    this.read = true
+    await this.save()
+  }
+
+  /**
+   * Mark notification as unread
+   */
+  public async markAsUnread(): Promise<void> {
+    this.read = false
+    await this.save()
+  }
+
+  /**
+   * Check if notification is expired
+   */
+  public isExpired(): boolean {
+    if (!this.expiresAt) return false
+    return this.expiresAt < DateTime.now()
+  }
+
+  /**
+   * Mark email as sent
+   */
+  public async markEmailSent(): Promise<void> {
+    this.sentViaEmail = true
+    this.emailSentAt = DateTime.now()
+    await this.save()
+  }
+
+  /**
+   * Mark email as failed
+   */
+  public async markEmailFailed(error: string): Promise<void> {
+    this.emailError = error
+    await this.save()
+  }
 }
 
 // Send new notifications to the local socket server via an internal HTTP hook.
