@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ broadcast.title }}</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .container {
+      background: #ffffff;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .header {
+      padding-bottom: 20px;
+      margin-bottom: 20px;
+    }
+    .header.emergency {
+      border-bottom: 3px solid #dc2626;
+    }
+    .header.high {
+      border-bottom: 3px solid #d97706;
+    }
+    .header.normal {
+      border-bottom: 3px solid #3b82f6;
+    }
+    .title {
+      font-size: 24px;
+      font-weight: 600;
+      color: #1f2937;
+      margin: 0 0 10px 0;
+    }
+    .priority-badge {
+      display: inline-block;
+      padding: 6px 16px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .priority-emergency {
+      background: #fef2f2;
+      color: #dc2626;
+      border: 2px solid #dc2626;
+    }
+    .priority-high {
+      background: #fef3c7;
+      color: #d97706;
+      border: 2px solid #d97706;
+    }
+    .priority-normal {
+      background: #dbeafe;
+      color: #2563eb;
+    }
+    .content {
+      margin: 20px 0;
+      color: #4b5563;
+      white-space: pre-wrap;
+    }
+    .footer {
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #e5e7eb;
+      font-size: 14px;
+      color: #6b7280;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header {{ priority }}">
+      <h1 class="title">{{ broadcast.title }}</h1>
+      <span class="priority-badge priority-{{ priority }}">{{ priority }} Priority</span>
+    </div>
+
+    <div class="content">
+      <p>Hello {{ user.firstName || user.email }},</p>
+      <p>{{ broadcast.message }}</p>
+    </div>
+
+    <div class="footer">
+      <p>This is an important message from the Volunteer System administration.</p>
+      @if(priority === 'emergency')
+        <p><strong>This is an emergency broadcast and requires your immediate attention.</strong></p>
+      @endif
+    </div>
+  </div>
+</body>
+</html>
