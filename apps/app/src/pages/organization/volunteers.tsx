@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Search, Filter, MoreHorizontal, Mail, Star, Loader2, Plus, Trash2 } from 'lucide-react';
+import { Search, Filter, MoreHorizontal, Mail, Star, Loader2, Plus, Trash2, FileText } from 'lucide-react';
 
 export default function OrganizationVolunteers() {
   const queryClient = useQueryClient();
@@ -27,6 +27,7 @@ export default function OrganizationVolunteers() {
   const [isMessageOpen, setIsMessageOpen] = useState(false);
   const [isAddOpen, setIsAddOpen] = useState(false); // Renamed from isEditOpen
   const [editingVolunteer, setEditingVolunteer] = useState<any>(null);
+  const [viewingRequest, setViewingRequest] = useState<any>(null);
 
   // Fetch Volunteers
   const { data: volunteers, isLoading } = useQuery({
@@ -69,7 +70,7 @@ export default function OrganizationVolunteers() {
 
   // Approve Volunteer Mutation
   const approveVolunteerMutation = useMutation({
-    mutationFn: (id: number | string) => api.approveOrganizationVolunteer(id),
+    mutationFn: (id: number | string) => api.approveOrganizationVolunteer(id as number),
     onMutate: (id: number | string) => {
       setLoadingById((s) => ({ ...s, [id]: true }));
     },
@@ -78,6 +79,7 @@ export default function OrganizationVolunteers() {
       queryClient.invalidateQueries({ queryKey: ['myOrganizations'] });
       queryClient.invalidateQueries({ queryKey: ['me'] });
       toast.success('Volunteer approved');
+      setViewingRequest(null);
     },
     onError: () => {
       toast.error('Failed to approve volunteer');
@@ -94,7 +96,7 @@ export default function OrganizationVolunteers() {
   // Reject Volunteer Mutation
   const rejectVolunteerMutation = useMutation({
     mutationFn: (payload: { id: number | string; reason?: string }) =>
-      api.rejectOrganizationVolunteer(payload.id, payload.reason),
+      api.rejectOrganizationVolunteer(payload.id as number, payload.reason),
     onMutate: (payload: { id: number | string }) => {
       const id = payload.id;
       setLoadingById((s) => ({ ...s, [id]: true }));
@@ -104,6 +106,7 @@ export default function OrganizationVolunteers() {
       queryClient.invalidateQueries({ queryKey: ['myOrganizations'] });
       queryClient.invalidateQueries({ queryKey: ['me'] });
       toast.success('Volunteer rejected');
+      setViewingRequest(null);
     },
     onError: () => {
       toast.error('Failed to reject volunteer');
@@ -257,6 +260,11 @@ export default function OrganizationVolunteers() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
+                        {volunteer.notes && volunteer.status === 'pending' && (
+                           <Button variant="ghost" size="icon" onClick={() => setViewingRequest(volunteer)} title="View Request Note">
+                              <FileText className="h-4 w-4 text-blue-500" />
+                           </Button>
+                        )}
                         <Button
                           variant="ghost"
                           size="icon"
@@ -350,6 +358,51 @@ export default function OrganizationVolunteers() {
         </DialogContent>
       </Dialog>
 
+      {/* View Request Note Dialog */}
+      <Dialog open={!!viewingRequest} onOpenChange={(open) => !open && setViewingRequest(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Membership Request</DialogTitle>
+            <DialogDescription>
+              Request from <span className="font-semibold">{viewingRequest?.name}</span>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+             <div className="bg-slate-50 p-4 rounded-md border text-sm italic">
+                "{viewingRequest?.notes || 'No message provided.'}"
+             </div>
+             <div className="flex gap-2 mt-4 text-xs text-muted-foreground">
+                <Mail className="h-3 w-3" /> {viewingRequest?.email}
+             </div>
+          </div>
+          <DialogFooter className="gap-2">
+             <Button 
+                variant="destructive" 
+                onClick={() => {
+                   setRejectTarget(viewingRequest);
+                   setRejectReason('');
+                   setIsRejectConfirmOpen(true);
+                   setViewingRequest(null);
+                }}
+             >
+               Reject
+             </Button>
+             <Button 
+                className="bg-green-600 hover:bg-green-700" 
+                onClick={() => approveVolunteerMutation.mutate(viewingRequest.id)}
+                disabled={!!loadingById[viewingRequest?.id]}
+             >
+               {loadingById[viewingRequest?.id] ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+               ) : (
+                  <Plus className="h-4 w-4 mr-2" />
+               )}
+               Approve
+             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Reject Confirmation Dialog */}
       <Dialog open={isRejectConfirmOpen} onOpenChange={setIsRejectConfirmOpen}>
         <DialogContent>
@@ -376,6 +429,7 @@ export default function OrganizationVolunteers() {
               Cancel
             </Button>
             <Button
+              className="bg-red-600 hover:bg-red-700"
               onClick={() => {
                 if (rejectTarget) {
                   rejectVolunteerMutation.mutate({ id: rejectTarget.id, reason: rejectReason });
