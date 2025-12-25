@@ -10,6 +10,8 @@ import Opportunity from 'App/Models/Opportunity'
 import Organization from 'App/Models/Organization'
 import VolunteerHour from 'App/Models/VolunteerHour'
 import UserAchievement from 'App/Models/UserAchievement'
+import Achievement from 'App/Models/Achievement'
+import AchievementProgress from 'App/Models/AchievementProgress'
 
 /**
  * VolunteerController - Volunteer Panel endpoints
@@ -997,31 +999,135 @@ export default class VolunteerController {
   }
 
   /**
-   * Get volunteer's achievements
+   * Get volunteer's achievements with progress tracking
    */
   public async myAchievements({ auth, response }: HttpContextContract) {
     try {
       await auth.use('api').authenticate()
       const user = auth.user!
 
-      const achievements = await UserAchievement.query()
+      // Get earned achievements
+      const earnedAchievements = await UserAchievement.query()
+        .where('user_id', user.id)
+        .preload('achievement', (query) => {
+          query.preload('category')
+        })
+        .preload('granter')
+        .orderBy('awarded_at', 'desc')
+
+      // Get all enabled achievements
+      const allAchievements = await Achievement.query()
+        .where('is_enabled', true)
+        .preload('category')
+        .orderBy('points', 'asc')
+
+      // Get progress for milestone achievements
+      const progressData = await AchievementProgress.query()
         .where('user_id', user.id)
         .preload('achievement')
-        .orderBy('created_at', 'desc')
 
-      const totalPoints = achievements.reduce((sum, ua) => sum + (ua.achievement?.points || 0), 0)
+      const progressMap = new Map(progressData.map((p) => [p.achievementId, p]))
+      const earnedIds = new Set(earnedAchievements.map((ua) => ua.achievementId))
+
+      // Calculate total points
+      const totalPoints = earnedAchievements.reduce(
+        (sum, ua) => sum + (ua.achievement?.points || 0),
+        0
+      )
+
+      // Build response with earned and locked achievements
+      const earned = earnedAchievements.map((ua) => ({
+        id: ua.achievement?.id,
+        key: ua.achievement?.key,
+        title: ua.achievement?.title,
+        description: ua.achievement?.description,
+        icon: ua.achievement?.icon,
+        badgeImageUrl: ua.achievement?.badgeImageUrl,
+        points: ua.achievement?.points,
+        category: ua.achievement?.category
+          ? {
+              id: ua.achievement.category.id,
+              name: ua.achievement.category.name,
+              icon: ua.achievement.category.icon
+            }
+          : null,
+        awardedAt: ua.awardedAt,
+        metadata: ua.metadata,
+        grantedBy: ua.grantedBy,
+        granter: ua.granter
+          ? {
+              id: ua.granter.id,
+              firstName: ua.granter.firstName,
+              lastName: ua.granter.lastName
+            }
+          : null,
+        grantReason: ua.grantReason
+      }))
+
+      const locked = allAchievements
+        .filter((ach) => !earnedIds.has(ach.id))
+        .map((ach) => {
+          const progress = progressMap.get(ach.id)
+          return {
+            id: ach.id,
+            key: ach.key,
+            title: ach.title,
+            description: ach.description,
+            icon: ach.icon,
+            badgeImageUrl: ach.badgeImageUrl,
+            points: ach.points,
+            category: ach.category
+              ? {
+                  id: ach.category.id,
+                  name: ach.category.name,
+                  icon: ach.category.icon
+                }
+              : null,
+            isMilestone: ach.isMilestone,
+            progress: progress
+              ? {
+                  currentValue: progress.currentValue,
+                  targetValue: progress.targetValue,
+                  percentage: progress.percentage
+                }
+              : null
+          }
+        })
+
+      // Find next achievable (closest to completion)
+      const nextToUnlock = locked
+        .filter((ach) => ach.progress && ach.progress.percentage > 0)
+        .sort((a, b) => (b.progress?.percentage || 0) - (a.progress?.percentage || 0))
+        .slice(0, 3)
+
+      // Group by category
+      const categories = new Map<number, any>()
+      ;[...earned, ...locked].forEach((ach) => {
+        if (ach.category) {
+          if (!categories.has(ach.category.id)) {
+            categories.set(ach.category.id, {
+              ...ach.category,
+              achievements: []
+            })
+          }
+          categories.get(ach.category.id)!.achievements.push(ach)
+        }
+      })
 
       return response.ok({
-        achievements: achievements.map((ua) => ({
-          id: ua.achievement?.id,
-          key: ua.achievement?.key,
-          title: ua.achievement?.title,
-          description: ua.achievement?.description,
-          points: ua.achievement?.points,
-          awardedAt: ua.createdAt,
-          metadata: ua.metadata
-        })),
-        totalPoints
+        earned,
+        locked,
+        nextToUnlock,
+        categories: Array.from(categories.values()),
+        stats: {
+          totalPoints,
+          earnedCount: earned.length,
+          lockedCount: locked.length,
+          totalCount: allAchievements.length,
+          completionPercentage: Math.round(
+            (earned.length / allAchievements.length) * 100
+          )
+        }
       })
     } catch (error) {
       Logger.error('My achievements error: %o', error)
