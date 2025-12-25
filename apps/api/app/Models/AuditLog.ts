@@ -84,4 +84,107 @@ export default class AuditLog extends BaseModel {
     // @ts-ignore
     return await this.create(data as any)
   }
+
+  /**
+   * Log a profile change
+   */
+  public static async logProfileChange(
+    userId: number,
+    targetUserId: number,
+    changes: Record<string, { from: any; to: any }>,
+    ipAddress?: string
+  ) {
+    return await this.safeCreate({
+      userId,
+      action: 'profile_change',
+      targetType: 'user',
+      targetId: targetUserId,
+      details: `Profile updated for user ${targetUserId}`,
+      metadata: JSON.stringify({ changes }),
+      ipAddress
+    })
+  }
+
+  /**
+   * Log an approval or rejection
+   */
+  public static async logApproval(
+    userId: number,
+    targetType: string,
+    targetId: number,
+    decision: 'approved' | 'rejected',
+    reason?: string,
+    ipAddress?: string
+  ) {
+    return await this.safeCreate({
+      userId,
+      action: `${targetType}_${decision}`,
+      targetType,
+      targetId,
+      details: reason || `${targetType} ${decision}`,
+      metadata: JSON.stringify({ decision, reason }),
+      ipAddress
+    })
+  }
+
+  /**
+   * Log a role change
+   */
+  public static async logRoleChange(
+    userId: number,
+    targetUserId: number,
+    roleChanges: { added?: string[]; removed?: string[] },
+    ipAddress?: string
+  ) {
+    return await this.safeCreate({
+      userId,
+      action: 'role_change',
+      targetType: 'user',
+      targetId: targetUserId,
+      details: `Role changes for user ${targetUserId}`,
+      metadata: JSON.stringify(roleChanges),
+      ipAddress
+    })
+  }
+
+  /**
+   * Log a login event
+   */
+  public static async logLogin(
+    userId: number,
+    success: boolean,
+    ipAddress?: string,
+    metadata?: Record<string, any>
+  ) {
+    return await this.safeCreate({
+      userId,
+      action: success ? 'login_success' : 'login_failed',
+      details: success ? 'User logged in successfully' : 'Login attempt failed',
+      metadata: metadata ? JSON.stringify(metadata) : undefined,
+      ipAddress
+    })
+  }
+
+  /**
+   * Log an override or administrative action
+   */
+  public static async logOverride(
+    userId: number,
+    action: string,
+    targetType: string,
+    targetId: number,
+    reason: string,
+    ipAddress?: string
+  ) {
+    return await this.safeCreate({
+      userId,
+      action: `${action}_override`,
+      targetType,
+      targetId,
+      details: reason,
+      metadata: JSON.stringify({ action, reason }),
+      ipAddress
+    })
+  }
 }
+

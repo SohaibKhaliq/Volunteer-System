@@ -413,6 +413,30 @@ Route.group(() => {
   Route.post('/invite-send-jobs/retry-failed', 'InviteSendJobsController.retryAllFailed')
   Route.get('/invite-send-jobs/:id', 'InviteSendJobsController.show')
   Route.post('/invite-send-jobs/:id/retry', 'InviteSendJobsController.retry')
+
+  // Enhanced Analytics
+  Route.get('/platform-analytics', 'AdminController.platformAnalytics')
+  Route.get('/user-growth', 'AdminController.userGrowthChart')
+  Route.get('/org-growth', 'AdminController.organizationGrowthChart')
+  Route.get('/hours-trend', 'AdminController.hoursTrendChart')
+  Route.get('/compliance-overview', 'AdminController.complianceOverview')
+  Route.get('/top-organizations', 'AdminController.topOrganizations')
+
+  // Enhanced Audit Logs
+  Route.get('/audit-logs/search', 'AuditLogsController.search')
+  Route.get('/audit-logs/export', 'AuditLogsController.export')
+  Route.get('/audit-logs/statistics', 'AuditLogsController.statistics')
+  Route.get('/audit-logs/security-events', 'AuditLogsController.securityEvents')
+  Route.get('/audit-logs/action-types', 'AuditLogsController.actionTypes')
+  Route.get('/audit-logs/target-types', 'AuditLogsController.targetTypes')
+
+  // System Monitoring
+  Route.get('/monitoring/background-jobs', 'SystemMonitoringController.backgroundJobsStatus')
+  Route.get('/monitoring/imports', 'SystemMonitoringController.importOperations')
+  Route.get('/monitoring/notifications', 'SystemMonitoringController.notificationDelivery')
+  Route.get('/monitoring/errors', 'SystemMonitoringController.errorLogs')
+  Route.get('/monitoring/health', 'SystemMonitoringController.systemHealth')
+
   Route.get('/backup', 'AdminController.createBackup')
   Route.get('/backup/status', 'AdminController.backupStatus')
 })
