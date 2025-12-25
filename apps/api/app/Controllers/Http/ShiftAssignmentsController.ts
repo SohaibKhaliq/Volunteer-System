@@ -4,6 +4,7 @@ import Shift from 'App/Models/Shift'
 import ShiftTask from 'App/Models/ShiftTask'
 import Notification from 'App/Models/Notification'
 import { createAssignmentSchema, bulkAssignSchema } from 'App/Validators/assignmentValidator'
+import { DateTime } from 'luxon'
 
 export default class ShiftAssignmentsController {
   public async index({ request }: HttpContextContract) {
@@ -29,7 +30,7 @@ export default class ShiftAssignmentsController {
 
     // Conflict detection: prevent overlapping assignments for the same user
     // Load shift times
-    await shift.loadMany(['assignments'])
+    await shift.load('assignments')
     const shiftStart = shift.startAt ? new Date(shift.startAt.toISO()) : null
     const shiftEnd = shift.endAt ? new Date(shift.endAt.toISO()) : null
 
@@ -168,5 +169,66 @@ export default class ShiftAssignmentsController {
   public async destroy({ params }: HttpContextContract) {
     const assignment = await ShiftAssignment.findOrFail(params.id)
     await assignment.delete()
+  }
+
+  /**
+   * Check in a volunteer to a shift assignment
+   */
+  public async checkIn({ request, auth, response }: HttpContextContract) {
+      const user = auth.user!
+      const { shiftId, latitude, longitude } = request.only(['shiftId', 'latitude', 'longitude'])
+
+      const assignment = await ShiftAssignment.query()
+        .where('shift_id', shiftId)
+        .where('user_id', user.id)
+        .first()
+
+      if (!assignment) {
+        return response.notFound({ message: 'Assignment not found' })
+      }
+
+      if (assignment.checkedInAt) {
+          return response.badRequest({ message: 'Already checked in' })
+      }
+      
+      // TODO: Add location verification logic here if shift has location
+
+      assignment.checkedInAt = DateTime.now()
+      assignment.status = 'in-progress'
+      await assignment.save()
+
+      return assignment
+  }
+
+  /**
+   * Check out a volunteer
+   */
+  public async checkOut({ request, auth, response }: HttpContextContract) {
+      const user = auth.user!
+      const { shiftId } = request.only(['shiftId'])
+
+      const assignment = await ShiftAssignment.query()
+        .where('shift_id', shiftId)
+        .where('user_id', user.id)
+        .first()
+
+      if (!assignment) {
+        return response.notFound({ message: 'Assignment not found' })
+      }
+
+      if (!assignment.checkedInAt) {
+          return response.badRequest({ message: 'Not checked in' })
+      }
+
+      assignment.checkedOutAt = DateTime.now()
+      assignment.status = 'completed'
+      
+      // Calculate hours
+      const duration = assignment.checkedOutAt.diff(assignment.checkedInAt, 'hours').hours
+      assignment.hours = Math.round(duration * 100) / 100
+      
+      await assignment.save()
+
+      return assignment
   }
 }
