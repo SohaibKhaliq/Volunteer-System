@@ -444,6 +444,13 @@ const api = {
   deleteOrganizationDocument: async (id: number) => axios.delete(`/organization/documents/${id}`),
   getOrganizationComplianceStats: async () => axios.get('/organization/compliance/stats'),
 
+  /* Compliance Requirements Management */
+  getComplianceRequirements: async () => axios.get('/organization/compliance-requirements'),
+  createComplianceRequirement: async (data: any) => axios.post('/organization/compliance-requirements', data),
+  updateComplianceRequirement: async (id: number, data: any) =>
+    axios.put(`/organization/compliance-requirements/${id}`, data),
+  deleteComplianceRequirement: async (id: number) => axios.delete(`/organization/compliance-requirements/${id}`),
+
   // Dashboard
   getOrganizationDashboardStats: async () => axios.get('/organization/dashboard-stats'),
 
