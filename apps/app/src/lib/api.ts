@@ -77,8 +77,9 @@ const api = {
   acceptInvite: async (token: string) => axios.post(`/invites/${token}/accept`),
   rejectInvite: async (token: string) => axios.post(`/invites/${token}/reject`),
 
-  listUsers: async (q?: string) => {
-    const res = await axios.get('/users', { params: q ? { search: q } : undefined });
+  listUsers: async (params?: string | any) => {
+    const query = typeof params === 'string' ? { search: params } : params;
+    const res = await axios.get('/users', { params: query });
     // backend may return a paginated object { data: [...] } or a plain array
     if (Array.isArray(res)) return res;
     if (res && Array.isArray((res as any).data)) return (res as any).data;

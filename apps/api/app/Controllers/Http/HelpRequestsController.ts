@@ -222,17 +222,29 @@ export default class HelpRequestController {
 
   public async assign({ params, request, response }: HttpContextContract) {
     try {
+      Logger.info('Assigning volunteer: params=%o', params)
       const helpRequest = await HelpRequest.findOrFail(params.id)
+      Logger.info('Found request: %o', helpRequest.id)
+      
       const { volunteerId } = request.only(['volunteerId'])
+      Logger.info('Volunteer ID: %s', volunteerId)
 
       helpRequest.assignedVolunteerId = volunteerId
       helpRequest.status = HelpRequestStatus.Assigned
+      
+      Logger.info('Saving...')
       await helpRequest.save()
+      Logger.info('Saved.')
 
       return helpRequest
     } catch (error) {
+      Logger.error('Assign error: %o', error)
       return response.badRequest({
-        error: { message: 'Unable to assign volunteer' }
+        error: { 
+          message: 'Unable to assign volunteer',
+          details: error.message,
+          code: error.code
+        }
       })
     }
   }
