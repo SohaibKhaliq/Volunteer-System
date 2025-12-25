@@ -112,12 +112,23 @@ export default class OrganizationsController {
   /**
    * Return resources for a specific organization (admin view)
    */
-  public async getResources({ params, request, response }: HttpContextContract) {
+  public async getResources({ auth, params, request, response }: HttpContextContract) {
     const page = Number(request.qs().page || 1)
     const perPage = Number(request.qs().perPage || 20)
     const orgId = params.id
     const org = await Organization.find(orgId)
     if (!org) return response.notFound()
+
+    // Security Check
+    const user = auth.user!
+    // allow generic admin access implies team member logic usually, but here checking specifically
+    const isTeam = await OrganizationTeamMember.query().where('organization_id', org.id).where('user_id', user.id).first()
+    const isVolunteer = await Database.from('organization_volunteers').where('organization_id', org.id).where('user_id', user.id).where('status', 'active').first()
+    
+    // Also allow global admins if needed, but for now strict org check
+    if (!isTeam && !isVolunteer) {
+       return response.forbidden({ message: 'Access denied' })
+    }
 
     const query = Resource.query().where('organization_id', org.id).whereNull('deleted_at')
     const pag = await query.paginate(page, perPage)
@@ -678,9 +689,26 @@ export default class OrganizationsController {
   /**
    * Get organization events
    */
-  public async getEvents({ params, response }: HttpContextContract) {
+  public async getEvents({ auth, params, response }: HttpContextContract) {
     const org = await Organization.find(params.id)
     if (!org) return response.notFound({ message: 'Organization not found' })
+
+    // Security Check: User must be a team member OR an active volunteer
+    const user = auth.user!
+    const isTeam = await OrganizationTeamMember.query()
+      .where('organization_id', org.id)
+      .where('user_id', user.id)
+      .first()
+      
+    const isVolunteer = await Database.from('organization_volunteers')
+      .where('organization_id', org.id)
+      .where('user_id', user.id)
+      .where('status', 'active')
+      .first()
+
+    if (!isTeam && !isVolunteer) {
+      return response.forbidden({ message: 'You must be a member of this organization to view its events' })
+    }
 
     const events = await Database.from('events')
       .where('organization_id', org.id)
@@ -712,9 +740,17 @@ export default class OrganizationsController {
   /**
    * Get organization tasks
    */
-  public async getTasks({ params, response }: HttpContextContract) {
+  public async getTasks({ auth, params, response }: HttpContextContract) {
     const org = await Organization.find(params.id)
     if (!org) return response.notFound({ message: 'Organization not found' })
+
+    const user = auth.user!
+    const isTeam = await OrganizationTeamMember.query().where('organization_id', org.id).where('user_id', user.id).first()
+    const isVolunteer = await Database.from('organization_volunteers').where('organization_id', org.id).where('user_id', user.id).where('status', 'active').first()
+
+    if (!isTeam && !isVolunteer) {
+       return response.forbidden({ message: 'Access denied' })
+    }
 
     const tasks = await Database.from('tasks')
       .join('events', 'events.id', 'tasks.event_id')

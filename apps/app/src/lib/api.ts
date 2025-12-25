@@ -523,6 +523,7 @@ const api = {
   updateVolunteerProfile: async (data: any) => axios.put('/volunteer/profile', data),
   updateVolunteerAvatar: async (data: FormData) =>
     axios.put('/volunteer/profile/avatar', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+  browseOrganizations: async (params?: any) => axios.get('/volunteer/organizations/browse', { params }),
 
   // Volunteer Opportunities
   browseOpportunities: async (params?: any) => axios.get('/volunteer/opportunities', { params }),
@@ -540,7 +541,7 @@ const api = {
 
   // Volunteer Organizations
   getVolunteerOrganizations: async () => axios.get('/volunteer/organizations'),
-  joinVolunteerOrganization: async (id: number) => axios.post(`/volunteer/organizations/${id}/join`),
+  joinVolunteerOrganization: async (id: number, data?: { notes?: string }) => axios.post(`/volunteer/organizations/${id}/join`, data),
   leaveVolunteerOrganization: async (id: number) => axios.delete(`/volunteer/organizations/${id}/leave`),
 
   // Volunteer Achievements

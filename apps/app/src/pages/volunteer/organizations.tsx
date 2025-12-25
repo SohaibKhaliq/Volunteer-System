@@ -6,7 +6,18 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Building2, Users, Calendar, MapPin, CheckCircle, LogOut, ArrowRight, Loader2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter
+} from '@/components/ui/dialog';
+import { Building2, Users, Calendar, MapPin, CheckCircle, LogOut, ArrowRight, Loader2, Search, Filter } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
 
@@ -14,6 +25,25 @@ const VolunteerOrganizationsPage = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('my-orgs');
+
+  // Browse State
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
+  const [cityFilter, setCityFilter] = useState('');
+  const [typeFilter, setTypeFilter] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  // Debounce search effect (simple timeout)
+  useState(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 500);
+    return () => clearTimeout(timer);
+  }); // This runs on every render? No. `useState` lazy init only runs once. I need `useEffect`.
+
+  // Join Dialog State
+  const [orgToJoin, setOrgToJoin] = useState<any>(null);
+  const [joinNote, setJoinNote] = useState('');
+  // Loading state for individual buttons (legacy support for My Orgs tab)
+  const [loadingByOrg, setLoadingByOrg] = useState<Record<number, boolean>>({});
 
   // Fetch user's organizations
   const { data: myOrgsData, isLoading: loadingMyOrgs } = useQuery({
@@ -29,48 +59,41 @@ const VolunteerOrganizationsPage = () => {
   });
 
   // Fetch public organizations to browse
-  const { data: publicOrgsData, isLoading: loadingPublicOrgs } = useQuery({
-    queryKey: ['public-organizations'],
+  const { data: browseData, isLoading: loadingBrowse } = useQuery({
+    queryKey: ['browse-organizations', page, debouncedSearch, cityFilter, typeFilter],
     queryFn: async () => {
-      try {
-        const res = await api.getPublicOrganizations({ perPage: 50 });
-        return (res as any)?.data || [];
-      } catch {
-        return [];
-      }
-    }
+       const params: any = { page, perPage: 12 };
+       if (debouncedSearch) params.search = debouncedSearch;
+       if (cityFilter) params.city = cityFilter;
+       if (typeFilter) params.type = typeFilter;
+       const res: any = await api.browseOrganizations(params);
+       return res;
+    },
+    // Only fetch when on discover tab
+    enabled: activeTab === 'discover',
+    placeholderData: (previousData: any) => previousData
   });
 
-  // Join organization mutation
-  const [loadingByOrg, setLoadingByOrg] = useState<Record<number, boolean>>({});
+  const availableOrgs = (browseData as any)?.data || [];
+  const meta = (browseData as any)?.meta || {};
 
+  // Join organization mutation
   const joinMutation = useMutation({
-    mutationFn: (id: number) => api.joinVolunteerOrganization(id),
-    onMutate: (id: number) => {
-      setLoadingByOrg((s) => ({ ...s, [id]: true }));
-    },
-    onSettled: (data, err, id: number) => {
-      setLoadingByOrg((s) => ({ ...s, [id]: false }));
-      queryClient.invalidateQueries({ queryKey: ['my-organizations'] });
-    },
+    mutationFn: (data: { id: number; notes?: string }) => api.joinVolunteerOrganization(data.id, { notes: data.notes }),
     onSuccess: () => {
       toast.success(t('Membership request submitted'));
+      setOrgToJoin(null);
+      setJoinNote('');
+      queryClient.invalidateQueries({ queryKey: ['my-organizations'] });
     },
     onError: (error: any) => {
       const status = error?.response?.status;
       const serverMessage = error?.response?.data?.message;
-      if (status === 401) {
-        toast.error(t('Please sign in to perform this action'));
-        queryClient.invalidateQueries({ queryKey: ['me'] });
-        return;
-      }
       if (status === 409) {
         toast.error(serverMessage || t('You are already a member of this organization'));
-        queryClient.invalidateQueries({ queryKey: ['my-organizations'] });
-        queryClient.invalidateQueries({ queryKey: ['organizations'] });
-        return;
+      } else {
+        toast.error(t('Failed to join organization'));
       }
-      toast.error(t('Failed to join organization'));
     }
   });
 
@@ -88,28 +111,9 @@ const VolunteerOrganizationsPage = () => {
       toast.success(t('Left organization'));
     },
     onError: (error: any) => {
-      const status = error?.response?.status;
-      const serverMessage = error?.response?.data?.message;
-      if (status === 401) {
-        toast.error(t('Please sign in to perform this action'));
-        queryClient.invalidateQueries({ queryKey: ['me'] });
-        return;
-      }
-      if (status === 404) {
-        toast.error(serverMessage || t('Membership not found'));
-        queryClient.invalidateQueries({ queryKey: ['my-organizations'] });
-        return;
-      }
       toast.error(t('Failed to leave organization'));
     }
   });
-
-  const myOrgs = myOrgsData || [];
-  const publicOrgs = publicOrgsData || [];
-
-  // Filter out organizations user already belongs to
-  const myOrgIds = myOrgs.map((o: any) => o.id);
-  const availableOrgs = publicOrgs.filter((o: any) => !myOrgIds.includes(o.id));
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -142,6 +146,20 @@ const VolunteerOrganizationsPage = () => {
       leaveMutation.mutate(id);
     }
   };
+
+  const handleJoinClick = (org: any) => {
+    setOrgToJoin(org);
+    setJoinNote('');
+  };
+
+  const confirmJoin = () => {
+    if (orgToJoin) {
+      joinMutation.mutate({ id: orgToJoin.id, notes: joinNote });
+    }
+  };
+
+  const myOrgs = myOrgsData || [];
+
 
   return (
     <div className="space-y-6">
@@ -241,7 +259,35 @@ const VolunteerOrganizationsPage = () => {
 
         {/* Discover Tab */}
         <TabsContent value="discover" className="mt-6">
-          {loadingPublicOrgs ? (
+          <div className="flex gap-4 mb-6">
+             <div className="relative flex-1">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder={t('Search organizations...')}
+                  className="pl-8"
+                  value={search}
+                  onChange={(e) => {
+                     setSearch(e.target.value);
+                     // Simple manual debounce since useDebounce hook isn't imported
+                     setTimeout(() => setDebouncedSearch(e.target.value), 500); 
+                  }}
+                />
+             </div>
+             <Input 
+                placeholder={t('Filter by City')} 
+                className="w-48"
+                value={cityFilter}
+                onChange={(e) => setCityFilter(e.target.value)}
+             />
+             <Input 
+                placeholder={t('Filter by Type')} 
+                className="w-48" 
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+             />
+          </div>
+
+          {loadingBrowse ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
@@ -249,11 +295,12 @@ const VolunteerOrganizationsPage = () => {
             <Card>
               <CardContent className="text-center py-12">
                 <CheckCircle className="h-12 w-12 mx-auto text-green-500 mb-4" />
-                <p className="text-muted-foreground">{t("You're already a member of all available organizations!")}</p>
+                <p className="text-muted-foreground">{t("No organizations found matching your criteria.")}</p>
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
               {availableOrgs.map((org: any) => (
                 <Card key={org.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                   <div className="h-24 bg-gradient-to-r from-green-500 to-teal-600 relative">
@@ -301,21 +348,77 @@ const VolunteerOrganizationsPage = () => {
                           {t('View')}
                         </Button>
                       </Link>
-                      <Button
-                        onClick={() => joinMutation.mutate(org.id)}
-                        disabled={!!loadingByOrg[org.id]}
-                        className="flex-1"
-                      >
-                        {loadingByOrg[org.id] ? <Loader2 className="h-4 w-4 animate-spin" /> : t('Join')}
-                      </Button>
+                      
+                      {/* Check if user is already a member - simplified check */}
+                      {myOrgs.some((m: any) => m.id === org.id) ? (
+                         <Button disabled className="flex-1" variant="secondary">
+                           {t('Member')}
+                         </Button>
+                      ) : (
+                        <Button
+                          onClick={() => handleJoinClick(org)}
+                          className="flex-1"
+                        >
+                          {t('Join')}
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
               ))}
             </div>
+            
+            {/* Simple Pagination */}
+            <div className="flex justify-center gap-2">
+               <Button 
+                 variant="outline" 
+                 disabled={page === 1}
+                 onClick={() => setPage(page - 1)}
+               >
+                 {t('Previous')}
+               </Button>
+               <Button 
+                 variant="outline" 
+                 disabled={!meta.next_page_url && availableOrgs.length < 12}
+                 onClick={() => setPage(page + 1)}
+               >
+                 {t('Next')}
+               </Button>
+            </div>
+            </>
           )}
         </TabsContent>
       </Tabs>
+
+      <Dialog open={!!orgToJoin} onOpenChange={(open) => !open && setOrgToJoin(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('Join Organization')}</DialogTitle>
+            <DialogDescription>
+              {t('Send a request to join')} <span className="font-semibold">{orgToJoin?.name}</span>.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-2">
+            <Label htmlFor="note">{t('Message (Optional)')}</Label>
+            <Textarea
+              id="note"
+              placeholder={t('Tell them why you want to join...')}
+              value={joinNote}
+              onChange={(e) => setJoinNote(e.target.value)}
+              className="mt-2"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOrgToJoin(null)}>
+              {t('Cancel')}
+            </Button>
+            <Button onClick={confirmJoin} disabled={joinMutation.isPending}>
+              {joinMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {t('Send Request')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

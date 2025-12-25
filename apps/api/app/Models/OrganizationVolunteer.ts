@@ -31,6 +31,9 @@ export default class OrganizationVolunteer extends BaseModel {
   @column()
   public rating: number
 
+  @column()
+  public notes: string | null
+
   @column({
     prepare: (value: any) => {
       if (value == null) return null

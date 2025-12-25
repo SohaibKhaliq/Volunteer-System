@@ -412,6 +412,7 @@ Route.group(() => {
   Route.get('/hours', 'VolunteerController.myHours')
 
   // Organizations
+  Route.get('/organizations/browse', 'VolunteerController.browseOrganizations')
   Route.get('/organizations', 'VolunteerController.myOrganizations')
   Route.post('/organizations/:id/join', 'VolunteerController.joinOrganization')
   Route.delete('/organizations/:id/leave', 'VolunteerController.leaveOrganization')

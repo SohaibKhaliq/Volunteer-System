@@ -966,4 +966,39 @@ export default class VolunteerController {
       return response.internalServerError({ error: { message: 'Failed to load bookmarks' } })
     }
   }
+  /**
+   * Browse available organizations to join
+   */
+  public async browseOrganizations({ request, response }: HttpContextContract) {
+    try {
+      const { page = 1, perPage = 20, search, city, type } = request.qs()
+
+      const query = Organization.query()
+        .where('is_active', true)
+        .where('is_approved', true)
+        .where('public_profile', true)
+
+      if (search) {
+        query.where('name', 'ilike', `%${search}%`)
+      }
+
+      if (city) {
+        query.where('address', 'ilike', `%${city}%`)
+      }
+
+      if (type) {
+        query.where('type', type)
+      }
+
+      const organizations = await query.paginate(page, perPage)
+      
+      // We might want to attach "isMember" status if we had the user context handy and efficiently,
+      // but for "browse" usually we just list them. The frontend can cross-check with "myOrganizations".
+
+      return response.ok(organizations)
+    } catch (error) {
+      Logger.error('Browse organizations error: %o', error)
+      return response.internalServerError({ error: { message: 'Failed to load organizations' } })
+    }
+  }
 }
