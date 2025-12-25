@@ -795,9 +795,33 @@ export default class AdminController {
       const admin = await this.requireSuperAdmin(auth)
 
       const settings = request.body()
+      const keys = Object.keys(settings)
+
+      // Fetch previous values for audit trail
+      const existingRows = keys.length
+        ? await Database.from('system_settings').whereIn('key', keys).select('key', 'value')
+        : []
+
+      const previousValues: Record<string, any> = {}
+      for (const row of existingRows) {
+        try {
+          previousValues[row.key] = JSON.parse(row.value)
+        } catch {
+          previousValues[row.key] = row.value
+        }
+      }
 
       // Validate and save each setting
       for (const [key, value] of Object.entries(settings)) {
+        // Ensure objects are valid JSON-serializable
+        if (typeof value === 'object') {
+          try {
+            JSON.stringify(value)
+          } catch (err) {
+            throw new Error(`Invalid JSON for key ${key}`)
+          }
+        }
+
         const stringValue = typeof value === 'object' ? JSON.stringify(value) : String(value)
 
         await Database.insertQuery()
@@ -807,13 +831,13 @@ export default class AdminController {
           .merge(['value'])
       }
 
-      // Log the action
+      // Log the action with previous and new values for full auditability
       await AuditLog.safeCreate({
         userId: admin.id,
         action: 'system_settings_updated',
         targetType: 'system',
         targetId: 0,
-        metadata: JSON.stringify({ keys: Object.keys(settings) })
+        metadata: JSON.stringify({ keys, previousValues, newValues: settings })
       })
 
       return response.ok({ message: 'Settings updated successfully' })
@@ -839,6 +863,22 @@ export default class AdminController {
         'favicon_url'
       ])
 
+      const keys = Object.keys(branding).filter((k) => branding[k] !== undefined)
+
+      // Fetch previous branding values for audit
+      const existingRows = keys.length
+        ? await Database.from('system_settings').whereIn('key', keys).select('key', 'value')
+        : []
+
+      const previousBranding: Record<string, any> = {}
+      for (const row of existingRows) {
+        try {
+          previousBranding[row.key] = JSON.parse(row.value)
+        } catch {
+          previousBranding[row.key] = row.value
+        }
+      }
+
       // Save branding settings
       for (const [key, value] of Object.entries(branding)) {
         if (value !== undefined) {
@@ -850,13 +890,13 @@ export default class AdminController {
         }
       }
 
-      // Log the action
+      // Log the action with previous values
       await AuditLog.safeCreate({
         userId: admin.id,
         action: 'branding_updated',
         targetType: 'system',
         targetId: 0,
-        metadata: JSON.stringify(branding)
+        metadata: JSON.stringify({ previous: previousBranding, new: branding })
       })
 
       return response.ok({ message: 'Branding updated successfully', branding })
