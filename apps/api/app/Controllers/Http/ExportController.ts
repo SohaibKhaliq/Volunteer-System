@@ -107,7 +107,7 @@ export default class ExportController {
       return response.notFound({ message: 'User is not part of any organization' })
     }
 
-    if (!allowedRoles.includes(memberRecord.role || '')) {
+    if (!this.hasExportPermission(memberRecord.role)) {
       return response.forbidden({ message: 'You do not have permission to export data' })
     }
 
@@ -176,7 +176,7 @@ export default class ExportController {
       return response.notFound({ message: 'User is not part of any organization' })
     }
 
-    if (!allowedRoles.includes(memberRecord.role || '')) {
+    if (!this.hasExportPermission(memberRecord.role)) {
       return response.forbidden({ message: 'You do not have permission to export data' })
     }
 
@@ -257,7 +257,7 @@ export default class ExportController {
       return response.notFound({ message: 'User is not part of any organization' })
     }
 
-    if (!allowedRoles.includes(memberRecord.role || '')) {
+    if (!this.hasExportPermission(memberRecord.role)) {
       return response.forbidden({ message: 'You do not have permission to export data' })
     }
 
@@ -426,5 +426,91 @@ export default class ExportController {
       return `"${value.replace(/"/g, '""')}"`
     }
     return value
+  }
+
+  /**
+   * Queue export job for background processing
+   */
+  public async queueExport({ request, response, auth }: HttpContextContract) {
+    const user = auth.user!
+    const memberRecord = await OrganizationTeamMember.query().where('user_id', user.id).first()
+
+    if (!memberRecord) {
+      return response.notFound({ message: 'User is not part of any organization' })
+    }
+
+    if (!this.hasExportPermission(memberRecord.role)) {
+      return response.forbidden({ message: 'You do not have permission to export data' })
+    }
+
+    const { entityType, format = 'csv', filters = {} } = request.body()
+
+    // Create operation record
+    const DataOperation = (await import('App/Models/DataOperation')).default
+    const operation = await DataOperation.create({
+      operationType: 'export',
+      entityType,
+      format: format as 'csv' | 'xlsx',
+      status: 'pending',
+      organizationId: memberRecord.organizationId,
+      userId: user.id
+    })
+
+    operation.setFilters(filters)
+    await operation.save()
+
+    // Queue background job
+    const ExportService = (await import('App/Services/ExportService')).default
+    ExportService.processExport(operation.id).catch((err) => {
+      console.error('Export processing error:', err)
+    })
+
+    return response.ok({
+      message: 'Export queued successfully',
+      operationId: operation.id
+    })
+  }
+
+  /**
+   * Get export operation status
+   */
+  public async getExportStatus({ params, response, auth }: HttpContextContract) {
+    const user = auth.user!
+    const DataOperation = (await import('App/Models/DataOperation')).default
+    
+    const operation = await DataOperation.query()
+      .where('id', params.id)
+      .where('user_id', user.id)
+      .firstOrFail()
+
+    return response.ok({
+      id: operation.id,
+      status: operation.status,
+      progress: operation.progress,
+      totalRecords: operation.totalRecords,
+      filePath: operation.filePath,
+      createdAt: operation.createdAt,
+      completedAt: operation.completedAt
+    })
+  }
+
+  /**
+   * Download completed export
+   */
+  public async downloadExport({ params, response, auth }: HttpContextContract) {
+    const user = auth.user!
+    const DataOperation = (await import('App/Models/DataOperation')).default
+    
+    const operation = await DataOperation.query()
+      .where('id', params.id)
+      .where('user_id', user.id)
+      .where('status', 'completed')
+      .firstOrFail()
+
+    if (!operation.filePath) {
+      return response.notFound({ message: 'Export file not found' })
+    }
+
+    return response.download(operation.filePath)
   }
 }

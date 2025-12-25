@@ -209,6 +209,29 @@ Route.post('/resources/:id/reactivate', 'ResourcesController.reactivate').middle
 Route.resource('audit-logs', 'AuditLogsController')
   .middleware({ '*': ['auth'] })
   .only(['index', 'show'])
+
+// Import routes
+Route.group(() => {
+  Route.post('/volunteers', 'ImportController.importVolunteers')
+  Route.post('/opportunities', 'ImportController.importOpportunities')
+  Route.post('/queue', 'ImportController.queueImport')
+  Route.get('/:id/status', 'ImportController.getStatus')
+  Route.get('/templates/volunteers', 'ImportController.volunteersTemplate')
+  Route.get('/templates/opportunities', 'ImportController.opportunitiesTemplate')
+}).prefix('/imports').middleware(['auth'])
+
+// Export routes
+Route.group(() => {
+  Route.get('/volunteers', 'ExportController.exportVolunteers')
+  Route.get('/opportunities', 'ExportController.exportOpportunities')
+  Route.get('/applications', 'ExportController.exportApplications')
+  Route.get('/attendances', 'ExportController.exportAttendances')
+  Route.get('/hours', 'ExportController.exportHours')
+  Route.post('/queue', 'ExportController.queueExport')
+  Route.get('/:id/status', 'ExportController.getExportStatus')
+  Route.get('/:id/download', 'ExportController.downloadExport')
+}).prefix('/exports').middleware(['auth'])
+
 Route.resource('communications', 'CommunicationsController')
   .middleware({ '*': ['auth'] })
   .apiOnly()

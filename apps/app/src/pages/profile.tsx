@@ -24,7 +24,6 @@ import {
   CheckCircle2,
   History,
   ArrowRight,
-  Building2,
   Users,
   Camera,
   AlertCircle
@@ -896,9 +895,9 @@ export default function Profile() {
                         <Label htmlFor="email">Email <span className="text-xs text-muted-foreground">(Read-only)</span></Label>
                         <Input id="email" value={formData.email} disabled className="bg-slate-50" />
                         {userData.emailVerifiedAt && (
-                           <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
-                             <CheckCircle2 className="h-3 w-3" /> Email Verified
-                           </p>
+                          <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
+                            <CheckCircle2 className="h-3 w-3" /> Email Verified
+                          </p>
                         )}
                       </div>
                       <div className="space-y-2">
