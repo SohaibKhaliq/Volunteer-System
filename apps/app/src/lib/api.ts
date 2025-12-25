@@ -266,8 +266,12 @@ const api = {
 
   /* Notifications */
   listNotifications: async (params?: any) => axios.get('/notifications', { params }),
+  getUnreadNotificationCount: async () => axios.get('/notifications/unread-count'),
   markNotificationRead: async (id: number) => axios.put(`/notifications/${id}/read`),
   markNotificationUnread: async (id: number) => axios.put(`/notifications/${id}/unread`),
+  markAllNotificationsRead: async () => axios.post('/notifications/mark-all-read'),
+  bulkMarkNotificationsRead: async (ids: number[]) => axios.post('/notifications/bulk-mark-read', { ids }),
+  deleteNotification: async (id: number) => axios.delete(`/notifications/${id}`),
   // NOTE: SSE-based notifications stream was removed on the server and now returns 501.
   // Realtime notifications are delivered via Socket.IO — components should connect
   // with socket.io-client and update React Query caches instead of calling this
@@ -278,6 +282,21 @@ const api = {
       new Error('Notifications SSE stream removed on server — use Socket.IO for realtime notifications')
     );
   },
+
+  /* Notification Preferences */
+  getNotificationPreferences: async () => axios.get('/notification-preferences'),
+  updateNotificationPreferences: async (preferences: any[]) => axios.put('/notification-preferences', { preferences }),
+  resetNotificationPreferences: async () => axios.post('/notification-preferences/reset'),
+
+  /* Broadcasts (Admin) */
+  listBroadcasts: async (params?: any) => axios.get('/admin/broadcasts', { params }),
+  createBroadcast: async (data: any) => axios.post('/admin/broadcasts', data),
+  getBroadcast: async (id: number) => axios.get(`/admin/broadcasts/${id}`),
+  updateBroadcast: async (id: number, data: any) => axios.put(`/admin/broadcasts/${id}`, data),
+  sendBroadcast: async (id: number) => axios.post(`/admin/broadcasts/${id}/send`),
+  scheduleBroadcast: async (id: number, scheduledAt: string) => axios.post(`/admin/broadcasts/${id}/schedule`, { scheduledAt }),
+  cancelBroadcast: async (id: number) => axios.post(`/admin/broadcasts/${id}/cancel`),
+  getBroadcastStats: async (id: number) => axios.get(`/admin/broadcasts/${id}/stats`),
 
   /* Volunteer Hours endpoints */
   listHours: async () => axios.get('/hours'),
