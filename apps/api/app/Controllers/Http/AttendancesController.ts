@@ -1,4 +1,5 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import type { ModelQueryBuilderContract } from '@ioc:Adonis/Lucid/Orm'
 import Attendance from 'App/Models/Attendance'
 import Opportunity from 'App/Models/Opportunity'
 import Application from 'App/Models/Application'
@@ -40,6 +41,40 @@ export default class AttendancesController {
         message: 'You must have an accepted application to check in'
       })
     }
+
+    // --- Compliance Check ---
+    const ComplianceRequirement = (await import('App/Models/ComplianceRequirement')).default
+    const ComplianceDocument = (await import('App/Models/ComplianceDocument')).default
+    
+    const requirements = await ComplianceRequirement.query()
+      .where('organization_id', opportunity.organizationId)
+      .andWhere((q) => {
+        q.whereNull('opportunity_id').orWhere('opportunity_id', opportunity.id)
+      })
+      .andWhere('is_mandatory', true)
+      .andWhereIn('enforcement_level', ['onboarding', 'signup', 'checkin'])
+
+    if (requirements.length > 0) {
+      const docTypes = requirements.map(r => r.docType)
+      const userDocs = await ComplianceDocument.query()
+        .where('user_id', user.id)
+        .whereIn('doc_type', docTypes)
+        .where('status', 'Valid')
+        .where((q) => {
+          q.whereNull('expires_at').orWhere('expires_at', '>', DateTime.now().toSQL())
+        })
+      
+      const validDocTypes = new Set(userDocs.map(d => d.docType))
+      const missingRequirements = requirements.filter(r => !validDocTypes.has(r.docType))
+
+      if (missingRequirements.length > 0) {
+          return response.forbidden({ 
+            message: 'You do not meet the compliance requirements to check in.',
+            requirements: missingRequirements.map(r => ({ name: r.name, docType: r.docType }))
+          })
+      }
+    }
+    // --- End Compliance Check ---
 
     // Check if already checked in
     const existingCheckin = await Attendance.query()
@@ -204,7 +239,7 @@ export default class AttendancesController {
     const duration = attendance.getDurationHours()
 
     // Create volunteer hours record (pending approval)
-    let volunteerHour = null
+    let volunteerHour: VolunteerHour | null = null
     if (duration && duration > 0) {
       try {
         volunteerHour = await VolunteerHour.create({
@@ -218,6 +253,9 @@ export default class AttendancesController {
         // Send notification to organization team members about pending hours
         const opportunity = attendance.opportunity || (await Opportunity.find(opportunityId))
         if (opportunity && volunteerHour) {
+          // Store volunteerHour in a const to help TypeScript narrow the type
+          const createdVolunteerHour = volunteerHour
+          
           const orgTeamMembers = await OrganizationTeamMember.query()
             .where('organization_id', opportunity.organizationId)
             .select('user_id')
@@ -229,7 +267,7 @@ export default class AttendancesController {
                 userId: member.userId,
                 type: 'hours_pending_approval',
                 payload: JSON.stringify({
-                  volunteerHourId: volunteerHour.id,
+                  volunteerHourId: createdVolunteerHour.id,
                   opportunityId: opportunity.id,
                   opportunityTitle: opportunity.title,
                   volunteerId: user.id,
@@ -262,7 +300,7 @@ export default class AttendancesController {
     const { page = 1, perPage = 20, opportunity_id, user_id, from, to } = request.qs()
 
     let query = Attendance.query()
-      .whereHas('opportunity', (builder) => {
+      .whereHas('opportunity', (builder: ModelQueryBuilderContract<typeof Opportunity>) => {
         builder.where('organization_id', organizationId)
         if (opportunity_id) {
           builder.where('id', opportunity_id)
@@ -301,7 +339,7 @@ export default class AttendancesController {
     const { page = 1, perPage = 20, opportunity_id, user_id, from, to } = request.qs()
 
     let query = Attendance.query()
-      .whereHas('opportunity', (builder) => {
+      .whereHas('opportunity', (builder: ModelQueryBuilderContract<typeof Opportunity>) => {
         builder.where('organization_id', memberRecord.organizationId)
         if (opportunity_id) {
           builder.where('id', opportunity_id)
@@ -489,6 +527,45 @@ export default class AttendancesController {
         message: 'You must have an accepted application to check in'
       })
     }
+
+    // --- Compliance Check ---
+    const ComplianceRequirement = (await import('App/Models/ComplianceRequirement')).default
+    const ComplianceDocument = (await import('App/Models/ComplianceDocument')).default
+    
+    // Note: We use opportunity.organizationId, checking if opportunity has it (it should if loaded)
+    // If opportunity is partial, we might need to load it. 
+    // Line 469: `Opportunity.query().where('checkin_code', code).first()`
+    // We should ensure organizationId is available. It is a column, so it is.
+    
+    const requirements = await ComplianceRequirement.query()
+      .where('organization_id', opportunity.organizationId)
+      .andWhere((q) => {
+        q.whereNull('opportunity_id').orWhere('opportunity_id', opportunity.id)
+      })
+      .andWhere('is_mandatory', true)
+      .andWhereIn('enforcement_level', ['onboarding', 'signup', 'checkin'])
+
+    if (requirements.length > 0) {
+      const docTypes = requirements.map(r => r.docType)
+      const userDocs = await ComplianceDocument.query()
+        .where('user_id', user.id)
+        .whereIn('doc_type', docTypes)
+        .where('status', 'Valid')
+        .where((q) => {
+          q.whereNull('expires_at').orWhere('expires_at', '>', DateTime.now().toSQL())
+        })
+      
+      const validDocTypes = new Set(userDocs.map(d => d.docType))
+      const missingRequirements = requirements.filter(r => !validDocTypes.has(r.docType))
+
+      if (missingRequirements.length > 0) {
+          return response.forbidden({ 
+            message: 'You do not meet the compliance requirements to check in.',
+            requirements: missingRequirements.map(r => ({ name: r.name, docType: r.docType }))
+          })
+      }
+    }
+    // --- End Compliance Check ---
 
     // Check if already checked in
     const existingCheckin = await Attendance.query()
