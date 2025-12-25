@@ -24,6 +24,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ShiftManagement } from '@/components/opportunities/ShiftManagement'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Loader2 } from 'lucide-react'
@@ -127,8 +129,16 @@ export default function OrganizationOpportunityEdit() {
               <CardTitle>{isEdit ? 'Edit Opportunity' : 'Create Opportunity'}</CardTitle>
           </CardHeader>
           <CardContent>
-              <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {isEdit ? (
+                <Tabs defaultValue="details">
+                    <TabsList className="mb-4">
+                        <TabsTrigger value="details">Details</TabsTrigger>
+                        {form.watch('type') === 'shift' && <TabsTrigger value="shifts">Shifts</TabsTrigger>}
+                    </TabsList>
+                    
+                    <TabsContent value="details">
+                        <Form {...form}>
+                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                       
                       <FormField
                         control={form.control}
@@ -279,8 +289,175 @@ export default function OrganizationOpportunityEdit() {
 
                   </form>
               </Form>
-          </CardContent>
-       </Card>
+            </TabsContent>
+            
+            <TabsContent value="shifts">
+                <ShiftManagement opportunityId={id!} />
+            </TabsContent>
+        </Tabs>
+    ) : (
+        <Form {...form}>
+             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                {/* Re-render form fields for create mode to avoid complexity of sharing form instance if desired, 
+                    OR just render the same form fields. 
+                    Given the file structure, it's easier to just NOT wrap in tabs for Create mode 
+                    or wrap both but 'shifts' tab is hidden/disabled until created.
+                    
+                    However, my previous plan was to check isEdit.
+                    If isEdit is false, we just show the form.
+                */}
+                <FormField
+                        control={form.control}
+                        name="title"
+                        render={({ field }: { field: any }) => (
+                          <FormItem>
+                            <FormLabel>Title</FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g. Beach Cleanup" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="description"
+                        render={({ field }: { field: any }) => (
+                          <FormItem>
+                            <FormLabel>Description</FormLabel>
+                            <FormControl>
+                              <Textarea placeholder="Describe the event, tasks involved..." {...field} rows={5} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="start_at"
+                            render={({ field }: { field: any }) => (
+                              <FormItem>
+                                <FormLabel>Start Date & Time</FormLabel>
+                                <FormControl>
+                                  <Input type="datetime-local" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="end_at"
+                            render={({ field }: { field: any }) => (
+                              <FormItem>
+                                <FormLabel>End Date & Time</FormLabel>
+                                <FormControl>
+                                  <Input type="datetime-local" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="location"
+                            render={({ field }: { field: any }) => (
+                              <FormItem>
+                                <FormLabel>Location</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Address or Online Link" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                          <FormField
+                            control={form.control}
+                            name="capacity"
+                            render={({ field }: { field: any }) => (
+                              <FormItem>
+                                <FormLabel>Capacity</FormLabel>
+                                <FormControl>
+                                  <Input type="number" min="0" placeholder="0 for unlimited" {...field} />
+                                </FormControl>
+                                <FormDescription>Enter 0 for unlimited spots.</FormDescription>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                         <FormField
+                            control={form.control}
+                            name="type"
+                            render={({ field }: { field: any }) => (
+                              <FormItem>
+                                <FormLabel>Type</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select type" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="event">Event</SelectItem>
+                                    <SelectItem value="shift">Shift</SelectItem>
+                                    <SelectItem value="recurring">Recurring</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+
+                         <FormField
+                            control={form.control}
+                            name="visibility"
+                            render={({ field }: { field: any }) => (
+                              <FormItem>
+                                <FormLabel>Visibility</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select visibility" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    <SelectItem value="public">Public</SelectItem>
+                                    <SelectItem value="org-only">Organization Members Only</SelectItem>
+                                    <SelectItem value="invite-only">Invite Only</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                      </div>
+
+                      <div className="flex justify-end gap-4 pt-4">
+                          <Button variant="outline" type="button" onClick={() => navigate('/organization/opportunities')}>
+                              Cancel
+                          </Button>
+                          <Button type="submit" disabled={mutation.isPending}>
+                              {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                              {isEdit ? 'Save Changes' : 'Create Opportunity'}
+                          </Button>
+                      </div>
+
+                  </form>
+        </Form>
+    )}
+           </CardContent>
+        </Card>
     </div>
   )
 }
