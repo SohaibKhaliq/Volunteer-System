@@ -27,8 +27,10 @@ import {
   Download,
   Trash2,
   MoreHorizontal,
-  Loader2
+  Loader2,
+  Shield
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export default function OrganizationCompliance() {
   const queryClient = useQueryClient();
@@ -198,6 +200,12 @@ export default function OrganizationCompliance() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        <Button variant="outline" className="ml-2" asChild>
+            <Link to="/organization/compliance-requirements" className="flex items-center gap-2">
+                <Shield className="h-4 w-4" />
+                Manage Requirements
+            </Link>
+        </Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
