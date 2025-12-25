@@ -601,6 +601,124 @@ export default class VolunteerController {
       })
     } catch (error) {
       Logger.error('Opportunity detail error: %o', error)
+      return response.internalServerError({ error: { message: 'Failed to load opportunity' } })
+    }
+  }
+
+  /**
+   * Apply for an opportunity
+   */
+  public async apply({ auth, params, request, response }: HttpContextContract) {
+    try {
+      await auth.use('api').authenticate()
+      const user = auth.user!
+      const opportunityId = params.id
+      const { notes } = request.only(['notes'])
+
+      const opportunity = await Opportunity.find(opportunityId)
+      if (!opportunity) {
+        return response.notFound({ message: 'Opportunity not found' })
+      }
+
+      if (opportunity.status !== 'published') {
+        return response.badRequest({ message: 'Opportunity is not open for applications' })
+      }
+
+      // Check if already applied
+      const existingApplication = await Application.query()
+        .where('opportunity_id', opportunityId)
+        .where('user_id', user.id)
+        .first()
+
+      if (existingApplication) {
+        return response.badRequest({ message: 'You have already applied for this opportunity' })
+      }
+
+      // Check capacity
+      // We count 'accepted' applications against capacity. 
+      // 'applied' might count depending on policy, but usually capacity is for confirmed spots.
+      // However, to prevent over-subscription, we might count 'applied' + 'accepted'.
+      // Let's assume strict capacity: accepted only counts? Or maybe 'applied' reserves a spot temporarily?
+      // Simple logic: if count(accepted) >= capacity, go to waitlist.
+      
+      const acceptedCountRaw = await Application.query()
+        .where('opportunity_id', opportunityId)
+        .where('status', 'accepted')
+        .count('* as total')
+      
+      const acceptedCount = acceptedCountRaw[0].$extras.total
+      
+      let status = 'applied'
+      let message = 'Application submitted successfully'
+
+      if (opportunity.capacity > 0 && acceptedCount >= opportunity.capacity) {
+        status = 'waitlisted'
+        message = 'Opportunity is full. You have been added to the waitlist.'
+      } else {
+        // Auto-approve logic could go here if the org has it enabled.
+        // For now, default to 'applied' (pending approval).
+      }
+
+      const application = await Application.create({
+        opportunityId: opportunity.id,
+        userId: user.id,
+        status,
+        appliedAt: DateTime.now(),
+        notes
+      })
+
+      // Send notification to Org Admins? (TODO)
+
+      return response.created({
+        message,
+        application
+      })
+
+    } catch (error) {
+       Logger.error('Apply opportunity error: %o', error)
+       return response.internalServerError({ error: { message: 'Failed to apply for opportunity' } })
+    }
+  }
+
+  /**
+   * Withdraw application
+   */
+  public async withdraw({ auth, params, response }: HttpContextContract) {
+    try {
+      await auth.use('api').authenticate()
+      const user = auth.user!
+      const opportunityId = params.id // Assuming route is POST /opportunities/:id/withdraw or DELETE /applications/:id
+      // Route in plan was not specific, but let's assume /opportunities/:id/withdraw for user convenience
+      
+      // If the route is DELETE /applications/:id, params.id is applicationId.
+      // Let's check routes.ts... typically we might do DELETE /opportunities/:id/application
+      // Checking routes.ts... it wasn't there yet.
+      // Let's implement it as: POST /opportunities/:id/withdraw in routes, handled here.
+
+      const application = await Application.query()
+        .where('opportunity_id', opportunityId)
+        .where('user_id', user.id)
+        .whereIn('status', ['applied', 'accepted', 'waitlisted'])
+        .first()
+
+      if (!application) {
+        return response.badRequest({ message: 'No active application found for this opportunity' })
+      }
+
+      application.status = 'withdrawn'
+      // application.respondedAt ? No
+      await application.save()
+
+      // If they were accepted, we might want to auto-promote someone from waitlist (Future enhancement)
+
+      return response.ok({ message: 'Application withdrawn' })
+    } catch (error) {
+       Logger.error('Withdraw application error: %o', error)
+       return response.internalServerError({ error: { message: 'Failed to withdraw application' } })
+    }
+  }      })
+    } catch (error) {
+      Logger.error('Opportunity detail error: %o', error)
       return response.notFound({ error: { message: 'Opportunity not found' } })
     }
   }
