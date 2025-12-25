@@ -6,6 +6,7 @@ import SystemSetting from 'App/Models/SystemSetting'
 import Logger from '@ioc:Adonis/Core/Logger'
 
 export default class EmailService {
+
   /**
    * Send notification email to a user
    */
