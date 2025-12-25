@@ -52,8 +52,9 @@ export default class NotificationService {
         try {
           const user = await User.find(userId)
           if (user) {
-            await EmailService.sendNotificationEmail(user, notification)
-            await notification.markEmailSent()
+            // await EmailService.sendNotificationEmail(user, notification) // Temporarily disabled
+            // await notification.markEmailSent()
+            Logger.info('Email notification skipped (EmailService temporarily disabled)')
           }
         } catch (emailError) {
           Logger.error('Failed to send notification email: %o', emailError)
@@ -163,5 +164,24 @@ export default class NotificationService {
     }
 
     return await query
+  }
+
+  /**
+   * Convenience method for creating notifications (alias for create)
+   */
+  public static async createNotification(data: {
+    userId: number
+    type: string
+    title?: string
+    message?: string
+    payload?: Record<string, any>
+    priority?: 'low' | 'normal' | 'high' | 'urgent'
+    category?: string
+    actionUrl?: string
+    actionText?: string
+    expiresAt?: DateTime
+  }): Promise<Notification | null> {
+    const { userId, type, ...notificationData } = data
+    return await this.create(userId, type, notificationData)
   }
 }
