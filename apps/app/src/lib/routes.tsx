@@ -61,6 +61,8 @@ import OrganizationLayout from '@/components/templates/OrganizationLayout';
 import OrganizationDashboard from '@/pages/organization/dashboard';
 import OrganizationProfile from '@/pages/organization/profile';
 import OrganizationEvents from '@/pages/organization/events';
+import OrganizationOpportunities from '@/pages/organization/opportunities';
+import OrganizationOpportunityEdit from '@/pages/organization/opportunities/edit';
 import OrganizationAchievements from '@/pages/organization/achievements';
 import OrganizationVolunteers from '@/pages/organization/volunteers';
 import OrganizationResources from '@/pages/organization/resources';
@@ -79,6 +81,8 @@ import OrganizationDetail from '@/pages/organization-detail';
 // Volunteer-specific layout/pages removed: profile now rendered inside main Layout
 import FeedbackDashboard from '@/pages/feedback';
 import TakeSurvey from '@/pages/feedback/[id]/take';
+import VolunteerOpportunities from '@/pages/volunteer/opportunities';
+import VolunteerOpportunityDetail from '@/pages/volunteer/opportunities/detail';
 
 // Simple wrappers to ensure pages are vertically scrollable
 const ScrollWrapper = ({ children }: any) => (
@@ -163,6 +167,9 @@ const routes: RouteObject[] = [
       { path: 'profile', element: <OrganizationProfile /> },
       { path: 'team', element: <OrganizationTeam /> },
       { path: 'events', element: <OrganizationEvents /> },
+      { path: 'opportunities', element: <OrganizationOpportunities /> },
+      { path: 'opportunities/create', element: <OrganizationOpportunityEdit /> },
+      { path: 'opportunities/:id/edit', element: <OrganizationOpportunityEdit /> },
       { path: 'resources', element: <OrganizationResources /> },
       { path: 'achievements', element: <OrganizationAchievements /> },
       { path: 'volunteers', element: <OrganizationVolunteers /> },
@@ -206,6 +213,8 @@ const routes: RouteObject[] = [
       { path: 'feedback/:id/take', element: <TakeSurvey /> },
       { path: 'contact', element: <Contact /> },
       { path: 'organizations/:id', element: <OrganizationDetail /> },
+      { path: 'volunteer/opportunities', element: <VolunteerOpportunities /> },
+      { path: 'volunteer/opportunities/:id', element: <VolunteerOpportunityDetail /> },
       { path: 'events/:id', element: <Detail /> }
     ]
   },
