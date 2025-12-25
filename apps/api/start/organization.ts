@@ -41,6 +41,12 @@ Route.group(() => {
   Route.delete('/opportunities/:id', 'OpportunitiesController.destroy').middleware(['auth'])
   Route.post('/opportunities/:id/publish', 'OpportunitiesController.publish').middleware(['auth'])
 
+  // Shift Management within Opportunities
+  Route.get('/opportunities/:opportunityId/shifts', 'ShiftsController.indexForOpportunity').middleware(['auth'])
+  Route.post('/opportunities/:opportunityId/shifts', 'ShiftsController.storeForOpportunity').middleware(['auth'])
+  Route.put('/shifts/:id', 'ShiftsController.update').middleware(['auth'])
+  Route.delete('/shifts/:id', 'ShiftsController.destroy').middleware(['auth'])
+
   // Applications for opportunities
   Route.get('/applications', 'ApplicationsController.myOrganizationApplications').middleware([
     'auth'
