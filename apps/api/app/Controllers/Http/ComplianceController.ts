@@ -6,8 +6,9 @@ import Logger from '@ioc:Adonis/Core/Logger'
 import ComplianceService from 'App/Services/ComplianceService'
 
 export default class ComplianceController {
-  public async index({ response }: HttpContextContract) {
-    const docs = await ComplianceDocument.query().preload('user')
+  public async index({ auth, response }: HttpContextContract) {
+    const user = auth.user!
+    const docs = await ComplianceDocument.query().where('user_id', user.id).preload('user')
     return response.ok(docs)
   }
 
@@ -41,8 +42,9 @@ export default class ComplianceController {
   public async store({ request, response, auth }: HttpContextContract) {
     try {
       await auth.use('api').authenticate()
+      const user = auth.user!
       const payload = request.only([
-        'user_id',
+        // 'user_id', // Don't allow setting arbitrary user_id
         'doc_type',
         'issued_at',
         'expires_at',
@@ -104,19 +106,19 @@ export default class ComplianceController {
         }
       }
 
-      payload['metadata'] = metadata
-
-      // Set initial status
-      if (!payload['status']) {
-        payload['status'] = 'pending'
+      const createPayload: any = {
+        ...payload,
+        userId: user.id, // Enforce current user
+        metadata,
+        status: 'pending' // Always start as pending
       }
 
-      const doc = await ComplianceDocument.create(payload)
+      const doc = await ComplianceDocument.create(createPayload)
 
       // Log compliance creation for audit
       await ComplianceService.logComplianceCheck(
-        payload.user_id,
-        payload.doc_type,
+        user.id,
+        createPayload.doc_type,
         'pass',
         { action: 'document_created', docId: doc.id }
       )
@@ -130,18 +132,27 @@ export default class ComplianceController {
     }
   }
 
-  public async show({ params, response }: HttpContextContract) {
+  public async show({ auth, params, response }: HttpContextContract) {
     const doc = await ComplianceDocument.find(params.id)
     if (!doc) return response.notFound()
+    
+    if (doc.userId !== auth.user!.id) {
+        return response.forbidden({ message: 'Access denied' })
+    }
+
     return response.ok(doc)
   }
 
-  public async update({ params, request, response }: HttpContextContract) {
+  public async update({ auth, params, request, response }: HttpContextContract) {
     try {
       const doc = await ComplianceDocument.find(params.id)
       if (!doc) return response.notFound()
 
-      const incoming = request.only(['doc_type', 'issued_at', 'expires_at', 'status'])
+      if (doc.userId !== auth.user!.id) {
+        return response.forbidden({ message: 'Access denied' })
+    }
+
+      const incoming = request.only(['doc_type', 'issued_at', 'expires_at']) // Removed status, user shouldn't verify own docs
 
       // Normalize incoming ISO date strings to Luxon DateTime objects
       if (incoming.issued_at) {
@@ -168,6 +179,9 @@ export default class ComplianceController {
       }
 
       incoming['metadata'] = metadata
+      // Reset status to pending on update
+      incoming['status'] = 'pending'
+      
       doc.merge(incoming)
       await doc.save()
       return response.ok(doc)
@@ -179,9 +193,14 @@ export default class ComplianceController {
     }
   }
 
-  public async destroy({ params, response }: HttpContextContract) {
+  public async destroy({ auth, params, response }: HttpContextContract) {
     const doc = await ComplianceDocument.find(params.id)
     if (!doc) return response.notFound()
+    
+    if (doc.userId !== auth.user!.id) {
+        return response.forbidden({ message: 'Access denied' })
+    }
+
     await doc.delete()
     return response.noContent()
   }

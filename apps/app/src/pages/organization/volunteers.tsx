@@ -17,6 +17,13 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Search, Filter, MoreHorizontal, Mail, Star, Loader2, Plus, Trash2, FileText } from 'lucide-react';
@@ -126,6 +133,7 @@ export default function OrganizationVolunteers() {
     phone: '',
     role: 'Volunteer',
     status: 'active',
+    notes: '',
     skills: [] as string[]
   });
 
@@ -137,6 +145,7 @@ export default function OrganizationVolunteers() {
       phone: '',
       role: 'Volunteer',
       status: 'active',
+      notes: '',
       skills: []
     });
     setIsAddOpen(true);
@@ -149,7 +158,8 @@ export default function OrganizationVolunteers() {
       email: volunteer.email,
       phone: volunteer.phone ?? '',
       role: volunteer.role,
-      status: volunteer.status,
+      status: volunteer.status || 'active',
+      notes: volunteer.notes || '',
       skills: volunteer.skills ? volunteer.skills : []
     });
     setIsAddOpen(true);
@@ -445,7 +455,7 @@ export default function OrganizationVolunteers() {
 
       {/* Add/Edit Dialog */}
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>{editingVolunteer ? 'Edit Volunteer' : 'Add Volunteer'}</DialogTitle>
             <DialogDescription>
@@ -453,63 +463,86 @@ export default function OrganizationVolunteers() {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                Name
-              </Label>
-              <Input
-                id="name"
-                className="col-span-3"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              />
+            <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                   <Label htmlFor="name">Name</Label>
+                   <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                   <Label htmlFor="email">Email</Label>
+                   <Input
+                    id="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  />
+                </div>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="email" className="text-right">
-                Email
-              </Label>
-              <Input
-                id="email"
-                className="col-span-3"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              />
+            
+            <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                   <Label htmlFor="phone">Phone</Label>
+                   <Input
+                    id="phone"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                   <Label htmlFor="role">Role</Label>
+                   <Select value={formData.role} onValueChange={(v) => setFormData({...formData, role: v})}>
+                      <SelectTrigger>
+                         <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                         <SelectItem value="Volunteer">Volunteer</SelectItem>
+                         <SelectItem value="Team Leader">Team Leader</SelectItem>
+                         <SelectItem value="Coordinator">Coordinator</SelectItem>
+                         <SelectItem value="Manager">Manager</SelectItem>
+                      </SelectContent>
+                   </Select>
+                </div>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="phone" className="text-right">
-                Phone
-              </Label>
-              <Input
-                id="phone"
-                className="col-span-3"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              />
+
+            <div className="grid grid-cols-2 gap-4">
+                 <div className="space-y-2">
+                    <Label htmlFor="status">Status</Label>
+                     <Select value={formData.status} onValueChange={(v) => setFormData({...formData, status: v})}>
+                      <SelectTrigger>
+                         <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                         <SelectItem value="active">Active</SelectItem>
+                         <SelectItem value="pending">Pending</SelectItem>
+                         <SelectItem value="inactive">Inactive</SelectItem>
+                         <SelectItem value="suspended">Suspended</SelectItem>
+                      </SelectContent>
+                   </Select>
+                 </div>
+                 <div className="space-y-2">
+                     <Label>Skills</Label>
+                     <TagInput
+                      id="skills"
+                      value={formData.skills as string[]}
+                      onChange={(v) => setFormData({ ...formData, skills: v })}
+                      placeholder="Add..."
+                    />
+                 </div>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="role" className="text-right">
-                Role
-              </Label>
-              <Input
-                id="role"
-                className="col-span-3"
-                value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-              />
+
+            <div className="space-y-2">
+               <Label htmlFor="notes">Internal Notes (Optional)</Label>
+               <Textarea 
+                  id="notes" 
+                  placeholder="Private notes about this volunteer..."
+                  value={formData.notes}
+                  onChange={(e) => setFormData({...formData, notes: e.target.value})}
+               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="skills" className="text-right">
-                Skills
-              </Label>
-              <div className="col-span-3">
-                <TagInput
-                  id="skills"
-                  value={formData.skills as string[]}
-                  onChange={(v) => setFormData({ ...formData, skills: v })}
-                  placeholder="Add skill and press Enter"
-                />
-              </div>
-            </div>
+
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddOpen(false)}>

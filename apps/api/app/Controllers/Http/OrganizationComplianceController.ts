@@ -2,21 +2,71 @@ import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import ComplianceDocument from 'App/Models/ComplianceDocument'
 
 export default class OrganizationComplianceController {
-  public async index({ request, response }: HttpContextContract) {
-    // In a real app, we'd filter by organization's users
-    // For now, we'll just return all docs or filter by user_id if provided
+  public async index({ auth, request, response }: HttpContextContract) {
     const { user_id } = request.qs()
-    const query = ComplianceDocument.query().preload('user')
+    const user = auth.user!
 
-    if (user_id) {
-      query.where('user_id', user_id)
+    const OrganizationTeamMember = await import('App/Models/OrganizationTeamMember')
+    const member = await OrganizationTeamMember.default
+      .query()
+      .where('user_id', user.id)
+      .first()
+
+    if (!member) {
+      return response.forbidden({ message: 'You are not an organization admin' })
     }
 
-    const docs = await query
+    const orgId = member.organizationId
+
+    // Get all users in this organization (team members + volunteers)
+    const OrganizationVolunteer = await import('App/Models/OrganizationVolunteer')
+    
+    // Subquery for volunteers
+    const volunteerUserIds = await OrganizationVolunteer.default.query()
+        .where('organization_id', orgId)
+        .select('user_id')
+
+    // Subquery for team members
+    const teamUserIds = await OrganizationTeamMember.default.query()
+        .where('organization_id', orgId)
+        .select('user_id')
+
+    const userIds = [
+        ...volunteerUserIds.map(v => v.userId),
+        ...teamUserIds.map(t => t.userId)
+    ]
+    
+    // Filter by specific user if requested, but ensure they are in the org
+    if (user_id) {
+        if (!userIds.includes(Number(user_id))) {
+             return response.ok([]) // Or forbidden, but empty list is safer for search
+        }
+        const docs = await ComplianceDocument.query()
+            .where('user_id', user_id)
+            .preload('user')
+        return response.ok(docs)
+    }
+
+    const docs = await ComplianceDocument.query()
+        .whereIn('user_id', userIds)
+        .preload('user')
+
     return response.ok(docs)
   }
 
-  public async store({ request, response }: HttpContextContract) {
+  public async store({ auth, request, response }: HttpContextContract) {
+     // Admin creating doc for a user?
+     // For now, let's assume this is for manual uploading by admins for a user
+     // We must verify the target user is in the org
+    const user = auth.user!
+    const OrganizationTeamMember = await import('App/Models/OrganizationTeamMember')
+    const member = await OrganizationTeamMember.default
+      .query()
+      .where('user_id', user.id)
+      .first()
+
+    if (!member) return response.forbidden({ message: 'Not an org admin' })
+
     const payload = request.only([
       'user_id',
       'doc_type',
@@ -25,13 +75,56 @@ export default class OrganizationComplianceController {
       'metadata',
       'status'
     ])
+
+    // Verify target user is in org
+    const targetUserId = payload.user_id
+    const OrganizationVolunteer = await import('App/Models/OrganizationVolunteer')
+    const isVolunteer = await OrganizationVolunteer.default.query()
+        .where('organization_id', member.organizationId)
+        .where('user_id', targetUserId)
+        .first()
+    
+    const isTeam = await OrganizationTeamMember.default.query()
+        .where('organization_id', member.organizationId)
+        .where('user_id', targetUserId)
+        .first()
+
+    if (!isVolunteer && !isTeam) {
+        return response.forbidden({ message: 'User does not belong to your organization' })
+    }
+
     const doc = await ComplianceDocument.create(payload)
     return response.created(doc)
   }
 
-  public async update({ params, request, response }: HttpContextContract) {
+  public async update({ auth, params, request, response }: HttpContextContract) {
+    const user = auth.user!
+    const OrganizationTeamMember = await import('App/Models/OrganizationTeamMember')
+    const member = await OrganizationTeamMember.default
+      .query()
+      .where('user_id', user.id)
+      .first()
+
+    if (!member) return response.forbidden({ message: 'Not an org admin' })
+
     const doc = await ComplianceDocument.find(params.id)
     if (!doc) return response.notFound()
+
+    // Verify doc owner is in org
+    const OrganizationVolunteer = await import('App/Models/OrganizationVolunteer')
+    const isVolunteer = await OrganizationVolunteer.default.query()
+        .where('organization_id', member.organizationId)
+        .where('user_id', doc.userId)
+        .first()
+
+    const isTeam = await OrganizationTeamMember.default.query()
+        .where('organization_id', member.organizationId)
+        .where('user_id', doc.userId)
+        .first()
+
+    if (!isVolunteer && !isTeam) {
+        return response.forbidden({ message: 'Document does not belong to your organization' })
+    }
 
     const payload = request.only(['doc_type', 'issued_at', 'expires_at', 'metadata', 'status'])
     doc.merge(payload)
@@ -39,9 +132,35 @@ export default class OrganizationComplianceController {
     return response.ok(doc)
   }
 
-  public async destroy({ params, response }: HttpContextContract) {
+  public async destroy({ auth, params, response }: HttpContextContract) {
+    const user = auth.user!
+    const OrganizationTeamMember = await import('App/Models/OrganizationTeamMember')
+    const member = await OrganizationTeamMember.default
+      .query()
+      .where('user_id', user.id)
+      .first()
+
+    if (!member) return response.forbidden({ message: 'Not an org admin' })
+
     const doc = await ComplianceDocument.find(params.id)
     if (!doc) return response.notFound()
+
+     // Verify doc owner is in org
+    const OrganizationVolunteer = await import('App/Models/OrganizationVolunteer')
+    const isVolunteer = await OrganizationVolunteer.default.query()
+        .where('organization_id', member.organizationId)
+        .where('user_id', doc.userId)
+        .first()
+
+    const isTeam = await OrganizationTeamMember.default.query()
+        .where('organization_id', member.organizationId)
+        .where('user_id', doc.userId)
+        .first()
+
+    if (!isVolunteer && !isTeam) {
+        return response.forbidden({ message: 'Document does not belong to your organization' })
+    }
+
     await doc.delete()
     return response.noContent()
   }

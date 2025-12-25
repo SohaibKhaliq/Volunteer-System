@@ -59,6 +59,22 @@ export default class VolunteerHoursController {
   public async update({ auth, params, request, response }: HttpContextContract) {
     const record = await VolunteerHour.find(params.id)
     if (!record) return response.notFound()
+
+    // Security Check: Ensure auth user manages the organization for this event
+    await record.load('event')
+    if (record.event && record.event.organizationId) {
+        const OrganizationTeamMember = await import('App/Models/OrganizationTeamMember')
+        const member = await OrganizationTeamMember.default.query()
+            .where('user_id', auth.user!.id)
+            .where('organization_id', record.event.organizationId)
+            .first()
+
+        // If strict mode, we should also check member.role for specific permissions
+        if (!member) {
+            return response.forbidden({ message: 'You do not have permission to manage hours for this organization' })
+        }
+    }
+
     const previousStatus = record.status
     record.merge(request.only(['status']))
     await record.save()
@@ -88,15 +104,6 @@ export default class VolunteerHoursController {
     // Log this action so admins can audit status changes
     try {
       const user = auth.user!
-      // try to resolve organization for this volunteer (first match)
-      let orgId: number | null = null
-      try {
-        const row: any = await Database.from('organization_volunteers')
-          .where('user_id', rec.user?.id ?? rec.user_id)
-          .first()
-        if (row) orgId = row.organization_id
-      } catch {}
-
       await AuditLog.safeCreate({
         userId: user.id,
         action: 'volunteer_hours_status_changed',
@@ -104,7 +111,7 @@ export default class VolunteerHoursController {
           previousStatus,
           newStatus: rec.status,
           hourId: rec.id,
-          organizationId: orgId
+          organizationId: record.event?.organizationId
         })
       })
     } catch (e) {
@@ -223,6 +230,32 @@ export default class VolunteerHoursController {
 
   public async bulkUpdate({ auth, request, response }: HttpContextContract) {
     const { ids, status } = request.only(['ids', 'status'])
+    
+    // Security: Fetch all hours, preload events, and check permissions
+    const hoursToCheck = await VolunteerHour.query()
+        .whereIn('id', ids)
+        .preload('event')
+
+    if (hoursToCheck.length === 0) {
+        return response.ok({ message: 'No records found' })
+    }
+
+    const OrganizationTeamMember = await import('App/Models/OrganizationTeamMember')
+    // Optimisation: Get the user's organization(s) first
+    // Assuming user mostly belongs to one org, specifically relevant here
+    const memberOrgs = await OrganizationTeamMember.default.query()
+        .where('user_id', auth.user!.id)
+        .select('organization_id')
+    
+    const allowedOrgIds = new Set(memberOrgs.map(m => m.organizationId))
+
+    // Verify every hour record belongs to an allowed organization
+    for (const h of hoursToCheck) {
+        if (h.event && h.event.organizationId && !allowedOrgIds.has(h.event.organizationId)) {
+             return response.forbidden({ message: `Permission denied for hour record ${h.id} belonging to organization ${h.event.organizationId}` })
+        }
+    }
+
     await VolunteerHour.query().whereIn('id', ids).update({ status })
 
     // If approving hours, send notifications and check achievements
@@ -256,25 +289,10 @@ export default class VolunteerHoursController {
     // Log bulk change
     try {
       const user = auth.user!
-      // try to resolve organizations for the given ids (limited)
-      let orgIds: number[] = []
-      try {
-        const rows: any[] = await Database.from('volunteer_hours')
-          .whereIn('id', ids)
-          .join(
-            'organization_volunteers',
-            'organization_volunteers.user_id',
-            'volunteer_hours.user_id'
-          )
-          .distinct('organization_volunteers.organization_id as organization_id')
-
-        orgIds = rows.map((r) => r.organization_id)
-      } catch {}
-
       await AuditLog.safeCreate({
         userId: user.id,
         action: 'volunteer_hours_bulk_update',
-        details: JSON.stringify({ ids, newStatus: status, organizationIds: orgIds })
+        details: JSON.stringify({ ids, newStatus: status, adminId: user.id })
       })
     } catch (e) {
       // ignore logging error
