@@ -1,5 +1,17 @@
 {
   "commands": {
+    "compliance:check-expiry": {
+      "settings": {
+        "loadApp": true,
+        "stayAlive": false
+      },
+      "commandPath": "./commands/CheckComplianceExpiry",
+      "commandName": "compliance:check-expiry",
+      "description": "Check for expiring compliance documents and send notifications",
+      "args": [],
+      "aliases": [],
+      "flags": []
+    },
     "reminder:compliance": {
       "settings": {},
       "commandPath": "./commands/ComplianceExpiryReminder",
