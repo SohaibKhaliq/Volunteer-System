@@ -411,6 +411,8 @@ Route.group(() => {
 
   // Attendance & Hours
   Route.get('/attendance', 'VolunteerController.myAttendance')
+  Route.post('/attendance/checkin', 'ShiftAssignmentsController.checkIn')
+  Route.post('/attendance/checkout', 'ShiftAssignmentsController.checkOut')
   Route.get('/hours', 'VolunteerController.myHours')
 
   // Organizations
