@@ -52,9 +52,8 @@ export default class NotificationService {
         try {
           const user = await User.find(userId)
           if (user) {
-            // await EmailService.sendNotificationEmail(user, notification) // Temporarily disabled
-            // await notification.markEmailSent()
-            Logger.info('Email notification skipped (EmailService temporarily disabled)')
+            await EmailService.sendNotificationEmail(user, notification)
+            await notification.markEmailSent()
           }
         } catch (emailError) {
           Logger.error('Failed to send notification email: %o', emailError)
