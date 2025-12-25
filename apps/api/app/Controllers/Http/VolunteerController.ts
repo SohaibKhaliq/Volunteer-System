@@ -1,6 +1,8 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
+import { DateTime } from 'luxon'
 import Logger from '@ioc:Adonis/Core/Logger'
 import Database from '@ioc:Adonis/Lucid/Database'
+import type { ModelQueryBuilderContract } from '@ioc:Adonis/Lucid/Orm'
 import User from 'App/Models/User'
 import Application from 'App/Models/Application'
 import Attendance from 'App/Models/Attendance'
@@ -38,7 +40,7 @@ export default class VolunteerController {
       // Lucid may return aggregation results in different shapes depending on DB adapter.
       const rawTotal = Array.isArray(hoursResult)
         ? (hoursResult[0]?.$extras?.total ??
-          hoursResult[0]?.total ??
+          (hoursResult[0] as any)?.total ??
           Object.values(hoursResult[0])[0])
         : ((hoursResult as any)?.total ?? 0)
       const totalHours = Number(rawTotal || 0)
@@ -50,7 +52,7 @@ export default class VolunteerController {
         .select(Database.raw('COUNT(DISTINCT opportunity_id) as count'))
       const rawEvents = Array.isArray(eventsAttendedResult)
         ? (eventsAttendedResult[0]?.$extras?.count ??
-          eventsAttendedResult[0]?.count ??
+          (eventsAttendedResult[0] as any)?.count ??
           Object.values(eventsAttendedResult[0])[0])
         : ((eventsAttendedResult as any)?.count ?? 0)
       const eventsAttended = Number(rawEvents || 0)
@@ -62,7 +64,7 @@ export default class VolunteerController {
         .count('* as total')
       const rawPending = Array.isArray(pendingApps)
         ? (pendingApps[0]?.$extras?.total ??
-          pendingApps[0]?.total ??
+          (pendingApps[0] as any)?.total ??
           Object.values(pendingApps[0])[0])
         : ((pendingApps as any)?.total ?? 0)
       const pendingApplications = Number(rawPending || 0)
@@ -74,7 +76,7 @@ export default class VolunteerController {
         .count('* as total')
       const rawAccepted = Array.isArray(acceptedApps)
         ? (acceptedApps[0]?.$extras?.total ??
-          acceptedApps[0]?.total ??
+          (acceptedApps[0] as any)?.total ??
           Object.values(acceptedApps[0])[0])
         : ((acceptedApps as any)?.total ?? 0)
       const acceptedApplications = Number(rawAccepted || 0)
@@ -92,7 +94,7 @@ export default class VolunteerController {
       // Upcoming events (opportunities with accepted applications in the future)
       const now = new Date()
       const upcomingOpps = await Opportunity.query()
-        .whereHas('applications', (q) => {
+        .whereHas('applications', (q: ModelQueryBuilderContract<typeof Application>) => {
           q.where('user_id', user.id).andWhere('status', 'accepted')
         })
         .andWhere('start_at', '>', now.toISOString())
@@ -201,7 +203,7 @@ export default class VolunteerController {
         .sum('hours as total')
       const rawTotal = Array.isArray(hoursResult)
         ? (hoursResult[0]?.$extras?.total ??
-          hoursResult[0]?.total ??
+          (hoursResult[0] as any)?.total ??
           Object.values(hoursResult[0])[0])
         : ((hoursResult as any)?.total ?? 0)
       const totalHours = Number(rawTotal || 0)
@@ -212,7 +214,7 @@ export default class VolunteerController {
         .select(Database.raw('COUNT(DISTINCT opportunity_id) as count'))
       const rawEvents = Array.isArray(eventsAttendedResult)
         ? (eventsAttendedResult[0]?.$extras?.count ??
-          eventsAttendedResult[0]?.count ??
+          (eventsAttendedResult[0] as any)?.count ??
           Object.values(eventsAttendedResult[0])[0])
         : ((eventsAttendedResult as any)?.count ?? 0)
       const eventsAttended = Number(rawEvents || 0)
@@ -223,7 +225,7 @@ export default class VolunteerController {
         .count('* as total')
       const rawPending = Array.isArray(pendingApps)
         ? (pendingApps[0]?.$extras?.total ??
-          pendingApps[0]?.total ??
+          (pendingApps[0] as any)?.total ??
           Object.values(pendingApps[0])[0])
         : ((pendingApps as any)?.total ?? 0)
       const pendingApplications = Number(rawPending || 0)
@@ -234,7 +236,7 @@ export default class VolunteerController {
         .count('* as total')
       const rawAccepted = Array.isArray(acceptedApps)
         ? (acceptedApps[0]?.$extras?.total ??
-          acceptedApps[0]?.total ??
+          (acceptedApps[0] as any)?.total ??
           Object.values(acceptedApps[0])[0])
         : ((acceptedApps as any)?.total ?? 0)
       const acceptedApplications = Number(rawAccepted || 0)
@@ -250,7 +252,7 @@ export default class VolunteerController {
 
       const now = new Date()
       const upcomingOpps = await Opportunity.query()
-        .whereHas('applications', (q) => {
+        .whereHas('applications', (q: ModelQueryBuilderContract<typeof Application>) => {
           q.where('user_id', user.id).andWhere('status', 'accepted')
         })
         .andWhere('start_at', '>', now.toISOString())
@@ -490,7 +492,7 @@ export default class VolunteerController {
       const query = Opportunity.query()
         .where('status', 'published')
         .andWhere('visibility', 'public')
-        .whereHas('organization', (orgQuery) => {
+        .whereHas('organization', (orgQuery: ModelQueryBuilderContract<typeof Organization>) => {
           orgQuery.where('status', 'active')
         })
         .preload('organization')
@@ -558,7 +560,7 @@ export default class VolunteerController {
 
       const opportunity = await Opportunity.query()
         .where('id', params.id)
-        .whereHas('organization', (orgQuery) => {
+        .whereHas('organization', (orgQuery: ModelQueryBuilderContract<typeof Organization>) => {
           orgQuery.where('status', 'active')
         })
         .preload('organization')
@@ -636,12 +638,45 @@ export default class VolunteerController {
 
       // Check capacity
       // We count 'accepted' applications against capacity. 
-      // 'applied' might count depending on policy, but usually capacity is for confirmed spots.
-      // However, to prevent over-subscription, we might count 'applied' + 'accepted'.
-      // Let's assume strict capacity: accepted only counts? Or maybe 'applied' reserves a spot temporarily?
-      // Simple logic: if count(accepted) >= capacity, go to waitlist.
-      
+
+      // --- Compliance Check ---
+      const ComplianceRequirement = (await import('App/Models/ComplianceRequirement')).default
+      const ComplianceDocument = (await import('App/Models/ComplianceDocument')).default
+
+      const requirements = await ComplianceRequirement.query()
+        .where('organization_id', opportunity.organizationId)
+        .andWhere((q) => {
+          q.whereNull('opportunity_id').orWhere('opportunity_id', opportunity.id)
+        })
+        .andWhere('is_mandatory', true)
+        .andWhereIn('enforcement_level', ['onboarding', 'signup'])
+
+      if (requirements.length > 0) {
+        // Fetch user's valid documents
+        // We need to check doc_type against requirements
+        const docTypes = requirements.map(r => r.docType)
+        const userDocs = await ComplianceDocument.query()
+          .where('user_id', user.id)
+          .whereIn('doc_type', docTypes)
+          .where('status', 'Valid')
+          .where((q) => {
+            q.whereNull('expires_at').orWhere('expires_at', '>', DateTime.now().toSQL())
+          })
+        
+        const validDocTypes = new Set(userDocs.map(d => d.docType))
+        const missingRequirements = requirements.filter(r => !validDocTypes.has(r.docType))
+
+        if (missingRequirements.length > 0) {
+           return response.forbidden({ 
+             message: 'You do not meet the compliance requirements for this opportunity.',
+             requirements: missingRequirements.map(r => ({ name: r.name, docType: r.docType }))
+           })
+        }
+      }
+      // --- End Compliance Check ---
+
       const acceptedCountRaw = await Application.query()
+
         .where('opportunity_id', opportunityId)
         .where('status', 'accepted')
         .count('* as total')
@@ -716,11 +751,6 @@ export default class VolunteerController {
        Logger.error('Withdraw application error: %o', error)
        return response.internalServerError({ error: { message: 'Failed to withdraw application' } })
     }
-  }      })
-    } catch (error) {
-      Logger.error('Opportunity detail error: %o', error)
-      return response.notFound({ error: { message: 'Opportunity not found' } })
-    }
   }
 
   /**
@@ -735,7 +765,7 @@ export default class VolunteerController {
 
       const query = Application.query()
         .where('user_id', user.id)
-        .preload('opportunity', (q) => {
+        .preload('opportunity', (q: ModelQueryBuilderContract<typeof Opportunity>) => {
           q.preload('organization')
         })
         .orderBy('applied_at', 'desc')
@@ -765,7 +795,7 @@ export default class VolunteerController {
 
       const query = Attendance.query()
         .where('user_id', user.id)
-        .preload('opportunity', (q) => {
+        .preload('opportunity', (q: ModelQueryBuilderContract<typeof Opportunity>) => {
           q.preload('organization')
         })
         .orderBy('check_in_at', 'desc')
