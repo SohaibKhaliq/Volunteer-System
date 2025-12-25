@@ -222,14 +222,23 @@ Route.post('/communications/logs/bulk-retry', 'CommunicationsController.bulkRetr
   'auth'
 ])
 
-// Notifications (admin) - expose recent notifications for UI
+// Notifications - expose recent notifications for UI
 Route.get('/notifications', 'NotificationsController.index').middleware(['auth'])
+Route.get('/notifications/unread-count', 'NotificationsController.unreadCount').middleware(['auth'])
+Route.post('/notifications/mark-all-read', 'NotificationsController.markAllRead').middleware(['auth'])
+Route.post('/notifications/bulk-mark-read', 'NotificationsController.bulkMarkRead').middleware(['auth'])
 Route.put('/notifications/:id/read', 'NotificationsController.markRead').middleware(['auth'])
 Route.put('/notifications/:id/unread', 'NotificationsController.markUnread').middleware(['auth'])
+Route.delete('/notifications/:id', 'NotificationsController.destroy').middleware(['auth'])
 // NOTE: SSE streaming has been removed. The /notifications/stream route now returns 501
 // and clients should use the Socket.IO-based realtime endpoint instead. The API
 // also posts new notifications to the socket server internal endpoint `/_internal/notify`.
 Route.get('/notifications/stream', 'NotificationsController.stream')
+
+// Notification Preferences
+Route.get('/notification-preferences', 'NotificationPreferencesController.index').middleware(['auth'])
+Route.put('/notification-preferences', 'NotificationPreferencesController.update').middleware(['auth'])
+Route.post('/notification-preferences/reset', 'NotificationPreferencesController.reset').middleware(['auth'])
 
 // Surveys (feedback)
 Route.resource('surveys', 'SurveysController')
@@ -365,6 +374,16 @@ Route.group(() => {
   Route.post('/templates/:key/reset', 'NotificationTemplatesController.reset')
   Route.delete('/templates/:key', 'NotificationTemplatesController.destroy')
   Route.post('/templates/preview', 'NotificationTemplatesController.preview')
+
+  // Broadcast Management
+  Route.get('/broadcasts', 'BroadcastsController.index')
+  Route.post('/broadcasts', 'BroadcastsController.store')
+  Route.get('/broadcasts/:id', 'BroadcastsController.show')
+  Route.put('/broadcasts/:id', 'BroadcastsController.update')
+  Route.post('/broadcasts/:id/send', 'BroadcastsController.send')
+  Route.post('/broadcasts/:id/schedule', 'BroadcastsController.schedule')
+  Route.post('/broadcasts/:id/cancel', 'BroadcastsController.cancel')
+  Route.get('/broadcasts/:id/stats', 'BroadcastsController.stats')
 
   // System Settings (extended)
   Route.get('/system-settings', 'AdminController.getSystemSettings')
