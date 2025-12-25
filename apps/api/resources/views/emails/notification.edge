@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ notification.title || 'Notification' }}</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .container {
+      background: #ffffff;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .header {
+      border-bottom: 3px solid #3b82f6;
+      padding-bottom: 20px;
+      margin-bottom: 20px;
+    }
+    .title {
+      font-size: 24px;
+      font-weight: 600;
+      color: #1f2937;
+      margin: 0 0 10px 0;
+    }
+    .priority {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .priority-urgent { background: #fef2f2; color: #dc2626; }
+    .priority-high { background: #fef3c7; color: #d97706; }
+    .priority-normal { background: #dbeafe; color: #2563eb; }
+    .priority-low { background: #f3f4f6; color: #6b7280; }
+    .content {
+      margin: 20px 0;
+      color: #4b5563;
+    }
+    .action-button {
+      display: inline-block;
+      padding: 12px 24px;
+      background: #3b82f6;
+      color: #ffffff;
+      text-decoration: none;
+      border-radius: 6px;
+      font-weight: 500;
+      margin: 20px 0;
+    }
+    .footer {
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #e5e7eb;
+      font-size: 14px;
+      color: #6b7280;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 class="title">{{ notification.title || 'Notification' }}</h1>
+      @if(notification.priority)
+        <span class="priority priority-{{ notification.priority }}">{{ notification.priority }}</span>
+      @endif
+    </div>
+
+    <div class="content">
+      <p>Hello {{ user.firstName || user.email }},</p>
+      <p>{{ message }}</p>
+    </div>
+
+    @if(actionUrl && actionText)
+      <a href="{{ actionUrl }}" class="action-button">{{ actionText }}</a>
+    @endif
+
+    <div class="footer">
+      <p>This is an automated notification from the Volunteer System.</p>
+      <p>If you have questions, please contact your organization administrator.</p>
+    </div>
+  </div>
+</body>
+</html>
