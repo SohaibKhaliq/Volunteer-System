@@ -313,6 +313,19 @@ export const adminApi = {
   updateRole: async (id: number, data: any) => axios.put(`/roles/${id}`, data),
   deleteRole: async (id: number) => axios.delete(`/roles/${id}`),
 
+  // ==========================================
+  // PERMISSIONS & FEATURE FLAGS
+  // ==========================================
+  listPermissions: async () => axios.get('/permissions'),
+  createPermission: async (data: any) => axios.post('/permissions', data),
+  updatePermission: async (id: number, data: any) => axios.put(`/permissions/${id}`, data),
+  deletePermission: async (id: number) => axios.delete(`/permissions/${id}`),
+
+  listFeatureFlags: async () => axios.get('/feature-flags'),
+  createFeatureFlag: async (data: any) => axios.post('/feature-flags', data),
+  updateFeatureFlag: async (id: number, data: any) => axios.put(`/feature-flags/${id}`, data),
+  deleteFeatureFlag: async (id: number) => axios.delete(`/feature-flags/${id}`),
+
   listTypes: async () => axios.get('/types'),
   createType: async (data: any) => axios.post('/types', data),
   updateType: async (id: number, data: any) => axios.put(`/types/${id}`, data),

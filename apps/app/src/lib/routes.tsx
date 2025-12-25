@@ -52,6 +52,8 @@ import AdminFeedbackResults from '@/pages/admin/feedback/[id]/results';
 import AdminExports from '@/pages/admin/exports';
 import AdminShifts from '@/pages/admin/shifts';
 import AdminRoles from '@/pages/admin/roles';
+import AdminPermissions from '@/pages/admin/permissions';
+import AdminFeatureFlags from '@/pages/admin/feature-flags';
 import AdminTypes from '@/pages/admin/types';
 import AdminAuditLogs from '@/pages/admin/audit-logs';
 import AdminSettings from '@/pages/admin/settings';
@@ -147,6 +149,8 @@ const routes: RouteObject[] = [
       { path: 'feedback/:id/results', element: <AdminFeedbackResults /> },
       { path: 'audit-logs', element: <AdminAuditLogs /> },
       { path: 'roles', element: <AdminRoles /> },
+      { path: 'permissions', element: <AdminPermissions /> },
+      { path: 'feature-flags', element: <AdminFeatureFlags /> },
       { path: 'types', element: <AdminTypes /> },
       { path: 'settings', element: <AdminSettings /> },
       { path: 'volunteer-profile', element: <AdminVolunteerProfile /> },

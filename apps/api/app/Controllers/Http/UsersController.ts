@@ -6,6 +6,7 @@ import Achievement from 'App/Models/Achievement'
 import UserAchievement from 'App/Models/UserAchievement'
 import VolunteerHour from 'App/Models/VolunteerHour'
 import User from 'App/Models/User'
+import AuthorizationService from 'App/Services/AuthorizationService'
 
 export default class UsersController {
   /**
@@ -601,6 +602,18 @@ export default class UsersController {
 
       if (!exists) {
         await Database.table('user_roles').insert({ user_id: user.id, role_id: role.id })
+        // Audit the change
+        try {
+          await AuthorizationService.logRoleChange(
+            (request as any).auth?.user?.id || 0,
+            user.id,
+            [role.name],
+            undefined,
+            request.ip()
+          )
+        } catch (err) {
+          Logger.warn('Failed to write role change audit: %o', err)
+        }
       }
 
       return response.ok({ message: 'Role assigned' })
@@ -615,9 +628,21 @@ export default class UsersController {
   }
   public async removeRole({ params, response }: HttpContextContract) {
     try {
+      // Find role name for auditing
+      const role = await Role.find(params.roleId)
       await Database.from('user_roles')
         .where({ user_id: params.id, role_id: params.roleId })
         .delete()
+      try {
+        await AuthorizationService.logRoleChange(
+          0,
+          Number(params.id),
+          undefined,
+          role ? [role.name] : undefined
+        )
+      } catch (err) {
+        Logger.warn('Failed to write role removal audit: %o', err)
+      }
       return response.noContent()
     } catch (error) {
       Logger.error('Failed to remove role from user: %o', error)

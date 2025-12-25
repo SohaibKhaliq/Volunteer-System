@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 // Render volunteer sections as stacked content instead of tabs
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -196,6 +197,16 @@ export default function Profile() {
   }
   const userData = (meResponse as any)?.profile ?? (meResponse as any)?.data ?? (meResponse as any) ?? {};
 
+  // Profile completion: required fields help volunteers understand next steps
+  const _filledChecks = [
+    userData.phone || formData.phone,
+    userData.profileMetadata?.address || formData.address,
+    (Array.isArray(userData.profileMetadata?.skills) && userData.profileMetadata.skills.length > 0) || (formData.skills && formData.skills.trim().length > 0),
+    userData.profileMetadata?.availability || formData.availability,
+    userData.emailVerifiedAt || userData.email_verified_at || userData.emailVerified
+  ].filter(Boolean).length;
+  const profileCompletion = Math.round(((_filledChecks || 0) / 5) * 100);
+
   // Transform assignments into the UI's expected `upcomingShifts` structure
   const upcomingShifts = (assignments ?? [])
     .map((a: any) => {
@@ -337,6 +348,26 @@ export default function Profile() {
                     </Badge>
                   ));
                 })()}
+              </div>
+
+              {/* Profile completion indicator (accessibility-friendly) */}
+              <div className="mt-3 w-full md:w-2/3">
+                <div className="flex items-center gap-4">
+                  <div className="flex-1" aria-hidden>
+                    <Progress value={profileCompletion} aria-label={`Profile completion ${profileCompletion} percent`} />
+                  </div>
+                  <div className="text-sm text-white/90 font-medium">{profileCompletion}%</div>
+                </div>
+                {profileCompletion < 100 && (
+                  <div className="mt-2 flex items-center gap-3">
+                    <div className="text-xs text-white/80 flex-1">
+                      Complete your profile to unlock more opportunities and improve matching accuracy.
+                    </div>
+                    <Button size="sm" variant="secondary" onClick={() => setActiveTab('settings')}>
+                      Complete profile
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -814,13 +845,26 @@ export default function Profile() {
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Incomplete Profile Warning */}
-                {(!formData.phone || !formData.address || !formData.skills) && (
-                  <Alert variant="destructive" className="mb-4">
+                {(profileCompletion < 100) && (
+                  <Alert className="mb-4" variant={profileCompletion < 50 ? 'destructive' : 'default'}>
                     <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Profile Incomplete</AlertTitle>
-                    <AlertDescription>
-                      Please complete your profile (Phone, Address, Skills) to be eligible for all opportunities.
-                    </AlertDescription>
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full gap-3">
+                      <div>
+                        <AlertTitle>Incomplete profile</AlertTitle>
+                        <AlertDescription>
+                          Your profile is {profileCompletion}% complete. Finish required fields to be eligible for more
+                          opportunities and receive reminders about upcoming commitments.
+                        </AlertDescription>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-40">
+                          <Progress value={profileCompletion} aria-label={`Profile completion ${profileCompletion} percent`} />
+                        </div>
+                        <Button size="sm" onClick={() => setActiveTab('settings')}>
+                          Complete now
+                        </Button>
+                      </div>
+                    </div>
                   </Alert>
                 )}
 
