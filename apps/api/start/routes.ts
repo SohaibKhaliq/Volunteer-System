@@ -293,8 +293,10 @@ Route.get('/monitoring/stats', 'MonitoringController.stats').middleware(['auth']
 Route.get('/monitoring/recent', 'MonitoringController.recent').middleware(['auth'])
 
 Route.get('/hours', 'VolunteerHoursController.index').middleware(['auth'])
+Route.post('/hours', 'VolunteerHoursController.store').middleware(['auth'])
+Route.get('/hours/:id', 'VolunteerHoursController.show').middleware(['auth'])
 Route.put('/hours/:id', 'VolunteerHoursController.update').middleware(['auth'])
-Route.post('/hours/bulk', 'VolunteerHoursController.bulkUpdate').middleware(['auth'])
+Route.post('/hours/bulk-status', 'VolunteerHoursController.bulkUpdateStatus').middleware(['auth'])
 
 Route.resource('courses', 'CoursesController')
   .middleware({ '*': ['auth'] })
