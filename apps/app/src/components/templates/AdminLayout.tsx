@@ -33,7 +33,6 @@ import { useStore } from '@/lib/store';
 import { showApiError } from '@/lib/error-to-toast';
 import { toast } from '@/components/atoms/use-toast';
 import { useNavigate } from 'react-router-dom';
-import Providers from '@/providers';
 
 export default function AdminLayout() {
   const { user, authenticated } = useApp();
@@ -247,7 +246,7 @@ export default function AdminLayout() {
       .find((item) => location.pathname === item.path || location.pathname.startsWith(item.path + '/'))?.label ||
     'Dashboard';
   return (
-    <Providers>
+    <>
       <div className="min-h-screen bg-gray-50">
         <div className="flex">
           {/* Sidebar */}
@@ -384,6 +383,6 @@ export default function AdminLayout() {
           </div>
         </div>
       </div>
-    </Providers>
+    </>
   );
 }
