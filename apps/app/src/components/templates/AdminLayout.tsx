@@ -20,7 +20,6 @@ import {
   Mail,
   ListOrdered,
   LogOut,
-  User,
   Bell,
   Siren
 } from 'lucide-react';
@@ -28,7 +27,7 @@ import { Button } from '@/components/ui/button';
 import api from '@/lib/api';
 import useAdminSummary from '@/hooks/useAdminSummary';
 import useFeatures from '@/hooks/useFeatures';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
 import { useStore } from '@/lib/store';
 import { showApiError } from '@/lib/error-to-toast';
@@ -233,6 +232,7 @@ export default function AdminLayout() {
         { path: '/admin/invite-send-jobs', icon: Mail, label: 'Invite Send Jobs', adminOnly: true },
         { path: '/admin/scheduled-jobs', icon: Clock, label: 'Scheduled Jobs', adminOnly: true },
         { path: '/admin/feedback', icon: FileText, label: 'Feedback' },
+        { path: '/admin/feedback/create', icon: MessageSquare, label: 'Create Feedback' },
         { path: '/admin/monitoring', icon: Activity, label: 'Monitoring', adminOnly: true, feature: 'monitoring' },
         { path: '/admin/analytics', icon: BarChart3, label: 'Analytics', adminOnly: true, feature: 'analytics' },
         { path: '/admin/reports', icon: BarChart3, label: 'Reports & Analytics' },
