@@ -1,13 +1,13 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { api } from '@/lib/api'
+import api from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { format } from 'date-fns'
-import { Calendar, Clock, MapPin, Building2, User, ChevronLeft, CheckCircle, AlertCircle, Share2, Info } from 'lucide-react'
+import { Calendar, Clock, MapPin, Building2, User, ChevronLeft, CheckCircle, Info } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   Dialog,
