@@ -136,6 +136,30 @@ const Header = () => {
             >
               {t('Organizations')}
             </Link>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className={cn('text-sm font-medium transition-colors', location.pathname.includes('transport') || location.pathname.includes('help-') ? 'text-primary' : 'text-muted-foreground')}>
+                  {t('Services')}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                <DropdownMenuItem onClick={() => navigate('/transport-request')} className="cursor-pointer">
+                  {t('Request Transport')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/transport-offer')} className="cursor-pointer">
+                  {t('Offer Transport')}
+                </DropdownMenuItem>
+                <div className="h-px bg-border my-1" />
+                <DropdownMenuItem onClick={() => navigate('/help-request')} className="cursor-pointer">
+                  {t('Request Help')}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/help-offer')} className="cursor-pointer">
+                  {t('Offer Help')}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <Link
               to="/about"
               className={cn(
