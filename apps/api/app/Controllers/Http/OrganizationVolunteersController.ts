@@ -5,7 +5,7 @@ import Notification from 'App/Models/Notification'
 import AuditLog from 'App/Models/AuditLog'
 import { DateTime } from 'luxon'
 // Mail is optional — we'll attempt to send email if configured, but don't fail on errors
-import Mail from '@ioc:Adonis/Addons/Mail'
+// import Mail from '@ioc:Adonis/Addons/Mail'
 
 export default class OrganizationVolunteersController {
   public async index({ auth, request, response }: HttpContextContract) {
@@ -128,7 +128,7 @@ export default class OrganizationVolunteersController {
     return response.noContent()
   }
 
-  public async approve({ auth, params, request, response }: HttpContextContract) {
+  public async approve({ auth, params, response }: HttpContextContract) {
     const volunteer = await OrganizationVolunteer.find(params.id)
     if (!volunteer) return response.notFound()
 
@@ -188,6 +188,7 @@ export default class OrganizationVolunteersController {
     // Send an email if Mail is configured (best-effort)
     try {
       if (volunteer.user && volunteer.user.email) {
+        /*
         await Mail.send((message) => {
           message.to(volunteer.user.email)
           message.subject(
@@ -197,6 +198,7 @@ export default class OrganizationVolunteersController {
             `Hello ${volunteer.user.name || ''},\n\nYour request to join ${org?.name || 'the organization'} has been approved. You can now access the organization's volunteer resources and opportunities.\n\nThank you.`
           )
         })
+        */
       }
     } catch (err) {
       // don't fail on mail errors
@@ -253,6 +255,7 @@ export default class OrganizationVolunteersController {
     // Try to send an email — best-effort
     try {
       if (volunteer.user && volunteer.user.email) {
+        /*
         await Mail.send((message) => {
           message.to(volunteer.user.email)
           message.subject(
@@ -262,6 +265,7 @@ export default class OrganizationVolunteersController {
             `Hello ${volunteer.user.name || ''},\n\nWe reviewed your request to join ${org?.name || 'the organization'}. Unfortunately it was not approved.${reason ? `\n\nReason: ${reason}` : ''}\n\nIf you have questions, contact the organization admins.`
           )
         })
+        */
       }
     } catch (err) {
       // don't fail on mail errors
