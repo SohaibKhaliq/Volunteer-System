@@ -1,4 +1,4 @@
-import Mail from '@ioc:Adonis/Addons/Mail'
+// import Mail from '@ioc:Adonis/Addons/Mail'
 import User from 'App/Models/User'
 import Notification from 'App/Models/Notification'
 import Broadcast from 'App/Models/Broadcast'
@@ -18,6 +18,7 @@ export default class EmailService {
       const subject = notification.title || `New notification: ${notification.type}`
       const message = this.getNotificationMessage(notification)
 
+      /*
       await Mail.send((message) => {
         message
           .to(user.email)
@@ -30,8 +31,10 @@ export default class EmailService {
             actionText: notification.actionText
           })
       })
+      */
 
-      Logger.info(`Notification email sent to ${user.email}`)
+      Logger.warn(`Mail disabled: Notification email would have been sent to ${user.email}`)
+      // Logger.info(`Notification email sent to ${user.email}`)
     } catch (error) {
       Logger.error('Failed to send notification email: %o', error)
       throw error
@@ -43,6 +46,7 @@ export default class EmailService {
    */
   public static async sendBroadcastEmail(user: User, broadcast: Broadcast): Promise<void> {
     try {
+      /*
       await Mail.send((message) => {
         message
           .to(user.email)
@@ -53,8 +57,10 @@ export default class EmailService {
             priority: broadcast.priority
           })
       })
+      */
 
-      Logger.info(`Broadcast email sent to ${user.email}`)
+      Logger.warn(`Mail disabled: Broadcast email would have been sent to ${user.email}`)
+      // Logger.info(`Broadcast email sent to ${user.email}`)
     } catch (error) {
       Logger.error('Failed to send broadcast email: %o', error)
       throw error
@@ -101,11 +107,14 @@ export default class EmailService {
     body: string
   ): Promise<void> {
     try {
+      /*
       await Mail.send((message) => {
         message.to(to).subject(subject).html(body)
       })
+      */
 
-      Logger.info(`Transactional email sent to ${to}`)
+      Logger.warn(`Mail disabled: Transactional email would have been sent to ${to}`)
+      // Logger.info(`Transactional email sent to ${to}`)
     } catch (error) {
       Logger.error('Failed to send transactional email: %o', error)
       throw error
