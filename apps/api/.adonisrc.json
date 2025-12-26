@@ -29,7 +29,8 @@
     "@adonisjs/drive-s3",
     "@adonisjs/route-model-binding/build/providers/RmbProvider",
     "@adonisjs/limiter",
-    "@adonisjs/redis"
+    "@adonisjs/redis",
+    "@adonisjs/mail"
   ],
   "aceProviders": [
     "@adonisjs/repl"
