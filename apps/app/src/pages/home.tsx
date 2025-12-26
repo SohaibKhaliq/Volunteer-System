@@ -15,9 +15,8 @@ const Home = () => {
     () => api.listEvents() as unknown as Promise<any[]>
   );
   const { data: stats, isLoading: isLoadingStats } = useQuery(
-    ['public-stats'],
-    () => api.getReportsOverview() as unknown as Promise<any>,
-    { enabled: !!authenticated }
+    ['home-stats'],
+    () => api.getHomeStats() as unknown as Promise<any>
   );
 
   return (
@@ -64,19 +63,19 @@ const Home = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
             <div className="p-6">
               <div className="text-4xl font-bold text-primary mb-2">
-                {isLoadingStats ? '...' : stats?.volunteers?.total || '5,000+'}
+                {isLoadingStats ? '...' : stats?.activeVolunteers?.toLocaleString() || '5,000+'}
               </div>
               <div className="text-muted-foreground">{t('Active Volunteers')}</div>
             </div>
             <div className="p-6 border-l-0 md:border-l border-r-0 md:border-r">
               <div className="text-4xl font-bold text-primary mb-2">
-                {isLoadingStats ? '...' : stats?.hours?.total || '12,000+'}
+                {isLoadingStats ? '...' : stats?.hoursContributed?.toLocaleString() || '12,000+'}
               </div>
               <div className="text-muted-foreground">{t('Hours Contributed')}</div>
             </div>
             <div className="p-6">
               <div className="text-4xl font-bold text-primary mb-2">
-                {isLoadingStats ? '...' : stats?.organizations?.total || '150+'}
+                {isLoadingStats ? '...' : stats?.partnerOrganizations?.toLocaleString() || '150+'}
               </div>
               <div className="text-muted-foreground">{t('Partner Organizations')}</div>
             </div>
