@@ -5,15 +5,19 @@ import { ArrowRight, Heart, Users, Calendar, MapPin } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 
+import { useApp } from '@/providers/app-provider';
+
 const Home = () => {
   const { t } = useTranslation();
+  const { authenticated } = useApp();
   const { data: featuredEvents, isLoading } = useQuery(
     ['featured-events'],
     () => api.listEvents() as unknown as Promise<any[]>
   );
   const { data: stats, isLoading: isLoadingStats } = useQuery(
     ['public-stats'],
-    () => api.getReportsOverview() as unknown as Promise<any>
+    () => api.getReportsOverview() as unknown as Promise<any>,
+    { enabled: !!authenticated }
   );
 
   return (
