@@ -20,7 +20,6 @@ import {
   List
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import Providers from '@/providers';
 
 export default function OrganizationLayout() {
   const { user, authenticated } = useApp();
@@ -57,7 +56,7 @@ export default function OrganizationLayout() {
   if (!authenticated) return null;
 
   return (
-    <Providers>
+    <>
       <div className="min-h-screen bg-gray-50">
         <div className="flex">
           {/* Sidebar */}
@@ -155,6 +154,6 @@ export default function OrganizationLayout() {
           </div>
         </div>
       </div>
-    </Providers>
+    </>
   );
 }
