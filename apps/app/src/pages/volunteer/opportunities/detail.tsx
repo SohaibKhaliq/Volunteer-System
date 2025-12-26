@@ -58,7 +58,7 @@ export default function OpportunityDetail() {
       toast.success('Withdrawn successfully.')
       queryClient.invalidateQueries({ queryKey: ['opportunity', id] })
     },
-    onError: (err: any) => {
+    onError: () => {
       toast.error('Failed to withdraw.')
     }
   })
@@ -67,7 +67,6 @@ export default function OpportunityDetail() {
   if (!opportunity) return <div className="p-8">Opportunity not found.</div>
 
   const status = opportunity.userApplicationStatus // 'applied', 'accepted', 'waitlisted', 'withdrawn', null
-  const isFull = opportunity.capacity > 0 && opportunity.application_count >= opportunity.capacity
   // NOTE: Logic for 'isFull' depends on how backend exposes counts. 
   // Opportunity.application_count from controller is raw applied count.
   // Ideally backend tells us if it accepts more. 
