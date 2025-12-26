@@ -116,13 +116,7 @@ const ScrollWrapper = ({ children }: any) => (
 const AdminScrollWrapper = ({ children }: any) => (
   <div style={{ height: '100vh', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>{children}</div>
 );
-export enum DetailTypes {
-  Offer = 'offer',
-  Request = 'request',
-  RideRequest = 'ride-request',
-  RideOffer = 'ride-offer',
-  Event = 'event'
-}
+import { DetailTypes } from '@/lib/types';
 
 const routes: RouteObject[] = [
   {
