@@ -10,7 +10,7 @@ import TextAreaInput from '@/components/molecules/text-area-input';
 import TextInput from '@/components/molecules/text-input';
 import api from '@/lib/api';
 import { EARTHQUAKE_EPICENTER } from '@/lib/config';
-import { DetailTypes } from '@/lib/routes';
+import { DetailTypes } from '@/lib/types';
 import { imageSchema } from '@/lib/validation';
 
 import { RequestTypes } from '@/types/types';
