@@ -122,11 +122,17 @@ export default class ExportController {
     }
 
     if (startDate) {
-      query = query.where('start_at', '>=', DateTime.fromISO(startDate).toSQL())
+      const date = DateTime.fromISO(startDate).toSQL()
+      if (date) {
+        query = query.where('start_at', '>=', date)
+      }
     }
 
     if (endDate) {
-      query = query.where('start_at', '<=', DateTime.fromISO(endDate).toSQL())
+      const date = DateTime.fromISO(endDate).toSQL()
+      if (date) {
+        query = query.where('start_at', '<=', date)
+      }
     }
 
     const opportunities = await query.orderBy('start_at', 'desc')
@@ -342,7 +348,7 @@ export default class ExportController {
       return response.notFound({ message: 'User is not part of any organization' })
     }
 
-    if (!allowedRoles.includes(memberRecord.role || '')) {
+    if (!this.hasExportPermission(memberRecord.role)) {
       return response.forbidden({ message: 'You do not have permission to export data' })
     }
 
