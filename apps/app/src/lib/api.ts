@@ -40,6 +40,14 @@ const api = {
   /* Organization Volunteer Management */
   getOrganizationVolunteers: async (orgId: number, filters?: any) =>
     axios.get(`/organizations/${orgId}/volunteers`, { params: filters }),
+  /* New Membership Controller Methods */
+  getOrganizationMembers: async (orgId: number, filters?: any) => 
+    axios.get(`/organizations/${orgId}/members`, { params: filters }), 
+  updateOrganizationMemberStatus: async (orgId: number, memberId: number, status: string, notes?: string) =>
+    axios.put(`/organizations/${orgId}/members/${memberId}`, { status, notes }),
+  removeOrganizationMember: async (orgId: number, memberId: number) =>
+    axios.delete(`/organizations/${orgId}/members/${memberId}`),
+  
   addOrganizationVolunteerForOrg: async (orgId: number, data: any) =>
     axios.post(`/organizations/${orgId}/volunteers`, data),
   joinOrganization: async (orgId: number) => axios.post(`/organizations/${orgId}/volunteers`, {}),
