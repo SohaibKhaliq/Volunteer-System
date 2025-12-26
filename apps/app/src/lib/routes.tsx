@@ -87,6 +87,27 @@ import VolunteerOpportunities from '@/pages/volunteer/opportunities';
 import VolunteerOpportunityDetail from '@/pages/volunteer/opportunities/detail';
 import VolunteerAttendance from '@/pages/volunteer/attendance';
 
+// Reactivated Orphan Pages
+import AdminOrganizationVolunteers from '@/pages/admin/organization-volunteers';
+import CentrelinkReporting from '@/pages/centrelink-reporting';
+import FeedbackResults from '@/pages/feedback/[id]/results'; // Admin context primarily
+import FeedbackCreate from '@/pages/feedback/create';
+import OrganizationHours from '@/pages/organization/[id]/hours'; // Admin/Org context? Checks needed
+import OrganizationApplications from '@/pages/organization/applications';
+import OrganizationAttendances from '@/pages/organization/attendances';
+import OrganizationComplianceRequirements from '@/pages/organization/compliance-requirements';
+import OrganizationTeams from '@/pages/organization/teams'; // Corrected from 'teams.tsx'
+import OrganizationPublicProfile from '@/pages/organizations/[slug]';
+import SettingsCalendar from '@/pages/settings/calendar';
+import VolunteerAchievements from '@/pages/volunteer/achievements';
+import VolunteerApplications from '@/pages/volunteer/applications';
+import VolunteerDashboard from '@/pages/volunteer/dashboard';
+import VolunteerHistory from '@/pages/volunteer/history';
+import VolunteerHours from '@/pages/volunteer/hours/index'; 
+import VolunteerOpportunityDetailView from '@/pages/volunteer/opportunity-detail'; // Alias to avoid conflict
+import VolunteerOrganizations from '@/pages/volunteer/organizations';
+import VolunteerSettings from '@/pages/volunteer/settings';
+
 // Simple wrappers to ensure pages are vertically scrollable
 const ScrollWrapper = ({ children }: any) => (
   <div style={{ height: '100vh', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>{children}</div>
@@ -154,7 +175,11 @@ const routes: RouteObject[] = [
       { path: 'types', element: <AdminTypes /> },
       { path: 'settings', element: <AdminSettings /> },
       { path: 'volunteer-profile', element: <AdminVolunteerProfile /> },
-      { path: 'emergency-requests', element: <AdminEmergencyRequests /> }
+      { path: 'emergency-requests', element: <AdminEmergencyRequests /> },
+      // Reactivated Orphans (Admin Context)
+      { path: 'organizations/:id/volunteers', element: <AdminOrganizationVolunteers /> },
+      { path: 'feedback/create', element: <FeedbackCreate /> },
+      { path: 'feedback/:id/results', element: <FeedbackResults /> }
     ]
   },
   {
@@ -182,7 +207,13 @@ const routes: RouteObject[] = [
       { path: 'compliance', element: <OrganizationCompliance /> },
       { path: 'reports', element: <OrganizationReports /> },
       { path: 'communications', element: <OrganizationCommunications /> },
-      { path: 'settings', element: <OrganizationSettings /> }
+      { path: 'settings', element: <OrganizationSettings /> },
+      // Reactivated Orphans (Organization Context)
+      { path: 'applications', element: <OrganizationApplications /> },
+      { path: 'attendances', element: <OrganizationAttendances /> },
+      { path: 'teams', element: <OrganizationTeams /> },
+      { path: 'compliance-requirements', element: <OrganizationComplianceRequirements /> },
+      { path: 'hours/:id', element: <OrganizationHours /> } // Verify :id necessity
     ]
   },
   {
@@ -221,7 +252,20 @@ const routes: RouteObject[] = [
       { path: 'volunteer/opportunities', element: <VolunteerOpportunities /> },
       { path: 'volunteer/opportunities/:id', element: <VolunteerOpportunityDetail /> },
       { path: 'volunteer/attendance', element: <VolunteerAttendance /> },
-      { path: 'events/:id', element: <Detail /> }
+      { path: 'events/:id', element: <Detail /> },
+      // Reactivated Orphans (Public/Shared)
+      { path: 'centrelink-reporting', element: <CentrelinkReporting /> },
+      { path: 'organizations/:slug', element: <OrganizationPublicProfile /> },
+      { path: 'settings/calendar', element: <SettingsCalendar /> },
+      // Reactivated Orphans (Volunteer Context - explicitly restoring /volunteer prefix)
+      { path: 'volunteer/dashboard', element: <VolunteerDashboard /> },
+      { path: 'volunteer/history', element: <VolunteerHistory /> },
+      { path: 'volunteer/achievements', element: <VolunteerAchievements /> },
+      { path: 'volunteer/applications', element: <VolunteerApplications /> },
+      { path: 'volunteer/settings', element: <VolunteerSettings /> },
+      { path: 'volunteer/organizations', element: <VolunteerOrganizations /> },
+      { path: 'volunteer/hours', element: <VolunteerHours /> },
+      { path: 'volunteer/opportunities/:id/view', element: <VolunteerOpportunityDetailView /> }
     ]
   },
   // Volunteer route group removed; volunteer pages consolidated into `/profile`
