@@ -158,6 +158,8 @@ const api = {
       return null as unknown as any;
     }
   },
+  getHomeStats: async () => axios.get('/home/stats'),
+
   getVolunteerStats: async (params?: Record<string, unknown>) => axios.get('/reports/volunteers', { params }),
   getEventStats: async (params?: Record<string, unknown>) => axios.get('/reports/events', { params }),
   getHoursStats: async (params?: Record<string, unknown>) => axios.get('/reports/hours', { params }),
