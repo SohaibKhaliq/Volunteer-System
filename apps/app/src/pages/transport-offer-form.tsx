@@ -7,7 +7,7 @@ import TextAreaInput from '@/components/molecules/text-area-input';
 import TextInput from '@/components/molecules/text-input';
 import TransportInput from '@/components/molecules/transport-input';
 import api from '@/lib/api';
-import { DetailTypes } from '@/lib/routes';
+import { DetailTypes } from '@/lib/types';
 import { imageSchema } from '@/lib/validation';
 import { FixType } from '@/types/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
