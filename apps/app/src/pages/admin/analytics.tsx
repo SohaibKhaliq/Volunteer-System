@@ -10,18 +10,47 @@ export default function AdminAnalytics() {
 
   const dash = (dashboard as any) ?? {};
 
-  // Normalize analytics data to [{ label, value }] for the chart
+  // Normalize analytics data to [{ month, users, hours }] for the chart
   const chartData = useMemo(() => {
     if (!analytics) return [] as any[];
-    // server might return array or wrapper
-    const raw = Array.isArray(analytics) ? analytics : (analytics?.data ?? analytics);
-    if (!Array.isArray(raw)) return [] as any[];
-    // try to map common shapes
-    return raw.map((r: any) => ({
-      month: r.month || r.name || r.label || String(r.date ?? ''),
-      users: Number(r.users ?? r.user_count ?? r.activeUsers ?? r.value ?? 0),
-      hours: Number(r.hours ?? r.totalHours ?? r.value ?? 0)
-    }));
+
+    // The backend returns { userGrowth: [], volunteerHours: [], ... }
+    // We need to merge them by date
+    const userGrowth = analytics.userGrowth || [];
+    const volunteerHours = analytics.volunteerHours || [];
+
+    const merged = new Map<string, { date: string; users: number; hours: number }>();
+
+    // Process user growth
+    userGrowth.forEach((item: any) => {
+      // item.date is typically YYYY-MM-DDT... or YYYY-MM-DD
+      const d = new Date(item.date);
+      const key = d.toISOString().split('T')[0];
+      if (!merged.has(key)) {
+        merged.set(key, { date: key, users: 0, hours: 0 });
+      }
+      merged.get(key)!.users += Number(item.count || 0);
+    });
+
+    // Process hours
+    volunteerHours.forEach((item: any) => {
+      const d = new Date(item.date);
+      const key = d.toISOString().split('T')[0];
+      if (!merged.has(key)) {
+        merged.set(key, { date: key, users: 0, hours: 0 });
+      }
+      merged.get(key)!.hours += Number(item.total_hours || 0);
+    });
+    
+    // Convert map to array and sort by date
+    return Array.from(merged.values())
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map(item => ({
+        month: new Date(item.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }),
+        users: item.users,
+        hours: item.hours
+      }));
+
   }, [analytics]);
 
   return (
