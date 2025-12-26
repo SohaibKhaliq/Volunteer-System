@@ -93,6 +93,16 @@ const Header = () => {
                   Settings
                 </DropdownMenuItem>
                 <div className="h-px bg-border my-1" />
+                <DropdownMenuItem onClick={() => navigate('/volunteer/dashboard')} className="cursor-pointer">
+                  Dashboard
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/volunteer/applications')} className="cursor-pointer">
+                  My Applications
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/volunteer/organizations')} className="cursor-pointer">
+                  My Organizations
+                </DropdownMenuItem>
+                <div className="h-px bg-border my-1" />
                 <DropdownMenuItem onClick={() => navigate('/map')} className="cursor-pointer">
                   Find Opportunities
                 </DropdownMenuItem>
