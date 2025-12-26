@@ -36,7 +36,7 @@ export default function AdminAnalytics() {
             <CardTitle className="text-sm">Total Users</CardTitle>
           </CardHeader>
           <CardContent className="text-3xl font-bold">
-            {loadingDash ? '—' : (dash.totalUsers ?? dash.users ?? '—')}
+            {loadingDash ? '—' : (dash.users?.total ?? dash.totalUsers ?? '—')}
           </CardContent>
         </Card>
 
@@ -44,7 +44,7 @@ export default function AdminAnalytics() {
           <CardHeader>
             <CardTitle className="text-sm">Active Volunteers</CardTitle>
           </CardHeader>
-          <CardContent className="text-3xl font-bold">{loadingDash ? '—' : (dash.activeVolunteers ?? '—')}</CardContent>
+          <CardContent className="text-3xl font-bold">{loadingDash ? '—' : (dash.users?.active ?? dash.activeVolunteers ?? '—')}</CardContent>
         </Card>
 
         <Card>
@@ -52,7 +52,7 @@ export default function AdminAnalytics() {
             <CardTitle className="text-sm">Events Completed</CardTitle>
           </CardHeader>
           <CardContent className="text-3xl font-bold">
-            {loadingDash ? '—' : (dash.eventsCompleted ?? dash.eventCompletion ?? '—')}
+            {loadingDash ? '—' : (dash.events?.total ?? dash.eventsCompleted ?? dash.eventCompletion ?? '—')}
           </CardContent>
         </Card>
 
