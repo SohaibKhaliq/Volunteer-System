@@ -7,7 +7,7 @@
 
 import { driveConfig } from '@adonisjs/core/build/config'
 import Application from '@ioc:Adonis/Core/Application'
-import Env from '@ioc:Adonis/Core/Env'
+// import Env from '@ioc:Adonis/Core/Env'
 
 /*
 |--------------------------------------------------------------------------
@@ -28,7 +28,7 @@ export default driveConfig({
   | the `DRIVE_DISK` environment variable.
   |
   */
-  disk: Env.get('DRIVE_DISK'),
+  disk: 'local', // Env.get('DRIVE_DISK'),
 
   disks: {
     /*
@@ -93,6 +93,7 @@ export default driveConfig({
     |**************************************************************************
     |
     */
+    /*
     s3: {
       driver: 's3',
       visibility: 'public',
@@ -105,6 +106,7 @@ export default driveConfig({
       // For minio to work
       // forcePathStyle: true,
     }
+    */
 
     /*
     |--------------------------------------------------------------------------
