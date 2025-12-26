@@ -30,7 +30,7 @@ export default function AdminResourcesDashboard() {
           <CardHeader>
             <CardTitle className="text-sm">Total Resources</CardTitle>
           </CardHeader>
-          <CardContent className="text-3xl font-bold">{dashLoading ? '—' : (ds.totalResources ?? '—')}</CardContent>
+          <CardContent className="text-3xl font-bold">{dashLoading ? '—' : (ds.total ?? '—')}</CardContent>
         </Card>
 
         <Card>
@@ -74,8 +74,8 @@ export default function AdminResourcesDashboard() {
                   low.map((r: any) => (
                     <TableRow key={r.id}>
                       <TableCell>{r.name}</TableCell>
-                      <TableCell>{r.available ?? r.qty ?? '—'}</TableCell>
-                      <TableCell>{r.threshold ?? r.min ?? '—'}</TableCell>
+                      <TableCell>{r.quantityAvailable ?? r.quantity_available ?? '—'}</TableCell>
+                      <TableCell>{Math.ceil((r.quantityTotal ?? r.quantity_total ?? 0) * 0.1)}</TableCell>
                       <TableCell className="text-right">
                         <Button size="sm" variant="outline">
                           View
@@ -115,9 +115,9 @@ export default function AdminResourcesDashboard() {
                 ) : (
                   due.map((d: any) => (
                     <TableRow key={d.id}>
-                      <TableCell>{d.name ?? d.resource}</TableCell>
-                      <TableCell>{new Date(d.dueAt ?? d.due_at ?? Date.now()).toLocaleDateString()}</TableCell>
-                      <TableCell className="line-clamp-2">{d.notes ?? d.note ?? '—'}</TableCell>
+                      <TableCell>{d.name}</TableCell>
+                      <TableCell>{d.maintenanceDue ? new Date(d.maintenanceDue).toLocaleDateString() : '—'}</TableCell>
+                      <TableCell className="line-clamp-2">{d.description ?? '—'}</TableCell>
                       <TableCell className="text-right">
                         <Button size="sm" variant="outline">
                           Manage
