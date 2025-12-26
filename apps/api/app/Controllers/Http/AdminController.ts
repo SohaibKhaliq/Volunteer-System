@@ -61,7 +61,25 @@ export default class AdminController {
       // Pending approvals (organizations with pending status)
       const pendingOrgs = await Organization.query().where('status', 'pending').count('* as total')
 
+      // Metrics for the last 6 months
+      const sixMonthsAgo = new Date()
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
+
+      const hoursResult = await Database.from('volunteer_hours')
+        .where('status', 'approved')
+        .where('date', '>=', sixMonthsAgo)
+        .sum('hours as total')
+      const totalHours = Number(hoursResult[0].total || 0)
+
+      const activeVolunteersResult = await Database.from('volunteer_hours')
+        .where('status', 'approved')
+        .where('date', '>=', sixMonthsAgo)
+        .countDistinct('user_id as total')
+      const activeVolunteersCount = Number(activeVolunteersResult[0].total || 0)
+
       return response.ok({
+        totalHours,
+        activeVolunteers: activeVolunteersCount,
         organizations: {
           total: totalOrgs[0].$extras.total || 0,
           active: activeOrgs[0].$extras.total || 0,
