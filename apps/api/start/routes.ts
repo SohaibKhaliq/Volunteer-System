@@ -36,6 +36,10 @@ Route.get('/health', async ({ response }) => {
 // Skills search (public)
 Route.get('/skills', 'SkillsController.search')
 
+// Home stats (public)
+Route.get('/home/stats', 'HomeController.stats')
+
+
 Route.resource('offers', 'OffersController')
   .middleware({
     // store: ['auth:api'],
