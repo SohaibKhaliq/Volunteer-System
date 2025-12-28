@@ -55,6 +55,7 @@ export default function OrganizationTeams() {
     description: '',
     lead_user_id: ''
   });
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   // Fetch Teams
   const { data: teams, isLoading } = useQuery({
@@ -63,7 +64,7 @@ export default function OrganizationTeams() {
   });
 
   // Fetch Organization Team Members for lead selection
-  const { data: teamMembers } = useQuery({
+  const { data: teamMembers, isLoading: isMembersLoading } = useQuery({
     queryKey: ['organizationTeam'],
     queryFn: () => api.listOrganizationTeam()
   });
@@ -78,12 +79,14 @@ export default function OrganizationTeams() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organizationTeams'] });
+      resetForm();
       setIsDialogOpen(false);
-      setEditingTeam(null);
       toast.success(editingTeam ? 'Team updated successfully' : 'Team created successfully');
     },
-    onError: () => {
-      toast.error('Failed to save team');
+    onError: (error: any) => {
+      const errorMessage =
+        error?.response?.data?.message || (editingTeam ? 'Failed to update team' : 'Failed to create team');
+      toast.error(errorMessage);
     }
   });
 
@@ -94,18 +97,35 @@ export default function OrganizationTeams() {
       queryClient.invalidateQueries({ queryKey: ['organizationTeams'] });
       toast.success('Team deleted successfully');
     },
-    onError: () => {
-      toast.error('Failed to delete team');
+    onError: (error: any) => {
+      const errorMessage = error?.response?.data?.message || 'Failed to delete team';
+      toast.error(errorMessage);
     }
   });
 
-  const handleOpenCreate = () => {
+  const resetForm = () => {
     setEditingTeam(null);
     setFormData({
       name: '',
       description: '',
       lead_user_id: ''
     });
+    setErrors({});
+  };
+
+  const validateForm = () => {
+    const newErrors: { [key: string]: string } = {};
+
+    if (!formData.name.trim()) {
+      newErrors.name = 'Team name is required';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleOpenCreate = () => {
+    resetForm();
     setIsDialogOpen(true);
   };
 
@@ -116,13 +136,18 @@ export default function OrganizationTeams() {
       description: team.description || '',
       lead_user_id: team.leadUserId?.toString() || ''
     });
+    setErrors({});
     setIsDialogOpen(true);
   };
 
   const handleSubmit = () => {
+    if (!validateForm()) {
+      return;
+    }
+
     const payload: any = {
-      name: formData.name,
-      description: formData.description || undefined
+      name: formData.name.trim(),
+      description: formData.description.trim() || null
     };
     if (formData.lead_user_id) {
       payload.lead_user_id = parseInt(formData.lead_user_id);
@@ -133,6 +158,13 @@ export default function OrganizationTeams() {
   const handleDelete = (teamId: number) => {
     if (window.confirm('Are you sure you want to delete this team?')) {
       deleteTeamMutation.mutate(teamId as any);
+    }
+  };
+
+  const handleDialogChange = (open: boolean) => {
+    setIsDialogOpen(open);
+    if (!open) {
+      resetForm();
     }
   };
 
@@ -233,7 +265,7 @@ export default function OrganizationTeams() {
       )}
 
       {/* Create/Edit Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isDialogOpen} onOpenChange={handleDialogChange}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editingTeam ? 'Edit Team' : 'Create Team'}</DialogTitle>
@@ -242,20 +274,28 @@ export default function OrganizationTeams() {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label htmlFor="name" className="text-right pt-2">
                 Name *
               </Label>
-              <Input
-                id="name"
-                className="col-span-3"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="e.g., Event Coordination"
-              />
+              <div className="col-span-3">
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => {
+                    setFormData({ ...formData, name: e.target.value });
+                    if (errors.name) {
+                      setErrors({ ...errors, name: '' });
+                    }
+                  }}
+                  placeholder="e.g., Event Coordination"
+                  className={errors.name ? 'border-red-500' : ''}
+                />
+                {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+              </div>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="description" className="text-right">
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label htmlFor="description" className="text-right pt-2">
                 Description
               </Label>
               <Textarea
@@ -264,41 +304,47 @@ export default function OrganizationTeams() {
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="What does this team do?"
+                rows={3}
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="lead_user_id" className="text-right">
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label htmlFor="lead_user_id" className="text-right pt-2">
                 Team Lead
               </Label>
-              <Select
-                value={formData.lead_user_id}
-                onValueChange={(value) => setFormData({ ...formData, lead_user_id: value })}
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select a team lead (optional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="">No lead assigned</SelectItem>
-                  {(Array.isArray(teamMembers) ? teamMembers : [])
-                    .filter((member: TeamMember) => member.userId !== undefined && member.userId !== null)
-                    .map((member: TeamMember) => (
-                      <SelectItem key={member.userId} value={member.userId.toString()}>
-                        {member.user?.firstName || member.user?.lastName
-                          ? `${member.user.firstName || ''} ${member.user.lastName || ''}`.trim()
-                          : member.user?.email || `User #${member.userId}`}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
+              <div className="col-span-3">
+                <Select
+                  value={formData.lead_user_id}
+                  onValueChange={(value) => setFormData({ ...formData, lead_user_id: value })}
+                  disabled={isMembersLoading}
+                >
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={isMembersLoading ? 'Loading members...' : 'Select a team lead (optional)'}
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">No lead assigned</SelectItem>
+                    {(Array.isArray(teamMembers) ? teamMembers : [])
+                      .filter((member: TeamMember) => member.userId !== undefined && member.userId !== null)
+                      .map((member: TeamMember) => (
+                        <SelectItem key={member.userId} value={member.userId.toString()}>
+                          {member.user?.firstName || member.user?.lastName
+                            ? `${member.user.firstName || ''} ${member.user.lastName || ''}`.trim()
+                            : member.user?.email || `User #${member.userId}`}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={saveTeamMutation.isPending}>
               Cancel
             </Button>
-            <Button onClick={handleSubmit} disabled={!formData.name || saveTeamMutation.isPending}>
+            <Button onClick={handleSubmit} disabled={!formData.name.trim() || saveTeamMutation.isPending}>
               {saveTeamMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              {editingTeam ? 'Update' : 'Create'}
+              {editingTeam ? 'Update Team' : 'Create Team'}
             </Button>
           </DialogFooter>
         </DialogContent>
