@@ -514,6 +514,9 @@ Route.group(() => {
   Route.get('/backup', 'AdminController.createBackup')
   Route.get('/backup/status', 'AdminController.backupStatus')
   Route.get('/backup/:id/download', 'AdminController.downloadBackup')
+
+  // Contact Submissions
+  Route.get('/contact-submissions', 'ContactController.index')
 })
   .prefix('/admin')
   .middleware(['auth'])
