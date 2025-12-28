@@ -15,6 +15,7 @@ const api = {
     return axios.post('/logout');
   },
   contact: async (data: any) => axios.post('/contact', data),
+  getContactSubmissions: async (params?: any) => axios.get('/admin/contact-submissions', { params }),
   getHealth: async () => axios.get('/health'),
 
   /* Help Request endpoints */
