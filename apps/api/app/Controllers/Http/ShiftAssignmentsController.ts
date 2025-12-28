@@ -7,14 +7,36 @@ import { createAssignmentSchema, bulkAssignSchema } from 'App/Validators/assignm
 import { DateTime } from 'luxon'
 import VolunteerHour from 'App/Models/VolunteerHour'
 
-
 export default class ShiftAssignmentsController {
-  public async index({ request }: HttpContextContract) {
+  public async index({ request, auth, response }: HttpContextContract) {
     const shiftId = request.input('shift_id')
     const userId = request.input('user_id')
-    const query = ShiftAssignment.query()
+    const eventId = request.input('event_id')
+    const scope = request.input('scope')
+
+    const query = ShiftAssignment.query().preload('shift').preload('user')
+
     if (shiftId) query.where('shift_id', shiftId)
     if (userId) query.where('user_id', userId)
+
+    if (eventId) {
+      query.whereHas('shift', (shiftQuery) => {
+        shiftQuery.where('event_id', eventId)
+      })
+    }
+
+    if (scope === 'organization') {
+      await auth.use('api').authenticate()
+      const user = auth.user!
+      const OrganizationTeamMember = await import('App/Models/OrganizationTeamMember')
+      const member = await OrganizationTeamMember.default.query().where('user_id', user.id).first()
+      if (!member) return response.notFound({ message: 'User is not part of any organization' })
+
+      query.whereHas('shift', (shiftQuery) => {
+        shiftQuery.where('organization_id', member.organizationId)
+      })
+    }
+
     return query
   }
 
@@ -177,75 +199,75 @@ export default class ShiftAssignmentsController {
    * Check in a volunteer to a shift assignment
    */
   public async checkIn({ request, auth, response }: HttpContextContract) {
-      const user = auth.user!
-      const { shiftId } = request.only(['shiftId'])
+    const user = auth.user!
+    const { shiftId } = request.only(['shiftId'])
 
-      const assignment = await ShiftAssignment.query()
-        .where('shift_id', shiftId)
-        .where('user_id', user.id)
-        .first()
+    const assignment = await ShiftAssignment.query()
+      .where('shift_id', shiftId)
+      .where('user_id', user.id)
+      .first()
 
-      if (!assignment) {
-        return response.notFound({ message: 'Assignment not found' })
-      }
+    if (!assignment) {
+      return response.notFound({ message: 'Assignment not found' })
+    }
 
-      if (assignment.checkedInAt) {
-          return response.badRequest({ message: 'Already checked in' })
-      }
-      
-      // TODO: Add location verification logic here if shift has location
+    if (assignment.checkedInAt) {
+      return response.badRequest({ message: 'Already checked in' })
+    }
 
-      assignment.checkedInAt = DateTime.now()
-      assignment.status = 'in-progress'
-      await assignment.save()
+    // TODO: Add location verification logic here if shift has location
 
-      return assignment
+    assignment.checkedInAt = DateTime.now()
+    assignment.status = 'in-progress'
+    await assignment.save()
+
+    return assignment
   }
 
   /**
    * Check out a volunteer
    */
   public async checkOut({ request, auth, response }: HttpContextContract) {
-      const user = auth.user!
-      const { shiftId } = request.only(['shiftId'])
+    const user = auth.user!
+    const { shiftId } = request.only(['shiftId'])
 
-      const assignment = await ShiftAssignment.query()
-        .where('shift_id', shiftId)
-        .where('user_id', user.id)
-        .first()
+    const assignment = await ShiftAssignment.query()
+      .where('shift_id', shiftId)
+      .where('user_id', user.id)
+      .first()
 
-      if (!assignment) {
-        return response.notFound({ message: 'Assignment not found' })
-      }
+    if (!assignment) {
+      return response.notFound({ message: 'Assignment not found' })
+    }
 
-      if (!assignment.checkedInAt) {
-          return response.badRequest({ message: 'Not checked in' })
-      }
+    if (!assignment.checkedInAt) {
+      return response.badRequest({ message: 'Not checked in' })
+    }
 
-      assignment.checkedOutAt = DateTime.now()
-      assignment.status = 'completed'
-      
-      // Calculate hours
-      const duration = assignment.checkedOutAt.diff(assignment.checkedInAt, 'hours').hours
-      assignment.hours = Math.round(duration * 100) / 100
-      
-      await assignment.save()
+    assignment.checkedOutAt = DateTime.now()
+    assignment.status = 'completed'
 
-      // Auto-create volunteer hour record
-      const shift = await Shift.find(shiftId)
-      if (shift) {
-         await VolunteerHour.create({
-             userId: user.id,
-             organizationId: shift.organizationId,
-             eventId: shift.eventId,
-             shiftId: shift.id,
-             date: DateTime.now(),
-             hours: assignment.hours,
-             notes: 'Automatically logged via shift check-out',
-             status: 'pending' 
-         })
-      }
+    // Calculate hours
+    const duration = assignment.checkedOutAt.diff(assignment.checkedInAt, 'hours').hours
+    assignment.hours = Math.round(duration * 100) / 100
 
-      return assignment
+    await assignment.save()
+
+    // Auto-create volunteer hour record
+    const shift = await Shift.find(shiftId)
+    if (shift) {
+      await VolunteerHour.create({
+        userId: user.id,
+        organizationId: shift.organizationId,
+        eventId: shift.eventId,
+        shiftId: shift.id,
+        date: DateTime.now(),
+        hours: assignment.hours,
+        notes: 'Automatically logged via shift check-out',
+        status: 'pending'
+      })
+    }
+
+    return assignment
   }
 }
