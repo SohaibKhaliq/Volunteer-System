@@ -65,6 +65,7 @@ import OrganizationLayout from '@/components/templates/OrganizationLayout';
 import OrganizationDashboard from '@/pages/organization/dashboard';
 import OrganizationProfile from '@/pages/organization/profile';
 import OrganizationEvents from '@/pages/organization/events';
+import OrganizationShifts from '@/pages/organization/shifts';
 import OrganizationAchievements from '@/pages/organization/achievements';
 import OrganizationVolunteers from '@/pages/organization/volunteers';
 import OrganizationResources from '@/pages/organization/resources';
@@ -196,6 +197,7 @@ const routes: RouteObject[] = [
       { path: 'profile', element: <OrganizationProfile /> },
       { path: 'team', element: <OrganizationTeam /> },
       { path: 'events', element: <OrganizationEvents /> },
+      { path: 'shifts', element: <OrganizationShifts /> },
       { path: 'opportunities/*', element: <Navigate to="/organization/events" replace /> },
       { path: 'resources', element: <OrganizationResources /> },
       { path: 'achievements', element: <OrganizationAchievements /> },
