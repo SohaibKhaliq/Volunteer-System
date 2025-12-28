@@ -1,4 +1,4 @@
-import { useState, useEffect,useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -71,7 +71,7 @@ export default function Profile() {
   useEffect(() => {
     try {
       localStorage.setItem('profile.activeTab', activeTab);
-    } catch (e) {}
+    } catch (e) { }
   }, [activeTab]);
 
   const [formData, setFormData] = useState({
@@ -334,7 +334,7 @@ export default function Profile() {
                       if (!isNaN(d.getTime()) && d.getFullYear() <= new Date().getFullYear() - 2) {
                         computed.push('Early Adopter');
                       }
-                    } catch (e) {}
+                    } catch (e) { }
                   } else {
                     computed.push('Member');
                   }
@@ -354,7 +354,11 @@ export default function Profile() {
               <div className="mt-3 w-full md:w-2/3">
                 <div className="flex items-center gap-4">
                   <div className="flex-1" aria-hidden>
-                    <Progress value={profileCompletion} aria-label={`Profile completion ${profileCompletion} percent`} />
+                    <Progress
+                      value={profileCompletion}
+                      className="bg-slate-700/50 h-2"
+                      aria-label={`Profile completion ${profileCompletion} percent`}
+                    />
                   </div>
                   <div className="text-sm text-white/90 font-medium">{profileCompletion}%</div>
                 </div>
@@ -528,7 +532,7 @@ export default function Profile() {
                 <CardContent>
                   <div className="flex flex-wrap gap-2">
                     {((meResponse as any)?.dashboard?.recentAchievements ?? userData.achievements) &&
-                    ((meResponse as any)?.dashboard?.recentAchievements ?? userData.achievements).length > 0 ? (
+                      ((meResponse as any)?.dashboard?.recentAchievements ?? userData.achievements).length > 0 ? (
                       ((meResponse as any)?.dashboard?.recentAchievements ?? userData.achievements).map((a: any) => (
                         <Badge key={a.id} variant="secondary" className="px-3 py-1">
                           <Award className="h-3 w-3 mr-1 text-yellow-500" /> {a.title}
@@ -560,7 +564,7 @@ export default function Profile() {
                 <CardContent>
                   <div className="space-y-3">
                     {(((meResponse as any)?.profile?.organizations ?? userData.organizations) || []).length === 0 &&
-                    (((meResponse as any)?.profile?.organizationStatuses ?? []) || []).length === 0 ? (
+                      (((meResponse as any)?.profile?.organizationStatuses ?? []) || []).length === 0 ? (
                       <div className="text-sm text-muted-foreground">You are not a member of any organizations.</div>
                     ) : (
                       // Build a union of organizations + any status-only entries
@@ -896,6 +900,11 @@ export default function Profile() {
                           const file = e.target.files?.[0];
                           if (!file) return;
 
+                          if (file.size > 5 * 1024 * 1024) {
+                            toast({ type: 'foreground', title: 'File too large', description: 'Maximum file size is 5MB.', variant: 'destructive' as any });
+                            return;
+                          }
+
                           const fd = new FormData();
                           fd.append('avatar', file);
 
@@ -903,10 +912,11 @@ export default function Profile() {
                             await api.updateVolunteerAvatar(fd);
                             queryClient.invalidateQueries(['me']);
                             toast({ title: 'Avatar updated', description: 'Your profile picture has been updated.' });
-                          } catch (err) {
+                          } catch (err: any) {
+                            console.error('Avatar upload error:', err);
                             toast({
                               title: 'Upload failed',
-                              description: 'Could not upload avatar.',
+                              description: err?.response?.data?.error?.message || 'Could not upload avatar.',
                               variant: 'destructive'
                             });
                           }
@@ -1012,15 +1022,15 @@ export default function Profile() {
                       <div className="space-y-1">
                         <Label className="text-muted-foreground">Background Check</Label>
                         <div className="flex items-center gap-2">
-                           <Shield className={userData.isBackgroundChecked ? "h-4 w-4 text-green-500" : "h-4 w-4 text-slate-400"} />
-                           <span className="text-sm">{userData.isBackgroundChecked ? 'Verified' : 'Not Verified / Pending'}</span>
+                          <Shield className={userData.isBackgroundChecked ? "h-4 w-4 text-green-500" : "h-4 w-4 text-slate-400"} />
+                          <span className="text-sm">{userData.isBackgroundChecked ? 'Verified' : 'Not Verified / Pending'}</span>
                         </div>
                       </div>
                       <div className="space-y-1">
                         <Label className="text-muted-foreground">Certified Volunteer</Label>
-                         <div className="flex items-center gap-2">
-                           <Award className={userData.isCertified ? "h-4 w-4 text-blue-500" : "h-4 w-4 text-slate-400"} />
-                           <span className="text-sm">{userData.isCertified ? 'Yes' : 'No'}</span>
+                        <div className="flex items-center gap-2">
+                          <Award className={userData.isCertified ? "h-4 w-4 text-blue-500" : "h-4 w-4 text-slate-400"} />
+                          <span className="text-sm">{userData.isCertified ? 'Yes' : 'No'}</span>
                         </div>
                       </div>
                     </div>
