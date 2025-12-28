@@ -36,7 +36,7 @@ Route.group(() => {
   Route.post('/opportunities', 'OpportunitiesController.storeForMyOrganization').middleware([
     'auth'
   ])
-  Route.get('/opportunities/:id', 'OpportunitiesController.show').middleware(['auth'])
+    Route.get('/opportunities/:id', 'OpportunitiesController.showForOrganization').middleware(['auth'])
   Route.put('/opportunities/:id', 'OpportunitiesController.update').middleware(['auth'])
   Route.delete('/opportunities/:id', 'OpportunitiesController.destroy').middleware(['auth'])
   Route.post('/opportunities/:id/publish', 'OpportunitiesController.publish').middleware(['auth'])
