@@ -5,7 +5,6 @@ import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
   Building2,
-  Calendar,
   Users,
   Clock,
   ShieldCheck,
@@ -31,7 +30,6 @@ export default function OrganizationLayout() {
     { path: '/organization', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/organization/profile', icon: Building2, label: 'Profile' },
     { path: '/organization/opportunities', icon: List, label: 'Opportunities' },
-    { path: '/organization/events', icon: Calendar, label: 'Events & Tasks' },
     { path: '/organization/volunteers', icon: Users, label: 'Volunteers' },
     { path: '/organization/teams', icon: Users, label: 'Teams' },
     { path: '/organization/attendances', icon: Clock, label: 'Attendances' },
