@@ -20,7 +20,6 @@ import {
   List
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import Providers from '@/providers';
 
 export default function OrganizationLayout() {
   const { user, authenticated } = useApp();
@@ -31,13 +30,14 @@ export default function OrganizationLayout() {
   const navItems = [
     { path: '/organization', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/organization/profile', icon: Building2, label: 'Profile' },
-    { path: '/organization/opportunities', icon: List, label: 'Opportunities' },
     { path: '/organization/events', icon: Calendar, label: 'Events & Tasks' },
     { path: '/organization/volunteers', icon: Users, label: 'Volunteers' },
     { path: '/organization/teams', icon: Users, label: 'Teams' },
     { path: '/organization/attendances', icon: Clock, label: 'Attendances' },
     { path: '/organization/hours-approval', icon: Clock, label: 'Hours Approval' },
+    { path: '/organization/applications', icon: List, label: 'Applications' },
     { path: '/organization/compliance', icon: ShieldCheck, label: 'Compliance' },
+    { path: '/organization/compliance-requirements', icon: ShieldCheck, label: 'Compliance Reqs' },
     { path: '/organization/reports', icon: FileBarChart, label: 'Reports' },
     { path: '/organization/resources', icon: Package, label: 'Resources' },
     { path: '/organization/achievements', icon: Award, label: 'Achievements' },
@@ -55,7 +55,7 @@ export default function OrganizationLayout() {
   if (!authenticated) return null;
 
   return (
-    <Providers>
+    <>
       <div className="min-h-screen bg-gray-50">
         <div className="flex">
           {/* Sidebar */}
@@ -153,6 +153,6 @@ export default function OrganizationLayout() {
           </div>
         </div>
       </div>
-    </Providers>
+    </>
   );
 }

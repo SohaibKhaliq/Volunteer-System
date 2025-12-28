@@ -15,6 +15,7 @@ const api = {
     return axios.post('/logout');
   },
   contact: async (data: any) => axios.post('/contact', data),
+  getContactSubmissions: async (params?: any) => axios.get('/admin/contact-submissions', { params }),
   getHealth: async () => axios.get('/health'),
 
   /* Help Request endpoints */
@@ -40,6 +41,14 @@ const api = {
   /* Organization Volunteer Management */
   getOrganizationVolunteers: async (orgId: number, filters?: any) =>
     axios.get(`/organizations/${orgId}/volunteers`, { params: filters }),
+  /* New Membership Controller Methods */
+  getOrganizationMembers: async (orgId: number, filters?: any) => 
+    axios.get(`/organizations/${orgId}/members`, { params: filters }), 
+  updateOrganizationMemberStatus: async (orgId: number, memberId: number, status: string, notes?: string) =>
+    axios.put(`/organizations/${orgId}/members/${memberId}`, { status, notes }),
+  removeOrganizationMember: async (orgId: number, memberId: number) =>
+    axios.delete(`/organizations/${orgId}/members/${memberId}`),
+  
   addOrganizationVolunteerForOrg: async (orgId: number, data: any) =>
     axios.post(`/organizations/${orgId}/volunteers`, data),
   joinOrganization: async (orgId: number) => axios.post(`/organizations/${orgId}/volunteers`, {}),
@@ -150,6 +159,8 @@ const api = {
       return null as unknown as any;
     }
   },
+  getHomeStats: async () => axios.get('/home/stats'),
+
   getVolunteerStats: async (params?: Record<string, unknown>) => axios.get('/reports/volunteers', { params }),
   getEventStats: async (params?: Record<string, unknown>) => axios.get('/reports/events', { params }),
   getHoursStats: async (params?: Record<string, unknown>) => axios.get('/reports/hours', { params }),
@@ -548,7 +559,7 @@ const api = {
   getVolunteerProfile: async () => axios.get('/volunteer/profile'),
   updateVolunteerProfile: async (data: any) => axios.put('/volunteer/profile', data),
   updateVolunteerAvatar: async (data: FormData) =>
-    axios.put('/volunteer/profile/avatar', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+    axios.put('/volunteer/profile/avatar', data),
   browseOrganizations: async (params?: any) => axios.get('/volunteer/organizations/browse', { params }),
 
   // Volunteer Opportunities

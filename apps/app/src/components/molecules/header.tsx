@@ -23,6 +23,11 @@ const Header = () => {
   const location = useLocation();
   const { t } = useTranslation();
 
+  const isAdmin = user?.roles?.some((r: any) => r.name === 'admin');
+  const isOrganization = user?.roles?.some((r: any) => r.name === 'organization_admin' || r.name === 'organization_member') || !!user?.organizationId;
+  const isVolunteer = authenticated && !isAdmin && !isOrganization;
+  const isPublicOrVolunteer = !isAdmin && !isOrganization;
+
   const logoutMutation = useMutation(api.logout, {
     onSuccess: () => {
       // Clear user state first
@@ -36,7 +41,7 @@ const Header = () => {
 
       try {
         toast({ title: 'Signed out', description: 'You have been logged out.' });
-      } catch (e) {}
+      } catch (e) { }
       navigate('/login');
     },
     onError: (err: any) => {
@@ -54,78 +59,62 @@ const Header = () => {
           </Link>
 
           <nav className="hidden md:flex items-center gap-6">
-            {/* Volunteer top-level menu to access consolidated volunteer sections */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className={cn('text-sm font-medium transition-colors')}>
-                  Volunteer
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56">
-                <DropdownMenuItem
-                  onClick={() => navigate('/profile', { state: { scrollTo: 'overview' } })}
-                  className="cursor-pointer"
-                >
-                  Overview
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => navigate('/profile', { state: { scrollTo: 'schedule' } })}
-                  className="cursor-pointer"
-                >
-                  My Schedule
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => navigate('/profile', { state: { scrollTo: 'history' } })}
-                  className="cursor-pointer"
-                >
-                  History
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => navigate('/profile', { state: { scrollTo: 'achievements' } })}
-                  className="cursor-pointer"
-                >
-                  Achievements
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => navigate('/profile', { state: { scrollTo: 'settings' } })}
-                  className="cursor-pointer"
-                >
-                  Settings
-                </DropdownMenuItem>
-                <div className="h-px bg-border my-1" />
-                <DropdownMenuItem onClick={() => navigate('/map')} className="cursor-pointer">
-                  Find Opportunities
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
 
-            <Link
-              to="/"
-              className={cn(
-                'text-sm font-medium transition-colors hover:text-primary',
-                location.pathname === '/' ? 'text-primary' : 'text-muted-foreground'
-              )}
-            >
-              {t('Home')}
-            </Link>
-            <Link
-              to="/map"
-              className={cn(
-                'text-sm font-medium transition-colors hover:text-primary',
-                location.pathname === '/map' ? 'text-primary' : 'text-muted-foreground'
-              )}
-            >
-              {t('Find Opportunities')}
-            </Link>
-            <Link
-              to="/organizations"
-              className={cn(
-                'text-sm font-medium transition-colors hover:text-primary',
-                location.pathname === '/organizations' ? 'text-primary' : 'text-muted-foreground'
-              )}
-            >
-              {t('Organizations')}
-            </Link>
+            {isPublicOrVolunteer && (
+              <>
+                <Link
+                  to="/"
+                  className={cn(
+                    'text-sm font-medium transition-colors hover:text-primary',
+                    location.pathname === '/' ? 'text-primary' : 'text-muted-foreground'
+                  )}
+                >
+                  {t('Home')}
+                </Link>
+                <Link
+                  to="/map"
+                  className={cn(
+                    'text-sm font-medium transition-colors hover:text-primary',
+                    location.pathname === '/map' ? 'text-primary' : 'text-muted-foreground'
+                  )}
+                >
+                  {t('Find Opportunities')}
+                </Link>
+                <Link
+                  to="/organizations"
+                  className={cn(
+                    'text-sm font-medium transition-colors hover:text-primary',
+                    location.pathname === '/organizations' ? 'text-primary' : 'text-muted-foreground'
+                  )}
+                >
+                  {t('Organizations')}
+                </Link>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className={cn('text-sm font-medium transition-colors', location.pathname.includes('transport') || location.pathname.includes('help-') ? 'text-primary' : 'text-muted-foreground')}>
+                      {t('Services')}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-56">
+                    <DropdownMenuItem onClick={() => navigate('/transport-request')} className="cursor-pointer">
+                      {t('Request Transport')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/transport-offer')} className="cursor-pointer">
+                      {t('Offer Transport')}
+                    </DropdownMenuItem>
+                    <div className="h-px bg-border my-1" />
+                    <DropdownMenuItem onClick={() => navigate('/help-request')} className="cursor-pointer">
+                      {t('Request Help')}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate('/help-offer')} className="cursor-pointer">
+                      {t('Offer Help')}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            )}
+
             <Link
               to="/about"
               className={cn(
@@ -177,10 +166,65 @@ const Header = () => {
         <div className="flex items-center gap-4">
           <DarkModeToggle />
           <Language />
-
+          {/* Volunteer top-level menu to access consolidated volunteer sections */}
+          {/* {isVolunteer && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className={cn('text-sm font-medium transition-colors')}>
+                  Volunteer
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                <DropdownMenuItem
+                  onClick={() => navigate('/profile', { state: { scrollTo: 'overview' } })}
+                  className="cursor-pointer"
+                >
+                  Overview
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => navigate('/profile', { state: { scrollTo: 'schedule' } })}
+                  className="cursor-pointer"
+                >
+                  My Schedule
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => navigate('/profile', { state: { scrollTo: 'history' } })}
+                  className="cursor-pointer"
+                >
+                  History
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => navigate('/profile', { state: { scrollTo: 'achievements' } })}
+                  className="cursor-pointer"
+                >
+                  Achievements
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => navigate('/profile', { state: { scrollTo: 'settings' } })}
+                  className="cursor-pointer"
+                >
+                  Settings
+                </DropdownMenuItem>
+                <div className="h-px bg-border my-1" />
+                <DropdownMenuItem onClick={() => navigate('/volunteer/dashboard')} className="cursor-pointer">
+                  Dashboard
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/volunteer/applications')} className="cursor-pointer">
+                  My Applications
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/volunteer/organizations')} className="cursor-pointer">
+                  My Organizations
+                </DropdownMenuItem>
+                <div className="h-px bg-border my-1" />
+                <DropdownMenuItem onClick={() => navigate('/map')} className="cursor-pointer">
+                  Find Opportunities
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )} */}
           {authenticated ? (
             <div className="flex items-center gap-4">
-              {user?.roles?.some((r: any) => r.name === 'admin') && (
+              {isAdmin && (
                 <Link
                   to="/admin"
                   className="hidden md:block text-sm font-medium text-muted-foreground hover:text-primary"
@@ -188,8 +232,7 @@ const Header = () => {
                   Admin
                 </Link>
               )}
-              {(user?.roles?.some((r: any) => r.name === 'organization_admin' || r.name === 'organization_member') ||
-                user?.organizationId) && (
+              {isOrganization && (
                 <Link
                   to="/organization"
                   className="hidden md:block text-sm font-medium text-muted-foreground hover:text-primary"
@@ -212,12 +255,16 @@ const Header = () => {
                   <DropdownMenuItem onClick={() => navigate('/profile')} className="cursor-pointer">
                     My Profile
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/help-request')} className="cursor-pointer">
-                    Request Help
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/help-offer')} className="cursor-pointer">
-                    Offer Help
-                  </DropdownMenuItem>
+                  {isVolunteer && (
+                    <>
+                      <DropdownMenuItem onClick={() => navigate('/help-request')} className="cursor-pointer">
+                        Request Help
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate('/help-offer')} className="cursor-pointer">
+                        Offer Help
+                      </DropdownMenuItem>
+                    </>
+                  )}
                   <div className="h-px bg-border my-1" />
                   <DropdownMenuItem
                     onClick={() => logoutMutation.mutate()}

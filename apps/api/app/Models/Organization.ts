@@ -13,8 +13,8 @@ import Event from './Event'
 import User from './User'
 import OrganizationInvite from './OrganizationInvite'
 import Database from '@ioc:Adonis/Lucid/Database'
-import Drive from '@ioc:Adonis/Core/Drive'
 import Logger from '@ioc:Adonis/Core/Logger'
+// import Drive from '@ioc:Adonis/Core/Drive'
 
 export default class Organization extends BaseModel {
   @column({ isPrimary: true })
@@ -217,8 +217,9 @@ export default class Organization extends BaseModel {
   }
 
   @beforeDelete()
-  public static async deleteFiles(org: Organization) {
+  public static async deleteFiles(_org: Organization) {
     try {
+      /*
       if (org.logo) {
         const raw = String(org.logo)
         const filename = raw.split('/').pop()
@@ -247,6 +248,7 @@ export default class Organization extends BaseModel {
           }
         }
       }
+      */
     } catch (err) {
       Logger.warn(`Failed to cleanup organization files: ${String(err)}`)
     }
@@ -258,15 +260,18 @@ export default class Organization extends BaseModel {
   public async resolveLogoUrls(): Promise<{ logo: string | null; logo_thumb: string | null }> {
     try {
       if (!this.logo) return { logo: null, logo_thumb: null }
-      const raw = String(this.logo)
-      const filename = raw.split('/').pop() || raw
+      // const raw = String(this.logo)
+      // const filename = raw.split('/').pop() || raw
+      /*
       const candidates = [
         raw,
         raw.replace(/^\/?tmp\/uploads\//, ''),
         `organizations/${filename}`,
         `local/${filename}`
       ]
+      */
 
+      /*
       let resolved: string | null = null
       for (const c of candidates) {
         try {
@@ -291,6 +296,8 @@ export default class Organization extends BaseModel {
       }
 
       return { logo: logoUrl, logo_thumb: thumbUrl }
+      */
+      return { logo: null, logo_thumb: null }
     } catch (err) {
       Logger.warn(`resolveLogoUrls failed: ${String(err)}`)
       return { logo: null, logo_thumb: null }
@@ -313,6 +320,7 @@ export default class Organization extends BaseModel {
         candidates.push(filename)
       }
 
+      /*
       for (const c of candidates) {
         try {
           await Drive.delete(c)
@@ -328,6 +336,7 @@ export default class Organization extends BaseModel {
           // ignore
         }
       }
+      */
     } catch (err) {
       Logger.warn(`deleteLogoFilesFor failed: ${String(err)}`)
     }

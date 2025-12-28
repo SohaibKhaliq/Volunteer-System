@@ -36,6 +36,10 @@ Route.get('/health', async ({ response }) => {
 // Skills search (public)
 Route.get('/skills', 'SkillsController.search')
 
+// Home stats (public)
+Route.get('/home/stats', 'HomeController.stats')
+
+
 Route.resource('offers', 'OffersController')
   .middleware({
     // store: ['auth:api'],
@@ -108,6 +112,11 @@ Route.delete(
   'OrganizationsController.removeVolunteer'
 ).middleware(['auth'])
 
+// Detailed Membership Management (Admin)
+Route.get('/organizations/:id/members', 'MembershipController.index').middleware(['auth'])
+Route.put('/organizations/:id/members/:memberId', 'MembershipController.updateStatus').middleware(['auth'])
+Route.delete('/organizations/:id/members/:memberId', 'MembershipController.remove').middleware(['auth'])
+
 // Organization events & tasks
 Route.get('/organizations/:id/events', 'OrganizationsController.getEvents').middleware(['auth'])
 Route.get('/organizations/:id/tasks', 'OrganizationsController.getTasks').middleware(['auth'])
@@ -152,6 +161,15 @@ Route.resource('roles', 'RolesController')
   .middleware({ '*': ['auth'] })
   .apiOnly()
 
+// Permissions and feature flags management (admin only)
+Route.resource('permissions', 'PermissionsController')
+  .middleware({ '*': ['auth', 'admin'] })
+  .apiOnly()
+
+Route.resource('feature-flags', 'FeatureFlagsController')
+  .middleware({ '*': ['auth', 'admin'] })
+  .apiOnly()
+
 Route.resource('events', 'EventsController')
   .middleware({
     store: ['auth'],
@@ -189,13 +207,14 @@ Route.post('/logout', 'AuthController.logout').middleware('auth:api')
 
 Route.get('/me', 'UsersController.me').middleware(['auth'])
 
-Route.resource('resources', 'ResourcesController')
-  .middleware({ '*': ['auth'] })
-  .apiOnly()
-// Resource management extra endpoints
+// Resource management extra endpoints (must be before resource definition)
 Route.get('/resources/dashboard', 'ResourcesController.dashboard').middleware(['auth'])
 Route.get('/resources/low-stock', 'ResourcesController.lowStock').middleware(['auth'])
 Route.get('/resources/maintenance', 'ResourcesController.maintenanceDue').middleware(['auth'])
+
+Route.resource('resources', 'ResourcesController')
+  .middleware({ '*': ['auth'] })
+  .apiOnly()
 Route.get('/resources/:id/assignments', 'ResourceAssignmentsController.index').middleware(['auth'])
 Route.post('/resources/:id/assign', 'ResourceAssignmentsController.store').middleware(['auth'])
 Route.post('/assignments/:id/return', 'ResourceAssignmentsController.markReturned').middleware([
@@ -218,7 +237,9 @@ Route.group(() => {
   Route.get('/:id/status', 'ImportController.getStatus')
   Route.get('/templates/volunteers', 'ImportController.volunteersTemplate')
   Route.get('/templates/opportunities', 'ImportController.opportunitiesTemplate')
-}).prefix('/imports').middleware(['auth'])
+})
+  .prefix('/imports')
+  .middleware(['auth'])
 
 // Export routes
 Route.group(() => {
@@ -230,7 +251,9 @@ Route.group(() => {
   Route.post('/queue', 'ExportController.queueExport')
   Route.get('/:id/status', 'ExportController.getExportStatus')
   Route.get('/:id/download', 'ExportController.downloadExport')
-}).prefix('/exports').middleware(['auth'])
+})
+  .prefix('/exports')
+  .middleware(['auth'])
 
 Route.resource('communications', 'CommunicationsController')
   .middleware({ '*': ['auth'] })
@@ -248,8 +271,12 @@ Route.post('/communications/logs/bulk-retry', 'CommunicationsController.bulkRetr
 // Notifications - expose recent notifications for UI
 Route.get('/notifications', 'NotificationsController.index').middleware(['auth'])
 Route.get('/notifications/unread-count', 'NotificationsController.unreadCount').middleware(['auth'])
-Route.post('/notifications/mark-all-read', 'NotificationsController.markAllRead').middleware(['auth'])
-Route.post('/notifications/bulk-mark-read', 'NotificationsController.bulkMarkRead').middleware(['auth'])
+Route.post('/notifications/mark-all-read', 'NotificationsController.markAllRead').middleware([
+  'auth'
+])
+Route.post('/notifications/bulk-mark-read', 'NotificationsController.bulkMarkRead').middleware([
+  'auth'
+])
 Route.put('/notifications/:id/read', 'NotificationsController.markRead').middleware(['auth'])
 Route.put('/notifications/:id/unread', 'NotificationsController.markUnread').middleware(['auth'])
 Route.delete('/notifications/:id', 'NotificationsController.destroy').middleware(['auth'])
@@ -259,9 +286,15 @@ Route.delete('/notifications/:id', 'NotificationsController.destroy').middleware
 Route.get('/notifications/stream', 'NotificationsController.stream')
 
 // Notification Preferences
-Route.get('/notification-preferences', 'NotificationPreferencesController.index').middleware(['auth'])
-Route.put('/notification-preferences', 'NotificationPreferencesController.update').middleware(['auth'])
-Route.post('/notification-preferences/reset', 'NotificationPreferencesController.reset').middleware(['auth'])
+Route.get('/notification-preferences', 'NotificationPreferencesController.index').middleware([
+  'auth'
+])
+Route.put('/notification-preferences', 'NotificationPreferencesController.update').middleware([
+  'auth'
+])
+Route.post('/notification-preferences/reset', 'NotificationPreferencesController.reset').middleware(
+  ['auth']
+)
 
 // Surveys (feedback)
 Route.resource('surveys', 'SurveysController')
@@ -300,7 +333,9 @@ Route.get('/centrelink/su462/:userId/csv', 'CentrelinkController.exportSU462CSV'
 // Document Library with Read & Acknowledge
 Route.get('/documents', 'DocumentsController.index').middleware(['auth'])
 Route.get('/documents/required', 'DocumentsController.required').middleware(['auth'])
-Route.get('/documents/my-acknowledgments', 'DocumentsController.myAcknowledgments').middleware(['auth'])
+Route.get('/documents/my-acknowledgments', 'DocumentsController.myAcknowledgments').middleware([
+  'auth'
+])
 Route.get('/documents/:id', 'DocumentsController.show').middleware(['auth'])
 Route.post('/documents', 'DocumentsController.store').middleware(['auth'])
 Route.put('/documents/:id', 'DocumentsController.update').middleware(['auth'])
@@ -346,9 +381,13 @@ Route.resource('achievement-categories', 'AchievementCategoriesController')
 
 // Achievement management endpoints
 Route.post('/achievements/grant', 'AchievementsController.grantAchievement').middleware(['auth'])
-Route.delete('/achievements/revoke/:id', 'AchievementsController.revokeAchievement').middleware(['auth'])
+Route.delete('/achievements/revoke/:id', 'AchievementsController.revokeAchievement').middleware([
+  'auth'
+])
 Route.get('/achievements/progress', 'AchievementsController.getProgress').middleware(['auth'])
-Route.post('/achievements/evaluate', 'AchievementsController.triggerEvaluation').middleware(['auth'])
+Route.post('/achievements/evaluate', 'AchievementsController.triggerEvaluation').middleware([
+  'auth'
+])
 
 // Shift scheduling routes
 Route.get('/shifts', 'ShiftsController.index').middleware(['auth'])
@@ -454,14 +493,30 @@ Route.group(() => {
   Route.get('/audit-logs/target-types', 'AuditLogsController.targetTypes')
 
   // System Monitoring
-  Route.get('/monitoring/background-jobs', 'SystemMonitoringController.backgroundJobsStatus')
-  Route.get('/monitoring/imports', 'SystemMonitoringController.importOperations')
-  Route.get('/monitoring/notifications', 'SystemMonitoringController.notificationDelivery')
-  Route.get('/monitoring/errors', 'SystemMonitoringController.errorLogs')
-  Route.get('/monitoring/health', 'SystemMonitoringController.systemHealth')
+  Route.get(
+    '/monitoring/background-jobs',
+    'SystemMonitoringController.backgroundJobsStatus'
+  ).middleware(['permission:monitoring.view'])
+  Route.get('/monitoring/imports', 'SystemMonitoringController.importOperations').middleware([
+    'permission:monitoring.view'
+  ])
+  Route.get(
+    '/monitoring/notifications',
+    'SystemMonitoringController.notificationDelivery'
+  ).middleware(['permission:monitoring.view'])
+  Route.get('/monitoring/errors', 'SystemMonitoringController.errorLogs').middleware([
+    'permission:monitoring.view'
+  ])
+  Route.get('/monitoring/health', 'SystemMonitoringController.systemHealth').middleware([
+    'permission:monitoring.view'
+  ])
 
   Route.get('/backup', 'AdminController.createBackup')
   Route.get('/backup/status', 'AdminController.backupStatus')
+  Route.get('/backup/:id/download', 'AdminController.downloadBackup')
+
+  // Contact Submissions
+  Route.get('/contact-submissions', 'ContactController.index')
 })
   .prefix('/admin')
   .middleware(['auth'])
@@ -497,8 +552,10 @@ Route.group(() => {
   // Organizations
   Route.get('/organizations/browse', 'VolunteerController.browseOrganizations')
   Route.get('/organizations', 'VolunteerController.myOrganizations')
-  Route.post('/organizations/:id/join', 'VolunteerController.joinOrganization')
-  Route.delete('/organizations/:id/leave', 'VolunteerController.leaveOrganization')
+  
+  // Membership management (Volunteer)
+  Route.post('/organizations/:id/join', 'MembershipController.join')
+  Route.delete('/organizations/:id/leave', 'MembershipController.leave')
 
   // Achievements
   Route.get('/achievements', 'VolunteerController.myAchievements')

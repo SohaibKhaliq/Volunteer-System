@@ -156,6 +156,7 @@ export const adminApi = {
   // ==========================================
   createBackup: async () => axios.get('/admin/backup'),
   getBackupStatus: async () => axios.get('/admin/backup/status'),
+  downloadBackup: async (id: number) => axios.get(`/admin/backup/${id}/download`, { responseType: 'blob' }),
 
   // ==========================================
   // INVITE SEND JOBS
@@ -233,20 +234,16 @@ export const adminApi = {
   getMaintenanceDueResources: async () => axios.get('/resources/maintenance'),
   listResourceAssignments: async (resourceId: number) => axios.get(`/resources/${resourceId}/assignments`),
   assignResource: async (resourceId: number, data: any) => axios.post(`/resources/${resourceId}/assign`, data),
-  returnAssignment: async (assignmentId: number, data: any) => 
-    axios.post(`/assignments/${assignmentId}/return`, data),
-  patchResourceStatus: async (resourceId: number, data: any) => 
-    axios.patch(`/resources/${resourceId}/status`, data),
-  createMaintenance: async (resourceId: number, data: any) => 
-    axios.post(`/resources/${resourceId}/maintenance`, data),
+  returnAssignment: async (assignmentId: number, data: any) => axios.post(`/assignments/${assignmentId}/return`, data),
+  patchResourceStatus: async (resourceId: number, data: any) => axios.patch(`/resources/${resourceId}/status`, data),
+  createMaintenance: async (resourceId: number, data: any) => axios.post(`/resources/${resourceId}/maintenance`, data),
   retireResource: async (resourceId: number) => axios.post(`/resources/${resourceId}/retire`),
   reactivateResource: async (resourceId: number) => axios.post(`/resources/${resourceId}/reactivate`),
 
   // ==========================================
   // AUDIT LOGS
   // ==========================================
-  listAuditLogs: async (params?: { page?: number; limit?: number; q?: string }) => 
-    axios.get('/audit-logs', { params }),
+  listAuditLogs: async (params?: { page?: number; limit?: number; q?: string }) => axios.get('/audit-logs', { params }),
   getAuditLog: async (id: number) => axios.get(`/audit-logs/${id}`),
 
   // ==========================================
@@ -286,8 +283,7 @@ export const adminApi = {
   // ==========================================
   listShifts: async (params?: any) => axios.get('/shifts', { params }),
   getShift: async (id: number) => axios.get(`/shifts/${id}`),
-  getShiftSuggestions: async (id: number, limit = 10) => 
-    axios.get(`/shifts/${id}/suggestions`, { params: { limit } }),
+  getShiftSuggestions: async (id: number, limit = 10) => axios.get(`/shifts/${id}/suggestions`, { params: { limit } }),
   createShift: async (data: any) => axios.post('/shifts', data),
   updateShift: async (id: number, data: any) => axios.put(`/shifts/${id}`, data),
   deleteShift: async (id: number) => axios.delete(`/shifts/${id}`),
@@ -313,6 +309,19 @@ export const adminApi = {
   updateRole: async (id: number, data: any) => axios.put(`/roles/${id}`, data),
   deleteRole: async (id: number) => axios.delete(`/roles/${id}`),
 
+  // ==========================================
+  // PERMISSIONS & FEATURE FLAGS
+  // ==========================================
+  listPermissions: async () => axios.get('/permissions'),
+  createPermission: async (data: any) => axios.post('/permissions', data),
+  updatePermission: async (id: number, data: any) => axios.put(`/permissions/${id}`, data),
+  deletePermission: async (id: number) => axios.delete(`/permissions/${id}`),
+
+  listFeatureFlags: async () => axios.get('/feature-flags'),
+  createFeatureFlag: async (data: any) => axios.post('/feature-flags', data),
+  updateFeatureFlag: async (id: number, data: any) => axios.put(`/feature-flags/${id}`, data),
+  deleteFeatureFlag: async (id: number) => axios.delete(`/feature-flags/${id}`),
+
   listTypes: async () => axios.get('/types'),
   createType: async (data: any) => axios.post('/types', data),
   updateType: async (id: number, data: any) => axios.put(`/types/${id}`, data),
@@ -329,7 +338,7 @@ export const adminApi = {
   // CALENDAR
   // ==========================================
   getEventsCalendar: async (params?: { from?: string; to?: string; organizationId?: number }) =>
-    axios.get('/calendar/events', { params, responseType: 'blob' }),
+    axios.get('/calendar/events', { params, responseType: 'blob' })
 };
 
 export default adminApi;

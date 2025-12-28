@@ -14,7 +14,9 @@ export default class Achievement extends BaseModel {
   @column({ columnName: 'category_id' })
   public categoryId?: number
 
-  @belongsTo(() => AchievementCategory)
+  @belongsTo(() => AchievementCategory, {
+    foreignKey: 'categoryId'
+  })
   public category: BelongsTo<typeof AchievementCategory>
 
   @column()

@@ -4,7 +4,6 @@ import api from '@/lib/api';
 import { toast } from '@/components/atoms/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import TagInput from '@/components/molecules/tag-input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -24,161 +23,107 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Search, Filter, MoreHorizontal, Mail, Star, Loader2, Plus, Trash2, FileText } from 'lucide-react';
+import { Search, Filter, MoreHorizontal, Loader2, Plus, FileText, XCircle } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 export default function OrganizationVolunteers() {
   const queryClient = useQueryClient();
-  const [selectedVolunteer, setSelectedVolunteer] = useState<any>(null);
-  const [isMessageOpen, setIsMessageOpen] = useState(false);
-  const [isAddOpen, setIsAddOpen] = useState(false); // Renamed from isEditOpen
-  const [editingVolunteer, setEditingVolunteer] = useState<any>(null);
-  const [viewingRequest, setViewingRequest] = useState<any>(null);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
 
-  // Fetch Volunteers
-  const { data: volunteers, isLoading } = useQuery({
-    queryKey: ['organizationVolunteers'],
-    queryFn: () => api.listOrganizationVolunteers()
+  // Fetch Organization ID first
+  const { data: orgProfile } = useQuery({
+    queryKey: ['organizationProfile'],
+    queryFn: () => api.getOrganizationProfile()
+  });
+  
+  const orgId = orgProfile?.id || (orgProfile as any)?.data?.id;
+
+  // Fetch Members using new API
+  const { data: membersData, isLoading } = useQuery({
+    queryKey: ['organizationMembers', orgId, search, statusFilter],
+    queryFn: async () => {
+      const params: any = { page: 1, perPage: 50 }; // Basic pagination for now
+      if (search) params.search = search;
+      if (statusFilter && statusFilter !== 'all') params.status = statusFilter;
+      return api.getOrganizationMembers(orgId, params);
+    },
+    enabled: !!orgId
   });
 
-  // Add/Update Volunteer Mutation
-  const saveVolunteerMutation = useMutation({
-    mutationFn: (data: any) => {
-      if (editingVolunteer) {
-        return api.updateOrganizationVolunteer(editingVolunteer.id, data);
-      }
-      return api.addOrganizationVolunteer(data);
+  const members = (membersData as any)?.data || [];
+
+  // Update Status Mutation (Approve/Reject/Suspend)
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ memberId, status, notes }: { memberId: number; status: string; notes?: string }) => {
+      return api.updateOrganizationMemberStatus(orgId, memberId, status, notes);
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['organizationMembers'] });
+      // Invalidate old keys just in case
       queryClient.invalidateQueries({ queryKey: ['organizationVolunteers'] });
-      setIsAddOpen(false);
-      toast.success(editingVolunteer ? 'Volunteer updated successfully' : 'Volunteer added successfully');
-    },
-    onError: () => {
-      toast.error('Failed to save volunteer');
-    }
-  });
-
-  // Delete Volunteer Mutation
-  const deleteVolunteerMutation = useMutation({
-    mutationFn: api.deleteOrganizationVolunteer,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['organizationVolunteers'] });
-      toast.success('Volunteer removed successfully');
-    },
-    onError: () => {
-      toast.error('Failed to remove volunteer');
-    }
-  });
-
-  // per-item loading map for approve/reject actions
-  const [loadingById, setLoadingById] = useState<Record<string | number, boolean>>({});
-
-  // Approve Volunteer Mutation
-  const approveVolunteerMutation = useMutation({
-    mutationFn: (id: number | string) => api.approveOrganizationVolunteer(id as number),
-    onMutate: (id: number | string) => {
-      setLoadingById((s) => ({ ...s, [id]: true }));
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['organizationVolunteers'] });
-      queryClient.invalidateQueries({ queryKey: ['myOrganizations'] });
-      queryClient.invalidateQueries({ queryKey: ['me'] });
-      toast.success('Volunteer approved');
+      toast.success('Member status updated successfully');
       setViewingRequest(null);
+      setRejectConfirmOpen(false);
     },
     onError: () => {
-      toast.error('Failed to approve volunteer');
-    },
-    onSettled: (data, err, id: any) => {
-      setLoadingById((s) => {
-        const ns = { ...s };
-        delete ns[id];
-        return ns;
-      });
+      toast.error('Failed to update status');
     }
   });
 
-  // Reject Volunteer Mutation
-  const rejectVolunteerMutation = useMutation({
-    mutationFn: (payload: { id: number | string; reason?: string }) =>
-      api.rejectOrganizationVolunteer(payload.id as number, payload.reason),
-    onMutate: (payload: { id: number | string }) => {
-      const id = payload.id;
-      setLoadingById((s) => ({ ...s, [id]: true }));
+  // Remove Mutation
+  const removeMutation = useMutation({
+    mutationFn: async (memberId: number) => {
+      return api.removeOrganizationMember(orgId, memberId);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['organizationVolunteers'] });
-      queryClient.invalidateQueries({ queryKey: ['myOrganizations'] });
-      queryClient.invalidateQueries({ queryKey: ['me'] });
-      toast.success('Volunteer rejected');
-      setViewingRequest(null);
+      queryClient.invalidateQueries({ queryKey: ['organizationMembers'] });
+      toast.success('Member removed successfully');
     },
     onError: () => {
-      toast.error('Failed to reject volunteer');
-    },
-    onSettled: (data, err, id: any) => {
-      setLoadingById((s) => {
-        const ns = { ...s };
-        delete ns[id];
-        return ns;
-      });
+      toast.error('Failed to remove member');
     }
   });
 
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    role: 'Volunteer',
-    status: 'active',
-    notes: '',
-    skills: [] as string[]
-  });
-
-  const handleOpenAdd = () => {
-    setEditingVolunteer(null);
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      role: 'Volunteer',
-      status: 'active',
-      notes: '',
-      skills: []
-    });
-    setIsAddOpen(true);
-  };
-
-  const handleOpenEdit = (volunteer: any) => {
-    setEditingVolunteer(volunteer);
-    setFormData({
-      name: volunteer.name,
-      email: volunteer.email,
-      phone: volunteer.phone ?? '',
-      role: volunteer.role,
-      status: volunteer.status || 'active',
-      notes: volunteer.notes || '',
-      skills: volunteer.skills ? volunteer.skills : []
-    });
-    setIsAddOpen(true);
-  };
-
-  // Reject confirmation dialog state
-  const [isRejectConfirmOpen, setIsRejectConfirmOpen] = useState(false);
-  const [rejectTarget, setRejectTarget] = useState<any>(null);
+  // Action Dialog States
+  const [viewingRequest, setViewingRequest] = useState<any>(null); // For pending request details
+  const [rejectConfirmOpen, setRejectConfirmOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
-
-  const handleSubmit = () => {
-    const payload = {
-      ...formData,
-      skills: Array.isArray(formData.skills) ? formData.skills : []
-    };
-    saveVolunteerMutation.mutate(payload);
+  const [rejectTarget, setRejectTarget] = useState<any>(null);
+  
+  const [actionMember, setActionMember] = useState<any>(null);
+  const [notesDialogOpen, setNotesDialogOpen] = useState(false);
+  const [notes, setNotes] = useState('');
+  
+  const handleApprove = (member: any) => {
+    updateStatusMutation.mutate({ memberId: member.user_id, status: 'active' });
+  };
+  
+  const handleReject = () => {
+    if (rejectTarget) {
+      updateStatusMutation.mutate({ memberId: rejectTarget.user_id, status: 'rejected', notes: rejectReason });
+    }
   };
 
-  if (isLoading) {
+  const handleUpdateNotes = () => {
+     if (actionMember) {
+        updateStatusMutation.mutate({ memberId: actionMember.user_id, status: actionMember.status, notes });
+        setNotesDialogOpen(false);
+     }
+  };
+
+  const getStatusBadge = (status: string) => {
+     switch(status) {
+        case 'active': return <Badge className="bg-green-100 text-green-800 hover:bg-green-200 border-none">Active</Badge>;
+        case 'pending': return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-none">Pending</Badge>;
+        case 'rejected': return <Badge className="bg-red-100 text-red-800 hover:bg-red-200 border-none">Rejected</Badge>;
+        case 'suspended': return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-200 border-none">Suspended</Badge>;
+        default: return <Badge variant="secondary">{status}</Badge>;
+     }
+  }
+
+  if (isLoading || !orgId) {
     return (
       <div className="flex justify-center items-center h-96">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -186,33 +131,41 @@ export default function OrganizationVolunteers() {
     );
   }
 
-  const displayVolunteers = Array.isArray(volunteers) ? volunteers : [];
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Volunteers</h2>
-          <p className="text-muted-foreground">Manage your volunteer database and track engagement.</p>
+          <p className="text-muted-foreground">Manage your volunteer database and requests.</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">Export List</Button>
-          <Button onClick={handleOpenAdd}>
-            <Plus className="h-4 w-4 mr-2" />
-            Add Volunteer
-          </Button>
+           {/* Add manually logic could go here if needed */}
         </div>
       </div>
 
       <div className="flex items-center gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search volunteers..." className="pl-8" />
+          <Input 
+             placeholder="Search volunteers..." 
+             className="pl-8" 
+             value={search}
+             onChange={(e) => setSearch(e.target.value)}
+          />
         </div>
-        <Button variant="outline">
-          <Filter className="h-4 w-4 mr-2" />
-          Filter
-        </Button>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-[180px]">
+            <Filter className="w-4 h-4 mr-2" />
+            <SelectValue placeholder="All Statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="suspended">Suspended</SelectItem>
+            <SelectItem value="rejected">Rejected</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <Card>
@@ -221,117 +174,96 @@ export default function OrganizationVolunteers() {
             <TableHeader>
               <TableRow>
                 <TableHead>Volunteer</TableHead>
-                <TableHead>Role</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Joined</TableHead>
                 <TableHead>Hours</TableHead>
-                <TableHead>Rating</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {displayVolunteers.length === 0 ? (
+              {members.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    No volunteers found. Add one to get started.
+                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    No volunteers found.
                   </TableCell>
                 </TableRow>
               ) : (
-                displayVolunteers.map((volunteer: any) => (
-                  <TableRow key={volunteer.id}>
+                members.map((member: any) => (
+                  <TableRow key={member.user_id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar>
-                          <AvatarImage src={volunteer.avatar} />
+                          <AvatarImage src={member.user?.avatar || member.user?.avatar_url} />
                           <AvatarFallback>
-                            {volunteer.name
-                              ?.split(' ')
-                              .map((n: string) => n[0])
-                              .join('')}
+                            {(member.user?.first_name || member.user?.email || '?')[0].toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <div className="font-medium">{volunteer.name}</div>
-                          <div className="text-xs text-muted-foreground">{volunteer.email}</div>
+                          <div className="font-medium">{member.user?.first_name} {member.user?.last_name}</div>
+                          <div className="text-xs text-muted-foreground">{member.user?.email}</div>
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>{volunteer.role}</TableCell>
                     <TableCell>
-                      <Badge variant={volunteer.status?.toLowerCase() === 'active' ? 'default' : 'secondary'}>
-                        {volunteer.status}
-                      </Badge>
+                      {getStatusBadge(member.status)}
                     </TableCell>
-                    <TableCell>{volunteer.hours || 0} hrs</TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1">
-                        <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                        <span>{volunteer.rating || 'N/A'}</span>
-                      </div>
+                       {member.joined_at ? new Date(member.joined_at).toLocaleDateString() : '-'}
                     </TableCell>
+                    <TableCell>{member.hours || 0} hrs</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        {volunteer.notes && volunteer.status === 'pending' && (
-                           <Button variant="ghost" size="icon" onClick={() => setViewingRequest(volunteer)} title="View Request Note">
-                              <FileText className="h-4 w-4 text-blue-500" />
-                           </Button>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            setSelectedVolunteer(volunteer);
-                            setIsMessageOpen(true);
-                          }}
-                        >
-                          <Mail className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(volunteer)}>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-
-                        {volunteer.status && volunteer.status.toLowerCase() === 'pending' && (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              disabled={!!loadingById[volunteer.id]}
-                              onClick={() => approveVolunteerMutation.mutate(volunteer.id)}
-                              title="Approve"
-                            >
-                              {loadingById[volunteer.id] ? (
-                                <Loader2 className="h-4 w-4 animate-spin text-green-600" />
-                              ) : (
+                        {member.status === 'pending' && (
+                           <>
+                             {member.notes && (
+                                <Button variant="ghost" size="icon" onClick={() => setViewingRequest(member)} title="View Request Note">
+                                   <FileText className="h-4 w-4 text-blue-500" />
+                                </Button>
+                             )}
+                             <Button variant="ghost" size="icon" onClick={() => handleApprove(member)} title="Approve">
                                 <Plus className="h-4 w-4 text-green-600" />
-                              )}
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              disabled={!!loadingById[volunteer.id]}
-                              onClick={() => {
-                                setRejectTarget(volunteer);
+                             </Button>
+                             <Button variant="ghost" size="icon" onClick={() => {
+                                setRejectTarget(member);
                                 setRejectReason('');
-                                setIsRejectConfirmOpen(true);
-                              }}
-                              title="Reject"
-                            >
-                              {loadingById[volunteer.id] ? (
-                                <Loader2 className="h-4 w-4 animate-spin text-red-600" />
-                              ) : (
-                                <Trash2 className="h-4 w-4 text-red-600" />
-                              )}
-                            </Button>
-                          </>
+                                setRejectConfirmOpen(true);
+                             }} title="Reject">
+                                <XCircle className="h-4 w-4 text-red-600" />
+                             </Button>
+                           </>
                         )}
-
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-red-600"
-                          onClick={() => deleteVolunteerMutation.mutate(volunteer.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        
+                        <DropdownMenu>
+                           <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                 <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                           </DropdownMenuTrigger>
+                           <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => {
+                                 setActionMember(member);
+                                 setNotes(member.notes || '');
+                                 setNotesDialogOpen(true);
+                              }}>
+                                 Edit Notes
+                              </DropdownMenuItem>
+                              
+                              {member.status === 'active' && (
+                                 <DropdownMenuItem onClick={() => updateStatusMutation.mutate({ memberId: member.user_id, status: 'suspended'})}>
+                                    Suspend
+                                 </DropdownMenuItem>
+                              )}
+                              {member.status === 'suspended' && (
+                                 <DropdownMenuItem onClick={() => updateStatusMutation.mutate({ memberId: member.user_id, status: 'active'})}>
+                                    Reactivate
+                                 </DropdownMenuItem>
+                              )}
+                              
+                              <DropdownMenuItem className="text-red-600" onClick={() => removeMutation.mutate(member.user_id)}>
+                                 Remove
+                              </DropdownMenuItem>
+                           </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -342,47 +274,18 @@ export default function OrganizationVolunteers() {
         </CardContent>
       </Card>
 
-      {/* Message Dialog */}
-      <Dialog open={isMessageOpen} onOpenChange={setIsMessageOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Message {selectedVolunteer?.name}</DialogTitle>
-            <DialogDescription>Send an email or in-app notification to this volunteer.</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="subject">Subject</Label>
-              <Input id="subject" placeholder="e.g. Upcoming Event Details" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="message">Message</Label>
-              <Textarea id="message" placeholder="Type your message here..." className="h-32" />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsMessageOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={() => setIsMessageOpen(false)}>Send Message</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       {/* View Request Note Dialog */}
       <Dialog open={!!viewingRequest} onOpenChange={(open) => !open && setViewingRequest(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Membership Request</DialogTitle>
             <DialogDescription>
-              Request from <span className="font-semibold">{viewingRequest?.name}</span>
+              Request from <span className="font-semibold">{viewingRequest?.user?.first_name}</span>
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
              <div className="bg-slate-50 p-4 rounded-md border text-sm italic">
                 "{viewingRequest?.notes || 'No message provided.'}"
-             </div>
-             <div className="flex gap-2 mt-4 text-xs text-muted-foreground">
-                <Mail className="h-3 w-3" /> {viewingRequest?.email}
              </div>
           </div>
           <DialogFooter className="gap-2">
@@ -391,7 +294,7 @@ export default function OrganizationVolunteers() {
                 onClick={() => {
                    setRejectTarget(viewingRequest);
                    setRejectReason('');
-                   setIsRejectConfirmOpen(true);
+                   setRejectConfirmOpen(true);
                    setViewingRequest(null);
                 }}
              >
@@ -399,14 +302,8 @@ export default function OrganizationVolunteers() {
              </Button>
              <Button 
                 className="bg-green-600 hover:bg-green-700" 
-                onClick={() => approveVolunteerMutation.mutate(viewingRequest.id)}
-                disabled={!!loadingById[viewingRequest?.id]}
+                onClick={() => handleApprove(viewingRequest)}
              >
-               {loadingById[viewingRequest?.id] ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-               ) : (
-                  <Plus className="h-4 w-4 mr-2" />
-               )}
                Approve
              </Button>
           </DialogFooter>
@@ -414,143 +311,37 @@ export default function OrganizationVolunteers() {
       </Dialog>
 
       {/* Reject Confirmation Dialog */}
-      <Dialog open={isRejectConfirmOpen} onOpenChange={setIsRejectConfirmOpen}>
+      <Dialog open={rejectConfirmOpen} onOpenChange={setRejectConfirmOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reject membership request</DialogTitle>
+            <DialogTitle>Reject Request</DialogTitle>
             <DialogDescription>
-              Provide an optional reason for rejecting this membership request. The volunteer will be notified.
+               Reason for rejection (optional)
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="reject-reason">Reason (optional)</Label>
-              <Textarea
-                id="reject-reason"
-                placeholder="Optional: brief reason for rejection"
-                value={rejectReason}
-                onChange={(e) => setRejectReason((e.target as HTMLTextAreaElement).value)}
-                className="h-28"
-              />
-            </div>
-          </div>
+          <Textarea 
+             value={rejectReason}
+             onChange={(e) => setRejectReason(e.target.value)}
+             placeholder="Reason..."
+          />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsRejectConfirmOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              className="bg-red-600 hover:bg-red-700"
-              onClick={() => {
-                if (rejectTarget) {
-                  rejectVolunteerMutation.mutate({ id: rejectTarget.id, reason: rejectReason });
-                }
-                setIsRejectConfirmOpen(false);
-              }}
-            >
-              Confirm Reject
-            </Button>
+            <Button variant="outline" onClick={() => setRejectConfirmOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleReject}>Details Reject</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Add/Edit Dialog */}
-      <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{editingVolunteer ? 'Edit Volunteer' : 'Add Volunteer'}</DialogTitle>
-            <DialogDescription>
-              {editingVolunteer ? 'Update volunteer details.' : 'Add a new volunteer to your organization.'}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                   <Label htmlFor="name">Name</Label>
-                   <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                   <Label htmlFor="email">Email</Label>
-                   <Input
-                    id="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  />
-                </div>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                   <Label htmlFor="phone">Phone</Label>
-                   <Input
-                    id="phone"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                   <Label htmlFor="role">Role</Label>
-                   <Select value={formData.role} onValueChange={(v) => setFormData({...formData, role: v})}>
-                      <SelectTrigger>
-                         <SelectValue placeholder="Select role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                         <SelectItem value="Volunteer">Volunteer</SelectItem>
-                         <SelectItem value="Team Leader">Team Leader</SelectItem>
-                         <SelectItem value="Coordinator">Coordinator</SelectItem>
-                         <SelectItem value="Manager">Manager</SelectItem>
-                      </SelectContent>
-                   </Select>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-                 <div className="space-y-2">
-                    <Label htmlFor="status">Status</Label>
-                     <Select value={formData.status} onValueChange={(v) => setFormData({...formData, status: v})}>
-                      <SelectTrigger>
-                         <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                         <SelectItem value="active">Active</SelectItem>
-                         <SelectItem value="pending">Pending</SelectItem>
-                         <SelectItem value="inactive">Inactive</SelectItem>
-                         <SelectItem value="suspended">Suspended</SelectItem>
-                      </SelectContent>
-                   </Select>
-                 </div>
-                 <div className="space-y-2">
-                     <Label>Skills</Label>
-                     <TagInput
-                      id="skills"
-                      value={formData.skills as string[]}
-                      onChange={(v) => setFormData({ ...formData, skills: v })}
-                      placeholder="Add..."
-                    />
-                 </div>
-            </div>
-
-            <div className="space-y-2">
-               <Label htmlFor="notes">Internal Notes (Optional)</Label>
-               <Textarea 
-                  id="notes" 
-                  placeholder="Private notes about this volunteer..."
-                  value={formData.notes}
-                  onChange={(e) => setFormData({...formData, notes: e.target.value})}
-               />
-            </div>
-
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSubmit}>{editingVolunteer ? 'Update' : 'Add'}</Button>
-          </DialogFooter>
-        </DialogContent>
+      
+      {/* Edit Notes Dialog */}
+      <Dialog open={notesDialogOpen} onOpenChange={setNotesDialogOpen}>
+         <DialogContent>
+            <DialogHeader>
+               <DialogTitle>Edit Internal Notes</DialogTitle>
+            </DialogHeader>
+            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Internal notes..." />
+            <DialogFooter>
+               <Button onClick={handleUpdateNotes}>Save</Button>
+            </DialogFooter>
+         </DialogContent>
       </Dialog>
     </div>
   );

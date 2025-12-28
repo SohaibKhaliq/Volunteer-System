@@ -26,7 +26,6 @@
     "@adonisjs/lucid",
     "@adonisjs/auth",
     "@adonisjs/bouncer",
-    "@adonisjs/drive-s3",
     "@adonisjs/route-model-binding/build/providers/RmbProvider",
     "@adonisjs/limiter",
     "@adonisjs/redis"

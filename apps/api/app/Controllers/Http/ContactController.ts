@@ -1,6 +1,8 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Logger from '@ioc:Adonis/Core/Logger'
 
+import ContactSubmission from 'App/Models/ContactSubmission'
+
 export default class ContactController {
   public async store({ request, response }: HttpContextContract) {
     const data = request.only(['firstName', 'lastName', 'email', 'subject', 'message'])
@@ -10,12 +12,35 @@ export default class ContactController {
       return response.badRequest({ message: 'Missing required fields' })
     }
 
-    // In a real app, we would send an email here or save to DB
-    Logger.info('Contact form submission:', data)
+    try {
+      await ContactSubmission.create({
+        ...data,
+        status: 'unread'
+      })
+      
+      Logger.info('Contact form submission saved:', data.email)
+      return response.ok({ message: 'Message sent successfully' })
+    } catch (error) {
+      Logger.error(error)
+      return response.internalServerError({ message: 'Failed to save message' })
+    }
+  }
 
-    // Simulate processing delay
-    await new Promise((resolve) => setTimeout(resolve, 500))
+  public async index({ request, response, auth }: HttpContextContract) {
+    // Ensure only admins can access (though route should handle this too)
+    // if (!auth.user?.isAdmin) ... let's rely on middleware in routes
+    
+    const page = request.input('page', 1)
+    const limit = request.input('limit', 10)
+    const status = request.input('status')
 
-    return response.ok({ message: 'Message sent successfully' })
+    const query = ContactSubmission.query().orderBy('created_at', 'desc')
+
+    if (status) {
+      query.where('status', status)
+    }
+
+    const submissions = await query.paginate(page, limit)
+    return response.ok(submissions)
   }
 }

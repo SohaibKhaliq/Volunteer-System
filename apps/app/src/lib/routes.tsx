@@ -1,6 +1,7 @@
 import NotFound from '@/components/molecules/404';
 import ErrorBoundary from '@/components/atoms/ErrorBoundary';
 import Layout from '@/components/templates/layout';
+import RouteGuard from '@/components/RouteGuard';
 import Carpooling from '@/pages/carpooling';
 import Detail from '@/pages/detail';
 import Help from '@/pages/help';
@@ -16,7 +17,7 @@ import TransportOfferForm from '@/pages/transport-offer-form';
 import TransportRequestForm from '@/pages/transport-request-form';
 import Profile from '@/pages/profile';
 import NotificationsPage from '@/pages/notifications';
-import { RouteObject } from 'react-router-dom';
+import { Navigate, RouteObject } from 'react-router-dom';
 import AdminLayout from '@/components/templates/AdminLayout';
 import AppProvider from '@/providers/app-provider';
 import AdminDashboard from '@/pages/admin/dashboard';
@@ -52,17 +53,18 @@ import AdminFeedbackResults from '@/pages/admin/feedback/[id]/results';
 import AdminExports from '@/pages/admin/exports';
 import AdminShifts from '@/pages/admin/shifts';
 import AdminRoles from '@/pages/admin/roles';
+import AdminPermissions from '@/pages/admin/permissions';
+import AdminFeatureFlags from '@/pages/admin/feature-flags';
 import AdminTypes from '@/pages/admin/types';
 import AdminAuditLogs from '@/pages/admin/audit-logs';
 import AdminSettings from '@/pages/admin/settings';
 import AdminVolunteerProfile from '@/pages/admin/volunteer-profile';
 import AdminEmergencyRequests from '@/pages/admin/emergency-requests';
+import AdminContactSubmissions from '@/pages/admin/contact-submissions';
 import OrganizationLayout from '@/components/templates/OrganizationLayout';
 import OrganizationDashboard from '@/pages/organization/dashboard';
 import OrganizationProfile from '@/pages/organization/profile';
 import OrganizationEvents from '@/pages/organization/events';
-import OrganizationOpportunities from '@/pages/organization/opportunities';
-import OrganizationOpportunityEdit from '@/pages/organization/opportunities/edit';
 import OrganizationAchievements from '@/pages/organization/achievements';
 import OrganizationVolunteers from '@/pages/organization/volunteers';
 import OrganizationResources from '@/pages/organization/resources';
@@ -85,6 +87,27 @@ import VolunteerOpportunities from '@/pages/volunteer/opportunities';
 import VolunteerOpportunityDetail from '@/pages/volunteer/opportunities/detail';
 import VolunteerAttendance from '@/pages/volunteer/attendance';
 
+// Reactivated Orphan Pages
+import AdminOrganizationVolunteers from '@/pages/admin/organization-volunteers';
+import CentrelinkReporting from '@/pages/centrelink-reporting';
+import FeedbackResults from '@/pages/feedback/[id]/results'; // Admin context primarily
+import FeedbackCreate from '@/pages/feedback/create';
+import OrganizationHours from '@/pages/organization/[id]/hours'; // Admin/Org context? Checks needed
+import OrganizationApplications from '@/pages/organization/applications';
+import OrganizationAttendances from '@/pages/organization/attendances';
+import OrganizationComplianceRequirements from '@/pages/organization/compliance-requirements';
+import OrganizationTeams from '@/pages/organization/teams'; // Corrected from 'teams.tsx'
+import OrganizationPublicProfile from '@/pages/organizations/[slug]';
+import SettingsCalendar from '@/pages/settings/calendar';
+import VolunteerAchievements from '@/pages/volunteer/achievements';
+import VolunteerApplications from '@/pages/volunteer/applications';
+import VolunteerDashboard from '@/pages/volunteer/dashboard';
+import VolunteerHistory from '@/pages/volunteer/history';
+import VolunteerHours from '@/pages/volunteer/hours/index';
+import VolunteerOpportunityDetailView from '@/pages/volunteer/opportunity-detail'; // Alias to avoid conflict
+import VolunteerOrganizations from '@/pages/volunteer/organizations';
+import VolunteerSettings from '@/pages/volunteer/settings';
+
 // Simple wrappers to ensure pages are vertically scrollable
 const ScrollWrapper = ({ children }: any) => (
   <div style={{ height: '100vh', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>{children}</div>
@@ -93,23 +116,19 @@ const ScrollWrapper = ({ children }: any) => (
 const AdminScrollWrapper = ({ children }: any) => (
   <div style={{ height: '100vh', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>{children}</div>
 );
-export enum DetailTypes {
-  Offer = 'offer',
-  Request = 'request',
-  RideRequest = 'ride-request',
-  RideOffer = 'ride-offer',
-  Event = 'event'
-}
+import { DetailTypes } from '@/lib/types';
 
 const routes: RouteObject[] = [
   {
     path: 'admin',
     element: (
-      <AdminScrollWrapper>
-        <AppProvider>
-          <AdminLayout />
-        </AppProvider>
-      </AdminScrollWrapper>
+      <RouteGuard allowedRoles={['admin']} redirectTo="/">
+        <AdminScrollWrapper>
+          <AppProvider>
+            <AdminLayout />
+          </AppProvider>
+        </AdminScrollWrapper>
+      </RouteGuard>
     ),
     errorElement: <ErrorBoundary />,
     children: [
@@ -147,20 +166,29 @@ const routes: RouteObject[] = [
       { path: 'feedback/:id/results', element: <AdminFeedbackResults /> },
       { path: 'audit-logs', element: <AdminAuditLogs /> },
       { path: 'roles', element: <AdminRoles /> },
+      { path: 'permissions', element: <AdminPermissions /> },
+      { path: 'feature-flags', element: <AdminFeatureFlags /> },
       { path: 'types', element: <AdminTypes /> },
       { path: 'settings', element: <AdminSettings /> },
       { path: 'volunteer-profile', element: <AdminVolunteerProfile /> },
-      { path: 'emergency-requests', element: <AdminEmergencyRequests /> }
+      { path: 'emergency-requests', element: <AdminEmergencyRequests /> },
+      { path: 'contact-submissions', element: <AdminContactSubmissions /> },
+      // Reactivated Orphans (Admin Context)
+      { path: 'organizations/:id/volunteers', element: <AdminOrganizationVolunteers /> },
+      { path: 'feedback/create', element: <FeedbackCreate /> },
+      { path: 'feedback/:id/results', element: <FeedbackResults /> }
     ]
   },
   {
     path: 'organization',
     element: (
-      <AdminScrollWrapper>
-        <AppProvider>
-          <OrganizationLayout />
-        </AppProvider>
-      </AdminScrollWrapper>
+      <RouteGuard allowedRoles={['organization_admin', 'admin']} redirectTo="/">
+        <AdminScrollWrapper>
+          <AppProvider>
+            <OrganizationLayout />
+          </AppProvider>
+        </AdminScrollWrapper>
+      </RouteGuard>
     ),
     errorElement: <ErrorBoundary />,
     children: [
@@ -168,9 +196,7 @@ const routes: RouteObject[] = [
       { path: 'profile', element: <OrganizationProfile /> },
       { path: 'team', element: <OrganizationTeam /> },
       { path: 'events', element: <OrganizationEvents /> },
-      { path: 'opportunities', element: <OrganizationOpportunities /> },
-      { path: 'opportunities/create', element: <OrganizationOpportunityEdit /> },
-      { path: 'opportunities/:id/edit', element: <OrganizationOpportunityEdit /> },
+      { path: 'opportunities/*', element: <Navigate to="/organization/events" replace /> },
       { path: 'resources', element: <OrganizationResources /> },
       { path: 'achievements', element: <OrganizationAchievements /> },
       { path: 'volunteers', element: <OrganizationVolunteers /> },
@@ -178,7 +204,13 @@ const routes: RouteObject[] = [
       { path: 'compliance', element: <OrganizationCompliance /> },
       { path: 'reports', element: <OrganizationReports /> },
       { path: 'communications', element: <OrganizationCommunications /> },
-      { path: 'settings', element: <OrganizationSettings /> }
+      { path: 'settings', element: <OrganizationSettings /> },
+      // Reactivated Orphans (Organization Context)
+      { path: 'applications', element: <OrganizationApplications /> },
+      { path: 'attendances', element: <OrganizationAttendances /> },
+      { path: 'teams', element: <OrganizationTeams /> },
+      { path: 'compliance-requirements', element: <OrganizationComplianceRequirements /> },
+      { path: 'hours/:id', element: <OrganizationHours /> } // Verify :id necessity
     ]
   },
   {
@@ -217,7 +249,20 @@ const routes: RouteObject[] = [
       { path: 'volunteer/opportunities', element: <VolunteerOpportunities /> },
       { path: 'volunteer/opportunities/:id', element: <VolunteerOpportunityDetail /> },
       { path: 'volunteer/attendance', element: <VolunteerAttendance /> },
-      { path: 'events/:id', element: <Detail /> }
+      { path: 'events/:id', element: <Detail /> },
+      // Reactivated Orphans (Public/Shared)
+      { path: 'centrelink-reporting', element: <CentrelinkReporting /> },
+      { path: 'organizations/:slug', element: <OrganizationPublicProfile /> },
+      { path: 'settings/calendar', element: <SettingsCalendar /> },
+      // Reactivated Orphans (Volunteer Context - explicitly restoring /volunteer prefix)
+      { path: 'volunteer/dashboard', element: <VolunteerDashboard /> },
+      { path: 'volunteer/history', element: <VolunteerHistory /> },
+      { path: 'volunteer/achievements', element: <VolunteerAchievements /> },
+      { path: 'volunteer/applications', element: <VolunteerApplications /> },
+      { path: 'volunteer/settings', element: <VolunteerSettings /> },
+      { path: 'volunteer/organizations', element: <VolunteerOrganizations /> },
+      { path: 'volunteer/hours', element: <VolunteerHours /> },
+      { path: 'volunteer/opportunities/:id/view', element: <VolunteerOpportunityDetailView /> }
     ]
   },
   // Volunteer route group removed; volunteer pages consolidated into `/profile`

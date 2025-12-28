@@ -75,18 +75,42 @@ export default function AdminBackup() {
                 <span>Checking status...</span>
               ) : status ? (
                 <div className="space-y-1">
-                  <div>
-                    Status: <strong className="capitalize">{String(status.status ?? status.state ?? 'unknown')}</strong>
-                  </div>
-                  {status.startedAt && <div>Started: {new Date(status.startedAt).toLocaleString()}</div>}
-                  {status.completedAt && <div>Completed: {new Date(status.completedAt).toLocaleString()}</div>}
-                  {status.downloadUrl && (
-                    <div>
-                      <a href={status.downloadUrl} target="_blank" rel="noreferrer" className="underline">
-                        Download latest backup
-                      </a>
-                    </div>
-                  )}
+                  {(() => {
+                    const last = status.lastBackup ? status.lastBackup : status
+                    return (
+                      <>
+                        <div>
+                          Status: <strong className="capitalize">{String(last?.status ?? 'unknown')}</strong>
+                        </div>
+                        {last?.createdAt && <div>Started: {new Date(last.createdAt).toLocaleString()}</div>}
+                        {last?.completedAt && <div>Completed: {new Date(last.completedAt).toLocaleString()}</div>}
+                        {last?.id && (
+                          <div>
+                            <Button
+                              onClick={async () => {
+                                try {
+                                  const res: any = await api.downloadBackup(last.id)
+                                  const blob = new Blob([res.data], { type: 'application/gzip' })
+                                  const url = window.URL.createObjectURL(blob)
+                                  const a = document.createElement('a')
+                                  a.href = url
+                                  a.download = `backup-${last.id}.json.gz`
+                                  document.body.appendChild(a)
+                                  a.click()
+                                  a.remove()
+                                  window.URL.revokeObjectURL(url)
+                                } catch (err: any) {
+                                  toast({ title: 'Download failed', description: String(err), variant: 'destructive' })
+                                }
+                              }}
+                            >
+                              Download latest backup
+                            </Button>
+                          </div>
+                        )}
+                      </>
+                    )
+                  })()}
                 </div>
               ) : (
                 <span>No recent backups</span>

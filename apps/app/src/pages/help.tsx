@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -33,8 +34,12 @@ const Help = () => {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="destructive">{t('Request Help')}</Button>
-            <Button variant="outline">{t('Offer Help')}</Button>
+            <Link to="/help-request">
+              <Button variant="destructive">{t('Request Help')}</Button>
+            </Link>
+            <Link to="/help-offer">
+              <Button variant="outline">{t('Offer Help')}</Button>
+            </Link>
           </div>
         </div>
 
@@ -60,23 +65,23 @@ const Help = () => {
             <Card key={req.id} className="hover:shadow-lg transition-shadow border-l-4 border-l-primary">
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start mb-2">
-                  <Badge variant={req.urgency === 'Critical' || req.urgency === 'High' ? 'destructive' : 'secondary'}>
-                    {req.urgency} Priority
+                  <Badge variant={['critical', 'high'].includes((req.severity || '').toLowerCase()) ? 'destructive' : 'secondary'}>
+                    {(req.severity || 'Normal').charAt(0).toUpperCase() + (req.severity || 'normal').slice(1)} Priority
                   </Badge>
                   <span className="text-xs text-muted-foreground flex items-center">
-                    <Clock className="h-3 w-3 mr-1" /> {req.date}
+                    <Clock className="h-3 w-3 mr-1" /> {new Date(req.createdAt).toLocaleDateString()}
                   </span>
                 </div>
-                <CardTitle className="text-lg">{req.title}</CardTitle>
+                <CardTitle className="text-lg">{(req.types && req.types[0]?.name) || 'Help Request'}</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{req.description}</p>
                 <div className="space-y-2 text-sm text-slate-600 mb-4">
                   <div className="flex items-center gap-2">
-                    <HeartHandshake className="h-4 w-4 text-primary" /> {req.category}
+                    <HeartHandshake className="h-4 w-4 text-primary" /> {(req.types && req.types[0]?.name) || 'General'}
                   </div>
                   <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-primary" /> {req.location}
+                    <MapPin className="h-4 w-4 text-primary" /> {req.address || t('No location provided')}
                   </div>
                 </div>
                 <Button className="w-full" variant="outline">

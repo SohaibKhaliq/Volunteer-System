@@ -10,7 +10,7 @@ import TextAreaInput from '@/components/molecules/text-area-input';
 import TextInput from '@/components/molecules/text-input';
 import api from '@/lib/api';
 import { EARTHQUAKE_EPICENTER } from '@/lib/config';
-import { DetailTypes } from '@/lib/routes';
+import { DetailTypes } from '@/lib/types';
 import { imageSchema } from '@/lib/validation';
 import { RequestTypes } from '@/types/types';
 import { FixType } from '@/types/utils';
@@ -48,7 +48,7 @@ const formSchema = z.object({
 const HelpRequestForm = () => {
   const { t } = useTranslation();
   const { toast } = useToast();
-  const timeout = useRef<NodeJS.Timeout | null>(null);
+  const timeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -130,22 +130,22 @@ const HelpRequestForm = () => {
   }, []);
 
   return (
-    <div className="flex flex-col w-full min-h-screen bg-gray-50/50">
-      <div className="w-full max-w-2xl mx-auto px-4 sm:px-6 py-8 pb-32">
-        <div className="mb-8 text-center sm:text-left">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">{t('Request Help')}</h1>
-          <p className="mt-2 text-sm text-gray-500 max-w-lg">
-            {t('Please provide details about your situation so we can coordinate the right assistance for you.')}
-          </p>
-        </div>
+    <div className="container mx-auto max-w-2xl py-12 px-4">
+      <div className="mb-8 text-center space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight">{t('Request Help')}</h1>
+        <p className="text-muted-foreground">
+          {t('Please provide details about your situation so we can coordinate the right assistance for you.')}
+        </p>
+      </div>
 
+      <div className="bg-card p-6 rounded-lg border shadow-sm">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8" encType="multipart/form-data">
             
             {/* Section 1: Assistance & Location */}
-            <div className="bg-white p-6 rounded-xl border shadow-sm space-y-6">
+            <div className="space-y-6">
               <div className="border-b pb-3">
-                <h2 className="text-lg font-semibold text-gray-900">{t('Assistance & Location')}</h2>
+                <h2 className="text-lg font-semibold">{t('Assistance & Location')}</h2>
               </div>
               
               <FormField
@@ -183,7 +183,7 @@ const HelpRequestForm = () => {
                 )}
               />
 
-              <div className="grid gap-6 sm:grid-cols-1">
+              <div className="space-y-6">
                 <FormField
                   control={form.control}
                   name="location"
@@ -233,9 +233,9 @@ const HelpRequestForm = () => {
             </div>
 
             {/* Section 2: Situation Details */}
-            <div className="bg-white p-6 rounded-xl border shadow-sm space-y-6">
+            <div className="space-y-6 pt-6 border-t">
               <div className="border-b pb-3">
-                <h2 className="text-lg font-semibold text-gray-900">{t('Situation Details')}</h2>
+                <h2 className="text-lg font-semibold">{t('Situation Details')}</h2>
               </div>
               
               <FormField
@@ -247,7 +247,6 @@ const HelpRequestForm = () => {
                       <TextAreaInput
                         label={t('Describe the situation')}
                         placeholder={t('Please provide as much detail as possible about what is happening...')}
-                        className="min-h-[120px]"
                         {...field}
                       />
                     </FormControl>
@@ -288,9 +287,9 @@ const HelpRequestForm = () => {
             </div>
 
             {/* Section 3: Contact Information */}
-            <div className="bg-white p-6 rounded-xl border shadow-sm space-y-6">
+            <div className="space-y-6 pt-6 border-t">
               <div className="border-b pb-3">
-                <h2 className="text-lg font-semibold text-gray-900">{t('Contact Information')}</h2>
+                <h2 className="text-lg font-semibold">{t('Contact Information')}</h2>
               </div>
 
               <FormField
@@ -389,7 +388,7 @@ const HelpRequestForm = () => {
                         <label className="text-sm font-medium leading-none text-gray-700">
                           {t('I consent to sharing this information for emergency assistance purposes.')}
                         </label>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-muted-foreground">
                           {t('Your data will be shared with verified volunteers and emergency services if necessary.')}
                         </p>
                       </div>

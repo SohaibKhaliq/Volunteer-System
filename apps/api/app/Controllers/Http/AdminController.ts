@@ -61,7 +61,25 @@ export default class AdminController {
       // Pending approvals (organizations with pending status)
       const pendingOrgs = await Organization.query().where('status', 'pending').count('* as total')
 
+      // Metrics for the last 6 months
+      const sixMonthsAgo = new Date()
+      sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
+
+      const hoursResult = await Database.from('volunteer_hours')
+        .where('status', 'approved')
+        .where('date', '>=', sixMonthsAgo)
+        .sum('hours as total')
+      const totalHours = Number(hoursResult[0].total || 0)
+
+      const activeVolunteersResult = await Database.from('volunteer_hours')
+        .where('status', 'approved')
+        .where('date', '>=', sixMonthsAgo)
+        .countDistinct('user_id as total')
+      const activeVolunteersCount = Number(activeVolunteersResult[0].total || 0)
+
       return response.ok({
+        totalHours,
+        activeVolunteers: activeVolunteersCount,
         organizations: {
           total: totalOrgs[0].$extras.total || 0,
           active: activeOrgs[0].$extras.total || 0,
@@ -795,9 +813,33 @@ export default class AdminController {
       const admin = await this.requireSuperAdmin(auth)
 
       const settings = request.body()
+      const keys = Object.keys(settings)
+
+      // Fetch previous values for audit trail
+      const existingRows = keys.length
+        ? await Database.from('system_settings').whereIn('key', keys).select('key', 'value')
+        : []
+
+      const previousValues: Record<string, any> = {}
+      for (const row of existingRows) {
+        try {
+          previousValues[row.key] = JSON.parse(row.value)
+        } catch {
+          previousValues[row.key] = row.value
+        }
+      }
 
       // Validate and save each setting
       for (const [key, value] of Object.entries(settings)) {
+        // Ensure objects are valid JSON-serializable
+        if (typeof value === 'object') {
+          try {
+            JSON.stringify(value)
+          } catch (err) {
+            throw new Error(`Invalid JSON for key ${key}`)
+          }
+        }
+
         const stringValue = typeof value === 'object' ? JSON.stringify(value) : String(value)
 
         await Database.insertQuery()
@@ -807,13 +849,13 @@ export default class AdminController {
           .merge(['value'])
       }
 
-      // Log the action
+      // Log the action with previous and new values for full auditability
       await AuditLog.safeCreate({
         userId: admin.id,
         action: 'system_settings_updated',
         targetType: 'system',
         targetId: 0,
-        metadata: JSON.stringify({ keys: Object.keys(settings) })
+        metadata: JSON.stringify({ keys, previousValues, newValues: settings })
       })
 
       return response.ok({ message: 'Settings updated successfully' })
@@ -839,6 +881,22 @@ export default class AdminController {
         'favicon_url'
       ])
 
+      const keys = Object.keys(branding).filter((k) => branding[k] !== undefined)
+
+      // Fetch previous branding values for audit
+      const existingRows = keys.length
+        ? await Database.from('system_settings').whereIn('key', keys).select('key', 'value')
+        : []
+
+      const previousBranding: Record<string, any> = {}
+      for (const row of existingRows) {
+        try {
+          previousBranding[row.key] = JSON.parse(row.value)
+        } catch {
+          previousBranding[row.key] = row.value
+        }
+      }
+
       // Save branding settings
       for (const [key, value] of Object.entries(branding)) {
         if (value !== undefined) {
@@ -850,13 +908,13 @@ export default class AdminController {
         }
       }
 
-      // Log the action
+      // Log the action with previous values
       await AuditLog.safeCreate({
         userId: admin.id,
         action: 'branding_updated',
         targetType: 'system',
         targetId: 0,
-        metadata: JSON.stringify(branding)
+        metadata: JSON.stringify({ previous: previousBranding, new: branding })
       })
 
       return response.ok({ message: 'Branding updated successfully', branding })
@@ -867,35 +925,40 @@ export default class AdminController {
   }
 
   /**
-   * Create a database backup (metadata only - actual backup would be handled by infrastructure)
+   * Create a database backup and queue processing on the server.
+   * This implementation creates a Backup record and starts a background
+   * process that exports core entities to a gzipped JSON file.
    */
   public async createBackup({ auth, response }: HttpContextContract) {
     try {
       const admin = await this.requireSuperAdmin(auth)
 
-      // In a real implementation, this would trigger a database backup job
-      // For now, we just log the request and return a status
+      const BackupModel = (await import('App/Models/Backup')).default
+      const backup = await BackupModel.create({
+        backupType: 'full',
+        organizationId: null,
+        createdBy: admin.id,
+        filePath: '',
+        fileSize: 0,
+        status: 'creating'
+      })
 
-      const backupId = `backup_${Date.now()}`
-      const backupInfo = {
-        id: backupId,
-        requestedBy: admin.id,
-        requestedAt: new Date().toISOString(),
-        status: 'initiated',
-        message:
-          'Backup request has been initiated. In production, this would trigger a database backup job.'
-      }
+      // Start background processing (fire-and-forget)
+      const BackupService = (await import('App/Services/BackupService')).default
+      BackupService.processBackup(backup.id).catch((err: any) => {
+        Logger.error('Backup processing failed for id %s: %o', backup.id, err)
+      })
 
-      // Log the action
+      // Log the request
       await AuditLog.safeCreate({
         userId: admin.id,
         action: 'backup_requested',
         targetType: 'system',
         targetId: 0,
-        metadata: JSON.stringify(backupInfo)
+        metadata: JSON.stringify({ backupId: backup.id, requestedAt: new Date().toISOString() })
       })
 
-      return response.ok(backupInfo)
+      return response.ok({ id: backup.id, status: backup.status, message: 'Backup queued' })
     } catch (error) {
       Logger.error('Create backup error: %o', error)
       return response.unauthorized({ error: { message: error.message || 'Access denied' } })
@@ -903,41 +966,70 @@ export default class AdminController {
   }
 
   /**
-   * Get backup status
+   * Get backup status (reads Backup records)
    */
   public async backupStatus({ auth, response }: HttpContextContract) {
     try {
       await this.requireSuperAdmin(auth)
 
-      // Get recent backup logs
-      const backupLogs = await AuditLog.query()
-        .where('action', 'backup_requested')
-        .orderBy('created_at', 'desc')
-        .limit(10)
+      const BackupModel = (await import('App/Models/Backup')).default
+      const backups = await BackupModel.query().orderBy('created_at', 'desc').limit(10)
 
-      const backups = backupLogs.map((log) => {
-        let metadata = {}
-        try {
-          metadata = JSON.parse(log.metadata || '{}')
-        } catch {
-          metadata = {}
-        }
-        return {
-          id: (metadata as any).id || log.id,
-          requestedAt: log.createdAt,
-          status: 'completed', // In production, this would check actual backup status
-          ...metadata
-        }
-      })
+      const mapped = backups.map((b) => ({
+        id: b.id,
+        backupType: b.backupType,
+        status: b.status,
+        createdAt: b.createdAt,
+        fileSize: b.fileSize,
+        downloadUrl: `/admin/backup/${b.id}/download`, // secure download endpoint
+        downloadPath: b.filePath || null,
+        includedEntities: b.getIncludedEntities()
+      }))
 
-      return response.ok({
-        lastBackup: backups[0] || null,
-        recentBackups: backups,
-        message:
-          'Backup status is simulated. In production, this would check actual backup infrastructure.'
-      })
+      return response.ok({ lastBackup: mapped[0] || null, recentBackups: mapped })
     } catch (error) {
       Logger.error('Backup status error: %o', error)
+      return response.unauthorized({ error: { message: error.message || 'Access denied' } })
+    }
+  }
+
+  /**
+   * Download a completed backup file (only super admins)
+   */
+  public async downloadBackup({ auth, params, response }: HttpContextContract) {
+    try {
+      await this.requireSuperAdmin(auth)
+      const id = params.id
+      const BackupModel = (await import('App/Models/Backup')).default
+      const backup = await BackupModel.findOrFail(id)
+
+      if (backup.status !== 'completed') {
+        return response.badRequest({ message: 'Backup not available for download' })
+      }
+
+      // Try Drive first
+      try {
+        const Drive = await import('@ioc:Adonis/Core/Drive')
+        // If stored in Drive, filePath will be disk path (e.g., backups/..)
+        if (await Drive.exists(backup.filePath!)) {
+          const stream = await Drive.getStream(backup.filePath!)
+          response.header('Content-Type', 'application/gzip')
+          response.header('Content-Disposition', `attachment; filename="backup-${backup.id}.json.gz"`)
+          return response.stream(stream)
+        }
+      } catch (e) {
+        // Drive not available or file not on drive, fall back
+      }
+
+      // Fallback: local file path
+      const fs = await import('fs')
+      if (fs.existsSync(backup.filePath!)) {
+        return response.download(backup.filePath!)
+      }
+
+      return response.notFound({ message: 'Backup file not found' })
+    } catch (error) {
+      Logger.error('Download backup error: %o', error)
       return response.unauthorized({ error: { message: error.message || 'Access denied' } })
     }
   }

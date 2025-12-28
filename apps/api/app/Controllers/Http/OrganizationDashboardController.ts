@@ -5,11 +5,34 @@ import Database from '@ioc:Adonis/Lucid/Database'
 import User from 'App/Models/User'
 import Logger from '@ioc:Adonis/Core/Logger'
 import { DateTime } from 'luxon'
+import OrganizationTeamMember from 'App/Models/OrganizationTeamMember'
 
 export default class OrganizationDashboardController {
   /**
    * Check if user has access to organization dashboard
    */
+  private async resolveOrganizationId(user: User, params: any): Promise<number | null> {
+    // Prefer explicit route param if provided
+    if (params?.id) {
+      const parsed = Number(params.id)
+      if (!Number.isNaN(parsed)) return parsed
+    }
+
+    // Fall back to the organization where the user is a team member (org admin/manager)
+    const memberRecord = await OrganizationTeamMember.query().where('userId', user.id).first()
+    if (memberRecord) return memberRecord.organizationId
+
+    // Fallback: org volunteer admin role
+    const volunteerMembership = await Database.from('organization_volunteers')
+      .where('user_id', user.id)
+      .where('role', 'admin')
+      .where('status', 'active')
+      .first()
+    if (volunteerMembership) return volunteerMembership.organization_id
+
+    return null
+  }
+
   private async checkAccess(
     user: User,
     organizationId: number
@@ -19,22 +42,28 @@ export default class OrganizationDashboardController {
       return { hasAccess: true }
     }
 
-    // Check if user is an admin of this organization
-    const membership = await Database.from('organization_volunteers')
+    // Check if user is an admin of this organization via team membership or volunteer record
+    const teamMembership = await OrganizationTeamMember.query()
+      .where('userId', user.id)
+      .where('organizationId', organizationId)
+      .whereIn('role', ['Admin', 'admin', 'Owner', 'owner', 'Manager', 'manager'])
+      .first()
+
+    if (teamMembership) return { hasAccess: true }
+
+    const volunteerMembership = await Database.from('organization_volunteers')
       .where('user_id', user.id)
       .where('organization_id', organizationId)
-      .where('role', 'admin')
+      .whereIn('role', ['admin', 'owner', 'manager'])
       .where('status', 'active')
       .first()
 
-    if (!membership) {
-      return {
-        hasAccess: false,
-        message: 'You do not have permission to access this organization dashboard'
-      }
-    }
+    if (volunteerMembership) return { hasAccess: true }
 
-    return { hasAccess: true }
+    return {
+      hasAccess: false,
+      message: 'You do not have permission to access this organization dashboard'
+    }
   }
 
   /**
@@ -83,7 +112,11 @@ export default class OrganizationDashboardController {
     try {
       await auth.use('api').authenticate()
       const user = auth.user!
-      const organizationId = Number(params.id)
+      const organizationId = await this.resolveOrganizationId(user, params)
+
+      if (!organizationId) {
+        return response.notFound({ error: { message: 'Organization not found for user' } })
+      }
 
       // Check access
       const access = await this.checkAccess(user, organizationId)
@@ -99,10 +132,7 @@ export default class OrganizationDashboardController {
 
       const dateRange = this.parseDateRange(request)
 
-      const stats = await OrganizationAnalyticsService.getOverviewStats(
-        organizationId,
-        dateRange
-      )
+      const stats = await OrganizationAnalyticsService.getOverviewStats(organizationId, dateRange)
 
       return response.ok({
         organization: {
@@ -130,7 +160,11 @@ export default class OrganizationDashboardController {
     try {
       await auth.use('api').authenticate()
       const user = auth.user!
-      const organizationId = Number(params.id)
+      const organizationId = await this.resolveOrganizationId(user, params)
+
+      if (!organizationId) {
+        return response.notFound({ error: { message: 'Organization not found for user' } })
+      }
 
       const access = await this.checkAccess(user, organizationId)
       if (!access.hasAccess) {
@@ -169,7 +203,11 @@ export default class OrganizationDashboardController {
     try {
       await auth.use('api').authenticate()
       const user = auth.user!
-      const organizationId = Number(params.id)
+      const organizationId = await this.resolveOrganizationId(user, params)
+
+      if (!organizationId) {
+        return response.notFound({ error: { message: 'Organization not found for user' } })
+      }
 
       const access = await this.checkAccess(user, organizationId)
       if (!access.hasAccess) {
@@ -205,7 +243,11 @@ export default class OrganizationDashboardController {
     try {
       await auth.use('api').authenticate()
       const user = auth.user!
-      const organizationId = Number(params.id)
+      const organizationId = await this.resolveOrganizationId(user, params)
+
+      if (!organizationId) {
+        return response.notFound({ error: { message: 'Organization not found for user' } })
+      }
 
       const access = await this.checkAccess(user, organizationId)
       if (!access.hasAccess) {
@@ -243,7 +285,11 @@ export default class OrganizationDashboardController {
     try {
       await auth.use('api').authenticate()
       const user = auth.user!
-      const organizationId = Number(params.id)
+      const organizationId = await this.resolveOrganizationId(user, params)
+
+      if (!organizationId) {
+        return response.notFound({ error: { message: 'Organization not found for user' } })
+      }
 
       const access = await this.checkAccess(user, organizationId)
       if (!access.hasAccess) {
@@ -268,7 +314,11 @@ export default class OrganizationDashboardController {
     try {
       await auth.use('api').authenticate()
       const user = auth.user!
-      const organizationId = Number(params.id)
+      const organizationId = await this.resolveOrganizationId(user, params)
+
+      if (!organizationId) {
+        return response.notFound({ error: { message: 'Organization not found for user' } })
+      }
 
       const access = await this.checkAccess(user, organizationId)
       if (!access.hasAccess) {
@@ -304,7 +354,11 @@ export default class OrganizationDashboardController {
     try {
       await auth.use('api').authenticate()
       const user = auth.user!
-      const organizationId = Number(params.id)
+      const organizationId = await this.resolveOrganizationId(user, params)
+
+      if (!organizationId) {
+        return response.notFound({ error: { message: 'Organization not found for user' } })
+      }
 
       const access = await this.checkAccess(user, organizationId)
       if (!access.hasAccess) {
@@ -342,7 +396,11 @@ export default class OrganizationDashboardController {
     try {
       await auth.use('api').authenticate()
       const user = auth.user!
-      const organizationId = Number(params.id)
+      const organizationId = await this.resolveOrganizationId(user, params)
+
+      if (!organizationId) {
+        return response.notFound({ error: { message: 'Organization not found for user' } })
+      }
 
       const access = await this.checkAccess(user, organizationId)
       if (!access.hasAccess) {

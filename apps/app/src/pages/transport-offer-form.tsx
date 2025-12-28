@@ -7,7 +7,7 @@ import TextAreaInput from '@/components/molecules/text-area-input';
 import TextInput from '@/components/molecules/text-input';
 import TransportInput from '@/components/molecules/transport-input';
 import api from '@/lib/api';
-import { DetailTypes } from '@/lib/routes';
+import { DetailTypes } from '@/lib/types';
 import { imageSchema } from '@/lib/validation';
 import { FixType } from '@/types/utils';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -42,7 +42,7 @@ const formSchema = z.object({
 
 const TransportOfferForm = () => {
   const { t } = useTranslation();
-  const timeout = useRef<NodeJS.Timeout | null>(null);
+  const timeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const navigate = useNavigate();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -127,135 +127,149 @@ const TransportOfferForm = () => {
   }, []);
 
   return (
-    <div className="flex flex-col w-full gap-4 px-6 overflow-y-auto pb-20">
-      <h1 className="text-2xl">{t('Offer Transport')}</h1>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" encType="multipart/form-data">
-          <FormField
-            control={form.control}
-            name="transport"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <TransportInput {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+    <div className="container mx-auto max-w-2xl py-12 px-4">
+      <div className="mb-8 text-center space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight">{t('Offer Transport')}</h1>
+        <p className="text-muted-foreground">
+          {t('Fill in the details below to offer a ride.')}
+        </p>
+      </div>
 
-          <FormField
-            control={form.control}
-            name="date"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <TextInput label={t('Travel Date')} placeholder={t('Travel Date')} type="datetime-local" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+      <div className="bg-card p-6 rounded-lg border shadow-sm">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" encType="multipart/form-data">
+            <FormField
+              control={form.control}
+              name="transport"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <TransportInput {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <FormField
-            control={form.control}
-            name="capacity"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <NumberInput label={t('How many seats?')} {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <TextInput label={t('Travel Date')} placeholder={t('Travel Date')} type="datetime-local" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <FormField
-            control={form.control}
-            name="storage"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <TextInput
-                    label={t('How much storage space do you have?')}
-                    placeholder={t('A 300L trunk for example')}
-                    optional
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+              <FormField
+                control={form.control}
+                name="capacity"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <NumberInput label={t('How many seats?')} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-          <FormField
-            control={form.control}
-            name="description"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <TextAreaInput label={t('Description')} placeholder={t('Type your message here')} {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+            <FormField
+              control={form.control}
+              name="storage"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <TextInput
+                      label={t('How much storage space do you have?')}
+                      placeholder={t('A 300L trunk for example')}
+                      optional
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <TextInput label={t('Name')} placeholder={t('Full Name')} {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <TextAreaInput label={t('Description')} placeholder={t('Type your message here')} {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <TextInput label={t('Email')} type="email" placeholder={t('Email')} optional {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <TextInput label={t('Name')} placeholder={t('Full Name')} {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-          <FormField
-            control={form.control}
-            name="phone"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <TextInput label={t('Phone Number')} placeholder={t('Phone Number')} type="tel" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <TextInput label={t('Phone Number')} placeholder={t('Phone Number')} type="tel" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-          <FormField
-            control={form.control}
-            name="files"
-            render={({ field }) => (
-              <FormItem>
-                <FormControl>
-                  <FileInput label={t('Upload pictures')} {...field} optional />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <TextInput label={t('Email')} type="email" placeholder={t('Email')} optional {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <Navbar asSubmit disabled={!isDirty || !isValid} loading={isSubmitting || isLoading} />
-        </form>
-      </Form>
+            <FormField
+              control={form.control}
+              name="files"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <FileInput label={t('Upload pictures')} {...field} optional />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="pt-4">
+              <Navbar asSubmit disabled={!isDirty || !isValid} loading={isSubmitting || isLoading} />
+            </div>
+          </form>
+        </Form>
+      </div>
     </div>
   );
 };

@@ -8,7 +8,11 @@ import { AreaChart, Area, ResponsiveContainer, XAxis, Tooltip } from 'recharts';
 
 export default function OrganizationDashboard() {
   // Dashboard stats (fetched)
-  const { data: stats, isLoading } = useQuery({
+  const {
+    data: stats,
+    isLoading,
+    error
+  } = useQuery({
     queryKey: ['organizationDashboardStats'],
     queryFn: () => api.getOrganizationDashboardStats()
   });
@@ -42,6 +46,18 @@ export default function OrganizationDashboard() {
     return (
       <div className="flex justify-center items-center h-96">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-96 space-y-3 text-center">
+        <p className="text-lg font-semibold">Unable to load your organization data</p>
+        <p className="text-sm text-muted-foreground">
+          Please refresh the page or try again. If the issue persists, check your connection.
+        </p>
+        <Button onClick={() => window.location.reload()}>Retry</Button>
       </div>
     );
   }
@@ -216,6 +232,15 @@ export default function OrganizationDashboard() {
   // number of volunteers for invite card - prefer volunteers query, fallback to dashboard stats
   const volunteersCount = Array.isArray(volunteers) ? volunteers.length : (displayStats.activeVolunteers ?? 0);
 
+  const nextEventText = nextEventLabel || 'No upcoming events yet';
+  const pendingHoursText =
+    pendingHoursCount > 0
+      ? `${pendingHoursCount} pending hour${pendingHoursCount === 1 ? '' : 's'} to review`
+      : 'All hours reviewed';
+  const pendingDocsText = pendingDocuments
+    ? `${pendingDocuments} compliance doc${pendingDocuments === 1 ? '' : 's'} pending`
+    : 'Compliance up-to-date';
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -240,7 +265,7 @@ export default function OrganizationDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{displayStats.activeVolunteers}</div>
-            <p className="text-xs text-muted-foreground">+12% from last month</p>
+            <p className="text-xs text-muted-foreground">{volunteersCount} total in org</p>
           </CardContent>
         </Card>
         <Card>
@@ -250,7 +275,7 @@ export default function OrganizationDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{displayStats.upcomingEvents}</div>
-            <p className="text-xs text-muted-foreground">Next event in 2 days</p>
+            <p className="text-xs text-muted-foreground">{nextEventText}</p>
           </CardContent>
         </Card>
         <Card>
@@ -260,7 +285,7 @@ export default function OrganizationDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{displayStats.totalHours}</div>
-            <p className="text-xs text-muted-foreground">+8% from last month</p>
+            <p className="text-xs text-muted-foreground">{pendingHoursText}</p>
           </CardContent>
         </Card>
         <Card>
@@ -270,7 +295,7 @@ export default function OrganizationDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{displayStats.impactScore}</div>
-            <p className="text-xs text-muted-foreground">Top 10% of organizations</p>
+            <p className="text-xs text-muted-foreground">{pendingDocsText}</p>
           </CardContent>
         </Card>
       </div>
@@ -299,9 +324,7 @@ export default function OrganizationDashboard() {
         <Card className="col-span-3">
           <CardHeader>
             <CardTitle>Recent Activity</CardTitle>
-            <CardDescription>
-              Latest actions from your volunteers. {pendingDocuments ? `${pendingDocuments} pending docs` : ''}
-            </CardDescription>
+            <CardDescription>Latest actions from your volunteers and compliance</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-8">
