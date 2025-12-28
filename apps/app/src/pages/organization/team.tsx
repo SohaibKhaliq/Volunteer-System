@@ -17,22 +17,36 @@ import { Users, UserPlus, Mail, Trash2, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { useApp } from '@/providers/app-provider';
 
 /**
  * Organization Team Management Page
  * Invite members, assign roles (admin/manager/viewer)
  */
 export default function OrganizationTeam() {
+  const { user } = useApp();
+  const membership = Array.isArray(user?.teamMemberships) ? user.teamMemberships[0] : undefined;
+  const organizationId =
+    membership?.organizationId || membership?.organization_id || membership?.organization?.id || user?.organizationId;
+  const actorRole = (membership?.role || '').toLowerCase();
+  const canManage = ['admin', 'coordinator'].includes(actorRole) || user?.isAdmin;
+
   const queryClient = useQueryClient();
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
 
-  const { data: team, isLoading } = useQuery({
+  const {
+    data: team,
+    isLoading,
+    error
+  } = useQuery({
     queryKey: ['organization', 'team'],
-    queryFn: organizationApi.listTeam
+    queryFn: () => organizationApi.listTeam(organizationId),
+    enabled: !!organizationId,
+    retry: false
   });
 
   const inviteMutation = useMutation({
-    mutationFn: organizationApi.inviteTeamMember,
+    mutationFn: (data: any) => organizationApi.inviteTeamMember(data, organizationId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organization', 'team'] });
       toast.success('Invitation sent!', {
@@ -48,7 +62,7 @@ export default function OrganizationTeam() {
   });
 
   const updateMemberMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: any }) => organizationApi.updateTeamMember(id, data),
+    mutationFn: ({ id, data }: { id: number; data: any }) => organizationApi.updateTeamMember(id, data, organizationId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organization', 'team'] });
       toast.success('Team member updated');
@@ -61,7 +75,7 @@ export default function OrganizationTeam() {
   });
 
   const removeMemberMutation = useMutation({
-    mutationFn: organizationApi.deleteTeamMember,
+    mutationFn: (id: number) => organizationApi.deleteTeamMember(id, organizationId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organization', 'team'] });
       toast.success('Team member removed');
@@ -99,12 +113,34 @@ export default function OrganizationTeam() {
   const getRoleBadge = (role: string) => {
     const roleMap: Record<string, { label: string; variant: any }> = {
       admin: { label: 'Admin', variant: 'destructive' },
-      manager: { label: 'Manager', variant: 'default' },
-      viewer: { label: 'Viewer', variant: 'secondary' }
+      coordinator: { label: 'Coordinator', variant: 'default' },
+      member: { label: 'Member', variant: 'secondary' }
     };
     const config = roleMap[role?.toLowerCase()] || { label: role, variant: 'outline' };
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
+
+  if (!organizationId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Users className="h-12 w-12 mx-auto text-muted-foreground" />
+          <p className="text-muted-foreground">Join an organization to manage its team.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Users className="h-12 w-12 mx-auto text-destructive" />
+          <p className="text-muted-foreground">{(error as any)?.message || 'Unable to load team.'}</p>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -126,14 +162,12 @@ export default function OrganizationTeam() {
             <Users className="h-8 w-8 text-primary" />
             Team Management
           </h1>
-          <p className="text-muted-foreground">
-            Manage your organization&apos;s team members and their roles
-          </p>
+          <p className="text-muted-foreground">Manage your organization&apos;s team members and their roles</p>
         </div>
 
         <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button disabled={!canManage}>
               <UserPlus className="h-4 w-4 mr-2" />
               Invite Member
             </Button>
@@ -154,25 +188,25 @@ export default function OrganizationTeam() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="role">Role</Label>
-                <Select name="role" defaultValue="viewer" required>
+                <Select name="role" defaultValue="member" required>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="admin">Admin</SelectItem>
-                    <SelectItem value="manager">Manager</SelectItem>
-                    <SelectItem value="viewer">Viewer</SelectItem>
+                    <SelectItem value="coordinator">Coordinator</SelectItem>
+                    <SelectItem value="member">Member</SelectItem>
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
-                  Admin: Full access • Manager: Can manage volunteers & events • Viewer: Read-only
+                  Admin: Full access • Coordinator: Can manage volunteers & events • Member: Read-only
                 </p>
               </div>
               <div className="flex gap-2">
                 <Button type="button" variant="outline" onClick={() => setInviteDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={inviteMutation.isPending}>
+                <Button type="submit" disabled={inviteMutation.isPending || !canManage}>
                   {inviteMutation.isPending ? 'Sending...' : 'Send Invitation'}
                 </Button>
               </div>
@@ -213,22 +247,26 @@ export default function OrganizationTeam() {
                   )}
                 </div>
                 <div className="flex gap-2">
-                  <Select value={member.role} onValueChange={(value) => handleUpdateRole(member.id, value)}>
-                    <SelectTrigger className="w-32">
+                  <Select
+                    value={member.role}
+                    onValueChange={(value) => handleUpdateRole(member.id, value)}
+                    disabled={!canManage}
+                  >
+                    <SelectTrigger className="w-40">
                       <Shield className="h-4 w-4 mr-2" />
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="manager">Manager</SelectItem>
-                      <SelectItem value="viewer">Viewer</SelectItem>
+                      <SelectItem value="coordinator">Coordinator</SelectItem>
+                      <SelectItem value="member">Member</SelectItem>
                     </SelectContent>
                   </Select>
                   <Button
                     variant="outline"
                     size="icon"
                     onClick={() => handleRemove(member.id, member.name || 'this member')}
-                    disabled={removeMemberMutation.isPending}
+                    disabled={removeMemberMutation.isPending || !canManage}
                   >
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
