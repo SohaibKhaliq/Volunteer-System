@@ -167,7 +167,7 @@ const Header = () => {
           <DarkModeToggle />
           <Language />
           {/* Volunteer top-level menu to access consolidated volunteer sections */}
-          {isVolunteer && (
+          {/* {isVolunteer && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className={cn('text-sm font-medium transition-colors')}>
@@ -221,7 +221,7 @@ const Header = () => {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          )}
+          )} */}
           {authenticated ? (
             <div className="flex items-center gap-4">
               {isAdmin && (
