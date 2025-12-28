@@ -75,6 +75,25 @@ export function getUserRole(user: any): UserRole {
     }
   }
 
+  // Check team memberships if present (organization_team_members)
+  if (user.teamMemberships && Array.isArray(user.teamMemberships)) {
+    const hasAdminTeamRole = user.teamMemberships.some((member: any) => {
+      const role = member.role || member.pivot?.role;
+      return (
+        role === 'Admin' ||
+        role === 'admin' ||
+        role === 'owner' ||
+        role === 'Owner' ||
+        role === 'manager' ||
+        role === 'Manager'
+      );
+    });
+
+    if (hasAdminTeamRole) {
+      return 'organization_admin';
+    }
+  }
+
   return 'volunteer';
 }
 
@@ -100,7 +119,7 @@ export function isGlobalAdmin(user: any): boolean {
 export function isOrganizationAdmin(user: any): boolean {
   if (!user?.organizations || !Array.isArray(user.organizations)) return false;
 
-  return user.organizations.some((org: any) => {
+  const orgAdmin = user.organizations.some((org: any) => {
     const role = org.role || org.pivot?.role;
     return (
       role === 'Admin' ||
@@ -111,6 +130,24 @@ export function isOrganizationAdmin(user: any): boolean {
       role === 'Manager'
     );
   });
+
+  if (orgAdmin) return true;
+
+  if (user.teamMemberships && Array.isArray(user.teamMemberships)) {
+    return user.teamMemberships.some((member: any) => {
+      const role = member.role || member.pivot?.role;
+      return (
+        role === 'Admin' ||
+        role === 'admin' ||
+        role === 'owner' ||
+        role === 'Owner' ||
+        role === 'manager' ||
+        role === 'Manager'
+      );
+    });
+  }
+
+  return false;
 }
 
 /**
