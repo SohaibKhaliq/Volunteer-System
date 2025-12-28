@@ -9,19 +9,46 @@ export const organizationApi = {
   // ==========================================
   // PROFILE & DASHBOARD
   // ==========================================
-  getProfile: async () => axios.get('/organization/profile'),
-  updateProfile: async (data: any) => axios.put('/organization/profile', data),
-  getDashboardStats: async () => axios.get('/organization/dashboard-stats'),
-  getSettings: async () => axios.get('/organization/settings'),
-  updateSettings: async (data: any) => axios.patch('/organization/settings', data),
+  getProfile: async (organizationId?: number) =>
+    axios.get('/organization/profile', {
+      params: organizationId ? { organizationId } : undefined
+    }),
+  updateProfile: async (data: any, organizationId?: number) =>
+    axios.put('/organization/profile', data, {
+      params: organizationId ? { organizationId } : undefined
+    }),
+  getDashboardStats: async (organizationId?: number) =>
+    axios.get('/organization/dashboard-stats', {
+      params: organizationId ? { organizationId } : undefined
+    }),
+  getSettings: async (organizationId?: number) =>
+    axios.get('/organization/settings', {
+      params: organizationId ? { organizationId } : undefined
+    }),
+  updateSettings: async (data: any, organizationId?: number) =>
+    axios.patch('/organization/settings', data, {
+      params: organizationId ? { organizationId } : undefined
+    }),
 
   // ==========================================
   // TEAM MANAGEMENT
   // ==========================================
-  listTeam: async () => axios.get('/organization/team'),
-  inviteTeamMember: async (data: any) => axios.post('/organization/team/invite', data),
-  updateTeamMember: async (id: number, data: any) => axios.put(`/organization/team/${id}`, data),
-  deleteTeamMember: async (id: number) => axios.delete(`/organization/team/${id}`),
+  listTeam: async (organizationId?: number) =>
+    axios.get('/organization/team', {
+      params: organizationId ? { organizationId } : undefined
+    }),
+  inviteTeamMember: async (data: any, organizationId?: number) =>
+    axios.post('/organization/team/invite', data, {
+      params: organizationId ? { organizationId } : undefined
+    }),
+  updateTeamMember: async (id: number, data: any, organizationId?: number) =>
+    axios.put(`/organization/team/${id}`, data, {
+      params: organizationId ? { organizationId } : undefined
+    }),
+  deleteTeamMember: async (id: number, organizationId?: number) =>
+    axios.delete(`/organization/team/${id}`, {
+      params: organizationId ? { organizationId } : undefined
+    }),
 
   // ==========================================
   // TEAMS/DEPARTMENTS
@@ -108,10 +135,8 @@ export const organizationApi = {
   // ==========================================
   getVolunteerAnalytics: async (dateRange?: any) =>
     axios.get('/organization/analytics/volunteers', { params: dateRange }),
-  getVolunteerLeaderboard: async (params?: any) => 
-    axios.get('/organization/analytics/leaderboard', { params }),
-  getVolunteerTrends: async (dateRange?: any) => 
-    axios.get('/organization/analytics/trends', { params: dateRange }),
+  getVolunteerLeaderboard: async (params?: any) => axios.get('/organization/analytics/leaderboard', { params }),
+  getVolunteerTrends: async (dateRange?: any) => axios.get('/organization/analytics/trends', { params: dateRange }),
 
   // ==========================================
   // COMMUNICATIONS
@@ -161,15 +186,13 @@ export const organizationApi = {
     axios.get('/organization/export/applications', { params, responseType: 'blob' }),
   exportAttendances: async (params?: any) =>
     axios.get('/organization/export/attendances', { params, responseType: 'blob' }),
-  exportHours: async (params?: any) => 
-    axios.get('/organization/export/hours', { params, responseType: 'blob' }),
+  exportHours: async (params?: any) => axios.get('/organization/export/hours', { params, responseType: 'blob' }),
 
   // ==========================================
   // REPORTS
   // ==========================================
   getReportsSummary: async (params?: any) => axios.get('/organization/reports/summary', { params }),
-  getVolunteerHoursReport: async (params?: any) => 
-    axios.get('/organization/reports/volunteer-hours', { params }),
+  getVolunteerHoursReport: async (params?: any) => axios.get('/organization/reports/volunteer-hours', { params }),
   getOpportunityPerformanceReport: async (params?: any) =>
     axios.get('/organization/reports/opportunity-performance', { params }),
   getVolunteerRetentionReport: async () => axios.get('/organization/reports/volunteer-retention'),
@@ -178,7 +201,7 @@ export const organizationApi = {
   // CALENDAR
   // ==========================================
   getOrganizationOpportunitiesCalendar: async (params?: { from?: string; to?: string; status?: string }) =>
-    axios.get('/calendar/organization-opportunities', { params, responseType: 'blob' }),
+    axios.get('/calendar/organization-opportunities', { params, responseType: 'blob' })
 };
 
 export default organizationApi;
