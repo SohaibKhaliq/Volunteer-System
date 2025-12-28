@@ -559,7 +559,7 @@ const api = {
   getVolunteerProfile: async () => axios.get('/volunteer/profile'),
   updateVolunteerProfile: async (data: any) => axios.put('/volunteer/profile', data),
   updateVolunteerAvatar: async (data: FormData) =>
-    axios.put('/volunteer/profile/avatar', data, { headers: { 'Content-Type': 'multipart/form-data' } }),
+    axios.put('/volunteer/profile/avatar', data),
   browseOrganizations: async (params?: any) => axios.get('/volunteer/organizations/browse', { params }),
 
   // Volunteer Opportunities

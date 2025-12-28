@@ -901,7 +901,7 @@ export default function Profile() {
                           if (!file) return;
 
                           if (file.size > 5 * 1024 * 1024) {
-                            toast({ type: 'foreground', title: 'File too large', description: 'Maximum file size is 5MB.', variant: 'destructive' as any });
+                            toast({ title: 'File too large', description: 'Maximum file size is 5MB.', variant: 'destructive' as any });
                             return;
                           }
 
