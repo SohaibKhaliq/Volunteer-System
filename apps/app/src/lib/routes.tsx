@@ -59,6 +59,7 @@ import AdminAuditLogs from '@/pages/admin/audit-logs';
 import AdminSettings from '@/pages/admin/settings';
 import AdminVolunteerProfile from '@/pages/admin/volunteer-profile';
 import AdminEmergencyRequests from '@/pages/admin/emergency-requests';
+import AdminContactSubmissions from '@/pages/admin/contact-submissions';
 import OrganizationLayout from '@/components/templates/OrganizationLayout';
 import OrganizationDashboard from '@/pages/organization/dashboard';
 import OrganizationProfile from '@/pages/organization/profile';
@@ -170,6 +171,7 @@ const routes: RouteObject[] = [
       { path: 'settings', element: <AdminSettings /> },
       { path: 'volunteer-profile', element: <AdminVolunteerProfile /> },
       { path: 'emergency-requests', element: <AdminEmergencyRequests /> },
+      { path: 'contact-submissions', element: <AdminContactSubmissions /> },
       // Reactivated Orphans (Admin Context)
       { path: 'organizations/:id/volunteers', element: <AdminOrganizationVolunteers /> },
       { path: 'feedback/create', element: <FeedbackCreate /> },
