@@ -18,134 +18,63 @@ import {
 } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Loader2, QrCode, Clock, Users, ClipboardCheck, RefreshCw, UserCheck } from 'lucide-react';
+import { Loader2, Clock, Users, ClipboardCheck } from 'lucide-react';
 
-interface Attendance {
+interface EventItem {
   id: number;
-  opportunityId: number;
+  title: string;
+  startAt?: string;
+}
+
+interface ShiftAssignmentAttendance {
+  id: number;
+  shiftId: number;
   userId: number;
-  checkInAt: string;
-  checkOutAt?: string;
-  method: string;
+  status?: string;
+  checkedInAt?: string | null;
+  checkedOutAt?: string | null;
+  hours?: number | null;
   user?: {
     id: number;
     firstName?: string;
     lastName?: string;
-    email: string;
+    email?: string;
     avatar?: string;
   };
-  opportunity?: {
+  shift?: {
     id: number;
-    title: string;
+    title?: string;
+    eventId?: number;
   };
-}
-
-interface Opportunity {
-  id: number;
-  title: string;
-  startAt: string;
-  status: string;
 }
 
 export default function OrganizationAttendances() {
   const queryClient = useQueryClient();
-  const [selectedOpportunity, setSelectedOpportunity] = useState<string>('');
-  const [isQRDialogOpen, setIsQRDialogOpen] = useState(false);
-  const [isManualCheckInOpen, setIsManualCheckInOpen] = useState(false);
-  const [qrCodeData, setQRCodeData] = useState<{ checkinCode: string; qrData: any } | null>(null);
-  const [manualCheckInData, setManualCheckInData] = useState({
-    user_id: '',
-    check_in_at: '',
-    check_out_at: '',
-    notes: ''
+  const [selectedEvent, setSelectedEvent] = useState<string>('');
+
+  // Fetch Events for filter
+  const { data: events } = useQuery({
+    queryKey: ['organizationEvents'],
+    queryFn: () => api.listOrganizationEvents()
   });
 
-  // Fetch Opportunities for filter
-  const { data: opportunities } = useQuery({
-    queryKey: ['organizationOpportunities'],
-    queryFn: () => api.listOrganizationOpportunities({ status: 'published' })
-  });
-
-  // Fetch Attendances
+  // Fetch Shift Assignment check-ins (scoped to org, optionally filtered by event)
   const { data: attendances, isLoading } = useQuery({
-    queryKey: ['organizationAttendances', selectedOpportunity],
+    queryKey: ['organizationAttendances', selectedEvent],
     queryFn: () =>
-      api.listOrganizationAttendances({
-        opportunity_id: selectedOpportunity || undefined
+      api.listShiftAssignments({
+        scope: 'organization',
+        event_id: selectedEvent || undefined
       })
   });
 
-  // Get check-in code mutation
-  const getCheckinCodeMutation = useMutation({
-    mutationFn: (opportunityId: number) => api.getOpportunityCheckinCode(opportunityId),
-    onSuccess: (data: any) => {
-      setQRCodeData(data);
-      setIsQRDialogOpen(true);
-    },
-    onError: () => {
-      toast.error('Failed to get check-in code');
-    }
-  });
-
-  // Regenerate check-in code mutation
-  const regenerateCodeMutation = useMutation({
-    mutationFn: (opportunityId: number) => api.regenerateOpportunityCheckinCode(opportunityId),
-    onSuccess: (data: any) => {
-      setQRCodeData(data);
-      toast.success('Check-in code regenerated');
-    },
-    onError: () => {
-      toast.error('Failed to regenerate code');
-    }
-  });
-
-  // Manual check-in mutation
-  const manualCheckInMutation = useMutation({
-    mutationFn: ({ opportunityId, data }: { opportunityId: number; data: any }) =>
-      api.manualCheckIn(opportunityId, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['organizationAttendances'] });
-      setIsManualCheckInOpen(false);
-      setManualCheckInData({ user_id: '', check_in_at: '', check_out_at: '', notes: '' });
-      toast.success('Attendance recorded');
-    },
-    onError: () => {
-      toast.error('Failed to record attendance');
-    }
-  });
-
-  const handleShowQRCode = (opportunityId: number) => {
-    getCheckinCodeMutation.mutate(opportunityId);
-  };
-
-  const handleManualCheckIn = () => {
-    if (!selectedOpportunity || !manualCheckInData.user_id) {
-      toast.error('Please select an opportunity and enter a user ID');
-      return;
-    }
-    manualCheckInMutation.mutate({
-      opportunityId: parseInt(selectedOpportunity, 10),
-      data: manualCheckInData
-    });
-  };
-
-  const formatDuration = (checkIn: string, checkOut?: string): string => {
+  const formatDuration = (checkIn?: string | null, checkOut?: string | null): string => {
+    if (!checkIn) return '-';
     if (!checkOut) return 'Active';
     const start = new Date(checkIn);
     const end = new Date(checkOut);
     const hours = Math.round(((end.getTime() - start.getTime()) / (1000 * 60 * 60)) * 10) / 10;
     return `${hours} hrs`;
-  };
-
-  const getMethodBadge = (method: string) => {
-    switch (method) {
-      case 'qr':
-        return <Badge className="bg-purple-500">QR</Badge>;
-      case 'manual':
-        return <Badge variant="secondary">Manual</Badge>;
-      default:
-        return <Badge variant="outline">{method}</Badge>;
-    }
   };
 
   if (isLoading) {
@@ -156,30 +85,18 @@ export default function OrganizationAttendances() {
     );
   }
 
-  const attendancesList = Array.isArray(attendances) ? attendances : (attendances as any)?.data || [];
+  const attendancesList: ShiftAssignmentAttendance[] = (
+    Array.isArray(attendances) ? attendances : (attendances as any)?.data || []
+  ) as any;
 
-  const opportunitiesList = Array.isArray(opportunities) ? opportunities : (opportunities as any)?.data || [];
+  const eventsList: EventItem[] = (Array.isArray(events) ? events : (events as any)?.data || []) as any;
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Attendance Tracking</h2>
-          <p className="text-muted-foreground">Track volunteer check-ins and check-outs for your opportunities.</p>
-        </div>
-        <div className="flex gap-2">
-          {selectedOpportunity && (
-            <>
-              <Button variant="outline" onClick={() => handleShowQRCode(parseInt(selectedOpportunity, 10))}>
-                <QrCode className="h-4 w-4 mr-2" />
-                Show QR Code
-              </Button>
-              <Button variant="outline" onClick={() => setIsManualCheckInOpen(true)}>
-                <UserCheck className="h-4 w-4 mr-2" />
-                Manual Check-in
-              </Button>
-            </>
-          )}
+          <p className="text-muted-foreground">Track volunteer check-ins and check-outs for your events.</p>
         </div>
       </div>
 
@@ -187,7 +104,7 @@ export default function OrganizationAttendances() {
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Check-ins</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Assignments</CardTitle>
             <ClipboardCheck className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -200,18 +117,18 @@ export default function OrganizationAttendances() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{attendancesList.filter((a: Attendance) => !a.checkOutAt).length}</div>
+            <div className="text-2xl font-bold">
+              {attendancesList.filter((a) => a.checkedInAt && !a.checkedOutAt).length}
+            </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">QR Check-ins</CardTitle>
-            <QrCode className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Checked In</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {attendancesList.filter((a: Attendance) => a.method === 'qr').length}
-            </div>
+            <div className="text-2xl font-bold">{attendancesList.filter((a) => a.checkedInAt).length}</div>
           </CardContent>
         </Card>
         <Card>
@@ -220,24 +137,26 @@ export default function OrganizationAttendances() {
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{attendancesList.filter((a: Attendance) => a.checkOutAt).length}</div>
+            <div className="text-2xl font-bold">{attendancesList.filter((a) => a.checkedOutAt).length}</div>
           </CardContent>
         </Card>
       </div>
 
       {/* Filters */}
       <div className="flex gap-4">
-        <Select value={selectedOpportunity} onValueChange={setSelectedOpportunity}>
+        <Select value={selectedEvent} onValueChange={setSelectedEvent}>
           <SelectTrigger className="w-[300px]">
-            <SelectValue placeholder="Filter by opportunity" />
+            <SelectValue placeholder="Filter by event" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Opportunities</SelectItem>
-            {opportunitiesList.filter((opp: Opportunity) => opp?.id).map((opp: Opportunity) => (
-              <SelectItem key={opp.id} value={opp.id.toString()}>
-                {opp.title}
-              </SelectItem>
-            ))}
+            <SelectItem value="">All Events</SelectItem>
+            {eventsList
+              .filter((ev) => ev?.id)
+              .map((ev) => (
+                <SelectItem key={ev.id} value={ev.id.toString()}>
+                  {ev.title}
+                </SelectItem>
+              ))}
           </SelectContent>
         </Select>
       </div>
@@ -261,30 +180,29 @@ export default function OrganizationAttendances() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Volunteer</TableHead>
-                  <TableHead>Opportunity</TableHead>
+                  <TableHead>Shift</TableHead>
                   <TableHead>Check-in</TableHead>
                   <TableHead>Check-out</TableHead>
                   <TableHead>Duration</TableHead>
-                  <TableHead>Method</TableHead>
                   <TableHead>Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {attendancesList.map((attendance: Attendance) => (
+                {attendancesList.map((attendance) => (
                   <TableRow key={attendance.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar>
                           <AvatarImage src={attendance.user?.avatar} />
                           <AvatarFallback>
-                            {attendance.user?.firstName?.[0] || attendance.user?.email?.[0]?.toUpperCase()}
+                            {attendance.user?.firstName?.[0] || attendance.user?.email?.[0]?.toUpperCase() || '?'}
                           </AvatarFallback>
                         </Avatar>
                         <div>
                           <div className="font-medium">
                             {attendance.user?.firstName
                               ? `${attendance.user.firstName} ${attendance.user.lastName || ''}`
-                              : attendance.user?.email}
+                              : attendance.user?.email || `User #${attendance.userId}`}
                           </div>
                           {attendance.user?.firstName && (
                             <div className="text-xs text-muted-foreground">{attendance.user.email}</div>
@@ -292,22 +210,13 @@ export default function OrganizationAttendances() {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>{attendance.opportunity?.title || 'Unknown'}</TableCell>
+                    <TableCell>{attendance.shift?.title || `Shift #${attendance.shiftId}`}</TableCell>
                     <TableCell>
-                      <div className="text-sm">{new Date(attendance.checkInAt).toLocaleDateString()}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {new Date(attendance.checkInAt).toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {attendance.checkOutAt ? (
+                      {attendance.checkedInAt ? (
                         <>
-                          <div className="text-sm">{new Date(attendance.checkOutAt).toLocaleDateString()}</div>
+                          <div className="text-sm">{new Date(attendance.checkedInAt).toLocaleDateString()}</div>
                           <div className="text-xs text-muted-foreground">
-                            {new Date(attendance.checkOutAt).toLocaleTimeString([], {
+                            {new Date(attendance.checkedInAt).toLocaleTimeString([], {
                               hour: '2-digit',
                               minute: '2-digit'
                             })}
@@ -317,13 +226,29 @@ export default function OrganizationAttendances() {
                         <span className="text-muted-foreground">-</span>
                       )}
                     </TableCell>
-                    <TableCell>{formatDuration(attendance.checkInAt, attendance.checkOutAt)}</TableCell>
-                    <TableCell>{getMethodBadge(attendance.method)}</TableCell>
                     <TableCell>
-                      {attendance.checkOutAt ? (
-                        <Badge className="bg-green-500">Completed</Badge>
+                      {attendance.checkedOutAt ? (
+                        <>
+                          <div className="text-sm">{new Date(attendance.checkedOutAt).toLocaleDateString()}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {new Date(attendance.checkedOutAt).toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </div>
+                        </>
                       ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell>{formatDuration(attendance.checkedInAt, attendance.checkedOutAt)}</TableCell>
+                    <TableCell>
+                      {attendance.checkedOutAt ? (
+                        <Badge className="bg-green-500">Completed</Badge>
+                      ) : attendance.checkedInAt ? (
                         <Badge className="bg-blue-500">Active</Badge>
+                      ) : (
+                        <Badge variant="secondary">Assigned</Badge>
                       )}
                     </TableCell>
                   </TableRow>
@@ -333,129 +258,6 @@ export default function OrganizationAttendances() {
           </CardContent>
         </Card>
       )}
-
-      {/* QR Code Dialog */}
-      <Dialog open={isQRDialogOpen} onOpenChange={setIsQRDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Check-in QR Code</DialogTitle>
-            <DialogDescription>Volunteers can scan this QR code to check in to the opportunity.</DialogDescription>
-          </DialogHeader>
-          {qrCodeData && (
-            <div className="flex flex-col items-center py-4">
-              <div className="bg-white p-4 rounded-lg border mb-4">
-                {/* QR Code would be rendered here - using a placeholder */}
-                <div className="w-48 h-48 bg-gray-100 flex items-center justify-center border-2 border-dashed">
-                  <div className="text-center">
-                    <QrCode className="h-12 w-12 mx-auto text-gray-400 mb-2" />
-                    <p className="text-xs text-gray-500 break-all px-2">
-                      Code: {qrCodeData.checkinCode.substring(0, 16)}...
-                    </p>
-                  </div>
-                </div>
-              </div>
-              <p className="text-sm text-muted-foreground text-center mb-4">
-                Check-in Code: <code className="bg-gray-100 px-2 py-1 rounded">{qrCodeData.checkinCode}</code>
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    navigator.clipboard.writeText(qrCodeData.checkinCode);
-                    toast.success('Code copied to clipboard');
-                  }}
-                >
-                  Copy Code
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => regenerateCodeMutation.mutate(qrCodeData.qrData.opportunityId)}
-                  disabled={regenerateCodeMutation.isPending}
-                >
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Regenerate
-                </Button>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button onClick={() => setIsQRDialogOpen(false)}>Close</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Manual Check-in Dialog */}
-      <Dialog open={isManualCheckInOpen} onOpenChange={setIsManualCheckInOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Manual Check-in</DialogTitle>
-            <DialogDescription>Record attendance manually for a volunteer.</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="user_id" className="text-right">
-                User ID *
-              </Label>
-              <Input
-                id="user_id"
-                type="number"
-                className="col-span-3"
-                value={manualCheckInData.user_id}
-                onChange={(e) => setManualCheckInData({ ...manualCheckInData, user_id: e.target.value })}
-                placeholder="Enter volunteer's user ID"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="check_in_at" className="text-right">
-                Check-in Time
-              </Label>
-              <Input
-                id="check_in_at"
-                type="datetime-local"
-                className="col-span-3"
-                value={manualCheckInData.check_in_at}
-                onChange={(e) => setManualCheckInData({ ...manualCheckInData, check_in_at: e.target.value })}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="check_out_at" className="text-right">
-                Check-out Time
-              </Label>
-              <Input
-                id="check_out_at"
-                type="datetime-local"
-                className="col-span-3"
-                value={manualCheckInData.check_out_at}
-                onChange={(e) => setManualCheckInData({ ...manualCheckInData, check_out_at: e.target.value })}
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="notes" className="text-right">
-                Notes
-              </Label>
-              <Input
-                id="notes"
-                className="col-span-3"
-                value={manualCheckInData.notes}
-                onChange={(e) => setManualCheckInData({ ...manualCheckInData, notes: e.target.value })}
-                placeholder="Optional notes"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsManualCheckInOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleManualCheckIn}
-              disabled={!manualCheckInData.user_id || manualCheckInMutation.isPending}
-            >
-              {manualCheckInMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-              Record Attendance
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
