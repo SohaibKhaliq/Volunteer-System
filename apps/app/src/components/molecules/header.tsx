@@ -41,7 +41,7 @@ const Header = () => {
 
       try {
         toast({ title: 'Signed out', description: 'You have been logged out.' });
-      } catch (e) {}
+      } catch (e) { }
       navigate('/login');
     },
     onError: (err: any) => {
@@ -59,62 +59,6 @@ const Header = () => {
           </Link>
 
           <nav className="hidden md:flex items-center gap-6">
-            {/* Volunteer top-level menu to access consolidated volunteer sections */}
-            {isVolunteer && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className={cn('text-sm font-medium transition-colors')}>
-                    Volunteer
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56">
-                  <DropdownMenuItem
-                    onClick={() => navigate('/profile', { state: { scrollTo: 'overview' } })}
-                    className="cursor-pointer"
-                  >
-                    Overview
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => navigate('/profile', { state: { scrollTo: 'schedule' } })}
-                    className="cursor-pointer"
-                  >
-                    My Schedule
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => navigate('/profile', { state: { scrollTo: 'history' } })}
-                    className="cursor-pointer"
-                  >
-                    History
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => navigate('/profile', { state: { scrollTo: 'achievements' } })}
-                    className="cursor-pointer"
-                  >
-                    Achievements
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={() => navigate('/profile', { state: { scrollTo: 'settings' } })}
-                    className="cursor-pointer"
-                  >
-                    Settings
-                  </DropdownMenuItem>
-                  <div className="h-px bg-border my-1" />
-                  <DropdownMenuItem onClick={() => navigate('/volunteer/dashboard')} className="cursor-pointer">
-                    Dashboard
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/volunteer/applications')} className="cursor-pointer">
-                    My Applications
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/volunteer/organizations')} className="cursor-pointer">
-                    My Organizations
-                  </DropdownMenuItem>
-                  <div className="h-px bg-border my-1" />
-                  <DropdownMenuItem onClick={() => navigate('/map')} className="cursor-pointer">
-                    Find Opportunities
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
 
             {isPublicOrVolunteer && (
               <>
@@ -222,7 +166,62 @@ const Header = () => {
         <div className="flex items-center gap-4">
           <DarkModeToggle />
           <Language />
-
+          {/* Volunteer top-level menu to access consolidated volunteer sections */}
+          {isVolunteer && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className={cn('text-sm font-medium transition-colors')}>
+                  Volunteer
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                <DropdownMenuItem
+                  onClick={() => navigate('/profile', { state: { scrollTo: 'overview' } })}
+                  className="cursor-pointer"
+                >
+                  Overview
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => navigate('/profile', { state: { scrollTo: 'schedule' } })}
+                  className="cursor-pointer"
+                >
+                  My Schedule
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => navigate('/profile', { state: { scrollTo: 'history' } })}
+                  className="cursor-pointer"
+                >
+                  History
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => navigate('/profile', { state: { scrollTo: 'achievements' } })}
+                  className="cursor-pointer"
+                >
+                  Achievements
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => navigate('/profile', { state: { scrollTo: 'settings' } })}
+                  className="cursor-pointer"
+                >
+                  Settings
+                </DropdownMenuItem>
+                <div className="h-px bg-border my-1" />
+                <DropdownMenuItem onClick={() => navigate('/volunteer/dashboard')} className="cursor-pointer">
+                  Dashboard
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/volunteer/applications')} className="cursor-pointer">
+                  My Applications
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/volunteer/organizations')} className="cursor-pointer">
+                  My Organizations
+                </DropdownMenuItem>
+                <div className="h-px bg-border my-1" />
+                <DropdownMenuItem onClick={() => navigate('/map')} className="cursor-pointer">
+                  Find Opportunities
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
           {authenticated ? (
             <div className="flex items-center gap-4">
               {isAdmin && (
