@@ -279,13 +279,15 @@ export default function OrganizationTeams() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">No lead assigned</SelectItem>
-                  {(Array.isArray(teamMembers) ? teamMembers : []).map((member: TeamMember) => (
-                    <SelectItem key={member.userId} value={member.userId.toString()}>
-                      {member.user?.firstName || member.user?.lastName
-                        ? `${member.user.firstName || ''} ${member.user.lastName || ''}`.trim()
-                        : member.user?.email || `User #${member.userId}`}
-                    </SelectItem>
-                  ))}
+                  {(Array.isArray(teamMembers) ? teamMembers : [])
+                    .filter((member: TeamMember) => member.userId !== undefined && member.userId !== null)
+                    .map((member: TeamMember) => (
+                      <SelectItem key={member.userId} value={member.userId.toString()}>
+                        {member.user?.firstName || member.user?.lastName
+                          ? `${member.user.firstName || ''} ${member.user.lastName || ''}`.trim()
+                          : member.user?.email || `User #${member.userId}`}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
