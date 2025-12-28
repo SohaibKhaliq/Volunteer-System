@@ -90,8 +90,12 @@ export default function OrganizationAchievements() {
                 type: ruleType,
                 threshold: Number(threshold)
               };
+              // Generate simple key
+              const key = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
               createMutation.mutate({
                 title,
+                key,
                 description: desc,
                 ruleType,
                 criteria,
