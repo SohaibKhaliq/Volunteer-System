@@ -226,6 +226,7 @@ export default function AdminLayout() {
       title: 'Admin Tools',
       items: [
         { path: '/admin/notifications', icon: Bell, label: 'Notifications', showBadge: true },
+        { path: '/admin/contact-submissions', icon: MessageSquare, label: 'Contact Submissions' },
         { path: '/admin/templates', icon: FileText, label: 'Templates' },
         { path: '/admin/communications', icon: MessageSquare, label: 'Communications' },
         { path: '/admin/invite-send-jobs', icon: Mail, label: 'Invite Send Jobs', adminOnly: true },
