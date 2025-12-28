@@ -122,12 +122,19 @@ export default class OrganizationsController {
     // Security Check
     const user = auth.user!
     // allow generic admin access implies team member logic usually, but here checking specifically
-    const isTeam = await OrganizationTeamMember.query().where('organization_id', org.id).where('user_id', user.id).first()
-    const isVolunteer = await Database.from('organization_volunteers').where('organization_id', org.id).where('user_id', user.id).where('status', 'active').first()
-    
+    const isTeam = await OrganizationTeamMember.query()
+      .where('organization_id', org.id)
+      .where('user_id', user.id)
+      .first()
+    const isVolunteer = await Database.from('organization_volunteers')
+      .where('organization_id', org.id)
+      .where('user_id', user.id)
+      .where('status', 'active')
+      .first()
+
     // Also allow global admins if needed, but for now strict org check
     if (!isTeam && !isVolunteer) {
-       return response.forbidden({ message: 'Access denied' })
+      return response.forbidden({ message: 'Access denied' })
     }
 
     const query = Resource.query().where('organization_id', org.id).whereNull('deleted_at')
@@ -238,8 +245,12 @@ export default class OrganizationsController {
     // - GET /organizations/:id -> admin/resource-style lookup by id (params.id)
     // - GET /organization/profile -> when no id provided, return the current user's organization
 
-    // If an id param is present, return that organization directly
+    // If an id param is present, only system admins may access arbitrary organizations
     if (params?.id) {
+      const user = auth.user!
+      if (!user.isAdmin) {
+        return response.forbidden({ message: 'Admin access required' })
+      }
       const org = await Organization.find(params.id)
       if (!org) return response.notFound()
       // normalize keys for frontend convenience
@@ -268,10 +279,22 @@ export default class OrganizationsController {
 
     // Otherwise, resolve the organization for the authenticated user (org panel)
     const user = auth.user!
-    const memberRecord = await OrganizationTeamMember.query().where('user_id', user.id).first()
-    if (!memberRecord) return response.notFound({ message: 'User is not part of any organization' })
+    const { organizationId, multipleMemberships, hasMembership } =
+      await this.resolveOrganizationForUser(user, auth.request)
 
-    const org = await Organization.find(memberRecord.organizationId)
+    if (!organizationId) {
+      if (multipleMemberships) {
+        return response.badRequest({
+          message: 'Multiple organizations found. Provide organizationId.'
+        })
+      }
+      if (!hasMembership && !user.isAdmin) {
+        return response.notFound({ message: 'User is not part of any organization' })
+      }
+      return response.badRequest({ message: 'organizationId is required' })
+    }
+
+    const org = await Organization.find(organizationId)
     if (!org) return response.notFound()
 
     // Include counts
@@ -315,15 +338,30 @@ export default class OrganizationsController {
     let org: Organization | null = null
 
     if (params?.id) {
+      const user = auth.user!
+      if (!user.isAdmin) {
+        return response.forbidden({ message: 'Admin access required' })
+      }
       org = await Organization.find(params.id)
       if (!org) return response.notFound()
     } else {
       const user = auth.user!
-      const memberRecord = await OrganizationTeamMember.query().where('user_id', user.id).first()
-      if (!memberRecord)
-        return response.notFound({ message: 'User is not part of any organization' })
+      const { organizationId, multipleMemberships, hasMembership } =
+        await this.resolveOrganizationForUser(user, request)
 
-      org = await Organization.find(memberRecord.organizationId)
+      if (!organizationId) {
+        if (multipleMemberships) {
+          return response.badRequest({
+            message: 'Multiple organizations found. Provide organizationId.'
+          })
+        }
+        if (!hasMembership && !user.isAdmin) {
+          return response.notFound({ message: 'User is not part of any organization' })
+        }
+        return response.badRequest({ message: 'organizationId is required' })
+      }
+
+      org = await Organization.find(organizationId)
       if (!org) return response.notFound()
     }
     // Accept both camel/cased frontend keys and DB-style keys.
@@ -699,7 +737,7 @@ export default class OrganizationsController {
       .where('organization_id', org.id)
       .where('user_id', user.id)
       .first()
-      
+
     const isVolunteer = await Database.from('organization_volunteers')
       .where('organization_id', org.id)
       .where('user_id', user.id)
@@ -707,7 +745,9 @@ export default class OrganizationsController {
       .first()
 
     if (!isTeam && !isVolunteer) {
-      return response.forbidden({ message: 'You must be a member of this organization to view its events' })
+      return response.forbidden({
+        message: 'You must be a member of this organization to view its events'
+      })
     }
 
     const events = await Database.from('events')
@@ -745,11 +785,18 @@ export default class OrganizationsController {
     if (!org) return response.notFound({ message: 'Organization not found' })
 
     const user = auth.user!
-    const isTeam = await OrganizationTeamMember.query().where('organization_id', org.id).where('user_id', user.id).first()
-    const isVolunteer = await Database.from('organization_volunteers').where('organization_id', org.id).where('user_id', user.id).where('status', 'active').first()
+    const isTeam = await OrganizationTeamMember.query()
+      .where('organization_id', org.id)
+      .where('user_id', user.id)
+      .first()
+    const isVolunteer = await Database.from('organization_volunteers')
+      .where('organization_id', org.id)
+      .where('user_id', user.id)
+      .where('status', 'active')
+      .first()
 
     if (!isTeam && !isVolunteer) {
-       return response.forbidden({ message: 'Access denied' })
+      return response.forbidden({ message: 'Access denied' })
     }
 
     const tasks = await Database.from('tasks')
@@ -932,14 +979,26 @@ export default class OrganizationsController {
   public async dashboardStats({ auth, response }: HttpContextContract) {
     const user = auth.user!
 
-    // Find organization for the current user
-    const memberRecord = await OrganizationTeamMember.query().where('user_id', user.id).first()
+    const { organizationId, membership, multipleMemberships, hasMembership } =
+      await this.resolveOrganizationForUser(user, auth.request)
 
-    if (!memberRecord) {
-      return response.notFound({ message: 'User is not part of any organization' })
+    if (!organizationId) {
+      if (multipleMemberships) {
+        return response.badRequest({
+          message: 'Multiple organizations found. Provide organizationId.'
+        })
+      }
+      if (!hasMembership && !user.isAdmin) {
+        return response.notFound({ message: 'User is not part of any organization' })
+      }
+      return response.badRequest({ message: 'organizationId is required' })
     }
 
-    const orgId = memberRecord.organizationId
+    if (!user.isAdmin && (!membership || membership.organizationId !== organizationId)) {
+      return response.forbidden({ message: 'You do not have permission to view this dashboard' })
+    }
+
+    const orgId = organizationId
 
     const activeVolunteers = await OrganizationVolunteer.query()
       .where('organization_id', orgId)
@@ -973,18 +1032,98 @@ export default class OrganizationsController {
   }
 
   // Team Management
-  public async team({ auth, response }: HttpContextContract) {
-    const user = auth.user!
-    const memberRecord = await OrganizationTeamMember.query().where('user_id', user.id).first()
-    if (!memberRecord) return response.notFound({ message: 'User is not part of any organization' })
+  private static readonly TEAM_ROLES = ['admin', 'coordinator', 'member']
 
-    const orgId = memberRecord.organizationId
+  private normalizeTeamRole(role?: string): string {
+    const normalized = (role || 'member').toString().trim().toLowerCase()
+    if (!OrganizationsController.TEAM_ROLES.includes(normalized)) {
+      return 'member'
+    }
+    return normalized
+  }
+
+  private async resolveOrganizationForUser(
+    user: User,
+    request: HttpContextContract['request']
+  ): Promise<{
+    organizationId: number | null
+    membership: OrganizationTeamMember | null
+    multipleMemberships: boolean
+    hasMembership: boolean
+  }> {
+    const rawOrgId =
+      request.input('organizationId') ||
+      request.qs().organizationId ||
+      request.params().organizationId ||
+      request.params().id
+
+    const parsedOrgId = rawOrgId ? Number(rawOrgId) : undefined
+    const memberships = await OrganizationTeamMember.query().where('userId', user.id)
+
+    if (parsedOrgId && !Number.isNaN(parsedOrgId)) {
+      const membership = memberships.find((m) => m.organizationId === parsedOrgId) || null
+      return {
+        organizationId: parsedOrgId,
+        membership,
+        multipleMemberships: memberships.length > 1,
+        hasMembership: memberships.length > 0
+      }
+    }
+
+    if (memberships.length === 1) {
+      return {
+        organizationId: memberships[0].organizationId,
+        membership: memberships[0],
+        multipleMemberships: false,
+        hasMembership: true
+      }
+    }
+
+    if (memberships.length > 1) {
+      return {
+        organizationId: null,
+        membership: null,
+        multipleMemberships: true,
+        hasMembership: true
+      }
+    }
+
+    return {
+      organizationId: null,
+      membership: null,
+      multipleMemberships: false,
+      hasMembership: false
+    }
+  }
+
+  public async team({ auth, request, response }: HttpContextContract) {
+    const user = auth.user!
+    const { organizationId, membership, multipleMemberships, hasMembership } =
+      await this.resolveOrganizationForUser(user, request)
+
+    if (!organizationId) {
+      if (multipleMemberships) {
+        return response.badRequest({
+          message: 'Multiple organizations found. Provide organizationId.'
+        })
+      }
+      if (!hasMembership && !user.isAdmin) {
+        return response.notFound({ message: 'User is not part of any organization' })
+      }
+      return response.badRequest({ message: 'organizationId is required' })
+    }
+
+    if (!user.isAdmin && (!membership || membership.organizationId !== organizationId)) {
+      return response.forbidden({ message: 'You do not have permission to view this team' })
+    }
+
     const members = await OrganizationTeamMember.query()
-      .where('organization_id', orgId)
+      .where('organization_id', organizationId)
       .preload('user')
     // Flatten user fields for frontend convenience
     const payload = members.map((m) => {
       const obj: any = m.toJSON()
+      obj.role = this.normalizeTeamRole(obj.role)
       if (obj.user) {
         obj.name =
           obj.user.first_name ||
@@ -1000,18 +1139,28 @@ export default class OrganizationsController {
 
   public async inviteMember({ auth, request, response }: HttpContextContract) {
     const currentUser = auth.user!
-    const memberRecord = await OrganizationTeamMember.query()
-      .where('user_id', currentUser.id)
-      .first()
-    if (!memberRecord) return response.notFound({ message: 'User is not part of any organization' })
+    const { organizationId, membership, multipleMemberships, hasMembership } =
+      await this.resolveOrganizationForUser(currentUser, request)
 
-    const orgId = memberRecord.organizationId
-    // Only allow invites from Admins or Coordinators
+    if (!organizationId) {
+      if (multipleMemberships) {
+        return response.badRequest({
+          message: 'Multiple organizations found. Provide organizationId.'
+        })
+      }
+      if (!hasMembership && !currentUser.isAdmin) {
+        return response.notFound({ message: 'User is not part of any organization' })
+      }
+      return response.badRequest({ message: 'organizationId is required' })
+    }
+
+    const actorRole = currentUser.isAdmin ? 'admin' : this.normalizeTeamRole(membership?.role)
     const allowedInviteRoles = ['admin', 'coordinator']
-    if (!allowedInviteRoles.includes((memberRecord.role || '').toLowerCase())) {
+    if (!allowedInviteRoles.includes(actorRole)) {
       return response.forbidden({ message: 'You do not have permission to invite members' })
     }
     const { email, role } = request.only(['email', 'role'])
+    const normalizedRole = this.normalizeTeamRole(role)
 
     const targetUser = await User.findBy('email', email)
     if (!targetUser) {
@@ -1020,7 +1169,7 @@ export default class OrganizationsController {
 
     // Prevent duplicate membership
     const existing = await OrganizationTeamMember.query()
-      .where('organization_id', orgId)
+      .where('organization_id', organizationId)
       .andWhere('user_id', targetUser.id)
       .first()
 
@@ -1029,34 +1178,57 @@ export default class OrganizationsController {
     }
 
     const member = await OrganizationTeamMember.create({
-      organizationId: orgId,
+      organizationId,
       userId: targetUser.id,
-      role: role || 'Member'
+      role: normalizedRole
     })
 
     return response.created(member)
   }
 
-  public async removeMember({ auth, params, response }: HttpContextContract) {
+  public async removeMember({ auth, params, request, response }: HttpContextContract) {
     // params.id is organization id, params.memberId is user id or team member id
     // Let's assume route is /organizations/:id/team/:memberId
     // where memberId is the ID of the OrganizationTeamMember record
     const user = auth.user!
-    const currentOrgRec = await OrganizationTeamMember.query().where('user_id', user.id).first()
-    if (!currentOrgRec)
-      return response.notFound({ message: 'User is not part of any organization' })
+    const { organizationId, membership, multipleMemberships, hasMembership } =
+      await this.resolveOrganizationForUser(user, request)
+
+    if (!organizationId) {
+      if (multipleMemberships) {
+        return response.badRequest({
+          message: 'Multiple organizations found. Provide organizationId.'
+        })
+      }
+      if (!hasMembership && !user.isAdmin) {
+        return response.notFound({ message: 'User is not part of any organization' })
+      }
+      return response.badRequest({ message: 'organizationId is required' })
+    }
 
     const member = await OrganizationTeamMember.find(params.memberId)
     if (!member) return response.notFound()
 
-    if (member.organizationId !== currentOrgRec.organizationId) {
+    if (member.organizationId !== organizationId) {
       return response.forbidden({ message: 'Member does not belong to your organization' })
     }
 
-    // Only allow deletion by Admins or Coordinators
+    const actorRole = user.isAdmin ? 'admin' : this.normalizeTeamRole(membership?.role)
     const allowedRemoveRoles = ['admin', 'coordinator']
-    if (!allowedRemoveRoles.includes((currentOrgRec.role || '').toLowerCase())) {
+    if (!allowedRemoveRoles.includes(actorRole)) {
       return response.forbidden({ message: 'You do not have permission to remove members' })
+    }
+
+    // Prevent removing the last admin
+    const adminCount = await OrganizationTeamMember.query()
+      .where('organization_id', organizationId)
+      .whereRaw('LOWER(role) = ?', ['admin'])
+      .count('* as total')
+      .first()
+    const adminTotal = Number(adminCount?.$extras?.total || adminCount?.total || 0)
+    const isTargetAdmin = this.normalizeTeamRole(member.role) === 'admin'
+    if (isTargetAdmin && adminTotal <= 1) {
+      return response.conflict({ message: 'At least one admin must remain in the organization' })
     }
 
     await member.delete()
@@ -1066,32 +1238,56 @@ export default class OrganizationsController {
   // Update team member (role etc). Only allowed by org admins/coordinators
   public async updateMember({ auth, params, request, response }: HttpContextContract) {
     const currentUser = auth.user!
-    const currentOrgRec = await OrganizationTeamMember.query()
-      .where('user_id', currentUser.id)
-      .first()
-    if (!currentOrgRec)
-      return response.notFound({ message: 'User is not part of any organization' })
+    const { organizationId, membership, multipleMemberships, hasMembership } =
+      await this.resolveOrganizationForUser(currentUser, request)
 
-    // Only admins/coordinators can update other members
+    if (!organizationId) {
+      if (multipleMemberships) {
+        return response.badRequest({
+          message: 'Multiple organizations found. Provide organizationId.'
+        })
+      }
+      if (!hasMembership && !currentUser.isAdmin) {
+        return response.notFound({ message: 'User is not part of any organization' })
+      }
+      return response.badRequest({ message: 'organizationId is required' })
+    }
+
+    const actorRole = currentUser.isAdmin ? 'admin' : this.normalizeTeamRole(membership?.role)
     const allowedRoles = ['admin', 'coordinator']
-    if (!allowedRoles.includes((currentOrgRec.role || '').toLowerCase())) {
+    if (!allowedRoles.includes(actorRole)) {
       return response.forbidden({ message: 'You do not have permission to update team members' })
     }
 
     const member = await OrganizationTeamMember.find(params.memberId)
     if (!member) return response.notFound()
 
-    if (member.organizationId !== currentOrgRec.organizationId) {
+    if (member.organizationId !== organizationId) {
       return response.forbidden({ message: 'Member does not belong to your organization' })
     }
 
     const payload = request.only(['role'])
-    if (payload.role) member.role = payload.role
+    const normalizedRole = this.normalizeTeamRole(payload.role)
+
+    if (this.normalizeTeamRole(member.role) === 'admin' && normalizedRole !== 'admin') {
+      const adminCount = await OrganizationTeamMember.query()
+        .where('organization_id', organizationId)
+        .whereRaw('LOWER(role) = ?', ['admin'])
+        .count('* as total')
+        .first()
+      const adminTotal = Number(adminCount?.$extras?.total || adminCount?.total || 0)
+      if (adminTotal <= 1) {
+        return response.conflict({ message: 'At least one admin must remain in the organization' })
+      }
+    }
+
+    member.role = normalizedRole
 
     await member.save()
     await member.refresh()
     await member.preload('user')
 
+    member.role = this.normalizeTeamRole(member.role)
     return response.ok(member)
   }
 
@@ -1100,12 +1296,27 @@ export default class OrganizationsController {
    */
   public async getSettings({ auth, response }: HttpContextContract) {
     const user = auth.user!
-    const memberRecord = await OrganizationTeamMember.query().where('user_id', user.id).first()
-    if (!memberRecord) {
-      return response.notFound({ message: 'User is not part of any organization' })
+
+    const { organizationId, membership, multipleMemberships, hasMembership } =
+      await this.resolveOrganizationForUser(user, auth.request)
+
+    if (!organizationId) {
+      if (multipleMemberships) {
+        return response.badRequest({
+          message: 'Multiple organizations found. Provide organizationId.'
+        })
+      }
+      if (!hasMembership && !user.isAdmin) {
+        return response.notFound({ message: 'User is not part of any organization' })
+      }
+      return response.badRequest({ message: 'organizationId is required' })
     }
 
-    const org = await Organization.find(memberRecord.organizationId)
+    if (!user.isAdmin && (!membership || membership.organizationId !== organizationId)) {
+      return response.forbidden({ message: 'You do not have permission to view these settings' })
+    }
+
+    const org = await Organization.find(organizationId)
     if (!org) {
       return response.notFound()
     }
@@ -1130,18 +1341,34 @@ export default class OrganizationsController {
    */
   public async updateSettings({ auth, request, response }: HttpContextContract) {
     const user = auth.user!
-    const memberRecord = await OrganizationTeamMember.query().where('user_id', user.id).first()
-    if (!memberRecord) {
-      return response.notFound({ message: 'User is not part of any organization' })
+
+    const { organizationId, membership, multipleMemberships, hasMembership } =
+      await this.resolveOrganizationForUser(user, request)
+
+    if (!organizationId) {
+      if (multipleMemberships) {
+        return response.badRequest({
+          message: 'Multiple organizations found. Provide organizationId.'
+        })
+      }
+      if (!hasMembership && !user.isAdmin) {
+        return response.notFound({ message: 'User is not part of any organization' })
+      }
+      return response.badRequest({ message: 'organizationId is required' })
     }
 
-    // Only allow admins to update settings
-    const allowedRoles = ['admin', 'coordinator']
-    if (!allowedRoles.includes((memberRecord.role || '').toLowerCase())) {
+    if (!user.isAdmin && (!membership || membership.organizationId !== organizationId)) {
       return response.forbidden({ message: 'You do not have permission to update settings' })
     }
 
-    const org = await Organization.find(memberRecord.organizationId)
+    // Only allow admins/coordinators to update settings
+    const allowedRoles = ['admin', 'coordinator']
+    const actorRole = user.isAdmin ? 'admin' : this.normalizeTeamRole(membership?.role)
+    if (!allowedRoles.includes(actorRole)) {
+      return response.forbidden({ message: 'You do not have permission to update settings' })
+    }
+
+    const org = await Organization.find(organizationId)
     if (!org) {
       return response.notFound()
     }
