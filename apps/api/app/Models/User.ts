@@ -18,6 +18,7 @@ import ComplianceDocument from './ComplianceDocument'
 import Role from './Role'
 import Organization from './Organization'
 import UserAchievement from './UserAchievement'
+import OrganizationTeamMember from './OrganizationTeamMember'
 
 export default class User extends BaseModel {
   @column({ isPrimary: true })
@@ -45,7 +46,7 @@ export default class User extends BaseModel {
   public phone?: string
 
   @column({
-    columnName: 'profile_metadata',
+    columnName: 'profile_metadata'
     // Standard JSON column handling.
     // Manual prepare/consume removed to prevent SQL syntax errors (double-encoding/quoting issues).
   })
@@ -110,6 +111,12 @@ export default class User extends BaseModel {
     pivotTimestamps: true
   })
   public organizations: ManyToMany<typeof Organization>
+
+  @hasMany(() => OrganizationTeamMember, {
+    localKey: 'id',
+    foreignKey: 'userId'
+  })
+  public teamMemberships: HasMany<typeof OrganizationTeamMember>
 
   @hasMany(() => UserAchievement)
   public achievements: HasMany<typeof UserAchievement>
