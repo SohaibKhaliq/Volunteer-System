@@ -29,6 +29,12 @@ import {
   Camera,
   AlertCircle
 } from 'lucide-react';
+
+// Import Volunteer Pages
+import VolunteerDashboard from '@/pages/volunteer/dashboard';
+import VolunteerApplicationsPage from '@/pages/volunteer/applications';
+import VolunteerOrganizationsPage from '@/pages/volunteer/organizations';
+import { Building2, List } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useStore } from '@/lib/store';
 import { Link, useLocation } from 'react-router-dom';
@@ -384,6 +390,16 @@ export default function Profile() {
             <TabsTrigger value="overview" className="flex gap-2">
               <User className="h-4 w-4" /> <span className="hidden md:inline">Overview</span>
             </TabsTrigger>
+            <TabsTrigger value="dashboard" className="flex gap-2">
+              <Award className="h-4 w-4" /> <span className="hidden md:inline">Dashboard</span>
+            </TabsTrigger>
+            <TabsTrigger value="applications" className="flex gap-2">
+              <List className="h-4 w-4" /> <span className="hidden md:inline">Applications</span>
+            </TabsTrigger>
+            <TabsTrigger value="organizations" className="flex gap-2">
+              <Building2 className="h-4 w-4" /> <span className="hidden md:inline">Organizations</span>
+            </TabsTrigger>
+
             <TabsTrigger value="schedule" className="flex gap-2">
               <Calendar className="h-4 w-4" /> <span className="hidden md:inline">My Schedule</span>
             </TabsTrigger>
@@ -681,6 +697,20 @@ export default function Profile() {
               </div>
             </div>
           </TabsContent>
+
+          <TabsContent value="dashboard" className="space-y-6">
+            <VolunteerDashboard />
+          </TabsContent>
+
+          <TabsContent value="applications" className="space-y-6">
+            <VolunteerApplicationsPage />
+          </TabsContent>
+
+          <TabsContent value="organizations" className="space-y-6">
+            <VolunteerOrganizationsPage />
+          </TabsContent>
+
+
 
           {/* SCHEDULE SECTION */}
           <TabsContent value="schedule">
