@@ -184,7 +184,7 @@ const routes: RouteObject[] = [
   {
     path: 'organization',
     element: (
-      <RouteGuard allowedRoles={['organization_admin']} redirectTo="/">
+      <RouteGuard allowedRoles={['organization_admin', 'admin']} redirectTo="/">
         <AdminScrollWrapper>
           <AppProvider>
             <OrganizationLayout />
