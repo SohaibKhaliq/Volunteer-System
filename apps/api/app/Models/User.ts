@@ -46,14 +46,8 @@ export default class User extends BaseModel {
 
   @column({
     columnName: 'profile_metadata',
-    prepare: (value: any) => (value ? JSON.stringify(value) : null),
-    consume: (value: any) => {
-      try {
-        return value ? JSON.parse(value) : null
-      } catch (e) {
-        return value
-      }
-    }
+    // Standard JSON column handling.
+    // Manual prepare/consume removed to prevent SQL syntax errors (double-encoding/quoting issues).
   })
   public profileMetadata?: any
 
