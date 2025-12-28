@@ -16,17 +16,6 @@ import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
 
-function parseApiDate(value: any): Date | null {
-  if (!value) return null;
-  if (value instanceof Date) return value;
-
-  const raw = String(value);
-  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(raw)) {
-    return new Date(raw.replace(' ', 'T') + 'Z');
-  }
-  return new Date(raw);
-}
-
 // Schema
 const opportunitySchema = z.object({
   title: z.string().min(3, 'Title is too short'),
@@ -80,9 +69,6 @@ export default function OrganizationOpportunityEdit() {
   // Populate form
   useEffect(() => {
     if (opportunity) {
-      const startDate = parseApiDate((opportunity as any).startAt ?? (opportunity as any).start_at);
-      const endDate = parseApiDate((opportunity as any).endAt ?? (opportunity as any).end_at);
-
       form.reset({
         title: opportunity.title,
         description: opportunity.description || '',
@@ -93,8 +79,8 @@ export default function OrganizationOpportunityEdit() {
         visibility: opportunity.visibility || 'public',
         // Dates need to be in 'YYYY-MM-DDTHH:mm' format for datetime-local input potentially
         // But let's assume standard ISO string works if we use a date picker component or simple input
-        start_at: startDate ? startDate.toISOString().slice(0, 16) : '',
-        end_at: endDate ? endDate.toISOString().slice(0, 16) : ''
+        start_at: opportunity.startAt ? new Date(opportunity.startAt).toISOString().slice(0, 16) : '',
+        end_at: opportunity.endAt ? new Date(opportunity.endAt).toISOString().slice(0, 16) : ''
       });
     }
   }, [opportunity, form]);

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import api from '@/lib/api'; // Assuming api helper exists
+import { axios } from '@/lib/axios';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +9,17 @@ import { format } from 'date-fns';
 import { Search, MapPin, Calendar, Clock, Filter, Building2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+function parseApiDate(value: any): Date | null {
+  if (!value) return null;
+  if (value instanceof Date) return value;
+  const raw = String(value);
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(raw)) {
+    return new Date(raw.replace(' ', 'T') + 'Z');
+  }
+  const d = new Date(raw);
+  return isNaN(d.getTime()) ? null : d;
+}
 
 export default function VolunteerOpportunities() {
   const [search, setSearch] = useState('');
@@ -24,9 +35,8 @@ export default function VolunteerOpportunities() {
       if (search) params.append('search', search);
       if (city) params.append('city', city);
       if (dateFilter === 'upcoming') params.append('dateFrom', new Date().toISOString());
-
-      const res = await api.get(`/volunteer/opportunities?${params.toString()}`);
-      return res.data;
+      const res = await axios.get(`/volunteer/opportunities?${params.toString()}`);
+      return res;
     }
   });
 
@@ -109,12 +119,22 @@ export default function VolunteerOpportunities() {
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-muted-foreground" />
-                    <span>{format(new Date(opp.startAt), 'PPP')}</span>
+                    <span>
+                      {(() => {
+                        const d = parseApiDate(opp.startAt ?? opp.start_at);
+                        return d ? format(d, 'PPP') : '—';
+                      })()}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-muted-foreground" />
                     <span>
-                      {format(new Date(opp.startAt), 'p')} - {opp.endAt ? format(new Date(opp.endAt), 'p') : 'N/A'}
+                      {(() => {
+                        const start = parseApiDate(opp.startAt ?? opp.start_at);
+                        const end = parseApiDate(opp.endAt ?? opp.end_at);
+                        if (!start) return '—';
+                        return `${format(start, 'p')} - ${end ? format(end, 'p') : 'N/A'}`;
+                      })()}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">

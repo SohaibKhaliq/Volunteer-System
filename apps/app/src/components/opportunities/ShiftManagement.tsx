@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useParams } from 'react-router-dom';
 import { Plus, Trash2, Calendar as CalendarIcon, Clock, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { useForm } from 'react-hook-form';
@@ -8,7 +9,7 @@ import * as z from 'zod';
 
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -22,25 +23,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
-
-function parseApiDate(value: any): Date | null {
-  if (!value) return null;
-  if (value instanceof Date) return value;
-
-  const raw = String(value);
-  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(raw)) {
-    return new Date(raw.replace(' ', 'T') + 'Z');
-  }
-  return new Date(raw);
-}
-
-function getShiftStart(shift: any): Date | null {
-  return parseApiDate(shift?.startAt ?? shift?.start_at);
-}
-
-function getShiftEnd(shift: any): Date | null {
-  return parseApiDate(shift?.endAt ?? shift?.end_at);
-}
 
 const shiftSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -229,19 +211,11 @@ export function ShiftManagement({ opportunityId }: { opportunityId: string }) {
                   <div className="text-sm text-muted-foreground flex items-center gap-4 mt-1">
                     <span className="flex items-center gap-1">
                       <CalendarIcon className="h-3 w-3" />
-                      {(() => {
-                        const d = getShiftStart(shift);
-                        return d ? format(d, 'MMM d, yyyy') : '—';
-                      })()}
+                      {format(new Date(shift.startAt), 'MMM d, yyyy')}
                     </span>
                     <span className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />
-                      {(() => {
-                        const start = getShiftStart(shift);
-                        const end = getShiftEnd(shift);
-                        if (!start || !end) return '—';
-                        return `${format(start, 'HH:mm')} - ${format(end, 'HH:mm')}`;
-                      })()}
+                      {format(new Date(shift.startAt), 'HH:mm')} - {format(new Date(shift.endAt), 'HH:mm')}
                     </span>
                     {shift.capacity && (
                       <span className="flex items-center gap-1">

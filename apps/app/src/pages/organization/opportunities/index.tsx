@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '@/lib/api';
+import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DataTable } from '@/components/ui/data-table'; // Assuming generic data table component exists
@@ -17,22 +17,6 @@ import {
   DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
-
-function parseApiDate(value: any): Date | null {
-  if (!value) return null;
-  if (value instanceof Date) return value;
-
-  const raw = String(value);
-  // Handle MySQL timestamp string: "YYYY-MM-DD HH:mm:ss"
-  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(raw)) {
-    return new Date(raw.replace(' ', 'T') + 'Z');
-  }
-  return new Date(raw);
-}
-
-function getStartAt(row: any): Date | null {
-  return parseApiDate(row?.startAt ?? row?.start_at);
-}
 
 export default function OrganizationOpportunities() {
   const navigate = useNavigate();
@@ -81,10 +65,7 @@ export default function OrganizationOpportunities() {
     },
     {
       header: 'Date',
-      accessorFn: (row: any) => {
-        const date = getStartAt(row);
-        return date ? format(date, 'MMM dd, yyyy') : '—';
-      }
+      accessorFn: (row: any) => format(new Date(row.startAt), 'MMM dd, yyyy')
     },
     {
       header: 'Status',
@@ -204,12 +185,7 @@ export default function OrganizationOpportunities() {
                 opportunities?.data?.map((opp: any) => (
                   <tr key={opp.id} className="border-b transition-colors hover:bg-muted/50">
                     <td className="p-4 font-medium">{opp.title}</td>
-                    <td className="p-4">
-                      {(() => {
-                        const date = getStartAt(opp);
-                        return date ? format(date, 'MMM dd, yyyy p') : '—';
-                      })()}
-                    </td>
+                    <td className="p-4">{format(new Date(opp.startAt), 'MMM dd, yyyy p')}</td>
                     <td className="p-4">
                       <Badge variant={opp.status === 'published' ? 'default' : 'secondary'}>{opp.status}</Badge>
                     </td>

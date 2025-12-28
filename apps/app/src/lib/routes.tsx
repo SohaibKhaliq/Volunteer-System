@@ -17,7 +17,7 @@ import TransportOfferForm from '@/pages/transport-offer-form';
 import TransportRequestForm from '@/pages/transport-request-form';
 import Profile from '@/pages/profile';
 import NotificationsPage from '@/pages/notifications';
-import { Navigate, RouteObject } from 'react-router-dom';
+import { RouteObject } from 'react-router-dom';
 import AdminLayout from '@/components/templates/AdminLayout';
 import AppProvider from '@/providers/app-provider';
 import AdminDashboard from '@/pages/admin/dashboard';
@@ -64,7 +64,8 @@ import AdminContactSubmissions from '@/pages/admin/contact-submissions';
 import OrganizationLayout from '@/components/templates/OrganizationLayout';
 import OrganizationDashboard from '@/pages/organization/dashboard';
 import OrganizationProfile from '@/pages/organization/profile';
-import OrganizationOpportunities from '@/pages/organization/opportunities/index';
+import OrganizationEvents from '@/pages/organization/events';
+import OrganizationOpportunities from '@/pages/organization/opportunities';
 import OrganizationOpportunityEdit from '@/pages/organization/opportunities/edit';
 import OrganizationAchievements from '@/pages/organization/achievements';
 import OrganizationVolunteers from '@/pages/organization/volunteers';
@@ -196,7 +197,7 @@ const routes: RouteObject[] = [
       { index: true, element: <OrganizationDashboard /> },
       { path: 'profile', element: <OrganizationProfile /> },
       { path: 'team', element: <OrganizationTeam /> },
-      { path: 'events', element: <Navigate to="/organization/opportunities" replace /> },
+      { path: 'events', element: <OrganizationEvents /> },
       { path: 'opportunities', element: <OrganizationOpportunities /> },
       { path: 'opportunities/create', element: <OrganizationOpportunityEdit /> },
       { path: 'opportunities/:id/edit', element: <OrganizationOpportunityEdit /> },
