@@ -153,6 +153,7 @@ export default class UsersController {
         .where('id', auth.user!.id)
         .preload('roles')
         .preload('organizations')
+        .preload('teamMemberships')
         .firstOrFail()
       const { password, ...safeUser } = user.toJSON() as any
       // compute impact score for the user (0-1000)
