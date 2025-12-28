@@ -1,6 +1,7 @@
 import NotFound from '@/components/molecules/404';
 import ErrorBoundary from '@/components/atoms/ErrorBoundary';
 import Layout from '@/components/templates/layout';
+import RouteGuard from '@/components/RouteGuard';
 import Carpooling from '@/pages/carpooling';
 import Detail from '@/pages/detail';
 import Help from '@/pages/help';
@@ -104,7 +105,7 @@ import VolunteerAchievements from '@/pages/volunteer/achievements';
 import VolunteerApplications from '@/pages/volunteer/applications';
 import VolunteerDashboard from '@/pages/volunteer/dashboard';
 import VolunteerHistory from '@/pages/volunteer/history';
-import VolunteerHours from '@/pages/volunteer/hours/index'; 
+import VolunteerHours from '@/pages/volunteer/hours/index';
 import VolunteerOpportunityDetailView from '@/pages/volunteer/opportunity-detail'; // Alias to avoid conflict
 import VolunteerOrganizations from '@/pages/volunteer/organizations';
 import VolunteerSettings from '@/pages/volunteer/settings';
@@ -123,11 +124,13 @@ const routes: RouteObject[] = [
   {
     path: 'admin',
     element: (
-      <AdminScrollWrapper>
-        <AppProvider>
-          <AdminLayout />
-        </AppProvider>
-      </AdminScrollWrapper>
+      <RouteGuard allowedRoles={['admin']} redirectTo="/">
+        <AdminScrollWrapper>
+          <AppProvider>
+            <AdminLayout />
+          </AppProvider>
+        </AdminScrollWrapper>
+      </RouteGuard>
     ),
     errorElement: <ErrorBoundary />,
     children: [
@@ -181,11 +184,13 @@ const routes: RouteObject[] = [
   {
     path: 'organization',
     element: (
-      <AdminScrollWrapper>
-        <AppProvider>
-          <OrganizationLayout />
-        </AppProvider>
-      </AdminScrollWrapper>
+      <RouteGuard allowedRoles={['organization_admin']} redirectTo="/">
+        <AdminScrollWrapper>
+          <AppProvider>
+            <OrganizationLayout />
+          </AppProvider>
+        </AdminScrollWrapper>
+      </RouteGuard>
     ),
     errorElement: <ErrorBoundary />,
     children: [
