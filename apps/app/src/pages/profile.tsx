@@ -38,6 +38,7 @@ import { useLocation } from 'react-router-dom';
 import volunteerApi from '@/lib/api/volunteerApi';
 import { AssignmentStatus } from '@/lib/constants/assignmentStatus';
 import { useNavigate } from 'react-router-dom';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function Profile() {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -164,18 +165,7 @@ export default function Profile() {
     { enabled: !!userId }
   );
 
-  // Browse opportunities (show a few suggestions on profile)
-  const { data: opportunitiesData } = useQuery({
-    queryKey: ['volunteer-browse-opportunities'],
-    queryFn: async () => {
-      try {
-        const res = await volunteerApi.browseOpportunities({ perPage: 6 });
-        return (res as any)?.data || [];
-      } catch {
-        return [];
-      }
-    }
-  });
+
 
   if (isLoading)
     return (
@@ -240,7 +230,15 @@ export default function Profile() {
 
   // Pagination state for schedule
   const [schedulePage, setSchedulePage] = useState(1);
+
   const schedulePerPage = 5;
+
+  const paginatedShifts = upcomingShifts.slice(
+    (schedulePage - 1) * schedulePerPage,
+    schedulePage * schedulePerPage
+  );
+
+  const totalPages = Math.ceil(upcomingShifts.length / schedulePerPage);
   // Reset page when source changes
   useEffect(() => {
     setSchedulePage(1);
@@ -262,47 +260,7 @@ export default function Profile() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['my-assignments', userId] })
   });
 
-  // Organization join/leave mutations
-  const joinOrgMutation = useMutation({
-    mutationFn: (id: number) => volunteerApi.joinOrganization(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['me']);
-      toast({ title: 'Request submitted', description: 'Your request to join the organization was submitted.' });
-    },
-    onError: (error: any) => {
-      const status = error?.response?.status;
-      const serverMessage = error?.response?.data?.message;
-      if (status === 401) {
-        toast({ title: 'Login required', description: 'Please sign in to join organizations', variant: 'destructive' });
-        queryClient.invalidateQueries(['me']);
-        return;
-      }
-      if (status === 409) {
-        toast({
-          title: 'Already a member',
-          description: serverMessage || 'You are already a member of this organization'
-        });
-        queryClient.invalidateQueries(['me']);
-        return;
-      }
-      toast({
-        title: 'Request failed',
-        description: serverMessage || 'Could not submit join request',
-        variant: 'destructive'
-      });
-    }
-  });
 
-  const leaveOrgMutation = useMutation({
-    mutationFn: (id: number) => volunteerApi.leaveOrganization(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['me']);
-      toast({ title: 'Left organization', description: 'You have left the organization.' });
-    },
-    onError: () => {
-      toast({ title: 'Action failed', description: 'Could not leave organization', variant: 'destructive' });
-    }
-  });
 
   return (
     <div className="min-h-screen bg-slate-50/50 pb-12">
@@ -438,58 +396,85 @@ export default function Profile() {
               <CardContent>
                 <div className="space-y-4">
                   {upcomingShifts.length > 0 ? (
-                    upcomingShifts.map((shift: any) => (
-                      <div
-                        key={shift.id}
-                        className="flex flex-col md:flex-row md:items-center justify-between p-6 border rounded-lg gap-4"
-                      >
-                        <div className="flex gap-4">
-                          <div className="flex flex-col items-center justify-center w-16 h-16 bg-slate-100 rounded-lg shrink-0">
-                            <span className="text-xs font-bold uppercase text-slate-500">
-                              {shift.date.split(' ')[0]}
-                            </span>
-                            <span className="text-xl font-bold">{shift.date.split(' ')[1]}</span>
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-lg">{shift.title}</h3>
-                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground mt-1">
-                              <span className="flex items-center gap-1">
-                                <Clock className="h-3 w-3" /> {shift.time}
+                    <>
+                      {paginatedShifts.map((shift: any) => (
+                        <div
+                          key={shift.id}
+                          className="flex flex-col md:flex-row md:items-center justify-between p-6 border rounded-lg gap-4"
+                        >
+                          <div className="flex gap-4">
+                            <div className="flex flex-col items-center justify-center w-16 h-16 bg-slate-100 rounded-lg shrink-0">
+                              <span className="text-xs font-bold uppercase text-slate-500">
+                                {shift.date.split(' ')[0]}
                               </span>
-                              <span className="flex items-center gap-1">
-                                <MapPin className="h-3 w-3" /> {shift.location}
-                              </span>
-                              <span className="flex items-center gap-1">
-                                <User className="h-3 w-3" /> {shift.role}
-                              </span>
+                              <span className="text-xl font-bold">{shift.date.split(' ')[1]}</span>
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-lg">{shift.title}</h3>
+                              <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground mt-1">
+                                <span className="flex items-center gap-1">
+                                  <Clock className="h-3 w-3" /> {shift.time}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <MapPin className="h-3 w-3" /> {shift.location}
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <User className="h-3 w-3" /> {shift.role}
+                                </span>
+                              </div>
                             </div>
                           </div>
+                          <div className="flex gap-2 w-full md:w-auto">
+                            <Button
+                              variant="outline"
+                              className="flex-1 md:flex-none"
+                              onClick={() => {
+                                const confirmed = window.confirm(
+                                  'Cancel this signup? This will mark your assignment as cancelled.'
+                                );
+                                if (confirmed) cancelMutation.mutate(shift.id);
+                              }}
+                              disabled={cancelMutation.isLoading}
+                            >
+                              {cancelMutation.isLoading ? 'Cancelling...' : 'Cancel'}
+                            </Button>
+                            <Button
+                              className="flex-1 md:flex-none"
+                              onClick={() =>
+                                navigate(shift.eventId ? `/detail/event/${shift.eventId}` : `/events/${shift.id}`)
+                              }
+                            >
+                              Details
+                            </Button>
+                          </div>
                         </div>
-                        <div className="flex gap-2 w-full md:w-auto">
+                      ))}
+
+                      {/* Pagination Controls */}
+                      {totalPages > 1 && (
+                        <div className="flex justify-center items-center gap-4 pt-4 border-t mt-4">
                           <Button
                             variant="outline"
-                            className="flex-1 md:flex-none"
-                            onClick={() => {
-                              const confirmed = window.confirm(
-                                'Cancel this signup? This will mark your assignment as cancelled.'
-                              );
-                              if (confirmed) cancelMutation.mutate(shift.id);
-                            }}
-                            disabled={cancelMutation.isLoading}
+                            size="sm"
+                            onClick={() => setSchedulePage(p => Math.max(1, p - 1))}
+                            disabled={schedulePage === 1}
                           >
-                            {cancelMutation.isLoading ? 'Cancelling...' : 'Cancel'}
+                            <ChevronLeft className="h-4 w-4 mr-1" /> Previous
                           </Button>
+                          <span className="text-sm text-muted-foreground">
+                            Page {schedulePage} of {totalPages}
+                          </span>
                           <Button
-                            className="flex-1 md:flex-none"
-                            onClick={() =>
-                              navigate(shift.eventId ? `/detail/event/${shift.eventId}` : `/events/${shift.id}`)
-                            }
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setSchedulePage(p => Math.min(totalPages, p + 1))}
+                            disabled={schedulePage === totalPages}
                           >
-                            Details
+                            Next <ChevronRight className="h-4 w-4 ml-1" />
                           </Button>
                         </div>
-                      </div>
-                    ))
+                      )}
+                    </>
                   ) : (
                     <div className="text-center py-12 text-muted-foreground">
                       No upcoming shifts.{' '}
@@ -824,6 +809,6 @@ export default function Profile() {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+    </div >
   );
 }
