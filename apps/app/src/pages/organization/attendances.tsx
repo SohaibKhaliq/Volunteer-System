@@ -233,7 +233,7 @@ export default function OrganizationAttendances() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="">All Opportunities</SelectItem>
-            {opportunitiesList.map((opp: Opportunity) => (
+            {opportunitiesList.filter((opp: Opportunity) => opp?.id).map((opp: Opportunity) => (
               <SelectItem key={opp.id} value={opp.id.toString()}>
                 {opp.title}
               </SelectItem>
