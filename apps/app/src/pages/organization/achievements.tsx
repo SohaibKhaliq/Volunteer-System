@@ -6,6 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/atoms/use-toast';
 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+
 export default function OrganizationAchievements() {
   const queryClient = useQueryClient();
   const { data: list = [] } = useQuery(['org-achievements'], () => api.listOrganizationAchievements(), {
@@ -13,15 +17,18 @@ export default function OrganizationAchievements() {
   });
 
   const [title, setTitle] = useState('');
-  const [criteria, setCriteria] = useState('');
+  const [desc, setDesc] = useState('');
+  const [ruleType, setRuleType] = useState('hours');
+  const [threshold, setThreshold] = useState('');
 
   const createMutation = useMutation({
     mutationFn: (payload: any) => api.createOrganizationAchievement(payload),
     onSuccess: () => {
       queryClient.invalidateQueries(['org-achievements']);
-      toast({ title: 'Achievement created', variant: 'success' });
+      toast({ title: 'Achievement created', variant: 'success' as any });
       setTitle('');
-      setCriteria('');
+      setDesc('');
+      setThreshold('');
     },
     onError: () => toast({ title: 'Failed to create achievement', variant: 'destructive' })
   });
@@ -35,21 +42,65 @@ export default function OrganizationAchievements() {
         </div>
       </div>
 
-      <div className="bg-white p-4 rounded-lg shadow-sm">
-        <div className="grid grid-cols-2 gap-2">
-          <Input placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} />
-          <Input
-            placeholder='criteria JSON e.g. {"type":"events","threshold":5}'
-            value={criteria}
-            onChange={(e) => setCriteria(e.target.value)}
-          />
+      <div className="bg-white p-6 rounded-lg shadow-sm space-y-4">
+        <h3 className="font-semibold text-lg">Create New Achievement</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Title</Label>
+            <Input placeholder="e.g. Super Volunteer" value={title} onChange={(e) => setTitle(e.target.value)} />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Rule Type</Label>
+            <Select value={ruleType} onValueChange={setRuleType}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="hours">Hours Based</SelectItem>
+                <SelectItem value="events">Events Count</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>{ruleType === 'hours' ? 'Required Hours' : 'Required Events'}</Label>
+            <Input
+              type="number"
+              placeholder={ruleType === 'hours' ? 'e.g. 50' : 'e.g. 10'}
+              value={threshold}
+              onChange={(e) => setThreshold(e.target.value)}
+            />
+          </div>
+
+          <div className="space-y-2 md:col-span-2">
+            <Label>Description</Label>
+            <Textarea
+              placeholder="Describe this achievement..."
+              value={desc}
+              onChange={(e) => setDesc(e.target.value)}
+            />
+          </div>
         </div>
-        <div className="flex justify-end mt-3">
+
+        <div className="flex justify-end pt-2">
           <Button
-            onClick={() => createMutation.mutate({ title, criteria: criteria ? JSON.parse(criteria) : undefined })}
-            disabled={!title}
+            onClick={() => {
+              const criteria = {
+                type: ruleType,
+                threshold: Number(threshold)
+              };
+              createMutation.mutate({
+                title,
+                description: desc,
+                ruleType,
+                criteria,
+                points: 10 // default points
+              });
+            }}
+            disabled={!title || !threshold}
           >
-            Create
+            {createMutation.isLoading ? 'Creating...' : 'Create Achievement'}
           </Button>
         </div>
       </div>
