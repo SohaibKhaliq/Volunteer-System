@@ -240,7 +240,7 @@ export default class OrganizationsController {
     return response.created(out)
   }
 
-  public async show({ auth, params, response }: HttpContextContract) {
+  public async show({ auth, params, request, response }: HttpContextContract) {
     // Support two uses:
     // - GET /organizations/:id -> admin/resource-style lookup by id (params.id)
     // - GET /organization/profile -> when no id provided, return the current user's organization
@@ -279,8 +279,8 @@ export default class OrganizationsController {
 
     // Otherwise, resolve the organization for the authenticated user (org panel)
     const user = auth.user!
-    const { organizationId, multipleMemberships, hasMembership } =
-      await this.resolveOrganizationForUser(user, auth.request)
+    const { organizationId, membership, multipleMemberships, hasMembership } =
+      await this.resolveOrganizationForUser(user, request)
 
     if (!organizationId) {
       if (multipleMemberships) {
@@ -292,6 +292,10 @@ export default class OrganizationsController {
         return response.notFound({ message: 'User is not part of any organization' })
       }
       return response.badRequest({ message: 'organizationId is required' })
+    }
+
+    if (!user.isAdmin && (!membership || membership.organizationId !== organizationId)) {
+      return response.forbidden({ message: 'You do not have permission to view this organization' })
     }
 
     const org = await Organization.find(organizationId)
@@ -346,7 +350,7 @@ export default class OrganizationsController {
       if (!org) return response.notFound()
     } else {
       const user = auth.user!
-      const { organizationId, multipleMemberships, hasMembership } =
+      const { organizationId, membership, multipleMemberships, hasMembership } =
         await this.resolveOrganizationForUser(user, request)
 
       if (!organizationId) {
@@ -359,6 +363,12 @@ export default class OrganizationsController {
           return response.notFound({ message: 'User is not part of any organization' })
         }
         return response.badRequest({ message: 'organizationId is required' })
+      }
+
+      if (!user.isAdmin && (!membership || membership.organizationId !== organizationId)) {
+        return response.forbidden({
+          message: 'You do not have permission to update this organization'
+        })
       }
 
       org = await Organization.find(organizationId)
@@ -976,11 +986,11 @@ export default class OrganizationsController {
   }
 
   // Dashboard Stats
-  public async dashboardStats({ auth, response }: HttpContextContract) {
+  public async dashboardStats({ auth, request, response }: HttpContextContract) {
     const user = auth.user!
 
     const { organizationId, membership, multipleMemberships, hasMembership } =
-      await this.resolveOrganizationForUser(user, auth.request)
+      await this.resolveOrganizationForUser(user, request)
 
     if (!organizationId) {
       if (multipleMemberships) {
@@ -1044,7 +1054,7 @@ export default class OrganizationsController {
 
   private async resolveOrganizationForUser(
     user: User,
-    request: HttpContextContract['request']
+    request?: HttpContextContract['request']
   ): Promise<{
     organizationId: number | null
     membership: OrganizationTeamMember | null
@@ -1052,10 +1062,10 @@ export default class OrganizationsController {
     hasMembership: boolean
   }> {
     const rawOrgId =
-      request.input('organizationId') ||
-      request.qs().organizationId ||
-      request.params().organizationId ||
-      request.params().id
+      request?.input?.('organizationId') ||
+      request?.qs?.().organizationId ||
+      request?.params?.().organizationId ||
+      request?.params?.().id
 
     const parsedOrgId = rawOrgId ? Number(rawOrgId) : undefined
     const memberships = await OrganizationTeamMember.query().where('userId', user.id)
@@ -1080,9 +1090,16 @@ export default class OrganizationsController {
     }
 
     if (memberships.length > 1) {
+      // Valid solution for multi-org users: deterministically pick an org when
+      // caller doesn't provide organizationId (prefer admin/coordinator).
+      const preferred =
+        memberships.find((m) =>
+          ['admin', 'coordinator'].includes(this.normalizeTeamRole(m.role))
+        ) || memberships[0]
+
       return {
-        organizationId: null,
-        membership: null,
+        organizationId: preferred.organizationId,
+        membership: preferred,
         multipleMemberships: true,
         hasMembership: true
       }
@@ -1294,11 +1311,11 @@ export default class OrganizationsController {
   /**
    * Get organization settings (org panel)
    */
-  public async getSettings({ auth, response }: HttpContextContract) {
+  public async getSettings({ auth, request, response }: HttpContextContract) {
     const user = auth.user!
 
     const { organizationId, membership, multipleMemberships, hasMembership } =
-      await this.resolveOrganizationForUser(user, auth.request)
+      await this.resolveOrganizationForUser(user, request)
 
     if (!organizationId) {
       if (multipleMemberships) {
