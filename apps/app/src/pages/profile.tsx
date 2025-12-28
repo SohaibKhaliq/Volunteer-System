@@ -21,11 +21,8 @@ import {
   Settings,
   LogOut,
   Shield,
-  Heart,
   CheckCircle2,
   History,
-  ArrowRight,
-  Users,
   Camera,
   AlertCircle
 } from 'lucide-react';
@@ -37,7 +34,7 @@ import VolunteerOrganizationsPage from '@/pages/volunteer/organizations';
 import { Building2, List } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useStore } from '@/lib/store';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import volunteerApi from '@/lib/api/volunteerApi';
 import { AssignmentStatus } from '@/lib/constants/assignmentStatus';
 import { useNavigate } from 'react-router-dom';
@@ -53,6 +50,8 @@ export default function Profile() {
   const { token } = useStore();
   // tab state for compact navigation
   const [activeTab, setActiveTab] = useState('overview');
+  // Cache buster for avatar
+  const [avatarVersion, setAvatarVersion] = useState(Date.now());
 
   // Initialize active tab from localStorage or navigation state (scroll instruction)
   useEffect(() => {
@@ -312,7 +311,7 @@ export default function Profile() {
         <div className="container mx-auto max-w-5xl">
           <div className="flex flex-col md:flex-row items-center md:items-end gap-6">
             <Avatar className="h-32 w-32 border-4 border-white shadow-xl">
-              <AvatarImage src={userData.profileImageUrl} />
+              <AvatarImage src={`${userData.profileImageUrl}?v=${avatarVersion}`} />
               <AvatarFallback className="bg-primary text-white text-4xl font-bold">
                 {userData.firstName?.[0]}
                 {userData.lastName?.[0]}
@@ -388,10 +387,7 @@ export default function Profile() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="bg-white shadow-sm p-1 h-12 w-full md:w-auto grid grid-cols-3 md:flex">
             <TabsTrigger value="overview" className="flex gap-2">
-              <User className="h-4 w-4" /> <span className="hidden md:inline">Overview</span>
-            </TabsTrigger>
-            <TabsTrigger value="dashboard" className="flex gap-2">
-              <Award className="h-4 w-4" /> <span className="hidden md:inline">Dashboard</span>
+              <Award className="h-4 w-4" /> <span className="hidden md:inline">Overview</span>
             </TabsTrigger>
             <TabsTrigger value="applications" className="flex gap-2">
               <List className="h-4 w-4" /> <span className="hidden md:inline">Applications</span>
@@ -415,287 +411,7 @@ export default function Profile() {
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Stats Cards */}
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Total Hours</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold flex items-center gap-2">
-                    {userData.hours || 0}
-                    <Clock className="h-5 w-5 text-blue-500" />
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {typeof userData.hoursChangePercent === 'number'
-                      ? `${userData.hoursChangePercent > 0 ? '+' : ''}${userData.hoursChangePercent}% from last month`
-                      : '+0% from last month'}
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Impact Score</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold flex items-center gap-2">
-                    {userData.impactScore}
-                    <Heart className="h-5 w-5 text-red-500" />
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {userData.impactPercentile ? `Top ${userData.impactPercentile}% of volunteers` : 'Top contributors'}
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">Events Attended</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold flex items-center gap-2">
-                    {userData.participationCount || 0}
-                    <CheckCircle2 className="h-5 w-5 text-green-500" />
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">{upcomingShifts.length} upcoming</p>
-                </CardContent>
-              </Card>
-
-              {/* Upcoming Schedule Preview */}
-              <Card className="md:col-span-2">
-                <CardHeader>
-                  <CardTitle>Upcoming Schedule</CardTitle>
-                  <CardDescription>Your next commitments</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Paginate upcoming schedule */}
-                  {(() => {
-                    const source = (meResponse as any)?.dashboard?.upcomingEvents ?? upcomingShifts;
-                    const total = Array.isArray(source) ? source.length : 0;
-                    const totalPages = Math.max(1, Math.ceil(total / schedulePerPage));
-                    const start = (schedulePage - 1) * schedulePerPage;
-                    const paged = Array.isArray(source) ? source.slice(start, start + schedulePerPage) : [];
-                    return (
-                      <>
-                        {paged.map((shift: any) => (
-                          <div
-                            key={shift.id}
-                            className="flex items-center justify-between p-4 border rounded-lg bg-slate-50/50"
-                          >
-                            <div className="flex items-center gap-4">
-                              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                                {shift.date.split(' ')[1]}
-                              </div>
-                              <div>
-                                <h4 className="font-semibold">{shift.title}</h4>
-                                <p className="text-sm text-muted-foreground flex items-center gap-2">
-                                  <Clock className="h-3 w-3" /> {shift.time} • <MapPin className="h-3 w-3" />{' '}
-                                  {shift.location}
-                                </p>
-                              </div>
-                            </div>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                navigate(shift.eventId ? `/detail/event/${shift.eventId}` : `/events/${shift.id}`)
-                              }
-                            >
-                              View
-                            </Button>
-                          </div>
-                        ))}
-
-                        {/* Pagination controls */}
-                        {total > schedulePerPage && (
-                          <div className="flex items-center justify-between">
-                            <div className="text-sm text-muted-foreground">
-                              Showing {start + 1}-{Math.min(start + schedulePerPage, total)} of {total}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setSchedulePage((p) => Math.max(1, p - 1))}
-                                disabled={schedulePage === 1}
-                              >
-                                Prev
-                              </Button>
-                              <div className="text-sm">
-                                {schedulePage} / {totalPages}
-                              </div>
-                              <Button
-                                size="sm"
-                                onClick={() => setSchedulePage((p) => Math.min(totalPages, p + 1))}
-                                variant="outline"
-                                disabled={schedulePage === totalPages}
-                              >
-                                Next
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                      </>
-                    );
-                  })()}
-                </CardContent>
-              </Card>
-
-              {/* Badges/Achievements */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Achievements</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {((meResponse as any)?.dashboard?.recentAchievements ?? userData.achievements) &&
-                      ((meResponse as any)?.dashboard?.recentAchievements ?? userData.achievements).length > 0 ? (
-                      ((meResponse as any)?.dashboard?.recentAchievements ?? userData.achievements).map((a: any) => (
-                        <Badge key={a.id} variant="secondary" className="px-3 py-1">
-                          <Award className="h-3 w-3 mr-1 text-yellow-500" /> {a.title}
-                        </Badge>
-                      ))
-                    ) : (
-                      <>
-                        <Badge variant="secondary" className="px-3 py-1">
-                          <Award className="h-3 w-3 mr-1 text-yellow-500" /> Early Adopter
-                        </Badge>
-                        <Badge variant="secondary" className="px-3 py-1">
-                          <Award className="h-3 w-3 mr-1 text-blue-500" /> 50 Hours Club
-                        </Badge>
-                        <Badge variant="secondary" className="px-3 py-1">
-                          <Award className="h-3 w-3 mr-1 text-green-500" /> Eco Warrior
-                        </Badge>
-                      </>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Organization Memberships */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Organization Memberships</CardTitle>
-                  <CardDescription>Your current organizations and pending requests</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {(((meResponse as any)?.profile?.organizations ?? userData.organizations) || []).length === 0 &&
-                      (((meResponse as any)?.profile?.organizationStatuses ?? []) || []).length === 0 ? (
-                      <div className="text-sm text-muted-foreground">You are not a member of any organizations.</div>
-                    ) : (
-                      // Build a union of organizations + any status-only entries
-                      (() => {
-                        const orgs = (meResponse as any)?.profile?.organizations ?? userData.organizations ?? [];
-                        const statuses = (meResponse as any)?.profile?.organizationStatuses ?? [];
-                        // Map statuses by organization id for quick lookup
-                        const statusMap: Record<string | number, any> = {};
-                        statuses.forEach((s: any) => {
-                          statusMap[s.organization_id ?? s.organizationId ?? s.id] = s;
-                        });
-
-                        // Combine orgs with any status-only entries (e.g., pending requests where org not preloaded)
-                        const extraStatuses = statuses.filter(
-                          (s: any) => !orgs.find((o: any) => o.id === (s.organization_id ?? s.organizationId ?? s.id))
-                        );
-
-                        const rows: any[] = [...orgs, ...extraStatuses];
-
-                        return rows.map((o: any) => {
-                          const id = o.id ?? o.organization_id ?? o.organizationId;
-                          const status = (statusMap[id] && statusMap[id].status) || 'not_member';
-                          const name = o.name || o.title || 'Organization';
-                          return (
-                            <div key={String(id)} className="flex items-center justify-between p-3 border rounded-lg">
-                              <div>
-                                <div className="font-medium">{name}</div>
-                                <div className="text-sm text-muted-foreground">
-                                  {status === 'active'
-                                    ? 'Member'
-                                    : status === 'pending'
-                                      ? 'Pending approval'
-                                      : 'Not a member'}
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {status === 'active' ? (
-                                  <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={() => leaveOrgMutation.mutate(id)}
-                                    disabled={leaveOrgMutation.isLoading}
-                                  >
-                                    Leave
-                                  </Button>
-                                ) : status === 'pending' ? (
-                                  <div className="text-sm text-muted-foreground">Request pending</div>
-                                ) : (
-                                  <Button
-                                    size="sm"
-                                    onClick={() => joinOrgMutation.mutate(id)}
-                                    disabled={joinOrgMutation.isLoading}
-                                  >
-                                    Request to join
-                                  </Button>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        });
-                      })()
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Browse Opportunities */}
-            <div>
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">Browse Opportunities</h2>
-                <Link to="/organizations">
-                  <Button variant="ghost" size="sm">
-                    View All <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {(opportunitiesData || []).slice(0, 6).map((opp: any) => (
-                  <div
-                    key={opp.id}
-                    className="bg-white border rounded-xl overflow-hidden hover:shadow-md transition-shadow"
-                  >
-                    <div className="h-32 bg-gradient-to-r from-blue-500 to-indigo-600 relative">
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                      <div className="absolute bottom-3 left-3 text-white font-semibold">{opp.title}</div>
-                      {opp.organization && (
-                        <div className="absolute top-3 left-3">
-                          <Badge className="bg-white/20 text-white border-0">{opp.organization.name}</Badge>
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-4">
-                      <p className="text-sm text-slate-600 line-clamp-2 mb-3">{opp.description}</p>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground mb-3">
-                        <Calendar className="h-3 w-3" />
-                        <span>{opp.startAt ? new Date(opp.startAt || opp.start_at).toLocaleDateString() : 'TBD'}</span>
-                        {opp.capacity && (
-                          <>
-                            <Users className="h-3 w-3 ml-2" />
-                            <span>{opp.capacity} spots</span>
-                          </>
-                        )}
-                      </div>
-                      <Link to={`/opportunities/${opp.id}`}>
-                        <Button className="w-full" variant="outline">
-                          View Details
-                        </Button>
-                      </Link>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <VolunteerDashboard />
           </TabsContent>
 
           <TabsContent value="dashboard" className="space-y-6">
@@ -907,7 +623,7 @@ export default function Profile() {
                   <div className="flex flex-col items-center space-y-3">
                     <div className="relative">
                       <Avatar className="h-32 w-32 border-4 border-white shadow-xl">
-                        <AvatarImage src={userData.profileImageUrl || userData.profileMetadata?.avatar_url} />
+                        <AvatarImage src={`${userData.profileImageUrl || userData.profileMetadata?.avatar_url}?v=${avatarVersion}`} />
                         <AvatarFallback className="bg-primary text-white text-4xl font-bold">
                           {userData.firstName?.[0]}
                           {userData.lastName?.[0]}
@@ -941,6 +657,7 @@ export default function Profile() {
                           try {
                             await api.updateVolunteerAvatar(fd);
                             queryClient.invalidateQueries(['me']);
+                            setAvatarVersion(Date.now());
                             toast({ title: 'Avatar updated', description: 'Your profile picture has been updated.' });
                           } catch (err: any) {
                             console.error('Avatar upload error:', err);
