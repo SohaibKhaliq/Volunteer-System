@@ -36,14 +36,22 @@ Route.group(() => {
   Route.post('/opportunities', 'OpportunitiesController.storeForMyOrganization').middleware([
     'auth'
   ])
-    Route.get('/opportunities/:id', 'OpportunitiesController.showForOrganization').middleware(['auth'])
+  Route.get('/opportunities/:id', 'OpportunitiesController.showForOrganization').middleware([
+    'auth'
+  ])
   Route.put('/opportunities/:id', 'OpportunitiesController.update').middleware(['auth'])
   Route.delete('/opportunities/:id', 'OpportunitiesController.destroy').middleware(['auth'])
   Route.post('/opportunities/:id/publish', 'OpportunitiesController.publish').middleware(['auth'])
 
   // Shift Management within Opportunities
-  Route.get('/opportunities/:opportunityId/shifts', 'ShiftsController.indexForOpportunity').middleware(['auth'])
-  Route.post('/opportunities/:opportunityId/shifts', 'ShiftsController.storeForOpportunity').middleware(['auth'])
+  Route.get(
+    '/opportunities/:opportunityId/shifts',
+    'ShiftsController.indexForOpportunity'
+  ).middleware(['auth'])
+  Route.post(
+    '/opportunities/:opportunityId/shifts',
+    'ShiftsController.storeForOpportunity'
+  ).middleware(['auth'])
   Route.put('/shifts/:id', 'ShiftsController.update').middleware(['auth'])
   Route.delete('/shifts/:id', 'ShiftsController.destroy').middleware(['auth'])
 
@@ -97,12 +105,21 @@ Route.group(() => {
   Route.post('/documents', 'OrganizationComplianceController.store').middleware(['auth'])
   Route.delete('/documents/:id', 'OrganizationComplianceController.destroy').middleware(['auth'])
   Route.get('/compliance/stats', 'OrganizationComplianceController.stats').middleware(['auth'])
-  
+
   // Compliance Requirements
-  Route.get('/compliance-requirements', 'ComplianceRequirementsController.index').middleware(['auth'])
-  Route.post('/compliance-requirements', 'ComplianceRequirementsController.store').middleware(['auth'])
-  Route.put('/compliance-requirements/:id', 'ComplianceRequirementsController.update').middleware(['auth'])
-  Route.delete('/compliance-requirements/:id', 'ComplianceRequirementsController.destroy').middleware(['auth'])
+  Route.get('/compliance-requirements', 'ComplianceRequirementsController.index').middleware([
+    'auth'
+  ])
+  Route.post('/compliance-requirements', 'ComplianceRequirementsController.store').middleware([
+    'auth'
+  ])
+  Route.put('/compliance-requirements/:id', 'ComplianceRequirementsController.update').middleware([
+    'auth'
+  ])
+  Route.delete(
+    '/compliance-requirements/:id',
+    'ComplianceRequirementsController.destroy'
+  ).middleware(['auth'])
 
   // Hours Management
   Route.get('/hours/pending', 'VolunteerHoursManagementController.pending').middleware(['auth'])
@@ -178,20 +195,43 @@ Route.group(() => {
   // Organization Dashboard (new analytics endpoints)
   Route.get('/dashboard', 'OrganizationDashboardController.all').middleware(['auth'])
   Route.get('/dashboard/overview', 'OrganizationDashboardController.overview').middleware(['auth'])
-  Route.get('/dashboard/hours-trend', 'OrganizationDashboardController.hoursTrend').middleware(['auth'])
-  Route.get('/dashboard/participation', 'OrganizationDashboardController.participation').middleware(['auth'])
+  Route.get('/dashboard/hours-trend', 'OrganizationDashboardController.hoursTrend').middleware([
+    'auth'
+  ])
+  Route.get('/dashboard/participation', 'OrganizationDashboardController.participation').middleware(
+    ['auth']
+  )
   Route.get('/dashboard/events', 'OrganizationDashboardController.events').middleware(['auth'])
-  Route.get('/dashboard/compliance', 'OrganizationDashboardController.compliance').middleware(['auth'])
-  Route.get('/dashboard/engagement', 'OrganizationDashboardController.engagement').middleware(['auth'])
-  Route.get('/dashboard/top-volunteers', 'OrganizationDashboardController.topVolunteers').middleware(['auth'])
+  Route.get('/dashboard/compliance', 'OrganizationDashboardController.compliance').middleware([
+    'auth'
+  ])
+  Route.get('/dashboard/engagement', 'OrganizationDashboardController.engagement').middleware([
+    'auth'
+  ])
+  Route.get(
+    '/dashboard/top-volunteers',
+    'OrganizationDashboardController.topVolunteers'
+  ).middleware(['auth'])
 }).prefix('/organization')
 
 // Organization-scoped report exports (with organization ID in path)
 Route.group(() => {
-  Route.get('/reports/volunteer-hours-export', 'OrganizationReportsExportController.volunteerHoursReport').middleware(['auth'])
-  Route.get('/reports/volunteer-summary-export', 'OrganizationReportsExportController.volunteerSummaryReport').middleware(['auth'])
-  Route.get('/reports/event-performance-export', 'OrganizationReportsExportController.eventPerformanceReport').middleware(['auth'])
-  Route.get('/reports/compliance-export', 'OrganizationReportsExportController.complianceReport').middleware(['auth'])
+  Route.get(
+    '/reports/volunteer-hours-export',
+    'OrganizationReportsExportController.volunteerHoursReport'
+  ).middleware(['auth'])
+  Route.get(
+    '/reports/volunteer-summary-export',
+    'OrganizationReportsExportController.volunteerSummaryReport'
+  ).middleware(['auth'])
+  Route.get(
+    '/reports/event-performance-export',
+    'OrganizationReportsExportController.eventPerformanceReport'
+  ).middleware(['auth'])
+  Route.get(
+    '/reports/compliance-export',
+    'OrganizationReportsExportController.complianceReport'
+  ).middleware(['auth'])
   Route.get('/reports/list', 'OrganizationReportsExportController.listReports').middleware(['auth'])
 }).prefix('/organizations/:id')
 
