@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { describe, it, expect, vi } from 'vitest';
 // automatic JSX runtime — remove unused default React import
 import { render, screen, waitFor } from '@testing-library/react';
@@ -10,7 +11,7 @@ import api from '@/lib/api';
 import { useStore } from '@/lib/store';
 
 vi.mock('@/lib/api');
-const mockedApi = api as any;
+const mockedApi = api;
 
 describe('Organization dashboard e2e flow (client)', () => {
   it('logs in as seeded organization user and shows dashboard numbers', async () => {
@@ -25,6 +26,14 @@ describe('Organization dashboard e2e flow (client)', () => {
     mockedApi.getOrganizationDashboardStats = vi
       .fn()
       .mockResolvedValue({ activeVolunteers: 3, upcomingEvents: 2, totalHours: 60, impactScore: 77 });
+
+    // dashboard secondary queries
+    mockedApi.listOrganizationEvents = vi.fn().mockResolvedValue([]);
+    mockedApi.listOrganizationOpportunities = vi.fn().mockResolvedValue([]);
+    mockedApi.listOrganizationVolunteers = vi.fn().mockResolvedValue([]);
+    mockedApi.getOrganizationComplianceStats = vi.fn().mockResolvedValue({ pendingDocuments: 0 });
+    mockedApi.listOrganizationDocuments = vi.fn().mockResolvedValue([]);
+    mockedApi.getOrganizationPendingHours = vi.fn().mockResolvedValue({ meta: { total: 0 } });
 
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 

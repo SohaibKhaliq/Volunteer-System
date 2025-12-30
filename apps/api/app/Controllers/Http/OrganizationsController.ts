@@ -5,6 +5,8 @@ import Database from '@ioc:Adonis/Lucid/Database'
 import { DateTime } from 'luxon'
 import OrganizationTeamMember from 'App/Models/OrganizationTeamMember'
 import Event from 'App/Models/Event'
+import Opportunity from 'App/Models/Opportunity'
+import VolunteerHour from 'App/Models/VolunteerHour'
 import Application from '@ioc:Adonis/Core/Application'
 import fs from 'fs'
 import Logger from '@ioc:Adonis/Core/Logger'
@@ -1015,17 +1017,33 @@ export default class OrganizationsController {
       .where('status', 'Active')
       .count('* as total')
 
-    const upcomingEvents = await Event.query()
-      .where('organization_id', orgId)
-      .where('start_at', '>', new Date())
-      .count('* as total')
+    // Upcoming events can exist in legacy `events` table and/or the newer `opportunities` table.
+    // Count both so the organization dashboard reflects what orgs actually create.
+    const now = DateTime.now().toJSDate()
 
-    const totalHours = await OrganizationVolunteer.query()
+    const [upcomingLegacyEvents, upcomingOpportunities] = await Promise.all([
+      Event.query().where('organization_id', orgId).where('start_at', '>', now).count('* as total'),
+      Opportunity.query().where('organization_id', orgId).where('start_at', '>', now).count('* as total')
+    ])
+
+    // Total hours: prefer normalized `volunteer_hours` entries (Approved) when present,
+    // otherwise fall back to legacy `organization_volunteers.hours` aggregate.
+    const volunteerHoursAgg = await VolunteerHour.query()
+      .where('organization_id', orgId)
+      .whereIn('status', ['Approved', 'approved'])
+      .count('* as count')
+      .sum('hours as total')
+
+    const hoursEntryCount = Number(volunteerHoursAgg[0].$extras.count || 0)
+    const hoursFromLogs = Number(volunteerHoursAgg[0].$extras.total || 0)
+
+    const legacyHoursAgg = await OrganizationVolunteer.query()
       .where('organization_id', orgId)
       .sum('hours as total')
 
-    const volCount = activeVolunteers[0].$extras.total
-    const hoursCount = totalHours[0].$extras.total || 0
+    const volCount = Number(activeVolunteers[0].$extras.total || 0)
+    const legacyHours = Number(legacyHoursAgg[0].$extras.total || 0)
+    const hoursCount = hoursEntryCount > 0 ? hoursFromLogs : legacyHours
 
     // Simple impact score calculation: (Total Hours / Active Volunteers) * 10, capped at 100
     let impactScore = 0
@@ -1035,7 +1053,9 @@ export default class OrganizationsController {
 
     return response.ok({
       activeVolunteers: volCount,
-      upcomingEvents: upcomingEvents[0].$extras.total,
+      upcomingEvents:
+        Number(upcomingLegacyEvents[0].$extras.total || 0) +
+        Number(upcomingOpportunities[0].$extras.total || 0),
       totalHours: hoursCount,
       impactScore
     })

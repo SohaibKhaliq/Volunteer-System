@@ -22,6 +22,11 @@ export default function OrganizationDashboard() {
     queryKey: ['organizationEvents'],
     queryFn: () => api.listOrganizationEvents()
   });
+
+  const { data: opportunities } = useQuery({
+    queryKey: ['organizationOpportunities'],
+    queryFn: () => api.listOrganizationOpportunities()
+  });
   const { data: volunteers } = useQuery({
     queryKey: ['organizationVolunteers'],
     queryFn: () => api.listOrganizationVolunteers()
@@ -86,8 +91,16 @@ export default function OrganizationDashboard() {
     created_at?: string;
   };
   const eventsList = Array.isArray(events) ? (events as EventItem[]) : ((events as any)?.data ?? []);
+  const opportunitiesList = Array.isArray(opportunities)
+    ? (opportunities as EventItem[])
+    : ((opportunities as any)?.data ?? []);
 
-  const chartData = eventsList
+  const allEventsLike: EventItem[] = [
+    ...(Array.isArray(opportunitiesList) ? opportunitiesList : []),
+    ...(Array.isArray(eventsList) ? eventsList : [])
+  ];
+
+  const chartData = allEventsLike
     .slice(0, 8)
     .map((ev: EventItem) => {
       // prefer explicit start date fields, fall back to created time
@@ -110,8 +123,8 @@ export default function OrganizationDashboard() {
   const recentActivity: RecentItem[] = [];
 
   // Add latest events
-  if (Array.isArray(eventsList)) {
-    for (const e of eventsList.slice(0, 10)) {
+  if (Array.isArray(allEventsLike)) {
+    for (const e of allEventsLike.slice(0, 10)) {
       const raw =
         (e as any).startAt ??
         (e as any).start_at ??
@@ -194,7 +207,7 @@ export default function OrganizationDashboard() {
 
   // compute upcoming events and the next event label
   const nowTs = Date.now();
-  const upcomingEvents = eventsList.filter((ev: EventItem) => {
+  const upcomingEvents = allEventsLike.filter((ev: EventItem) => {
     const raw = (ev as any).startAt ?? (ev as any).start_at ?? (ev as any).start_date;
     const ts = raw ? Date.parse(String(raw)) : NaN;
     return !Number.isNaN(ts) && ts > nowTs;
