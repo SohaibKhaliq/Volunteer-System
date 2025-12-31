@@ -108,6 +108,7 @@ import VolunteerHours from '@/pages/volunteer/hours/index';
 import VolunteerOpportunityDetailView from '@/pages/volunteer/opportunity-detail'; // Alias to avoid conflict
 import VolunteerOrganizations from '@/pages/volunteer/organizations';
 import VolunteerSettings from '@/pages/volunteer/settings';
+import VolunteerCompliance from '@/pages/volunteer/compliance';
 
 // Simple wrappers to ensure pages are vertically scrollable
 const ScrollWrapper = ({ children }: any) => (
@@ -264,6 +265,7 @@ const routes: RouteObject[] = [
       { path: 'volunteer/settings', element: <VolunteerSettings /> },
       { path: 'volunteer/organizations', element: <VolunteerOrganizations /> },
       { path: 'volunteer/hours', element: <VolunteerHours /> },
+      { path: 'volunteer/compliance', element: <VolunteerCompliance /> },
       { path: 'volunteer/opportunities/:id/view', element: <VolunteerOpportunityDetailView /> }
     ]
   },
