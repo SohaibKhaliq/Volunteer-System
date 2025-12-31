@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,26 +21,22 @@ import api from '@/lib/api';
 import { HelpRequest } from '@/types/types';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { MoreHorizontal, Search } from 'lucide-react';
+import { MoreHorizontal, Search, Filter, AlertCircle, Phone, MapPin, Hash } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
-
-// ... imports
 import { RequestDetailsModal } from '@/components/organisms/RequestDetailsModal';
 import { AssignVolunteerModal } from '@/components/organisms/AssignVolunteerModal';
+import { cn } from '@/lib/utils';
 
 const AdminEmergencyRequests = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  
+
   // Modal states
   const [selectedRequest, setSelectedRequest] = useState<HelpRequest | null>(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
 
-  // ... existing query ...
   const { data: requests, isLoading } = useQuery({
     queryKey: ['help-requests'],
     queryFn: () => api.listHelpRequests()
@@ -52,89 +48,148 @@ const AdminEmergencyRequests = () => {
     req.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case 'critical': return 'bg-red-500 hover:bg-red-600';
-      case 'high': return 'bg-orange-500 hover:bg-orange-600';
-      case 'medium': return 'bg-yellow-500 hover:bg-yellow-600';
-      default: return 'bg-green-500 hover:bg-green-600';
+  const getSeverityStyles = (severity: string) => {
+    switch (severity?.toLowerCase()) {
+      case 'critical':
+        return 'bg-red-100 text-red-700 border-red-200 hover:bg-red-200';
+      case 'high':
+        return 'bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-200';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-700 border-yellow-200 hover:bg-yellow-200';
+      default:
+        return 'bg-green-100 text-green-700 border-green-200 hover:bg-green-200';
     }
   };
 
+  const getUrgencyStyles = (score: number) => {
+    if (score >= 80) return 'text-red-600 font-bold';
+    if (score >= 50) return 'text-orange-600 font-medium';
+    return 'text-green-600';
+  };
+
   return (
-    <div className="flex-1 space-y-4 p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">{t('Emergency Requests')}</h2>
+    <div className="flex-1 space-y-8 p-8 pt-8 bg-slate-50 min-h-screen">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight text-slate-900">{t('Emergency Requests')}</h2>
+          <p className="text-slate-500 mt-1">{t('Manage and triage incoming help requests from the community.')}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" className="bg-white hover:bg-slate-50">
+            <Filter className="mr-2 h-4 w-4" />
+            {t('Filter')}
+          </Button>
+          <Button>
+            {t('Export Data')}
+          </Button>
+        </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('Active Requests')}</CardTitle>
-          <div className="flex items-center py-4">
-            <div className="relative w-full max-w-sm">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder={t('Search requests...')}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-8"
-              />
+      <Card className="border-0 shadow-sm bg-white rounded-xl overflow-hidden ring-1 ring-slate-200/60">
+        <div className="p-6 pb-4 border-b border-slate-100 flex items-center justify-between bg-white">
+          <div className="flex items-center gap-2">
+            <div className="bg-red-50 p-2 rounded-lg">
+              <AlertCircle className="h-5 w-5 text-red-600" />
             </div>
+            <h3 className="font-semibold text-lg text-slate-800">{t('Active Cases')}</h3>
+            <Badge variant="secondary" className="bg-slate-100 text-slate-600 ml-2 rounded-full px-2.5">
+              {filteredRequests?.length || 0}
+            </Badge>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
+
+          <div className="relative w-full max-w-sm">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Input
+              placeholder={t('Search by ID, name, or description...')}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 h-10 bg-slate-50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-primary/20 transition-all rounded-lg"
+            />
+          </div>
+        </div>
+
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader className="bg-slate-50/50">
+              <TableRow className="hover:bg-transparent border-slate-100">
+                <TableHead className="w-[120px] pl-6">{t('Case ID')}</TableHead>
+                <TableHead>{t('Severity')}</TableHead>
+                <TableHead>{t('Urgency')}</TableHead>
+                <TableHead>{t('Requester')}</TableHead>
+                <TableHead>{t('Location')}</TableHead>
+                <TableHead>{t('Assistance Type')}</TableHead>
+                <TableHead>{t('Submitted')}</TableHead>
+                <TableHead className="text-right pr-6">{t('Actions')}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
                 <TableRow>
-                  <TableHead>{t('Case ID')}</TableHead>
-                  <TableHead>{t('Urgency')}</TableHead>
-                  <TableHead>{t('Severity')}</TableHead>
-                  <TableHead>{t('Location')}</TableHead>
-                  <TableHead>{t('Contact')}</TableHead>
-                  <TableHead>{t('Assistance Type')}</TableHead>
-                  <TableHead>{t('Submitted')}</TableHead>
-                  <TableHead className="text-right">{t('Actions')}</TableHead>
+                  <TableCell colSpan={8} className="h-32 text-center text-slate-500">
+                    <div className="flex justify-center items-center gap-2">
+                      <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full" />
+                      {t('Loading requests...')}
+                    </div>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="h-24 text-center">
-                      {t('Loading...')}
+              ) : filteredRequests?.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="h-32 text-center text-slate-500">
+                    {t('No requests found matching your criteria.')}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredRequests?.map((request: any) => (
+                  <TableRow key={request.id} className="hover:bg-slate-50/60 border-slate-100 group transition-colors">
+                    <TableCell className="pl-6 align-top py-4">
+                      <div className="flex items-center gap-2 font-mono text-sm font-medium text-slate-700">
+                        <Hash className="h-3.5 w-3.5 text-slate-400" />
+                        {request.caseId || request.case_id || 'N/A'}
+                      </div>
                     </TableCell>
-                  </TableRow>
-                ) : filteredRequests?.length === 0 ? (
-                  <TableRow>
-                   <TableCell colSpan={8} className="h-24 text-center">
-                     {t('No requests found.')}
-                   </TableCell>
-                 </TableRow>
-                ) : (
-                  filteredRequests?.map((request: any) => (
-                    <TableRow key={request.id}>
-                      <TableCell className="font-medium">{request.caseId || request.case_id || 'N/A'}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="font-mono">
-                          {request.urgencyScore ?? request.urgency_score ?? 0}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={getSeverityColor(request.severity)}>
-                          {request.severity?.toUpperCase()}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{request.address}</TableCell>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span>{request.name}</span>
-                          <span className="text-xs text-muted-foreground">{request.phone}</span>
+
+                    <TableCell className="align-top py-4">
+                      <Badge variant="outline" className={cn("rounded-md px-2 py-0.5 border capitalize", getSeverityStyles(request.severity))}>
+                        {request.severity}
+                      </Badge>
+                    </TableCell>
+
+                    <TableCell className="align-top py-4">
+                      <div className={cn("text-sm font-semibold", getUrgencyStyles(request.urgencyScore ?? 0))}>
+                        {request.urgencyScore ?? 0}%
+                      </div>
+                    </TableCell>
+
+                    <TableCell className="align-top py-4">
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-slate-900">{request.name}</span>
+                        <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-0.5">
+                          <Phone className="h-3 w-3" />
+                          {request.phone}
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        {request.types?.map((t: any) => t.type).join(', ')}
-                      </TableCell>
-                      <TableCell>
+                      </div>
+                    </TableCell>
+
+                    <TableCell className="align-top py-4">
+                      <div className="flex items-start gap-1.5 text-sm text-slate-600 max-w-[200px] truncate">
+                        <MapPin className="h-4 w-4 text-slate-400 shrink-0 mt-0.5" />
+                        <span className="truncate" title={request.address}>{request.address}</span>
+                      </div>
+                    </TableCell>
+
+                    <TableCell className="align-top py-4">
+                      <div className="flex flex-wrap gap-1">
+                        {request.types?.map((t: any, idx: number) => (
+                          <Badge key={idx} variant="secondary" className="bg-slate-100 text-slate-600 hover:bg-slate-200 border-0 text-xs font-normal">
+                            {t.type}
+                          </Badge>
+                        ))}
+                      </div>
+                    </TableCell>
+
+                    <TableCell className="align-top py-4">
+                      <span className="text-sm text-slate-500">
                         {(() => {
                           try {
                             const dateStr = request.createdAt || request.created_at;
@@ -143,43 +198,46 @@ const AdminEmergencyRequests = () => {
                             return 'Invalid Date';
                           }
                         })()}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                              <span className="sr-only">Open menu</span>
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>{t('Actions')}</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => {
-                                setSelectedRequest(request);
-                                setDetailsModalOpen(true);
-                            }}>
-                              {t('View Details')}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => {
-                                setSelectedRequest(request);
-                                setAssignModalOpen(true);
-                            }}>
-                              {t('Assign Volunteer')}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-600">{t('Close Case')}</DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                      </span>
+                    </TableCell>
+
+                    <TableCell className="text-right pr-6 align-top py-4">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0 text-slate-400 hover:text-slate-900">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-[160px]">
+                          <DropdownMenuLabel>{t('Actions')}</DropdownMenuLabel>
+                          <DropdownMenuItem onClick={() => {
+                            setSelectedRequest(request);
+                            setDetailsModalOpen(true);
+                          }}>
+                            {t('View Details')}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => {
+                            setSelectedRequest(request);
+                            setAssignModalOpen(true);
+                          }}>
+                            {t('Assign Volunteer')}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-red-600 focus:text-red-600 focus:bg-red-50">
+                            {t('Close Case')}
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
 
-      <RequestDetailsModal 
+      <RequestDetailsModal
         request={selectedRequest}
         open={detailsModalOpen}
         onClose={() => {
@@ -187,7 +245,7 @@ const AdminEmergencyRequests = () => {
           setSelectedRequest(null);
         }}
       />
-      
+
       <AssignVolunteerModal
         requestId={selectedRequest?.id || null}
         open={assignModalOpen}
