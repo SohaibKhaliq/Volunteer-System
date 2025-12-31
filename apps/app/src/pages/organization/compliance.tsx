@@ -52,10 +52,8 @@ export default function OrganizationCompliance() {
   // Upload/Update Document Mutation
   const saveDocMutation = useMutation({
     mutationFn: (data: any) => {
-      // Note: In a real app, this would likely involve FormData for file uploads
-      // For now, we're simulating it with JSON data as per the previous implementation
+      // Logic would go here
       if (editingDoc) {
-        // Assuming we have an update endpoint or logic
         return api.uploadOrganizationDocument({ ...data, id: editingDoc.id });
       }
       return api.uploadOrganizationDocument(data);
@@ -63,10 +61,10 @@ export default function OrganizationCompliance() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organizationDocuments'] });
       setIsUploadOpen(false);
-      toast.success(editingDoc ? 'Document updated successfully' : 'Document uploaded successfully');
+      toast({ title: editingDoc ? 'Document updated successfully' : 'Document uploaded successfully', variant: 'success' });
     },
     onError: () => {
-      toast.error('Failed to save document');
+      toast({ title: 'Failed to save document', variant: 'destructive' });
     }
   });
 
@@ -75,10 +73,10 @@ export default function OrganizationCompliance() {
     mutationFn: api.deleteOrganizationDocument,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organizationDocuments'] });
-      toast.success('Document deleted successfully');
+      toast({ title: 'Document deleted successfully', variant: 'success' });
     },
     onError: () => {
-      toast.error('Failed to delete document');
+      toast({ title: 'Failed to delete document', variant: 'destructive' });
     }
   });
 
@@ -107,16 +105,10 @@ export default function OrganizationCompliance() {
   const handleDocSubmit = () => {
     saveDocMutation.mutate({
       ...docFormData,
-      status: 'Pending', // Default status for new uploads
+      status: 'Pending',
       uploadedAt: new Date().toISOString().split('T')[0]
     });
   };
-
-  const volunteerCompliance = [
-    { id: 1, requirement: 'Background Check', total: 124, compliant: 118, pending: 6 },
-    { id: 2, requirement: 'Code of Conduct', total: 124, compliant: 124, pending: 0 },
-    { id: 3, requirement: 'Safety Training', total: 124, compliant: 98, pending: 26 }
-  ];
 
   if (isDocsLoading || isStatsLoading) {
     return (
@@ -138,74 +130,76 @@ export default function OrganizationCompliance() {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Compliance</h2>
-          <p className="text-muted-foreground">Manage legal documents and volunteer certifications.</p>
+          <p className="text-muted-foreground">Manage legal documents and organization requirements.</p>
         </div>
-        <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={handleOpenUpload}>
-              <Upload className="h-4 w-4 mr-2" />
-              Upload Document
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{editingDoc ? 'Edit Document' : 'Upload Compliance Document'}</DialogTitle>
-              <DialogDescription>
-                {editingDoc ? 'Update document details.' : 'Upload a new license, certification, or policy document.'}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="doc-name">Document Name</Label>
-                <Input
-                  id="doc-name"
-                  placeholder="e.g. Liability Insurance"
-                  value={docFormData.name}
-                  onChange={(e) => setDocFormData({ ...docFormData, name: e.target.value })}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="doc-type">Type</Label>
-                  <Input
-                    id="doc-type"
-                    placeholder="e.g. Insurance"
-                    value={docFormData.type}
-                    onChange={(e) => setDocFormData({ ...docFormData, type: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="doc-expiry">Expiry Date</Label>
-                  <Input
-                    id="doc-expiry"
-                    type="date"
-                    value={docFormData.expiry}
-                    onChange={(e) => setDocFormData({ ...docFormData, expiry: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="file">File</Label>
-                <Input id="file" type="file" />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsUploadOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleDocSubmit} disabled={saveDocMutation.isLoading}>
-                {saveDocMutation.isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {editingDoc ? 'Update' : 'Upload'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-        <Button variant="outline" className="ml-2" asChild>
+        <div className="flex gap-2">
+          <Button variant="outline" asChild>
             <Link to="/organization/compliance-requirements" className="flex items-center gap-2">
-                <Shield className="h-4 w-4" />
-                Manage Requirements
+              <Shield className="h-4 w-4" />
+              Manage Requirements
             </Link>
-        </Button>
+          </Button>
+          <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={handleOpenUpload}>
+                <Upload className="h-4 w-4 mr-2" />
+                Upload Document
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{editingDoc ? 'Edit Document' : 'Upload Compliance Document'}</DialogTitle>
+                <DialogDescription>
+                  {editingDoc ? 'Update document details.' : 'Upload a new license, certification, or policy document.'}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="doc-name">Document Name</Label>
+                  <Input
+                    id="doc-name"
+                    placeholder="e.g. Liability Insurance"
+                    value={docFormData.name}
+                    onChange={(e) => setDocFormData({ ...docFormData, name: e.target.value })}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="doc-type">Type</Label>
+                    <Input
+                      id="doc-type"
+                      placeholder="e.g. Insurance"
+                      value={docFormData.type}
+                      onChange={(e) => setDocFormData({ ...docFormData, type: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="doc-expiry">Expiry Date</Label>
+                    <Input
+                      id="doc-expiry"
+                      type="date"
+                      value={docFormData.expiry}
+                      onChange={(e) => setDocFormData({ ...docFormData, expiry: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="file">File</Label>
+                  <Input id="file" type="file" />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsUploadOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleDocSubmit} disabled={saveDocMutation.isLoading}>
+                  {saveDocMutation.isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {editingDoc ? 'Update' : 'Upload'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -308,39 +302,6 @@ export default function OrganizationCompliance() {
               )}
             </TableBody>
           </Table>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Volunteer Compliance</CardTitle>
-          <CardDescription>Tracking volunteer requirements.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            {volunteerCompliance.map((item) => (
-              <div key={item.id} className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="font-medium">{item.requirement}</span>
-                  <span className="text-muted-foreground">
-                    {item.compliant}/{item.total} Compliant
-                  </span>
-                </div>
-                <div className="w-full bg-gray-100 rounded-full h-2.5">
-                  <div
-                    className={`h-2.5 rounded-full ${item.pending > 0 ? 'bg-orange-500' : 'bg-green-500'}`}
-                    style={{ width: `${(item.compliant / item.total) * 100}%` }}
-                  ></div>
-                </div>
-                {item.pending > 0 && (
-                  <p className="text-xs text-orange-600 flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" />
-                    {item.pending} volunteers pending verification
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
         </CardContent>
       </Card>
     </div>
