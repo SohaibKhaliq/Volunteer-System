@@ -98,7 +98,7 @@ export default class Opportunity extends BaseModel {
     // or query attaches `skills` on the model (extras) or a `requiredSkills`
     // field was loaded, normalize that into an array for the frontend.
     const anyThis: any = this as any
-    const raw = anyThis.skills || anyThis.requiredSkills || anyThis.$extras?.skills || []
+    const raw = anyThis.requiredSkills || anyThis.$extras?.skills || []
     if (!raw) return []
     if (Array.isArray(raw)) return raw.map((s) => String(s).trim()).filter(Boolean)
     if (typeof raw === 'string')
