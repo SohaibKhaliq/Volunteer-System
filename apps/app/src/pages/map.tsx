@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/components/atoms/use-toast';
 import { useStore } from '@/lib/store';
@@ -9,10 +9,25 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { Search, Map as MapIcon, List, Filter, Calendar, MapPin, Clock } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger
+} from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Search, Map as MapIcon, List, Filter, Calendar as CalendarIcon, MapPin, Clock, LayoutTemplate } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 import L from 'leaflet';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 // Fix for default marker icon
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -27,14 +42,16 @@ const DefaultIcon = L.icon({
 
 L.Marker.prototype.options.icon = DefaultIcon;
 
-// Events are loaded dynamically via the API. The component previously used
-// static MOCK_EVENTS but now relies on `api.listEvents`.
-
 const MapPage = () => {
   const { t } = useTranslation();
-  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+  // View mode state: 'list' | 'map' | 'split'
+  const [viewMode, setViewMode] = useState<'list' | 'map' | 'split'>('split');
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
+
+  // Filter states
+  const [selectedType, setSelectedType] = useState<string>('all');
+  const [date, setDate] = useState<Date | undefined>();
 
   // debounce search to avoid too many requests
   useEffect(() => {
@@ -58,16 +75,33 @@ const MapPage = () => {
     { keepPreviousData: true }
   );
 
-  const joinMutation = useMutation({
-    mutationFn: (eventId: number) => api.joinEvent(eventId),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['map-events']);
-      toast({ title: 'Joined', description: 'You joined the event' });
-    },
-    onError: (err: any) => {
-      toast({ title: 'Failed', description: err?.response?.data?.message || 'Unable to join' });
-    }
-  });
+  // Derived filtered events
+  const filteredEvents = useMemo(() => {
+    return (eventsData || []).filter((event: any) => {
+      // Type filter
+      if (selectedType !== 'all' && event.type !== selectedType) {
+        return false;
+      }
+      // Date filter (simple match on string date vs selected date)
+      if (date) {
+        const eventDate = new Date(event.startAt || event.date);
+        if (
+          eventDate.getFullYear() !== date.getFullYear() ||
+          eventDate.getMonth() !== date.getMonth() ||
+          eventDate.getDate() !== date.getDate()
+        ) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [eventsData, selectedType, date]);
+
+  // Extract unique types for the filter
+  const uniqueTypes = useMemo(() => {
+    const types = new Set((eventsData || []).map((e: any) => e.type));
+    return Array.from(types).filter(Boolean) as string[];
+  }, [eventsData]);
 
   const [loadingByEvent, setLoadingByEvent] = useState<Record<number, boolean>>({});
 
@@ -89,43 +123,95 @@ const MapPage = () => {
   });
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)]">
+    <div className="flex flex-col h-[calc(100vh-64px)] bg-slate-50">
       {/* Filters Bar */}
-      <div className="bg-white border-b p-4 flex flex-col md:flex-row gap-4 items-center justify-between sticky top-0 z-10">
-        <div className="relative w-full md:w-96">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <div className="bg-white border-b px-6 py-4 flex flex-col md:flex-row gap-4 items-center justify-between sticky top-0 z-20 shadow-sm">
+        <div className="relative w-full md:w-96 group">
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
           <Input
             placeholder={t('Search opportunities...')}
-            className="pl-10"
+            className="pl-11 h-11 bg-slate-50 border-slate-200 focus:bg-white transition-all rounded-full"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
 
-        <div className="flex gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
-          <Button variant="outline" size="sm" className="whitespace-nowrap">
-            <Filter className="mr-2 h-4 w-4" /> {t('All Types')}
-          </Button>
-          <Button variant="outline" size="sm" className="whitespace-nowrap">
-            <Calendar className="mr-2 h-4 w-4" /> {t('Any Date')}
-          </Button>
-          <div className="ml-auto flex border rounded-md overflow-hidden">
-            <Button
-              variant={viewMode === 'list' ? 'secondary' : 'ghost'}
-              size="sm"
-              className="rounded-none px-3"
+        <div className="flex gap-3 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 items-center no-scrollbar">
+          {/* Type Filter */}
+          <Select value={selectedType} onValueChange={setSelectedType}>
+            <SelectTrigger className="h-10 w-[160px] rounded-full border-slate-200 text-slate-600 hover:text-primary hover:border-primary/20 hover:bg-primary/5">
+              <div className="flex items-center truncate">
+                <Filter className="mr-2 h-3.5 w-3.5 shrink-0" />
+                <SelectValue placeholder={t('All Types')} />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{t('All Types')}</SelectItem>
+              {uniqueTypes.map((type) => (
+                <SelectItem key={type} value={type}>
+                  {type}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Date Filter */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className={cn(
+                  "h-10 rounded-full border-slate-200 text-slate-600 hover:text-primary hover:border-primary/20 hover:bg-primary/5 px-4 font-normal justify-start text-left font-normal",
+                  !date && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                {date ? format(date, "PPP") : <span>{t('Any Date')}</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={date}
+                onSelect={setDate}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+
+          {/* View Toggle */}
+          <div className="ml-auto md:ml-2 flex bg-slate-100 p-1 rounded-full border border-slate-200 shrink-0">
+            <button
               onClick={() => setViewMode('list')}
+              className={cn(
+                "p-2 rounded-full transition-all",
+                viewMode === 'list' ? "bg-white shadow-sm text-primary" : "text-slate-500 hover:text-slate-700"
+              )}
+              title={t('List View')}
             >
               <List className="h-4 w-4" />
-            </Button>
-            <Button
-              variant={viewMode === 'map' ? 'secondary' : 'ghost'}
-              size="sm"
-              className="rounded-none px-3"
+            </button>
+            <button
+              onClick={() => setViewMode('split')}
+              className={cn(
+                "p-2 rounded-full transition-all hidden md:block",
+                viewMode === 'split' ? "bg-white shadow-sm text-primary" : "text-slate-500 hover:text-slate-700"
+              )}
+              title={t('Split View')}
+            >
+              <LayoutTemplate className="h-4 w-4" />
+            </button>
+            <button
               onClick={() => setViewMode('map')}
+              className={cn(
+                "p-2 rounded-full transition-all",
+                viewMode === 'map' ? "bg-white shadow-sm text-primary" : "text-slate-500 hover:text-slate-700"
+              )}
+              title={t('Map View')}
             >
               <MapIcon className="h-4 w-4" />
-            </Button>
+            </button>
           </div>
         </div>
       </div>
@@ -133,96 +219,164 @@ const MapPage = () => {
       <div className="flex-1 flex overflow-hidden relative">
         {/* List View */}
         <div
-          className={`w-full md:w-1/2 lg:w-2/5 overflow-y-auto p-4 space-y-4 ${viewMode === 'map' ? 'hidden md:block' : 'block'}`}
+          className={cn(
+            "overflow-y-auto transition-all duration-300",
+            viewMode === 'map' ? "hidden" : "block", // Hide if map only
+            viewMode === 'split' ? "hidden md:block w-full md:w-1/2 lg:w-5/12 xl:w-1/3" : "w-full" // Split vs Full
+          )}
         >
-          <div className="flex justify-between items-center mb-2">
-            <h2 className="font-semibold text-lg">{t('Available Opportunities')}</h2>
-            <span className="text-sm text-muted-foreground">
-              {(eventsData || []).length} {t('results')}
-            </span>
-          </div>
-
-          {(eventsData || []).map((event: any) => (
-            <Card key={event.id} className="hover:shadow-md transition-shadow">
-              <div className="flex flex-col sm:flex-row h-full">
-                <div className="w-full sm:w-32 h-32 sm:h-auto bg-slate-100 relative shrink-0">
-                  <img
-                    src={event.image}
-                    alt={event.title}
-                    className="absolute inset-0 w-full h-full object-cover rounded-t-lg sm:rounded-l-lg sm:rounded-tr-none"
-                  />
-                </div>
-                <div className="flex-1 p-4 flex flex-col justify-between">
-                  <div>
-                    <div className="flex justify-between items-start mb-1">
-                      <Badge variant="secondary" className="text-xs">
-                        {event.type}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">{event.date}</span>
-                    </div>
-                    <h3 className="font-bold text-lg leading-tight mb-1">{event.title}</h3>
-                    <p className="text-sm text-muted-foreground mb-2">{event.organization}</p>
-                    <div className="flex items-center gap-3 text-xs text-slate-500">
-                      <div className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3" /> {event.location}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" /> {event.time}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mt-4 flex justify-end items-center gap-2">
-                    <Link to={`/detail/event/${event.id}`}>
-                      <Button size="sm" variant="outline">
-                        {t('View Details')}
-                      </Button>
-                    </Link>
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        if (!token) {
-                          const returnTo = encodeURIComponent(
-                            window.location.pathname + window.location.search + window.location.hash
-                          );
-                          window.location.href = `/login?returnTo=${returnTo}`;
-                          return;
-                        }
-                        joinItemMutation.mutate(event.id);
-                      }}
-                      disabled={!!loadingByEvent[event.id]}
-                    >
-                      {loadingByEvent[event.id] ? t('Joining...') : t('Join Now')}
-                    </Button>
-                  </div>
-                </div>
+          <div className="p-6 space-y-6">
+            <div className="flex justify-between items-end">
+              <div>
+                <h2 className="font-bold text-2xl text-slate-900 leading-tight">{t('Available Opportunities')}</h2>
+                <p className="text-slate-500 text-sm mt-1">{t('Find the perfect way to give back')}</p>
               </div>
-            </Card>
-          ))}
+              <Badge variant="outline" className="h-7 px-3 rounded-full bg-white border-slate-200 font-medium text-slate-600">
+                {filteredEvents.length} {t('results')}
+              </Badge>
+            </div>
+
+            <div className="space-y-4">
+              {filteredEvents.length === 0 ? (
+                <div className="text-center py-12 text-slate-500">
+                  <p>{t('No opportunities found matching your filters.')}</p>
+                  <Button
+                    variant="link"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setSelectedType('all');
+                      setDate(undefined);
+                    }}
+                  >
+                    {t('Clear all filters')}
+                  </Button>
+                </div>
+              ) : (
+                filteredEvents.map((event: any) => (
+                  <Card
+                    key={event.id}
+                    className="group overflow-hidden border-0 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 bg-white rounded-2xl"
+                  >
+                    <div className="flex flex-col sm:flex-row h-full">
+                      <div className="w-full sm:w-40 h-48 sm:h-auto relative shrink-0 overflow-hidden">
+                        <div className="absolute inset-0 bg-slate-200 animate-pulse" />
+                        <img
+                          src={event.image}
+                          alt={event.title}
+                          className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          loading="lazy"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60 sm:hidden" />
+                        <div className="absolute top-3 left-3 flex gap-2">
+                          <Badge className="bg-white/90 text-slate-900 backdrop-blur-sm border-0 shadow-sm hover:bg-white font-medium">
+                            {event.type}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      <div className="flex-1 p-5 flex flex-col justify-between relative">
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-start gap-2">
+                            <div className="text-xs font-semibold uppercase tracking-wider text-primary/80">
+                              {event.organization}
+                            </div>
+                            <span className="text-xs text-slate-400 font-medium whitespace-nowrap bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
+                              {event.date}
+                            </span>
+                          </div>
+
+                          <h3 className="font-bold text-lg leading-snug text-slate-900 group-hover:text-primary transition-colors">
+                            {event.title}
+                          </h3>
+
+                          <div className="space-y-2 mt-auto">
+                            <div className="flex items-center gap-2 text-sm text-slate-500">
+                              <MapPin className="h-4 w-4 text-slate-400 shrink-0" />
+                              <span className="truncate">{event.location}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-slate-500">
+                              <Clock className="h-4 w-4 text-slate-400 shrink-0" />
+                              <span>{event.time}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="mt-5 flex gap-3 pt-4 border-t border-slate-100">
+                          <Link to={`/detail/event/${event.id}`} className="flex-1">
+                            <Button variant="outline" className="w-full rounded-xl border-slate-200 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 transition-all font-medium">
+                              {t('Details')}
+                            </Button>
+                          </Link>
+                          <Button
+                            className="flex-1 rounded-xl shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all font-medium"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              if (!token) {
+                                const returnTo = encodeURIComponent(
+                                  window.location.pathname + window.location.search + window.location.hash
+                                );
+                                window.location.href = `/login?returnTo=${returnTo}`;
+                                return;
+                              }
+                              joinItemMutation.mutate(event.id);
+                            }}
+                            disabled={!!loadingByEvent[event.id]}
+                          >
+                            {loadingByEvent[event.id] ? (
+                              <span className="flex items-center gap-2">
+                                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                {t('Joining...')}
+                              </span>
+                            ) : t('Join Now')}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                ))
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Map View */}
-        <div className={`flex-1 bg-slate-100 relative ${viewMode === 'list' ? 'hidden md:block' : 'block'}`}>
+        <div
+          className={cn(
+            "bg-slate-100 relative transition-all duration-300",
+            viewMode === 'list' ? "hidden" : "block", // Hide if list only
+            viewMode === 'split' ? "hidden md:flex flex-1" : "w-full h-full" // Split vs Full
+          )}
+        >
           <MapContainer center={[31.6295, -7.9811]} zoom={13} className="w-full h-full z-0">
             <TileLayer
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             />
-            {(eventsData || []).map((event: any) =>
+            {filteredEvents.map((event: any) =>
               event.coordinates ? (
                 <Marker key={event.id} position={event.coordinates as [number, number]}>
-                  <Popup>
-                    <div className="p-2 min-w-[200px]">
-                      <h3 className="font-bold text-sm mb-1">{event.title}</h3>
-                      <p className="text-xs text-muted-foreground mb-2">{event.location}</p>
-                      <div className="space-y-2">
+                  <Popup className="custom-popup">
+                    <div className="p-3 min-w-[240px]">
+                      <div className="relative h-32 rounded-lg overflow-hidden mb-3">
+                        <img src={event.image} alt={event.title} className="w-full h-full object-cover" />
+                        <div className="absolute top-2 left-2 px-2 py-0.5 bg-white/90 backdrop-blur rounded text-[10px] font-bold uppercase tracking-wider">
+                          {event.type}
+                        </div>
+                      </div>
+                      <h3 className="font-bold text-base mb-1 leading-tight">{event.title}</h3>
+                      <p className="text-xs text-muted-foreground mb-3 flex items-center gap-1">
+                        <MapPin className="h-3 w-3" /> {event.location}
+                      </p>
+
+                      <div className="grid grid-cols-2 gap-2">
                         <Link to={`/detail/event/${event.id}`}>
-                          <Button size="sm" className="w-full h-8 text-xs">
+                          <Button size="sm" variant="outline" className="w-full h-8 text-xs rounded-lg">
                             {t('View')}
                           </Button>
                         </Link>
                         <Button
                           size="sm"
-                          className="w-full h-8 text-xs"
+                          className="w-full h-8 text-xs rounded-lg shadow-sm"
                           onClick={() => {
                             if (!token) {
                               const returnTo = encodeURIComponent(
@@ -235,7 +389,7 @@ const MapPage = () => {
                           }}
                           disabled={!!loadingByEvent[event.id]}
                         >
-                          {loadingByEvent[event.id] ? t('Joining...') : t('Join')}
+                          {loadingByEvent[event.id] ? "..." : t('Join')}
                         </Button>
                       </div>
                     </div>
