@@ -54,6 +54,8 @@ export default function Profile() {
   const [activeTab, setActiveTab] = useState('overview');
   // Cache buster for avatar
   const [avatarVersion, setAvatarVersion] = useState(Date.now());
+  // Pagination state for schedule (must be before any early returns)
+  const [schedulePage, setSchedulePage] = useState(1);
 
   // Initialize active tab from localStorage or navigation state (scroll instruction)
   useEffect(() => {
@@ -166,6 +168,17 @@ export default function Profile() {
     { enabled: !!userId }
   );
 
+  // Reset schedule page when source changes (must be before early returns)
+  useEffect(() => {
+    setSchedulePage(1);
+  }, [meResponse, assignments]);
+
+  // allow cancelling assignments (mark status cancelled)
+  const cancelMutation = useMutation({
+    mutationFn: (id: number) => api.updateAssignment(id, { status: AssignmentStatus.Cancelled }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['my-assignments', userId] })
+  });
+
 
 
   if (isLoading)
@@ -229,9 +242,6 @@ export default function Profile() {
       return a.startAt.getTime() - b.startAt.getTime();
     });
 
-  // Pagination state for schedule
-  const [schedulePage, setSchedulePage] = useState(1);
-
   const schedulePerPage = 5;
 
   const paginatedShifts = upcomingShifts.slice(
@@ -240,10 +250,6 @@ export default function Profile() {
   );
 
   const totalPages = Math.ceil(upcomingShifts.length / schedulePerPage);
-  // Reset page when source changes
-  useEffect(() => {
-    setSchedulePage(1);
-  }, [meResponse, assignments]);
 
   // Transform volunteer-hours into history rows
   const history = (myHours ?? []).map((h: any) => ({
@@ -253,13 +259,6 @@ export default function Profile() {
     hours: h.hours || 0,
     status: h.status || 'Verified'
   }));
-
-  // allow cancelling assignments (mark status cancelled)
-  // NOTE: keep hooks at top-level and in stable order — declare mutations before any early returns
-  const cancelMutation = useMutation({
-    mutationFn: (id: number) => api.updateAssignment(id, { status: AssignmentStatus.Cancelled }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['my-assignments', userId] })
-  });
 
 
 
