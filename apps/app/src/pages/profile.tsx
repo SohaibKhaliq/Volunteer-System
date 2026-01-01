@@ -31,6 +31,7 @@ import {
 import VolunteerDashboard from '@/pages/volunteer/dashboard';
 import VolunteerApplicationsPage from '@/pages/volunteer/applications';
 import VolunteerOrganizationsPage from '@/pages/volunteer/organizations';
+import VolunteerCompliance from '@/pages/volunteer/compliance';
 import { Building2, List } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useStore } from '@/lib/store';
@@ -353,6 +354,9 @@ export default function Profile() {
             <TabsTrigger value="organizations" className="flex gap-2">
               <Building2 className="h-4 w-4" /> <span className="hidden md:inline">Organizations</span>
             </TabsTrigger>
+            <TabsTrigger value="compliance" className="flex gap-2">
+              <Shield className="h-4 w-4" /> <span className="hidden md:inline">Compliance</span>
+            </TabsTrigger>
 
             <TabsTrigger value="schedule" className="flex gap-2">
               <Calendar className="h-4 w-4" /> <span className="hidden md:inline">My Schedule</span>
@@ -382,6 +386,10 @@ export default function Profile() {
 
           <TabsContent value="organizations" className="space-y-6">
             <VolunteerOrganizationsPage />
+          </TabsContent>
+
+          <TabsContent value="compliance" className="space-y-6">
+            <VolunteerCompliance embed={true} />
           </TabsContent>
 
 
