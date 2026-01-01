@@ -95,10 +95,7 @@ export default class CentrelinkController {
     let fortnight
     if (period) {
       // Get specific fortnight by period number
-      const fortnights = CentrelinkService.calculateFortnights(
-        startDate,
-        DateTime.now().toJSDate()
-      )
+      const fortnights = CentrelinkService.calculateFortnights(startDate, DateTime.now().toJSDate())
       fortnight = fortnights.find((f) => f.period === parseInt(period))
 
       if (!fortnight) {
