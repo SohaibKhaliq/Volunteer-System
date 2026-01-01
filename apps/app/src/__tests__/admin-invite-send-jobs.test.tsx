@@ -100,8 +100,11 @@ describe('Admin Invite Send Jobs page', () => {
     };
 
     const mockList = vi.fn().mockResolvedValueOnce(jobsPage1).mockResolvedValueOnce(jobsPage2);
-    (api as any).getInviteSendJobsStats = vi.fn().mockResolvedValue(jobsPage1)(api as any).listInviteSendJobs =
-      mockList;
+    (api as any).getInviteSendJobsStats = vi
+      .fn()
+      .mockResolvedValue({ data: { total: 2, byStatus: { sent: 1, failed: 1 }, successRate: 50 } });
+    (api as any).listInviteSendJobs = mockList;
+    (api as any).getAdminActivity = vi.fn().mockResolvedValue({ data: [] });
 
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
