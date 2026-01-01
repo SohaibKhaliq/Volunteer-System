@@ -13,17 +13,33 @@ import { toast } from '@/components/atoms/use-toast';
 import { Upload, FileText, CheckCircle, Clock, AlertCircle, XCircle, Download, File } from 'lucide-react';
 import { format } from 'date-fns';
 
-export default function VolunteerCompliance() {
+export default function VolunteerCompliance({ embed = false }: { embed?: boolean }) {
     const queryClient = useQueryClient();
     const [isUploadOpen, setIsUploadOpen] = useState(false);
 
     // Fetch my documents
     const { data: documentsRaw } = useQuery({
         queryKey: ['my-compliance'],
-        queryFn: () => api.listCompliance() // The backend implementation of this returns auth.user documents
+        queryFn: () => api.listCompliance()
+    });
+
+    // Fetch available types
+    const { data: typesData } = useQuery({
+        queryKey: ['compliance-types'],
+        queryFn: () => api.getComplianceTypes()
     });
 
     const documents = Array.isArray(documentsRaw) ? documentsRaw : ((documentsRaw as any)?.data ?? []);
+
+    // Flatten types for easy lookup
+    const systemTypes = typesData?.system || [];
+    const orgTypes = typesData?.organization || [];
+    const allTypes = [...systemTypes, ...orgTypes];
+
+    const getTypeLabel = (val: string) => {
+        const found = allTypes.find((t: any) => t.value === val);
+        return found ? found.label : val;
+    };
 
     // Upload Mutation
     const uploadMutation = useMutation({
@@ -67,7 +83,6 @@ export default function VolunteerCompliance() {
             payload.append('wwcc_number', formData.wwccNumber);
             payload.append('wwcc_state', formData.wwccState);
         } else {
-            // File is required for non-WWCC (or even for WWCC usually, but let's assume photo/scan is needed)
             if (!formData.file) {
                 toast({ title: 'Please select a file', variant: 'destructive' });
                 return;
@@ -89,21 +104,16 @@ export default function VolunteerCompliance() {
         return <Badge className="bg-yellow-500 hover:bg-yellow-600"><Clock className="w-3 h-3 mr-1" /> Pending</Badge>;
     };
 
-    const docTypeLabels: Record<string, string> = {
-        wwcc: 'Working With Children Check',
-        police_check: 'Police Check',
-        certification: 'Certification / Qualification',
-        background_check: 'Background Check',
-        other: 'Other Document'
-    };
-
     return (
-        <div className="container mx-auto p-6 space-y-8 max-w-5xl">
+        <div className={`space-y-8 ${embed ? '' : 'container mx-auto p-6 max-w-5xl'}`}>
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">My Compliance</h1>
-                    <p className="text-muted-foreground mt-1">Manage your certifications and legal documents required for volunteering.</p>
-                </div>
+                {!embed && (
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight">My Compliance</h1>
+                        <p className="text-muted-foreground mt-1">Manage your certifications and legal documents required for volunteering.</p>
+                    </div>
+                )}
+                {embed && <div className="hidden" />} {/* Spacer if needed */}
                 <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
                     <DialogTrigger asChild>
                         <Button className="shadow-sm">
@@ -124,10 +134,22 @@ export default function VolunteerCompliance() {
                                         <SelectValue placeholder="Select type" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="wwcc">Working With Children Check</SelectItem>
-                                        <SelectItem value="police_check">Police Check</SelectItem>
-                                        <SelectItem value="certification">Certification</SelectItem>
-                                        <SelectItem value="other">Other</SelectItem>
+                                        <SelectItem value="" disabled>Select a Document Type</SelectItem>
+                                        {/* System Types Group */}
+                                        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">Standard Documents</div>
+                                        {systemTypes.map((t: any) => (
+                                            <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                                        ))}
+
+                                        {/* Organization Types Group */}
+                                        {orgTypes.length > 0 && (
+                                            <>
+                                                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground mt-2 border-t pt-2">Organization Requirements</div>
+                                                {orgTypes.map((t: any) => (
+                                                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                                                ))}
+                                            </>
+                                        )}
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -221,10 +243,12 @@ export default function VolunteerCompliance() {
             </div>
 
             <Card>
-                <CardHeader>
-                    <CardTitle>Your Documents</CardTitle>
-                </CardHeader>
-                <CardContent>
+                {!embed && (
+                    <CardHeader>
+                        <CardTitle>Your Documents</CardTitle>
+                    </CardHeader>
+                )}
+                <CardContent className={embed ? "pt-6" : ""}>
                     {documents.length === 0 ? (
                         <div className="text-center py-12 text-muted-foreground">
                             <FileText className="mx-auto h-12 w-12 text-slate-300 mb-3" />
@@ -248,7 +272,7 @@ export default function VolunteerCompliance() {
                                         <TableCell className="font-medium">
                                             <div className="flex items-center gap-2">
                                                 <File className="w-4 h-4 text-slate-400" />
-                                                {docTypeLabels[doc.docType] || doc.docType || doc.doc_type}
+                                                {getTypeLabel(doc.docType) || doc.docType || doc.doc_type}
                                             </div>
                                             {doc.notes && doc.status === 'rejected' && (
                                                 <div className="text-xs text-red-500 mt-1">Reason: {doc.notes}</div>
