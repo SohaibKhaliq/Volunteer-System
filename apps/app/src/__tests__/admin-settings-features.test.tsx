@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@/test-utils';
 import { MemoryRouter } from 'react-router-dom';
+import userEvent from '@testing-library/user-event';
 
 vi.mock('@/lib/api');
 import api from '@/lib/api';
@@ -20,9 +21,10 @@ import AdminSettings from '@/pages/admin/settings';
 
 describe('AdminSettings features tab', () => {
   it('renders toggles and submits updates', async () => {
+    const user = userEvent.setup();
     const mockGet = ((api as any).getSystemSettings = vi
       .fn()
-      .mockResolvedValue({ dataOps: false, analytics: true, monitoring: false, scheduling: true }));
+      .mockResolvedValue({ features: { dataOps: false, analytics: true, monitoring: false, scheduling: true } }));
     const mockUpdate = ((api as any).updateSystemSettings = vi.fn().mockResolvedValue({ message: 'ok' }));
 
     render(
@@ -31,16 +33,20 @@ describe('AdminSettings features tab', () => {
       </MemoryRouter>
     );
 
+    // open the features tab first
+    const featuresTab = await screen.findByRole('tab', { name: /Features/i });
+    await user.click(featuresTab);
+
     // Wait for toggles to appear (find any switch element)
     const toggle = await screen.findByRole('switch', { name: /dataOps/i }, { timeout: 3000 });
     expect(toggle).toBeTruthy();
 
     // Toggle dataOps on
-    fireEvent.click(toggle);
+    await user.click(toggle);
 
     // Click save
     const saveBtn = screen.getByRole('button', { name: /Save Changes/i });
-    fireEvent.click(saveBtn);
+    await user.click(saveBtn);
 
     // ensure updateSystemSettings called with features key
     expect(mockUpdate).toHaveBeenCalled();
@@ -50,6 +56,7 @@ describe('AdminSettings features tab', () => {
   });
 
   it('allows editing features as raw JSON and saves', async () => {
+    const user = userEvent.setup();
     const mockGetRaw = ((api as any).getSystemSettings = vi
       .fn()
       .mockResolvedValue({ features: { dataOps: false, analytics: true, monitoring: false, scheduling: true } }));
@@ -63,19 +70,20 @@ describe('AdminSettings features tab', () => {
 
     // open the features tab
     const featuresTab = await screen.findByRole('tab', { name: /Features/i });
-    fireEvent.click(featuresTab);
+    await user.click(featuresTab);
 
     // open raw JSON editor
     const rawBtn = await screen.findByRole('button', { name: /Raw JSON/i });
-    fireEvent.click(rawBtn);
+    await user.click(rawBtn);
 
     const ta = await screen.findByRole('textbox');
     // replace JSON text: set dataOps true
-    fireEvent.change(ta, { target: { value: JSON.stringify({ dataOps: true, analytics: true }, null, 2) } });
+    await user.clear(ta);
+    await user.type(ta, JSON.stringify({ dataOps: true, analytics: true }, null, 2));
 
     // click Save Changes
     const saveBtn = screen.getByRole('button', { name: /Save Changes/i });
-    fireEvent.click(saveBtn);
+    await user.click(saveBtn);
 
     // update was called
     expect(mockUpdate).toHaveBeenCalled();
