@@ -186,6 +186,7 @@ Route.resource('assignments', 'AssignmentsController')
   .middleware({ '*': ['auth'] })
   .apiOnly()
 
+Route.get('/compliance/types', 'ComplianceController.getTypes').middleware(['auth'])
 Route.resource('compliance', 'ComplianceController')
   .middleware({ '*': ['auth'] })
   .apiOnly()
