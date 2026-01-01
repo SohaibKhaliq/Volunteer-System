@@ -483,7 +483,7 @@ export default class ExportController {
   public async getExportStatus({ params, response, auth }: HttpContextContract) {
     const user = auth.user!
     const DataOperation = (await import('App/Models/DataOperation')).default
-    
+
     const operation = await DataOperation.query()
       .where('id', params.id)
       .where('user_id', user.id)
@@ -506,7 +506,7 @@ export default class ExportController {
   public async downloadExport({ params, response, auth }: HttpContextContract) {
     const user = auth.user!
     const DataOperation = (await import('App/Models/DataOperation')).default
-    
+
     const operation = await DataOperation.query()
       .where('id', params.id)
       .where('user_id', user.id)
