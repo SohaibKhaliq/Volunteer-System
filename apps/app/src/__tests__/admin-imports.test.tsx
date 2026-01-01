@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Providers from '@/providers';
 import { MemoryRouter } from 'react-router-dom';
@@ -52,6 +52,8 @@ describe('Admin Imports page', () => {
     expect(retryBtns.length).toBeGreaterThan(0);
 
     fireEvent.click(retryBtns[0]);
-    expect((api as any).retryScheduledJob).toHaveBeenCalledWith(1);
+    await waitFor(() => {
+      expect((api as any).retryScheduledJob).toHaveBeenCalledWith(1);
+    });
   });
 });
