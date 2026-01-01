@@ -5,30 +5,36 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import MapPage from '@/pages/map';
 import Home from '@/pages/home';
 import Detail from '@/pages/detail';
+import AppProvider from '@/providers/app-provider';
 
-vi.mock('@/lib/api', () => ({
-  default: {
-    listEvents: vi.fn().mockResolvedValue([
-      {
+vi.mock('@/lib/axios', () => ({
+  axios: {
+    get: vi.fn((url) => {
+      if (url === '/events') return Promise.resolve({
+        data: [{
+          id: 99,
+          title: 'Mock Event',
+          location: 'Mock Location',
+          date: '2025-01-01',
+          time: '10:00',
+          type: 'Community',
+          image: 'https://example.com/img.png',
+          coordinates: [31.63, -8.0]
+        }]
+      });
+      if (url === '/events/99') return Promise.resolve({
         id: 99,
         title: 'Mock Event',
-        location: 'Mock Location',
-        date: '2025-01-01',
-        time: '10:00',
-        type: 'Community',
-        image: 'https://example.com/img.png',
-        coordinates: [31.63, -8.0]
-      }
-    ]),
-    getReportsOverview: vi.fn().mockResolvedValue(null),
-    getEvent: vi.fn().mockResolvedValue({
-      id: 99,
-      title: 'Mock Event',
-      description: 'desc',
-      startAt: new Date().toISOString(),
-      capacity: 10,
-      spots: { filled: 0 }
-    })
+        description: 'desc',
+        startAt: new Date().toISOString(),
+        capacity: 10,
+        spots: { filled: 0 }
+      });
+
+      return Promise.resolve({ data: [] });
+    }),
+    post: vi.fn(),
+    interceptors: { request: { use: vi.fn() }, response: { use: vi.fn() } }
   }
 }));
 
@@ -39,9 +45,11 @@ describe('Public pages access', () => {
     render(
       <QueryClientProvider client={queryClient}>
         <MemoryRouter initialEntries={[`/map`]}>
-          <Routes>
-            <Route path="/map" element={<MapPage />} />
-          </Routes>
+          <AppProvider>
+            <Routes>
+              <Route path="/map" element={<MapPage />} />
+            </Routes>
+          </AppProvider>
         </MemoryRouter>
       </QueryClientProvider>
     );
@@ -54,9 +62,11 @@ describe('Public pages access', () => {
     render(
       <QueryClientProvider client={queryClient}>
         <MemoryRouter initialEntries={[`/`]}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-          </Routes>
+          <AppProvider>
+            <Routes>
+              <Route path="/" element={<Home />} />
+            </Routes>
+          </AppProvider>
         </MemoryRouter>
       </QueryClientProvider>
     );
@@ -70,9 +80,11 @@ describe('Public pages access', () => {
     render(
       <QueryClientProvider client={queryClient}>
         <MemoryRouter initialEntries={[`/detail/event/99`]}>
-          <Routes>
-            <Route path="/detail/event/:id" element={<Detail />} />
-          </Routes>
+          <AppProvider>
+            <Routes>
+              <Route path="/detail/event/:id" element={<Detail />} />
+            </Routes>
+          </AppProvider>
         </MemoryRouter>
       </QueryClientProvider>
     );
