@@ -14,11 +14,21 @@ export default class ComplianceController {
 
   public async getTypes({ auth, response }: HttpContextContract) {
     const user = auth.user!
-    
+
     // 1. System Defaults
     const systemTypes = [
-      { label: 'Background Check', value: 'background_check', isMandatory: false, source: 'system' },
-      { label: 'WWCC (Working with Children Check)', value: 'wwcc', isMandatory: true, source: 'system' },
+      {
+        label: 'Background Check',
+        value: 'background_check',
+        isMandatory: false,
+        source: 'system'
+      },
+      {
+        label: 'WWCC (Working with Children Check)',
+        value: 'wwcc',
+        isMandatory: true,
+        source: 'system'
+      },
       { label: 'Police Check', value: 'police_check', isMandatory: false, source: 'system' },
       { label: 'Certification', value: 'certification', isMandatory: false, source: 'system' },
       { label: 'Other', value: 'other', isMandatory: false, source: 'system' }
@@ -29,18 +39,18 @@ export default class ComplianceController {
     // Ideally, we filter by organizations the user has applied to or joined.
     const ComplianceRequirement = (await import('App/Models/ComplianceRequirement')).default
     const reqs = await ComplianceRequirement.query().preload('organization')
-    
-    const orgTypes = reqs.map(r => ({
+
+    const orgTypes = reqs.map((r) => ({
       label: `${r.name} (${r.organization?.name || 'Org Requirement'})`,
       value: r.id.toString(), // Use ID as value for specific requirements, or we can use a composite key
       // actually, to keep it simple for the "doc_type" column which is string:
-      // if it's a known type (like 'certification'), we might want to group it. 
+      // if it's a known type (like 'certification'), we might want to group it.
       // But the user request implies "dynamic types" appearing in the dropdown.
       // So we will use the requirement name as the type, or a special prefix.
-      // Let's use "req_<id>" and store the link in metadata, OR just use the 'docType' field 
+      // Let's use "req_<id>" and store the link in metadata, OR just use the 'docType' field
       // of the requirement if it aligns with system types.
-      // 
-      // BETTER APPROACH: The Requirement entity defines *what* is needed. 
+      //
+      // BETTER APPROACH: The Requirement entity defines *what* is needed.
       // The `docType` in the dropdown should probably be the *kind* of document (e.g. "Certificate").
       // But the user wants "Types... defined by Admin and Organization".
       // So we will return specific requirement names as selectable "Types".
@@ -98,10 +108,7 @@ export default class ComplianceController {
 
       // Validate WWCC if provided
       if (payload.doc_type === 'wwcc' && payload.wwcc_number && payload.wwcc_state) {
-        const validation = ComplianceService.validateWWCC(
-          payload.wwcc_number,
-          payload.wwcc_state
-        )
+        const validation = ComplianceService.validateWWCC(payload.wwcc_number, payload.wwcc_state)
 
         if (!validation.valid) {
           return response.status(422).send({
@@ -160,12 +167,10 @@ export default class ComplianceController {
       const doc = await ComplianceDocument.create(createPayload)
 
       // Log compliance creation for audit
-      await ComplianceService.logComplianceCheck(
-        user.id,
-        createPayload.doc_type,
-        'pass',
-        { action: 'document_created', docId: doc.id }
-      )
+      await ComplianceService.logComplianceCheck(user.id, createPayload.doc_type, 'pass', {
+        action: 'document_created',
+        docId: doc.id
+      })
 
       return response.created(doc)
     } catch (err) {
@@ -179,9 +184,9 @@ export default class ComplianceController {
   public async show({ auth, params, response }: HttpContextContract) {
     const doc = await ComplianceDocument.find(params.id)
     if (!doc) return response.notFound()
-    
+
     if (doc.userId !== auth.user!.id) {
-        return response.forbidden({ message: 'Access denied' })
+      return response.forbidden({ message: 'Access denied' })
     }
 
     return response.ok(doc)
@@ -194,7 +199,7 @@ export default class ComplianceController {
 
       if (doc.userId !== auth.user!.id) {
         return response.forbidden({ message: 'Access denied' })
-    }
+      }
 
       const incoming = request.only(['doc_type', 'issued_at', 'expires_at']) // Removed status, user shouldn't verify own docs
 
@@ -225,7 +230,7 @@ export default class ComplianceController {
       incoming['metadata'] = metadata
       // Reset status to pending on update
       incoming['status'] = 'pending'
-      
+
       doc.merge(incoming)
       await doc.save()
       return response.ok(doc)
@@ -240,9 +245,9 @@ export default class ComplianceController {
   public async destroy({ auth, params, response }: HttpContextContract) {
     const doc = await ComplianceDocument.find(params.id)
     if (!doc) return response.notFound()
-    
+
     if (doc.userId !== auth.user!.id) {
-        return response.forbidden({ message: 'Access denied' })
+      return response.forbidden({ message: 'Access denied' })
     }
 
     await doc.delete()
