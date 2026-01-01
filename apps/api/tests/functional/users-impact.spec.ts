@@ -16,14 +16,14 @@ test.group('User impact score', () => {
     await VolunteerHour.create({
       userId: u.id,
       eventId: null,
-      date: DateTime.now().minus({ days: 10 }).toJSDate(),
+      date: DateTime.now().minus({ days: 10 }),
       hours: 20,
       status: 'approved'
     })
     await VolunteerHour.create({
       userId: u.id,
       eventId: null,
-      date: DateTime.now().minus({ days: 40 }).toJSDate(),
+      date: DateTime.now().minus({ days: 40 }),
       hours: 10,
       status: 'approved'
     })
@@ -32,7 +32,7 @@ test.group('User impact score', () => {
     await VolunteerHour.create({
       userId: other.id,
       eventId: null,
-      date: DateTime.now().minus({ days: 5 }).toJSDate(),
+      date: DateTime.now().minus({ days: 5 }),
       hours: 100,
       status: 'approved'
     })
@@ -65,7 +65,7 @@ test.group('User impact score', () => {
     const c = await User.create({ email: 'c@test', password: 'pass' })
 
     // Use old dates (> 200 days ago) so recent window (90d) does not affect scores
-    const oldDate = DateTime.now().minus({ days: 200 }).toJSDate()
+    const oldDate = DateTime.now().minus({ days: 200 })
 
     // a: 60 hours, 0 events
     await VolunteerHour.create({
