@@ -33,13 +33,27 @@ describe('Policy & resource pages', () => {
   });
 
   it('privacy, terms and cookies pages render expected headings', () => {
-    render(<Privacy />);
+    const { unmount: u1 } = render(
+      <MemoryRouter>
+        <Privacy />
+      </MemoryRouter>
+    );
     expect(screen.getByText(/Privacy Policy/i)).toBeTruthy();
+    u1();
 
-    render(<Terms />);
+    const { unmount: u2 } = render(
+      <MemoryRouter>
+        <Terms />
+      </MemoryRouter>
+    );
     expect(screen.getByText(/Terms of Service/i)).toBeTruthy();
+    u2();
 
-    render(<Cookies />);
-    expect(screen.getByText(/Cookies/i)).toBeTruthy();
+    render(
+      <MemoryRouter>
+        <Cookies />
+      </MemoryRouter>
+    );
+    expect(screen.getAllByText(/Cookies/i).length).toBeGreaterThan(0);
   });
 });
