@@ -17,7 +17,7 @@ export default class ContactController {
         ...data,
         status: 'unread'
       })
-      
+
       Logger.info('Contact form submission saved:', data.email)
       return response.ok({ message: 'Message sent successfully' })
     } catch (error) {
@@ -29,7 +29,7 @@ export default class ContactController {
   public async index({ request, response, auth }: HttpContextContract) {
     // Ensure only admins can access (though route should handle this too)
     // if (!auth.user?.isAdmin) ... let's rely on middleware in routes
-    
+
     const page = request.input('page', 1)
     const limit = request.input('limit', 10)
     const status = request.input('status')
