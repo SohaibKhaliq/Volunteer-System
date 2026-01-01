@@ -1,6 +1,7 @@
 // vitest provides globals via tsconfig types — don't import describe/it/expect/vi here
 // automatic JSX runtime — remove unused default React import
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { screen, fireEvent, waitFor } from '@testing-library/react';
+import { render } from '@/test-utils';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 // queries are not necessary for this test file
 import Login from '@/pages/login';
