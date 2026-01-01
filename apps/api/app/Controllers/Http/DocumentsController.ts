@@ -92,10 +92,7 @@ export default class DocumentsController {
       }
 
       // Check if user has acknowledged
-      const acknowledged = await DocumentLibraryService.hasUserAcknowledged(
-        document.id,
-        user.id
-      )
+      const acknowledged = await DocumentLibraryService.hasUserAcknowledged(document.id, user.id)
 
       // Get acknowledgment stats
       const stats = await DocumentLibraryService.getAcknowledgmentStats(document.id)
@@ -128,21 +125,15 @@ export default class DocumentsController {
         return response.badRequest({ message: 'File is required' })
       }
 
-      const {
-        title,
-        description,
-        category,
-        organizationId,
-        requiresAcknowledgment,
-        isPublic
-      } = request.only([
-        'title',
-        'description',
-        'category',
-        'organizationId',
-        'requiresAcknowledgment',
-        'isPublic'
-      ])
+      const { title, description, category, organizationId, requiresAcknowledgment, isPublic } =
+        request.only([
+          'title',
+          'description',
+          'category',
+          'organizationId',
+          'requiresAcknowledgment',
+          'isPublic'
+        ])
 
       // Move file to private storage
       await file.moveToDisk('local', {
@@ -159,7 +150,8 @@ export default class DocumentsController {
         fileType: file.type || '',
         fileSize: file.size || 0,
         organizationId: organizationId ? Number(organizationId) : undefined,
-        requiresAcknowledgment: requiresAcknowledgment === 'true' || requiresAcknowledgment === true,
+        requiresAcknowledgment:
+          requiresAcknowledgment === 'true' || requiresAcknowledgment === true,
         isPublic: isPublic === 'true' || isPublic === true,
         version: 1,
         status: 'published',
@@ -239,10 +231,7 @@ export default class DocumentsController {
       const fileContent = await Drive.get(document.filePath)
 
       response.header('Content-Type', document.fileType)
-      response.header(
-        'Content-Disposition',
-        `attachment; filename="${document.fileName}"`
-      )
+      response.header('Content-Disposition', `attachment; filename="${document.fileName}"`)
 
       return response.send(fileContent)
     } catch (error) {
