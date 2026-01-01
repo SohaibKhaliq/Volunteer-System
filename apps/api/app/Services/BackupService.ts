@@ -52,7 +52,7 @@ export default class BackupService {
         'organization_id',
         'hours',
         'date',
-        'description',
+        'notes',
         'status',
         'created_at'
       )
@@ -96,12 +96,12 @@ export default class BackupService {
         action: 'backup_completed',
         targetType: 'system',
         targetId: 0,
-        metadata: JSON.stringify({ backupId: backup.id, filePath })
+        metadata: JSON.stringify({ backupId: backup.id, filePath: backup.filePath })
       })
 
-      Logger.info('Backup %s completed: %s', backup.id, filePath)
+      Logger.info('Backup %s completed: %s', backup.id, backup.filePath)
     } catch (err: any) {
-      Logger.error('Backup processing error for %s: %o', backupId, err)
+      Logger.error('Backup processing error for %s: %s %s', backupId, err.message, err.stack)
       try {
         backup.status = 'failed'
         await backup.save()
