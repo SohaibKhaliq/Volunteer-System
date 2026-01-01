@@ -76,10 +76,7 @@ export default class NotificationsController {
       return response.badRequest({ message: 'ids must be a non-empty array' })
     }
 
-    await Notification.query()
-      .whereIn('id', ids)
-      .where('user_id', user.id)
-      .update({ read: true })
+    await Notification.query().whereIn('id', ids).where('user_id', user.id).update({ read: true })
 
     return response.ok({ message: `${ids.length} notifications marked as read` })
   }
@@ -107,4 +104,3 @@ export default class NotificationsController {
       .json({ error: 'SSE stream removed. Use Socket.IO for realtime notifications.' })
   }
 }
-
