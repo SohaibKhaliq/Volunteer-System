@@ -1023,7 +1023,10 @@ export default class OrganizationsController {
 
     const [upcomingLegacyEvents, upcomingOpportunities] = await Promise.all([
       Event.query().where('organization_id', orgId).where('start_at', '>', now).count('* as total'),
-      Opportunity.query().where('organization_id', orgId).where('start_at', '>', now).count('* as total')
+      Opportunity.query()
+        .where('organization_id', orgId)
+        .where('start_at', '>', now)
+        .count('* as total')
     ])
 
     // Total hours: prefer normalized `volunteer_hours` entries (Approved) when present,
