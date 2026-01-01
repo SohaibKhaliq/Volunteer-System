@@ -45,6 +45,7 @@
     "@types/proxy-addr": "^2.0.0",
     "@types/source-map-support": "^0.5.7",
     "adonis-preset-ts": "^2.1.0",
+    "@types/node": "^18.16.19",
     "eslint": "^8.49.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-adonis": "^2.1.1",
