@@ -45,7 +45,7 @@ export default class AttendancesController {
     // --- Compliance Check ---
     const ComplianceRequirement = (await import('App/Models/ComplianceRequirement')).default
     const ComplianceDocument = (await import('App/Models/ComplianceDocument')).default
-    
+
     const requirements = await ComplianceRequirement.query()
       .where('organization_id', opportunity.organizationId)
       .andWhere((q) => {
@@ -55,7 +55,7 @@ export default class AttendancesController {
       .andWhereIn('enforcement_level', ['onboarding', 'signup', 'checkin'])
 
     if (requirements.length > 0) {
-      const docTypes = requirements.map(r => r.docType)
+      const docTypes = requirements.map((r) => r.docType)
       const userDocs = await ComplianceDocument.query()
         .where('user_id', user.id)
         .whereIn('doc_type', docTypes)
@@ -63,15 +63,15 @@ export default class AttendancesController {
         .where((q) => {
           q.whereNull('expires_at').orWhere('expires_at', '>', DateTime.now().toSQL())
         })
-      
-      const validDocTypes = new Set(userDocs.map(d => d.docType))
-      const missingRequirements = requirements.filter(r => !validDocTypes.has(r.docType))
+
+      const validDocTypes = new Set(userDocs.map((d) => d.docType))
+      const missingRequirements = requirements.filter((r) => !validDocTypes.has(r.docType))
 
       if (missingRequirements.length > 0) {
-          return response.forbidden({ 
-            message: 'You do not meet the compliance requirements to check in.',
-            requirements: missingRequirements.map(r => ({ name: r.name, docType: r.docType }))
-          })
+        return response.forbidden({
+          message: 'You do not meet the compliance requirements to check in.',
+          requirements: missingRequirements.map((r) => ({ name: r.name, docType: r.docType }))
+        })
       }
     }
     // --- End Compliance Check ---
@@ -87,14 +87,7 @@ export default class AttendancesController {
       return response.conflict({ message: 'You are already checked in' })
     }
 
-    const {
-      method,
-      metadata,
-      latitude,
-      longitude,
-      accuracy,
-      exceptionReason
-    } = request.only([
+    const { method, metadata, latitude, longitude, accuracy, exceptionReason } = request.only([
       'method',
       'metadata',
       'latitude',
@@ -157,9 +150,7 @@ export default class AttendancesController {
         }
       } else {
         // No opportunity location set, log warning
-        Logger.warn(
-          `Opportunity ${opportunityId} has no location set for geolocation validation`
-        )
+        Logger.warn(`Opportunity ${opportunityId} has no location set for geolocation validation`)
         geolocationData.warning = 'Opportunity location not configured'
       }
     }
@@ -255,7 +246,7 @@ export default class AttendancesController {
         if (opportunity && volunteerHour) {
           // Store volunteerHour in a const to help TypeScript narrow the type
           const createdVolunteerHour = volunteerHour
-          
+
           const orgTeamMembers = await OrganizationTeamMember.query()
             .where('organization_id', opportunity.organizationId)
             .select('user_id')
@@ -531,12 +522,12 @@ export default class AttendancesController {
     // --- Compliance Check ---
     const ComplianceRequirement = (await import('App/Models/ComplianceRequirement')).default
     const ComplianceDocument = (await import('App/Models/ComplianceDocument')).default
-    
+
     // Note: We use opportunity.organizationId, checking if opportunity has it (it should if loaded)
-    // If opportunity is partial, we might need to load it. 
+    // If opportunity is partial, we might need to load it.
     // Line 469: `Opportunity.query().where('checkin_code', code).first()`
     // We should ensure organizationId is available. It is a column, so it is.
-    
+
     const requirements = await ComplianceRequirement.query()
       .where('organization_id', opportunity.organizationId)
       .andWhere((q) => {
@@ -546,7 +537,7 @@ export default class AttendancesController {
       .andWhereIn('enforcement_level', ['onboarding', 'signup', 'checkin'])
 
     if (requirements.length > 0) {
-      const docTypes = requirements.map(r => r.docType)
+      const docTypes = requirements.map((r) => r.docType)
       const userDocs = await ComplianceDocument.query()
         .where('user_id', user.id)
         .whereIn('doc_type', docTypes)
@@ -554,15 +545,15 @@ export default class AttendancesController {
         .where((q) => {
           q.whereNull('expires_at').orWhere('expires_at', '>', DateTime.now().toSQL())
         })
-      
-      const validDocTypes = new Set(userDocs.map(d => d.docType))
-      const missingRequirements = requirements.filter(r => !validDocTypes.has(r.docType))
+
+      const validDocTypes = new Set(userDocs.map((d) => d.docType))
+      const missingRequirements = requirements.filter((r) => !validDocTypes.has(r.docType))
 
       if (missingRequirements.length > 0) {
-          return response.forbidden({ 
-            message: 'You do not meet the compliance requirements to check in.',
-            requirements: missingRequirements.map(r => ({ name: r.name, docType: r.docType }))
-          })
+        return response.forbidden({
+          message: 'You do not meet the compliance requirements to check in.',
+          requirements: missingRequirements.map((r) => ({ name: r.name, docType: r.docType }))
+        })
       }
     }
     // --- End Compliance Check ---
