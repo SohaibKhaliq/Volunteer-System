@@ -2,6 +2,7 @@ import Application from '@ioc:Adonis/Core/Application'
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Logger from '@ioc:Adonis/Core/Logger'
 import { CarpoolingStatus } from 'Contracts/status'
+import { DateTime } from 'luxon'
 import {
   CreateCarpoolingOfferDto,
   CreateCarpoolingRequestDto,
@@ -37,6 +38,7 @@ export default class CarpoolingAdsController {
           parsedPayload = createCarpoolingOfferSchema.parse({
             ...payload
           })
+          console.log('Parsed Payload keys:', Object.keys(parsedPayload))
           break
         case 'request':
           parsedPayload = createCarpoolingRequestSchema.parse({
@@ -66,7 +68,7 @@ export default class CarpoolingAdsController {
         if (ext && !allowedExt.includes(ext)) {
           return response.badRequest({ message: 'Invalid file type uploaded' })
         }
-        await f.moveToDisk('local', { dirname: 'carpooling' })
+        await f.moveToDisk('carpooling')
         placedFiles.push({
           originalName: f.clientName || '',
           storedName: f.fileName || '',
@@ -75,7 +77,11 @@ export default class CarpoolingAdsController {
       }
 
       const carpooling = await CarpoolingAd.create({
-        ...parsedPayload,
+        ...{
+          ...parsedPayload,
+          departureDate: parsedPayload.departureDate ? DateTime.fromJSDate(parsedPayload.departureDate).toFormat('yyyy-MM-dd HH:mm:ss') as any : undefined,
+          arrivalDate: parsedPayload.arrivalDate ? DateTime.fromJSDate(parsedPayload.arrivalDate).toFormat('yyyy-MM-dd HH:mm:ss') as any : undefined
+        },
         status: payload.type === 'offer' ? CarpoolingStatus.planned : CarpoolingStatus.requested,
         type: payload.type as 'request' | 'offer',
         files: JSON.stringify(placedFiles)
