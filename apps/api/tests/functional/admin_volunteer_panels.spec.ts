@@ -756,7 +756,7 @@ test.group('Admin System Settings', (group) => {
 
     response.assertStatus(200)
     assert.property(response.body(), 'id')
-    assert.equal(response.body().status, 'initiated')
+    assert.equal(response.body().status, 'creating')
   })
 
   test('admin can check backup status', async ({ client, assert }) => {
