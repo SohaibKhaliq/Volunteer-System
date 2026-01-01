@@ -1014,7 +1014,10 @@ export default class AdminController {
         if (await Drive.exists(backup.filePath!)) {
           const stream = await Drive.getStream(backup.filePath!)
           response.header('Content-Type', 'application/gzip')
-          response.header('Content-Disposition', `attachment; filename="backup-${backup.id}.json.gz"`)
+          response.header(
+            'Content-Disposition',
+            `attachment; filename="backup-${backup.id}.json.gz"`
+          )
           return response.stream(stream)
         }
       } catch (e) {
