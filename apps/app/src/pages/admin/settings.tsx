@@ -226,9 +226,12 @@ export default function AdminSettings() {
                 <>
                   {(['dataOps', 'analytics', 'monitoring', 'scheduling'] as string[]).map((k) => (
                     <div className="flex items-center justify-between" key={k}>
-                      <span className="font-medium">{k}</span>
+                      <Label htmlFor={`feature-${k}`} className="font-medium">
+                        {k}
+                      </Label>
                       <Switch
                         id={`feature-${k}`}
+                        aria-label={k}
                         checked={(settings?.features?.[k] as boolean) ?? false}
                         onCheckedChange={(checked) =>
                           setSettings({ ...settings, features: { ...(settings.features || {}), [k]: checked } })
