@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,8 +15,15 @@ function DownloadSample({ onClick }: { onClick: () => void }) {
 }
 
 export default function AdminImports() {
+  const queryClient = useQueryClient();
   const [volFile, setVolFile] = useState<File | null>(null);
   const [oppFile, setOppFile] = useState<File | null>(null);
+
+  // Fetch scheduled jobs (import jobs)
+  const { data: jobs = [], isLoading: jobsLoading } = useQuery({
+    queryKey: ['scheduled-jobs'],
+    queryFn: () => api.listScheduledJobs()
+  });
 
   const volunteersImport = useMutation({
     mutationFn: async (file: File) => {
@@ -27,6 +34,7 @@ export default function AdminImports() {
     onSuccess: () => {
       toast({ title: 'Volunteer import queued', description: 'Server has received the file and will process it.' });
       setVolFile(null);
+      queryClient.invalidateQueries({ queryKey: ['scheduled-jobs'] });
     },
     onError: (err: any) => toast({ title: 'Import failed', description: String(err), variant: 'destructive' })
   });
@@ -40,8 +48,18 @@ export default function AdminImports() {
     onSuccess: () => {
       toast({ title: 'Opportunities import queued', description: 'Server accepted the file.' });
       setOppFile(null);
+      queryClient.invalidateQueries({ queryKey: ['scheduled-jobs'] });
     },
     onError: (err: any) => toast({ title: 'Import failed', description: String(err), variant: 'destructive' })
+  });
+
+  const retryMutation = useMutation({
+    mutationFn: (jobId: number) => api.retryScheduledJob(jobId),
+    onSuccess: () => {
+      toast({ title: 'Job retry requested' });
+      queryClient.invalidateQueries({ queryKey: ['scheduled-jobs'] });
+    },
+    onError: () => toast({ title: 'Retry failed', variant: 'destructive' })
   });
 
   const downloadVolTemplate = async () => {
@@ -121,6 +139,41 @@ export default function AdminImports() {
             </Button>
             <DownloadSample onClick={downloadOppTemplate} />
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Import Jobs List */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Import Jobs</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {jobsLoading ? (
+            <p className="text-sm text-muted-foreground">Loading jobs...</p>
+          ) : jobs.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No scheduled import jobs</p>
+          ) : (
+            <div className="space-y-2">
+              {jobs.map((job: any) => (
+                <div key={job.id} className="flex items-center justify-between p-3 border rounded-lg">
+                  <div className="flex-1">
+                    <div className="font-medium">{job.name}</div>
+                    <div className="text-sm text-muted-foreground">
+                      Type: {job.type} | Status: {job.status} | Run at: {new Date(job.runAt).toLocaleString()}
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => retryMutation.mutate(job.id)}
+                    disabled={retryMutation.isLoading}
+                  >
+                    Retry
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
