@@ -5,10 +5,7 @@ export default class ComplianceRequirementsController {
   public async index({ auth, response }: HttpContextContract) {
     const user = auth.user!
     const OrganizationTeamMember = await import('App/Models/OrganizationTeamMember')
-    const member = await OrganizationTeamMember.default
-      .query()
-      .where('user_id', user.id)
-      .first()
+    const member = await OrganizationTeamMember.default.query().where('user_id', user.id).first()
 
     if (!member) {
       return response.forbidden({ message: 'You are not an organization admin' })
@@ -24,10 +21,7 @@ export default class ComplianceRequirementsController {
   public async store({ auth, request, response }: HttpContextContract) {
     const user = auth.user!
     const OrganizationTeamMember = await import('App/Models/OrganizationTeamMember')
-    const member = await OrganizationTeamMember.default
-      .query()
-      .where('user_id', user.id)
-      .first()
+    const member = await OrganizationTeamMember.default.query().where('user_id', user.id).first()
 
     if (!member) {
       return response.forbidden({ message: 'You are not an organization admin' })
@@ -53,10 +47,7 @@ export default class ComplianceRequirementsController {
   public async update({ auth, params, request, response }: HttpContextContract) {
     const user = auth.user!
     const OrganizationTeamMember = await import('App/Models/OrganizationTeamMember')
-    const member = await OrganizationTeamMember.default
-      .query()
-      .where('user_id', user.id)
-      .first()
+    const member = await OrganizationTeamMember.default.query().where('user_id', user.id).first()
 
     if (!member) {
       return response.forbidden({ message: 'You are not an organization admin' })
@@ -68,7 +59,9 @@ export default class ComplianceRequirementsController {
     }
 
     if (requirement.organizationId !== member.organizationId) {
-      return response.forbidden({ message: 'This requirement does not belong to your organization' })
+      return response.forbidden({
+        message: 'This requirement does not belong to your organization'
+      })
     }
 
     const payload = request.only([
@@ -89,10 +82,7 @@ export default class ComplianceRequirementsController {
   public async destroy({ auth, params, response }: HttpContextContract) {
     const user = auth.user!
     const OrganizationTeamMember = await import('App/Models/OrganizationTeamMember')
-    const member = await OrganizationTeamMember.default
-      .query()
-      .where('user_id', user.id)
-      .first()
+    const member = await OrganizationTeamMember.default.query().where('user_id', user.id).first()
 
     if (!member) {
       return response.forbidden({ message: 'You are not an organization admin' })
@@ -104,7 +94,9 @@ export default class ComplianceRequirementsController {
     }
 
     if (requirement.organizationId !== member.organizationId) {
-      return response.forbidden({ message: 'This requirement does not belong to your organization' })
+      return response.forbidden({
+        message: 'This requirement does not belong to your organization'
+      })
     }
 
     await requirement.delete()
