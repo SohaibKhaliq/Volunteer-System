@@ -10,7 +10,7 @@ test.group('Scheduler service', (group) => {
     await Database.rawQuery('DELETE FROM users')
   })
 
-  test('processing due scheduled reminder creates notification and completes job', async () => {
+  test('processing due scheduled reminder creates notification and completes job', async ({ assert }) => {
     const u = await User.create({ email: 'sched-user@test', password: 'pass' })
 
     const job = await ScheduledJob.create({
@@ -25,9 +25,9 @@ test.group('Scheduler service', (group) => {
     await svc.processDue()
 
     const reloaded = await ScheduledJob.find(job.id)
-    test.assert(reloaded && reloaded.status === 'Completed')
+    assert.isTrue(reloaded && reloaded.status === 'Completed')
 
     const notes = await Database.from('notifications').where('type', 'reminder')
-    test.assert(notes && notes.length >= 1)
+    assert.isTrue(notes && notes.length >= 1)
   })
 })
