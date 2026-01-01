@@ -44,7 +44,7 @@ export default class OffersController {
           return response.badRequest({ message: 'Invalid file type uploaded' })
         }
         // Move to disk 'local' under offers directory so other services can find it
-        await f.moveToDisk('local', { dirname: 'offers' })
+        await f.moveToDisk('offers')
         placedFiles.push({
           originalName: f.clientName || '',
           storedName: f.fileName || '',
