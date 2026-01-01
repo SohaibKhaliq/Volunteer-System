@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import Providers from '@/providers';
 import { MemoryRouter } from 'react-router-dom';
@@ -49,7 +49,9 @@ describe('Admin Scheduled Jobs page', () => {
     // click retry on first job
     const retryBtn = await screen.findAllByText('Retry');
     fireEvent.click(retryBtn[0]);
-    expect(mockRetry).toHaveBeenCalledWith(1);
+    await waitFor(() => {
+      expect(mockRetry).toHaveBeenCalledWith(1);
+    });
 
     // view details for first job
     const viewBtn = await screen.findAllByText('View');
