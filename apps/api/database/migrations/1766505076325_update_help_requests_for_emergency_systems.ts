@@ -14,7 +14,7 @@ export default class extends BaseSchema {
       table.boolean('consent_given').defaultTo(false)
       table.json('meta_data').nullable()
 
-      table.integer('assigned_team_id').unsigned().references('teams.id').onDelete('SET NULL')
+      table.integer('assigned_team_id').unsigned().nullable()
       table.integer('assigned_volunteer_id').unsigned().references('users.id').onDelete('SET NULL')
     })
 
