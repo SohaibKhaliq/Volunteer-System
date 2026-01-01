@@ -79,8 +79,16 @@ export default class CarpoolingAdsController {
       const carpooling = await CarpoolingAd.create({
         ...{
           ...parsedPayload,
-          departureDate: parsedPayload.departureDate ? DateTime.fromJSDate(parsedPayload.departureDate).toFormat('yyyy-MM-dd HH:mm:ss') as any : undefined,
-          arrivalDate: parsedPayload.arrivalDate ? DateTime.fromJSDate(parsedPayload.arrivalDate).toFormat('yyyy-MM-dd HH:mm:ss') as any : undefined
+          departureDate: parsedPayload.departureDate
+            ? (DateTime.fromJSDate(parsedPayload.departureDate).toFormat(
+                'yyyy-MM-dd HH:mm:ss'
+              ) as any)
+            : undefined,
+          arrivalDate: parsedPayload.arrivalDate
+            ? (DateTime.fromJSDate(parsedPayload.arrivalDate).toFormat(
+                'yyyy-MM-dd HH:mm:ss'
+              ) as any)
+            : undefined
         },
         status: payload.type === 'offer' ? CarpoolingStatus.planned : CarpoolingStatus.requested,
         type: payload.type as 'request' | 'offer',
