@@ -46,10 +46,7 @@ export default class AuditLogsController {
     try {
       await this.requireAdmin(auth)
 
-      const log = await AuditLog.query()
-        .where('id', params.id)
-        .preload('user')
-        .firstOrFail()
+      const log = await AuditLog.query().where('id', params.id).preload('user').firstOrFail()
 
       return response.ok(log)
     } catch (error) {
@@ -132,10 +129,16 @@ export default class AuditLogsController {
 
       if (format === 'csv') {
         response.header('Content-Type', 'text/csv')
-        response.header('Content-Disposition', `attachment; filename="audit-logs-${Date.now()}.csv"`)
+        response.header(
+          'Content-Disposition',
+          `attachment; filename="audit-logs-${Date.now()}.csv"`
+        )
       } else {
         response.header('Content-Type', 'application/json')
-        response.header('Content-Disposition', `attachment; filename="audit-logs-${Date.now()}.json"`)
+        response.header(
+          'Content-Disposition',
+          `attachment; filename="audit-logs-${Date.now()}.json"`
+        )
       }
 
       return response.send(exportData)
@@ -153,10 +156,13 @@ export default class AuditLogsController {
       await this.requireAdmin(auth)
 
       const { from, to } = request.qs()
-      const dateRange = from && to ? {
-        from: DateTime.fromISO(from),
-        to: DateTime.fromISO(to)
-      } : undefined
+      const dateRange =
+        from && to
+          ? {
+              from: DateTime.fromISO(from),
+              to: DateTime.fromISO(to)
+            }
+          : undefined
 
       const stats = await AuditLogService.getLogStatistics(dateRange)
 
@@ -175,10 +181,13 @@ export default class AuditLogsController {
       await this.requireAdmin(auth)
 
       const { from, to, limit = 100 } = request.qs()
-      const dateRange = from && to ? {
-        from: DateTime.fromISO(from),
-        to: DateTime.fromISO(to)
-      } : undefined
+      const dateRange =
+        from && to
+          ? {
+              from: DateTime.fromISO(from),
+              to: DateTime.fromISO(to)
+            }
+          : undefined
 
       const events = await AuditLogService.getSecurityEvents(dateRange, Number(limit))
 
