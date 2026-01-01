@@ -157,7 +157,9 @@ export default class BroadcastsController {
       return response.ok(broadcast)
     } catch (error) {
       Logger.error('Send broadcast error: %o', error)
-      return response.badRequest({ error: { message: error.message || 'Failed to send broadcast' } })
+      return response.badRequest({
+        error: { message: error.message || 'Failed to send broadcast' }
+      })
     }
   }
 
