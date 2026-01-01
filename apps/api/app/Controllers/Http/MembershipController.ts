@@ -24,13 +24,13 @@ export default class MembershipController {
       if (['active', 'pending'].includes(existingMembership.status)) {
         return response.conflict({ message: 'You are already a member or have a pending request' })
       }
-      
+
       // If previously rejected or left, allow re-joining
       existingMembership.status = 'pending'
       existingMembership.notes = notes
       existingMembership.joinedAt = undefined
       await existingMembership.save()
-      
+
       return response.ok({ message: 'Membership request submitted successfully' })
     }
 
@@ -130,7 +130,7 @@ export default class MembershipController {
     if (status) {
       membership.status = status
     }
-    
+
     if (notes !== undefined) {
       membership.notes = notes
     }
