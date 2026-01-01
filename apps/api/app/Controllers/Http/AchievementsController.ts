@@ -11,13 +11,13 @@ export default class AchievementsController {
   // List achievements (optionally filter by organization and category)
   public async index({ request, response }: HttpContextContract) {
     const { organization_id, category_id, include_progress, user_id } = request.qs()
-    
+
     let query = Achievement.query().orderBy('id', 'desc')
-    
+
     if (organization_id) {
       query = query.where('organization_id', Number(organization_id))
     }
-    
+
     if (category_id) {
       query = query.where('category_id', Number(category_id))
     }
@@ -31,14 +31,19 @@ export default class AchievementsController {
     if (include_progress && user_id) {
       const progressData = await AchievementProgress.query()
         .where('user_id', Number(user_id))
-        .whereIn('achievement_id', achievements.map(a => a.id))
+        .whereIn(
+          'achievement_id',
+          achievements.map((a) => a.id)
+        )
 
-      const progressMap = new Map(progressData.map(p => [p.achievementId, p]))
+      const progressMap = new Map(progressData.map((p) => [p.achievementId, p]))
 
-      return response.ok(achievements.map(ach => ({
-        ...ach.toJSON(),
-        progress: progressMap.get(ach.id) || null
-      })))
+      return response.ok(
+        achievements.map((ach) => ({
+          ...ach.toJSON(),
+          progress: progressMap.get(ach.id) || null
+        }))
+      )
     }
 
     return response.ok(achievements)
@@ -95,11 +100,8 @@ export default class AchievementsController {
   }
 
   public async show({ params, response }: HttpContextContract) {
-    const ach = await Achievement.query()
-      .where('id', params.id)
-      .preload('category')
-      .first()
-    
+    const ach = await Achievement.query().where('id', params.id).preload('category').first()
+
     if (!ach) return response.notFound({ error: { message: 'Achievement not found' } })
     return response.ok(ach)
   }
@@ -133,7 +135,7 @@ export default class AchievementsController {
       'points',
       'isEnabled'
     ])
-    
+
     ach.merge({
       categoryId: payload.categoryId ?? ach.categoryId,
       title: payload.title ?? ach.title,
@@ -146,7 +148,7 @@ export default class AchievementsController {
       points: payload.points ?? ach.points,
       isEnabled: payload.isEnabled ?? ach.isEnabled
     })
-    
+
     await ach.save()
     await ach.load('category')
     return response.ok(ach)
@@ -254,11 +256,7 @@ export default class AchievementsController {
       const { reason } = request.only(['reason'])
       const userAchievementId = params.id
 
-      await AchievementEvaluationService.revokeAchievement(
-        userAchievementId,
-        revoker.id,
-        reason
-      )
+      await AchievementEvaluationService.revokeAchievement(userAchievementId, revoker.id, reason)
 
       return response.ok({ message: 'Achievement revoked successfully' })
     } catch (error) {
@@ -286,9 +284,7 @@ export default class AchievementsController {
         })
       }
 
-      let query = AchievementProgress.query()
-        .where('user_id', targetUserId)
-        .preload('achievement')
+      let query = AchievementProgress.query().where('user_id', targetUserId).preload('achievement')
 
       if (achievementId) {
         query = query.where('achievement_id', Number(achievementId))
