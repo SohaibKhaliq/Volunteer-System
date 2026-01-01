@@ -21,6 +21,21 @@ vi.mock('@/lib/api', () => ({
         participationCount: 3
       }
     }),
+    getVolunteerDashboard: vi.fn().mockResolvedValue({
+      profile: {
+        id: 10,
+        firstName: 'Alice',
+        lastName: 'Jones',
+        email: 'a@test',
+        impactScore: 850,
+        impactPercentile: 10,
+        hours: 24,
+        hoursChangePercent: 12,
+        achievements: [{ id: 1, key: '50-hours', title: '50 Hours Club' }],
+        participationCount: 3,
+        profileMetadata: {}
+      }
+    }),
     getMyAssignments: vi.fn().mockResolvedValue([
       {
         id: 1,
@@ -42,7 +57,8 @@ vi.mock('@/lib/api', () => ({
         hours: 4,
         status: 'Verified'
       }
-    ])
+    ]),
+    logout: vi.fn().mockResolvedValue({})
   }
 }));
 
