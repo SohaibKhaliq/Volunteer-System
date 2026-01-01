@@ -40,7 +40,7 @@ if (!Object.getOwnPropertyDescriptor(window, 'location')?.writable) {
   // @ts-expect-error Allow replacing location for tests
   delete window.location;
   // @ts-expect-error Allow replacing location for tests
-  window.location = { href: '/', pathname: '/', search: '', hash: '' };
+  window.location = { href: 'http://localhost/', pathname: '/', search: '', hash: '' };
 }
 
 // Reset any persisted Zustand store before each test run
