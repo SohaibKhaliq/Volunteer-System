@@ -1,17 +1,18 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent } from '@/test-utils';
 import { MemoryRouter } from 'react-router-dom';
-import Providers from '@/providers';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 vi.mock('@/lib/api');
 import api from '@/lib/api';
+import AppProvider from '@/providers/app-provider';
 
 // mock admin user
 vi.mock('@/providers/app-provider', () => ({
+  __esModule: true,
+  default: ({ children }: any) => <div>{children}</div>,
   useApp: () => ({
-    user: { firstName: 'Admin', lastName: 'User', email: 'admin@example.com', isAdmin: true },
-    authenticated: true
+    user: { id: 1, name: 'Admin', role: 'admin' },
+    isAuthenticated: true
   })
 }));
 
@@ -24,21 +25,14 @@ describe('AdminSettings features tab', () => {
       .mockResolvedValue({ dataOps: false, analytics: true, monitoring: false, scheduling: true }));
     const mockUpdate = ((api as any).updateSystemSettings = vi.fn().mockResolvedValue({ message: 'ok' }));
 
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
-      <QueryClientProvider client={client}>
-        <Providers>
-          <MemoryRouter>
-            <AdminSettings />
-          </MemoryRouter>
-        </Providers>
-      </QueryClientProvider>
+      <MemoryRouter>
+        <AdminSettings />
+      </MemoryRouter>
     );
 
     // Wait for toggles to appear (find any switch element)
-    const switches = await screen.findAllByRole('switch');
-    expect(switches.length).toBeGreaterThan(0);
-    const toggle = switches[0];
+    const toggle = await screen.findByRole('switch', { name: /dataOps/i }, { timeout: 3000 });
     expect(toggle).toBeTruthy();
 
     // Toggle dataOps on
@@ -61,19 +55,14 @@ describe('AdminSettings features tab', () => {
       .mockResolvedValue({ features: { dataOps: false, analytics: true, monitoring: false, scheduling: true } }));
     const mockUpdate = ((api as any).updateSystemSettings = vi.fn().mockResolvedValue({ message: 'ok' }));
 
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
-      <QueryClientProvider client={client}>
-        <Providers>
-          <MemoryRouter>
-            <AdminSettings />
-          </MemoryRouter>
-        </Providers>
-      </QueryClientProvider>
+      <MemoryRouter>
+        <AdminSettings />
+      </MemoryRouter>
     );
 
     // open the features tab
-    const featuresTab = await screen.findByText('Features');
+    const featuresTab = await screen.findByRole('tab', { name: /Features/i });
     fireEvent.click(featuresTab);
 
     // open raw JSON editor
@@ -101,22 +90,18 @@ describe('AdminSettings features tab', () => {
       .mockResolvedValue({ platform_name: 'Old', primary_color: '#000000' }));
     const mockBrand = ((api as any).updateBranding = vi.fn().mockResolvedValue({ message: 'ok' }));
 
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    render(
-      <QueryClientProvider client={client}>
-        <Providers>
-          <MemoryRouter>
-            <AdminSettings />
-          </MemoryRouter>
-        </Providers>
-      </QueryClientProvider>
+    const { user } = render(
+      <AppProvider>
+        <AdminSettings />
+      </AppProvider>
     );
 
     // switch to Branding tab
-    const brandingTab = await screen.findByText('Branding');
-    fireEvent.click(brandingTab);
+    const brandingTab = await screen.findByRole('tab', { name: /Branding/i });
+    await user.click(brandingTab);
 
-    const nameInput = await screen.findByLabelText('Platform Name');
+    // Wait for tab content to render
+    const nameInput = await screen.findByLabelText(/Platform Name/i, {}, { timeout: 4000 });
     fireEvent.change(nameInput, { target: { value: 'Branded Platform' } });
 
     const saveBtn = await screen.findByText('Save Branding');
