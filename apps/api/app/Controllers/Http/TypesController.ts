@@ -1,7 +1,7 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Type from 'App/Models/Type'
 import BaseController from './BaseController'
-import { RequestTypes } from '../../contracts/requests'
+import { RequestTypes } from '../../../contracts/requests'
 
 export default class TypesController extends BaseController {
   protected get model() {
