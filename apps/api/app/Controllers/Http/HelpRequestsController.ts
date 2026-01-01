@@ -50,7 +50,7 @@ export default class HelpRequestController {
         if (ext && !allowedExt.includes(ext)) {
           return response.badRequest({ message: 'Invalid file type uploaded' })
         }
-        await f.moveToDisk('local', { dirname: 'help-requests' })
+        await f.moveToDisk('help-requests')
         placedFiles.push({
           originalName: f.clientName || '',
           storedName: f.fileName || '',
