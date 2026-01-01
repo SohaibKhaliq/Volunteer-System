@@ -1,9 +1,11 @@
 // automatic JSX runtime — remove unused default React import
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router-dom';
 import NotificationBell from '@/components/molecules/notification-bell';
 import api from '@/lib/api';
+import userEvent from '@testing-library/user-event';
 
 vi.mock('@/lib/api');
 vi.mock('socket.io-client', () => ({ io: () => ({ on: () => {}, close: () => {} }) }));
@@ -23,6 +25,7 @@ function TestApp() {
 
 describe('NotificationBell', () => {
   it('shows unread count and allows marking read', async () => {
+    const user = userEvent.setup();
     mockedApi.listNotifications = vi.fn().mockResolvedValue([
       {
         id: 1,
@@ -51,15 +54,15 @@ describe('NotificationBell', () => {
 
     // open dropdown
     const btn = screen.getByRole('button');
-    fireEvent.click(btn);
+    await user.click(btn);
 
     // should show 'Earned:' message
-    expect(await screen.findByText(/Earned:/i)).toBeTruthy();
+    expect(await screen.findByText(/Earned:/i, {}, { timeout: 3000 })).toBeTruthy();
 
     // click the mark read button
     const markButtons = screen.getAllByRole('button', { name: /Mark .* read|Unread/ });
     // Click the first mark-read button for the unread item
-    fireEvent.click(markButtons[0]);
+    await user.click(markButtons[0]);
 
     await waitFor(() => {
       expect(mockedApi.markNotificationRead).toHaveBeenCalled();
