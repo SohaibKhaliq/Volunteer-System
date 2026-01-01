@@ -30,8 +30,10 @@ export default class HelpRequestController {
       const parsedPayload = createHelpRequestSchema.parse({
         ...payload,
         types: typeof payload.types === 'string' ? JSON.parse(payload.types) : payload.types,
-        location: typeof payload.location === 'string' ? JSON.parse(payload.location) : payload.location,
-        metaData: typeof payload.metaData === 'string' ? JSON.parse(payload.metaData) : payload.metaData,
+        location:
+          typeof payload.location === 'string' ? JSON.parse(payload.location) : payload.location,
+        metaData:
+          typeof payload.metaData === 'string' ? JSON.parse(payload.metaData) : payload.metaData,
         consentGiven: payload.consentGiven === 'true' || payload.consentGiven === true
       })
 
@@ -59,11 +61,14 @@ export default class HelpRequestController {
       }
 
       // Triage Logic
-      const urgencyScore = TriageService.calculateUrgencyScore({
-        severity: parsedPayload.severity,
-        description: parsedPayload.description,
-        source: parsedPayload.source
-      } as HelpRequest, parsedPayload.types)
+      const urgencyScore = TriageService.calculateUrgencyScore(
+        {
+          severity: parsedPayload.severity,
+          description: parsedPayload.description,
+          source: parsedPayload.source
+        } as HelpRequest,
+        parsedPayload.types
+      )
 
       const caseId = TriageService.generateCaseId()
 
@@ -180,9 +185,7 @@ export default class HelpRequestController {
 
   public async index({ response }: HttpContextContract) {
     try {
-      const helpRequests = await HelpRequest.query()
-        .preload('types')
-        .orderBy('created_at', 'desc')
+      const helpRequests = await HelpRequest.query().preload('types').orderBy('created_at', 'desc')
 
       return helpRequests
     } catch (error) {
@@ -225,13 +228,13 @@ export default class HelpRequestController {
       Logger.info('Assigning volunteer: params=%o', params)
       const helpRequest = await HelpRequest.findOrFail(params.id)
       Logger.info('Found request: %o', helpRequest.id)
-      
+
       const { volunteerId } = request.only(['volunteerId'])
       Logger.info('Volunteer ID: %s', volunteerId)
 
       helpRequest.assignedVolunteerId = volunteerId
       helpRequest.status = HelpRequestStatus.Assigned
-      
+
       Logger.info('Saving...')
       await helpRequest.save()
       Logger.info('Saved.')
@@ -240,7 +243,7 @@ export default class HelpRequestController {
     } catch (error) {
       Logger.error('Assign error: %o', error)
       return response.badRequest({
-        error: { 
+        error: {
           message: 'Unable to assign volunteer',
           details: error.message,
           code: error.code
