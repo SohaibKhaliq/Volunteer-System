@@ -1,7 +1,7 @@
 // vitest provides globals via tsconfig types — don't import describe/it/expect/vi here
 // automatic JSX runtime — remove unused default React import
-import { screen, fireEvent, waitFor } from '@testing-library/react';
-import { render } from '@/test-utils';
+import { screen, fireEvent, waitFor, render } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 // queries are not necessary for this test file
 import Login from '@/pages/login';
@@ -15,14 +15,17 @@ describe('Login page redirect behavior', () => {
   it('navigates back to returnTo after successful login', async () => {
     mockedApi.login = vi.fn().mockResolvedValue({ token: { token: 'abc' } });
 
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     // render login page in a memory router with returnTo
     const { container } = render(
-      <MemoryRouter initialEntries={['/login?returnTo=/admin']}>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/admin" element={<div>Admin page</div>} />
-        </Routes>
-      </MemoryRouter>
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/login?returnTo=/admin']}>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/admin" element={<div>Admin page</div>} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>
     );
 
     // fill credentials and submit
@@ -46,13 +49,16 @@ describe('Login page redirect behavior', () => {
       JSON.stringify({ state: { token: 'abc', user: { id: 1, email: 'a@b' } } })
     );
 
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
-      <MemoryRouter initialEntries={['/login?returnTo=/dashboard']}>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/dashboard" element={<div>Dashboard page</div>} />
-        </Routes>
-      </MemoryRouter>
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/login?returnTo=/dashboard']}>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/dashboard" element={<div>Dashboard page</div>} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>
     );
 
     // since token exists and Login has an effect to navigate, we should be redirected
