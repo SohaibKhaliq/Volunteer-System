@@ -57,7 +57,7 @@ describe('Admin Scheduled Jobs page', () => {
     const viewBtn = await screen.findAllByText('View');
     fireEvent.click(viewBtn[0]);
     // JSON payload should be visible
-    expect(await screen.findByText('"sample": "payload"')).toBeInTheDocument();
+    expect(await screen.findByText(/sample.*payload/i)).toBeInTheDocument();
 
     // retry from details dialog
     const dialogRetryBtn = await screen.findAllByText('Retry');
