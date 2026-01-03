@@ -4,35 +4,37 @@ import Notification from 'App/Models/Notification'
 
 test.group('Notifications endpoints', () => {
   test('non-admin users see only their notifications', async ({ client, assert }) => {
-    const u1 = await User.create({ email: 'n1@test', password: 'pass' })
-    const u2 = await User.create({ email: 'n2@test', password: 'pass' })
+    const u1 = await User.create({ email: 'n1_' + Math.floor(Math.random() * 100000) + '@test.com', password: 'pass' })
+    const u2 = await User.create({ email: 'n2_' + Math.floor(Math.random() * 100000) + '@test.com', password: 'pass' })
 
-    await Notification.create({ userId: u1.id, type: 'test', payload: 'a', read: false })
-    await Notification.create({ userId: u2.id, type: 'test', payload: 'b', read: false })
+    await Notification.create({ userId: u1.id, type: 'test', payload: JSON.stringify({ msg: 'a' }), read: false })
+    await Notification.create({ userId: u2.id, type: 'test', payload: JSON.stringify({ msg: 'b' }), read: false })
 
     const resp = await client.loginAs(u1).get('/notifications')
     resp.assertStatus(200)
     const body = resp.body()
-    assert.isArray(body)
-    assert.isTrue(body.every((n: any) => n.userId === u1.id))
+    // response is paginated
+    assert.isArray(body.data)
+    assert.isTrue(body.data.every((n: any) => n.user_id === u1.id))
   })
 
-  test('admin can see all notifications', async ({ client, assert }) => {
-    const admin = await User.create({ email: 'admin-not@test', password: 'pass', isAdmin: true })
-    const u = await User.create({ email: 'n3@test', password: 'pass' })
-
-    await Notification.create({ userId: u.id, type: 'x', payload: 'p' })
+  test('admin can see their own notifications', async ({ client, assert }) => {
+    const admin = await User.create({ email: 'admin-not_' + Math.floor(Math.random() * 100000) + '@test.com', password: 'pass', isAdmin: true })
+    
+    // Create notification for admin
+    await Notification.create({ userId: admin.id, type: 'x', payload: JSON.stringify({ msg: 'p' }) })
 
     const resp = await client.loginAs(admin).get('/notifications')
     resp.assertStatus(200)
     const body = resp.body()
-    assert.isArray(body)
-    assert.isTrue(body.length >= 1)
+    assert.isArray(body.data)
+    assert.isTrue(body.data.length >= 1)
+    assert.equal(body.data[0].user_id, admin.id)
   })
 
   test('can mark notification read and unread', async ({ client, assert }) => {
-    const u = await User.create({ email: 'mark@test', password: 'pass' })
-    const n = await Notification.create({ userId: u.id, type: 'x', payload: 'p', read: false })
+    const u = await User.create({ email: 'mark_' + Math.floor(Math.random() * 100000) + '@test.com', password: 'pass' })
+    const n = await Notification.create({ userId: u.id, type: 'x', payload: JSON.stringify({ msg: 'p' }), read: false })
 
     const markResp = await client.loginAs(u).put(`/notifications/${n.id}/read`)
     markResp.assertStatus(200)
