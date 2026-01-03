@@ -54,9 +54,7 @@ export default class ConflictDetectionService {
       .where('user_id', userId)
       .where('status', 'accepted')
       .whereHas('opportunity', (oppQuery) => {
-        oppQuery
-          .where('start_date', '<', endDate.toSQL())
-          .where('end_date', '>', startDate.toSQL())
+        oppQuery.where('start_date', '<', endDate.toSQL()).where('end_date', '>', startDate.toSQL())
       })
       .preload('opportunity')
 
@@ -106,11 +104,7 @@ export default class ConflictDetectionService {
     }> = []
 
     // Check shift assignments
-    const shiftAssignments = await this.getUserShiftAssignments(
-      userId,
-      shiftStartAt,
-      shiftEndAt
-    )
+    const shiftAssignments = await this.getUserShiftAssignments(userId, shiftStartAt, shiftEndAt)
 
     for (const assignment of shiftAssignments) {
       if (assignment.shift) {
@@ -134,19 +128,13 @@ export default class ConflictDetectionService {
     }
 
     // Check opportunity commitments
-    const opportunities = await this.getUserOpportunityCommitments(
-      userId,
-      shiftStartAt,
-      shiftEndAt
-    )
+    const opportunities = await this.getUserOpportunityCommitments(userId, shiftStartAt, shiftEndAt)
 
     for (const application of opportunities) {
       if (application.opportunity) {
         const opp = application.opportunity
         // Opportunities might span multiple days, so we need to check overlap
-        const oppStart = opp.startDate
-          ? DateTime.fromJSDate(opp.startDate)
-          : shiftStartAt
+        const oppStart = opp.startDate ? DateTime.fromJSDate(opp.startDate) : shiftStartAt
         const oppEnd = opp.endDate ? DateTime.fromJSDate(opp.endDate) : shiftEndAt
 
         if (this.doPeriodsOverlap(shiftStartAt, shiftEndAt, oppStart, oppEnd)) {
@@ -212,12 +200,14 @@ export default class ConflictDetectionService {
   /**
    * Format conflict message for display
    */
-  public static formatConflictMessage(conflicts: Array<{
-    type: string
-    title: string
-    startAt: DateTime
-    endAt: DateTime
-  }>): string {
+  public static formatConflictMessage(
+    conflicts: Array<{
+      type: string
+      title: string
+      startAt: DateTime
+      endAt: DateTime
+    }>
+  ): string {
     if (conflicts.length === 0) {
       return 'No conflicts detected'
     }
