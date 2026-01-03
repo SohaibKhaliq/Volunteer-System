@@ -113,18 +113,14 @@ export default class DocumentLibraryService {
       totalRequired,
       acknowledged,
       pending: Math.max(0, totalRequired - acknowledged),
-      percentageComplete:
-        totalRequired > 0 ? Math.round((acknowledged / totalRequired) * 100) : 0
+      percentageComplete: totalRequired > 0 ? Math.round((acknowledged / totalRequired) * 100) : 0
     }
   }
 
   /**
    * Check if a user has acknowledged a document
    */
-  public static async hasUserAcknowledged(
-    documentId: number,
-    userId: number
-  ): Promise<boolean> {
+  public static async hasUserAcknowledged(documentId: number, userId: number): Promise<boolean> {
     const acknowledgment = await DocumentAcknowledgment.query()
       .where('document_id', documentId)
       .where('user_id', userId)
@@ -152,9 +148,7 @@ export default class DocumentLibraryService {
     category: string,
     organizationId?: number
   ): Promise<Document[]> {
-    const query = Document.query()
-      .where('category', category)
-      .where('status', 'published')
+    const query = Document.query().where('category', category).where('status', 'published')
 
     if (organizationId) {
       query.where((q) => {
@@ -223,10 +217,12 @@ export default class DocumentLibraryService {
   /**
    * Get pending acknowledgments for an organization
    */
-  public static async getPendingAcknowledgments(organizationId: number): Promise<{
-    document: Document
-    pendingCount: number
-  }[]> {
+  public static async getPendingAcknowledgments(organizationId: number): Promise<
+    {
+      document: Document
+      pendingCount: number
+    }[]
+  > {
     const documents = await Document.query()
       .where('organization_id', organizationId)
       .where('requires_acknowledgment', true)
