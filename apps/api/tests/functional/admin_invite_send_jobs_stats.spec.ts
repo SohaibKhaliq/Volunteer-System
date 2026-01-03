@@ -6,21 +6,22 @@ import InviteSendJob from 'App/Models/InviteSendJob'
 
 test.group('Admin invite send jobs stats endpoint', () => {
   test('unauthenticated returns 401', async ({ client }) => {
-    await client.get('/admin/invite-send-jobs/stats').assertStatus(401)
+    const response = await client.get('/admin/invite-send-jobs/stats')
+    response.assertStatus(401)
   })
 
-  test('admin can fetch stats', async ({ client }) => {
-    const admin = await User.create({ email: 'admin-stats@test', password: 'pass', isAdmin: true })
+  test('admin can fetch stats', async ({ client, assert }) => {
+    const admin = await User.create({ email: `admin-stats-${Date.now()}@test`, password: 'pass', isAdmin: true })
 
     const org = await Organization.create({ name: 'StatsOrg' })
-    const inviter = await User.create({ email: 'inviter-stats@test', password: 'pass' })
+    const inviter = await User.create({ email: `inviter-stats-${Date.now()}@test`, password: 'pass' })
 
     // create jobs with varied statuses
     for (let i = 0; i < 6; i++) {
       const invite = await OrganizationInvite.create({
         organizationId: org.id,
-        email: `s-${i}@test`,
-        token: `t-${i}`,
+        email: `s-${i}-${Date.now()}@test`,
+        token: `t-${i}-${Date.now()}`,
         invitedBy: inviter.id
       })
       await InviteSendJob.create({
@@ -33,9 +34,9 @@ test.group('Admin invite send jobs stats endpoint', () => {
     const resp = await client.loginAs(admin).get('/admin/invite-send-jobs/stats')
     resp.assertStatus(200)
     const body = resp.body()
-    test.assert(typeof body.total === 'number')
-    test.assert(typeof body.successRate === 'number')
-    test.assert(typeof body.byStatus === 'object')
-    test.assert(body.total >= 6)
+    assert.isNumber(body.total)
+    assert.isNumber(body.successRate)
+    assert.isObject(body.byStatus)
+    assert.isAtLeast(body.total, 6)
   })
 })
