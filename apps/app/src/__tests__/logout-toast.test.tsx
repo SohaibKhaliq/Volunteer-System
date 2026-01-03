@@ -7,7 +7,7 @@ import api from '@/lib/api';
 import { useStore } from '@/lib/store';
 
 vi.mock('@/lib/api');
-vi.mock('socket.io-client', () => ({ io: () => ({ on: () => {}, close: () => {} }) }));
+vi.mock('socket.io-client', () => ({ io: () => ({ on: () => { }, close: () => { } }) }));
 
 const mockedApi = api as any;
 
@@ -29,6 +29,7 @@ describe('Header logout flow', () => {
     mockedApi.listNotifications = vi.fn().mockResolvedValue([]);
     mockedApi.markNotificationRead = vi.fn().mockResolvedValue({});
     mockedApi.markNotificationUnread = vi.fn().mockResolvedValue({});
+    mockedApi.getCurrentUser = vi.fn().mockResolvedValue({ data: { id: 1, firstName: 'Test', lastName: 'User', isAdmin: false } });
 
     // Set token in store
     const setToken = useStore.getState().setToken;
@@ -36,7 +37,7 @@ describe('Header logout flow', () => {
 
     render(<TestApp />);
 
-    const btn = await screen.findByText(/Logout/i);
+    const btn = await screen.findByText(/Log out/i);
     fireEvent.click(btn);
 
     await waitFor(() => {
