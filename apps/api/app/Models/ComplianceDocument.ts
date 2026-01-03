@@ -1,6 +1,7 @@
 import { BaseModel, column, BelongsTo, belongsTo } from '@ioc:Adonis/Lucid/Orm'
 import { DateTime } from 'luxon'
 import User from './User'
+import Organization from './Organization'
 
 export default class ComplianceDocument extends BaseModel {
   @column({ isPrimary: true })
@@ -11,6 +12,14 @@ export default class ComplianceDocument extends BaseModel {
 
   @belongsTo(() => User)
   public user: BelongsTo<typeof User>
+
+  @column({ columnName: 'organization_id' })
+  public organizationId?: number
+
+  @belongsTo(() => Organization, {
+    foreignKey: 'organizationId'
+  })
+  public organization: BelongsTo<typeof Organization>
 
   @column({ columnName: 'doc_type' })
   public docType: string
