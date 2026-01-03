@@ -59,86 +59,88 @@ export const runnerHooks: Pick<Required<Config>, 'setup' | 'teardown'> = {
         // Manual check/shim
         if (!(ApiClient.prototype as any).loginAs) {
           console.log('Manually adding loginAs shim...')
-          ApiClient.macro('loginAs', function (this: any, user: any) {
+          ApiClient.macro('loginAs', async function (this: any, user: any) {
             // Capture 'this' context
             const client = this
 
-            // Generate token and set header synchronously by wrapping in a promise
-            // that gets resolved before any HTTP method is called
-            const tokenPromise = (async () => {
-              const AuthBinding: any = Application.container.resolveBinding('Adonis/Addons/Auth')
-              const apiConfig = AuthBinding.config?.guards?.api
-              let serializer: any = null
+            // Generate token
+            const AuthBinding: any = Application.container.resolveBinding('Adonis/Addons/Auth')
+            const apiConfig = AuthBinding.config?.guards?.api
+            let serializer: any = null
 
-              if (apiConfig) {
-                let provider = null
-                if (apiConfig.provider) {
-                  const pDriver = apiConfig.provider.driver
-                  if (pDriver === 'lucid' && AuthBinding.makeLucidProvider) {
-                    provider = AuthBinding.makeLucidProvider(apiConfig.provider)
-                  } else if (AuthBinding.makeUserProviderInstance) {
-                    try {
-                      provider = AuthBinding.makeUserProviderInstance(apiConfig.provider)
-                    } catch (e) {}
-                  }
-                }
-
-                const driver = apiConfig.driver
-                if (driver === 'oat' && AuthBinding.makeOatGuard) {
-                  serializer = AuthBinding.makeOatGuard('api', apiConfig, provider)
-                } else if (driver === 'session' && AuthBinding.makeSessionGuard) {
-                  serializer = AuthBinding.makeSessionGuard('api', apiConfig, provider)
-                } else if (driver === 'basic' && AuthBinding.makeBasicAuthGuard) {
-                  serializer = AuthBinding.makeBasicAuthGuard('api', apiConfig, provider)
-                } else {
-                  serializer = AuthBinding.makeMapping('api', apiConfig)
+            if (apiConfig) {
+              let provider = null
+              if (apiConfig.provider) {
+                const pDriver = apiConfig.provider.driver
+                if (pDriver === 'lucid' && AuthBinding.makeLucidProvider) {
+                  provider = AuthBinding.makeLucidProvider(apiConfig.provider)
+                } else if (AuthBinding.makeUserProviderInstance) {
+                  try {
+                    provider = AuthBinding.makeUserProviderInstance(apiConfig.provider)
+                  } catch (e) {}
                 }
               }
 
-              if (serializer) {
-                const tokenResult = await serializer.login(user)
-                const token = tokenResult || serializer.token
-                const tokenString = token?.token || token
-
-                console.log(
-                  'Login Shim Generated Token:',
-                  tokenString || 'undefined',
-                  'Type:',
-                  token?.type || 'bearer'
-                )
-
-                if (tokenString && typeof tokenString === 'string') {
-                  return tokenString
-                }
-              }
-              return null
-            })()
-
-            // Override HTTP methods to wait for token before making request
-            const originalGet = client.get
-            const originalPost = client.post
-            const originalPut = client.put
-            const originalPatch = client.patch
-            const originalDelete = client.delete
-
-            const wrapMethod = (method: Function) => {
-              return function (this: any, ...args: any[]) {
-                return tokenPromise.then((token) => {
-                  if (token) {
-                    // Call the original method and then add the Authorization header
-                    const request = method.apply(this, args)
-                    return request.header('Authorization', `Bearer ${token}`)
-                  }
-                  return method.apply(this, args)
-                })
+              const driver = apiConfig.driver
+              if (driver === 'oat' && AuthBinding.makeOatGuard) {
+                serializer = AuthBinding.makeOatGuard('api', apiConfig, provider)
+              } else if (driver === 'session' && AuthBinding.makeSessionGuard) {
+                serializer = AuthBinding.makeSessionGuard('api', apiConfig, provider)
+              } else if (driver === 'basic' && AuthBinding.makeBasicAuthGuard) {
+                serializer = AuthBinding.makeBasicAuthGuard('api', apiConfig, provider)
+              } else {
+                serializer = AuthBinding.makeMapping('api', apiConfig)
               }
             }
 
-            client.get = wrapMethod(originalGet)
-            client.post = wrapMethod(originalPost)
-            client.put = wrapMethod(originalPut)
-            client.patch = wrapMethod(originalPatch)
-            client.delete = wrapMethod(originalDelete)
+            let tokenString: string | null = null
+            if (serializer) {
+              const tokenResult = await serializer.login(user)
+              const token = tokenResult || serializer.token
+              tokenString = token?.token || token
+
+              console.log(
+                'Login Shim Generated Token:',
+                tokenString || 'undefined',
+                'Type:',
+                token?.type || 'bearer'
+              )
+            }
+
+            // Store token on client instance
+            client._authToken = tokenString
+
+            // Override HTTP methods to add Authorization header
+            const originalGet = client.get.bind(client)
+            const originalPost = client.post.bind(client)
+            const originalPut = client.put.bind(client)
+            const originalPatch = client.patch.bind(client)
+            const originalDelete = client.delete.bind(client)
+
+            client.get = function (...args: any[]) {
+              const request = originalGet(...args)
+              return client._authToken ? request.header('Authorization', `Bearer ${client._authToken}`) : request
+            }
+
+            client.post = function (...args: any[]) {
+              const request = originalPost(...args)
+              return client._authToken ? request.header('Authorization', `Bearer ${client._authToken}`) : request
+            }
+
+            client.put = function (...args: any[]) {
+              const request = originalPut(...args)
+              return client._authToken ? request.header('Authorization', `Bearer ${client._authToken}`) : request
+            }
+
+            client.patch = function (...args: any[]) {
+              const request = originalPatch(...args)
+              return client._authToken ? request.header('Authorization', `Bearer ${client._authToken}`) : request
+            }
+
+            client.delete = function (...args: any[]) {
+              const request = originalDelete(...args)
+              return client._authToken ? request.header('Authorization', `Bearer ${client._authToken}`) : request
+            }
 
             return client
           })
