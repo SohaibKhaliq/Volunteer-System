@@ -11,7 +11,7 @@ import AuditLog from 'App/Models/AuditLog'
 
 /**
  * AchievementEvaluationService
- * 
+ *
  * Core service for evaluating achievement criteria and awarding achievements to volunteers.
  * Supports multiple rule types: hours, events, frequency, certification, and custom rules.
  */
@@ -64,7 +64,9 @@ export default class AchievementEvaluationService {
         }
       }
 
-      Logger.info(`Evaluated achievements for user ${userId}: ${awarded} awarded, ${updated} updated`)
+      Logger.info(
+        `Evaluated achievements for user ${userId}: ${awarded} awarded, ${updated} updated`
+      )
       return { awarded, updated }
     } catch (error) {
       Logger.error('Achievement evaluation error for user %d: %o', userId, error)
@@ -78,7 +80,11 @@ export default class AchievementEvaluationService {
   private static async evaluateAchievement(
     userId: number,
     achievement: Achievement
-  ): Promise<{ earned: boolean; progress?: { currentValue: number; targetValue: number }; metadata?: any }> {
+  ): Promise<{
+    earned: boolean
+    progress?: { currentValue: number; targetValue: number }
+    metadata?: any
+  }> {
     switch (achievement.ruleType) {
       case 'hours':
         return await this.evaluateHoursAchievement(userId, achievement)
@@ -103,16 +109,18 @@ export default class AchievementEvaluationService {
   private static async evaluateHoursAchievement(
     userId: number,
     achievement: Achievement
-  ): Promise<{ earned: boolean; progress?: { currentValue: number; targetValue: number }; metadata?: any }> {
+  ): Promise<{
+    earned: boolean
+    progress?: { currentValue: number; targetValue: number }
+    metadata?: any
+  }> {
     const criteria = achievement.criteria || {}
     const threshold = criteria.threshold || 0
     const organizationId = criteria.organizationId || achievement.organizationId
     const withinDays = criteria.withinDays
 
     // Build query for approved volunteer hours
-    let query = VolunteerHour.query()
-      .where('user_id', userId)
-      .where('status', 'Approved')
+    let query = VolunteerHour.query().where('user_id', userId).where('status', 'Approved')
 
     if (organizationId) {
       query = query.where('organization_id', organizationId)
@@ -147,16 +155,18 @@ export default class AchievementEvaluationService {
   private static async evaluateEventsAchievement(
     userId: number,
     achievement: Achievement
-  ): Promise<{ earned: boolean; progress?: { currentValue: number; targetValue: number }; metadata?: any }> {
+  ): Promise<{
+    earned: boolean
+    progress?: { currentValue: number; targetValue: number }
+    metadata?: any
+  }> {
     const criteria = achievement.criteria || {}
     const threshold = criteria.threshold || 0
     const organizationId = criteria.organizationId || achievement.organizationId
     const withinDays = criteria.withinDays
 
     // Count attended events
-    let query = Attendance.query()
-      .where('user_id', userId)
-      .where('status', 'Present')
+    let query = Attendance.query().where('user_id', userId).where('status', 'Present')
 
     if (organizationId) {
       query = query.whereHas('event', (eventQuery: any) => {
@@ -193,7 +203,11 @@ export default class AchievementEvaluationService {
   private static async evaluateFrequencyAchievement(
     userId: number,
     achievement: Achievement
-  ): Promise<{ earned: boolean; progress?: { currentValue: number; targetValue: number }; metadata?: any }> {
+  ): Promise<{
+    earned: boolean
+    progress?: { currentValue: number; targetValue: number }
+    metadata?: any
+  }> {
     const criteria = achievement.criteria || {}
     const consecutiveMonths = criteria.consecutiveMonths || 3
     const minHoursPerMonth = criteria.minHoursPerMonth || 1
@@ -430,6 +444,8 @@ export default class AchievementEvaluationService {
     })
 
     await userAchievement.delete()
-    Logger.info(`Achievement ${userAchievement.achievementId} revoked from user ${userAchievement.userId}`)
+    Logger.info(
+      `Achievement ${userAchievement.achievementId} revoked from user ${userAchievement.userId}`
+    )
   }
 }
