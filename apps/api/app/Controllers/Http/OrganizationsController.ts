@@ -391,8 +391,11 @@ export default class OrganizationsController {
       'public_profile',
       'auto_approve_volunteers',
       'is_approved',
-      'is_active'
+      'is_active',
+      'publicProfile', // Explicitly allow camelCase
+      'autoApproveVolunteers' // Explicitly allow camelCase
     ])
+    // Logger.info(`Update Organization Body: ${JSON.stringify(body)}`)
 
     // Normalize keys to model property names
     if (body.email) body.contactEmail = body.email
