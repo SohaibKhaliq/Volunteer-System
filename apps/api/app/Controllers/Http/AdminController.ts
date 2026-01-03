@@ -129,10 +129,10 @@ export default class AdminController {
         .count('* as total')
 
       return response.ok({
-        backgroundChecksPending: Number(bgChecks[0]?.$extras?.total || 0),
-        importsPending: Number(importJobs[0]?.$extras?.total || 0),
-        pendingHours: Number(pendingHours[0]?.$extras?.total || 0),
-        unreadNotifications: Number(unreadNotifs[0]?.$extras?.total || 0)
+        backgroundChecksPending: Number(bgChecks[0]?.total || bgChecks[0]?.$extras?.total || 0),
+        importsPending: Number(importJobs[0]?.total || importJobs[0]?.$extras?.total || 0),
+        pendingHours: Number(pendingHours[0]?.total || pendingHours[0]?.$extras?.total || 0),
+        unreadNotifications: Number(unreadNotifs[0]?.total || unreadNotifs[0]?.$extras?.total || 0)
       })
     } catch (error) {
       Logger.error('Admin summary error: %o', error)
@@ -830,6 +830,9 @@ export default class AdminController {
       }
 
       // Validate and save each setting
+      // Validate and save each setting
+      const SystemSetting = (await import('App/Models/SystemSetting')).default
+      
       for (const [key, value] of Object.entries(settings)) {
         // Ensure objects are valid JSON-serializable
         if (typeof value === 'object') {
@@ -842,11 +845,7 @@ export default class AdminController {
 
         const stringValue = typeof value === 'object' ? JSON.stringify(value) : String(value)
 
-        await Database.insertQuery()
-          .table('system_settings')
-          .insert({ key, value: stringValue })
-          .onConflict('key')
-          .merge(['value'])
+        await SystemSetting.updateOrCreate({ key }, { value: stringValue })
       }
 
       // Log the action with previous and new values for full auditability
@@ -854,14 +853,14 @@ export default class AdminController {
         userId: admin.id,
         action: 'system_settings_updated',
         targetType: 'system',
-        targetId: 0,
+        targetId: null,
         metadata: JSON.stringify({ keys, previousValues, newValues: settings })
       })
 
       return response.ok({ message: 'Settings updated successfully' })
     } catch (error) {
       Logger.error('Update system settings error: %o', error)
-      return response.unauthorized({ error: { message: error.message || 'Access denied' } })
+      return response.internalServerError({ message: 'Failed to update settings', error: error.message })
     }
   }
 
@@ -898,13 +897,14 @@ export default class AdminController {
       }
 
       // Save branding settings
+      const SystemSetting = (await import('App/Models/SystemSetting')).default
+
       for (const [key, value] of Object.entries(branding)) {
         if (value !== undefined) {
-          await Database.insertQuery()
-            .table('system_settings')
-            .insert({ key, value: String(value) })
-            .onConflict('key')
-            .merge(['value'])
+          await SystemSetting.updateOrCreate(
+            { key },
+            { value: String(value) }
+          )
         }
       }
 
@@ -913,14 +913,14 @@ export default class AdminController {
         userId: admin.id,
         action: 'branding_updated',
         targetType: 'system',
-        targetId: 0,
+        targetId: null,
         metadata: JSON.stringify({ previous: previousBranding, new: branding })
       })
 
       return response.ok({ message: 'Branding updated successfully', branding })
     } catch (error) {
       Logger.error('Update branding error: %o', error)
-      return response.unauthorized({ error: { message: error.message || 'Access denied' } })
+      return response.internalServerError({ message: 'Failed to update branding', error: error.message })
     }
   }
 
