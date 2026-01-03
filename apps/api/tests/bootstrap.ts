@@ -59,90 +59,107 @@ export const runnerHooks: Pick<Required<Config>, 'setup' | 'teardown'> = {
         // Manual check/shim
         if (!(ApiClient.prototype as any).loginAs) {
           console.log('Manually adding loginAs shim...')
-          ApiClient.macro('loginAs', async function (this: any, user: any) {
-            // Capture 'this' context
+          ApiClient.macro('loginAs', function (this: any, user: any) {
             const client = this
 
-            // Generate token
-            const AuthBinding: any = Application.container.resolveBinding('Adonis/Addons/Auth')
-            const apiConfig = AuthBinding.config?.guards?.api
-            let serializer: any = null
+            // Generate token promise
+            const tokenPromise = (async () => {
+              const AuthBinding: any = Application.container.resolveBinding('Adonis/Addons/Auth')
+              const apiConfig = AuthBinding.config?.guards?.api
+              let serializer: any = null
 
-            if (apiConfig) {
-              let provider = null
-              if (apiConfig.provider) {
-                const pDriver = apiConfig.provider.driver
-                if (pDriver === 'lucid' && AuthBinding.makeLucidProvider) {
-                  provider = AuthBinding.makeLucidProvider(apiConfig.provider)
-                } else if (AuthBinding.makeUserProviderInstance) {
-                  try {
-                    provider = AuthBinding.makeUserProviderInstance(apiConfig.provider)
-                  } catch (e) {}
+              if (apiConfig) {
+                let provider = null
+                if (apiConfig.provider) {
+                  const pDriver = apiConfig.provider.driver
+                  if (pDriver === 'lucid' && AuthBinding.makeLucidProvider) {
+                    provider = AuthBinding.makeLucidProvider(apiConfig.provider)
+                  } else if (AuthBinding.makeUserProviderInstance) {
+                    try {
+                      provider = AuthBinding.makeUserProviderInstance(apiConfig.provider)
+                    } catch (e) {}
+                  }
+                }
+
+                const driver = apiConfig.driver
+                if (driver === 'oat' && AuthBinding.makeOatGuard) {
+                  serializer = AuthBinding.makeOatGuard('api', apiConfig, provider)
+                } else if (driver === 'session' && AuthBinding.makeSessionGuard) {
+                  serializer = AuthBinding.makeSessionGuard('api', apiConfig, provider)
+                } else if (driver === 'basic' && AuthBinding.makeBasicAuthGuard) {
+                  serializer = AuthBinding.makeBasicAuthGuard('api', apiConfig, provider)
+                } else {
+                  serializer = AuthBinding.makeMapping('api', apiConfig)
                 }
               }
 
-              const driver = apiConfig.driver
-              if (driver === 'oat' && AuthBinding.makeOatGuard) {
-                serializer = AuthBinding.makeOatGuard('api', apiConfig, provider)
-              } else if (driver === 'session' && AuthBinding.makeSessionGuard) {
-                serializer = AuthBinding.makeSessionGuard('api', apiConfig, provider)
-              } else if (driver === 'basic' && AuthBinding.makeBasicAuthGuard) {
-                serializer = AuthBinding.makeBasicAuthGuard('api', apiConfig, provider)
-              } else {
-                serializer = AuthBinding.makeMapping('api', apiConfig)
+              if (serializer) {
+                const tokenResult = await serializer.login(user)
+                const token = tokenResult || serializer.token
+                const tokenString = token?.token || token
+
+                console.log(
+                  'Login Shim Generated Token:',
+                  tokenString || 'undefined',
+                  'Type:',
+                  token?.type || 'bearer'
+                )
+
+                return tokenString
+              }
+              return null
+            })()
+
+            // Store token promise on client for later use
+            client._authTokenPromise = tokenPromise
+
+            // Create a thenable wrapper that:
+            // 1. When awaited directly: returns token string
+            // 2. When chained with .post(), .get(), etc: returns client with auth
+            const wrapper: any = {
+              // Make it thenable so it can be awaited to get token
+              then: (resolve: any, reject: any) => {
+                return tokenPromise.then(resolve, reject)
+              },
+              
+              // Proxy HTTP methods to return client after setting up auth
+              get: (...args: any[]) => {
+                return tokenPromise.then((token) => {
+                  const request = client.get(...args)
+                  return token ? request.header('Authorization', `Bearer ${token}`) : request
+                })
+              },
+              
+              post: (...args: any[]) => {
+                return tokenPromise.then((token) => {
+                  const request = client.post(...args)
+                  return token ? request.header('Authorization', `Bearer ${token}`) : request
+                })
+              },
+              
+              put: (...args: any[]) => {
+                return tokenPromise.then((token) => {
+                  const request = client.put(...args)
+                  return token ? request.header('Authorization', `Bearer ${token}`) : request
+                })
+              },
+              
+              patch: (...args: any[]) => {
+                return tokenPromise.then((token) => {
+                  const request = client.patch(...args)
+                  return token ? request.header('Authorization', `Bearer ${token}`) : request
+                })
+              },
+              
+              delete: (...args: any[]) => {
+                return tokenPromise.then((token) => {
+                  const request = client.delete(...args)
+                  return token ? request.header('Authorization', `Bearer ${token}`) : request
+                })
               }
             }
 
-            let tokenString: string | null = null
-            if (serializer) {
-              const tokenResult = await serializer.login(user)
-              const token = tokenResult || serializer.token
-              tokenString = token?.token || token
-
-              console.log(
-                'Login Shim Generated Token:',
-                tokenString || 'undefined',
-                'Type:',
-                token?.type || 'bearer'
-              )
-            }
-
-            // Store token on client instance
-            client._authToken = tokenString
-
-            // Override HTTP methods to add Authorization header
-            const originalGet = client.get.bind(client)
-            const originalPost = client.post.bind(client)
-            const originalPut = client.put.bind(client)
-            const originalPatch = client.patch.bind(client)
-            const originalDelete = client.delete.bind(client)
-
-            client.get = function (...args: any[]) {
-              const request = originalGet(...args)
-              return client._authToken ? request.header('Authorization', `Bearer ${client._authToken}`) : request
-            }
-
-            client.post = function (...args: any[]) {
-              const request = originalPost(...args)
-              return client._authToken ? request.header('Authorization', `Bearer ${client._authToken}`) : request
-            }
-
-            client.put = function (...args: any[]) {
-              const request = originalPut(...args)
-              return client._authToken ? request.header('Authorization', `Bearer ${client._authToken}`) : request
-            }
-
-            client.patch = function (...args: any[]) {
-              const request = originalPatch(...args)
-              return client._authToken ? request.header('Authorization', `Bearer ${client._authToken}`) : request
-            }
-
-            client.delete = function (...args: any[]) {
-              const request = originalDelete(...args)
-              return client._authToken ? request.header('Authorization', `Bearer ${client._authToken}`) : request
-            }
-
-            return client
+            return wrapper
           })
         }
 
