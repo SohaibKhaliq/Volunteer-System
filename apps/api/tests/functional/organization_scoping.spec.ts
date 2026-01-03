@@ -13,14 +13,14 @@ test.group('Organization dashboard scoping', () => {
   })
 
   test('returns 404 when user is not part of an organization', async ({ client }) => {
-    const user = await User.create({ email: 'lonely@example.test', password: 'password' })
+    const user = await User.create({ email: `lonely-${Date.now()}@example.test`, password: 'password' })
     const response = await client.loginAs(user).get('/organization/dashboard-stats')
     response.assertStatus(404)
   })
 
   test('returns scoped stats for organization member', async ({ client }) => {
     const org = await Organization.create({ name: 'Test Org' })
-    const user = await User.create({ email: 'orguser@example.test', password: '12345678' })
+    const user = await User.create({ email: `orguser-${Date.now()}@example.test`, password: '12345678' })
     await OrganizationTeamMember.create({ organizationId: org.id, userId: user.id, role: 'Admin' })
 
     // one active volunteer with 20 hours
@@ -36,7 +36,7 @@ test.group('Organization dashboard scoping', () => {
     await Event.create({
       title: 'Event 1',
       organizationId: org.id,
-      startAt: DateTime.now().plus({ days: 3 }).toJSDate(),
+      startAt: DateTime.now().plus({ days: 3 }),
       isPublished: true
     })
 
