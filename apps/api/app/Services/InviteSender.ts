@@ -182,6 +182,9 @@ export async function processQueue(batch = 10) {
         await sendInviteNow(id)
       }
     }
+  } catch (err) {
+    // Log error but don't crash - resilience against missing tables/migrations
+    Logger.warn('Invite processing loop error: %o', err)
   } finally {
     _processing = false
   }
