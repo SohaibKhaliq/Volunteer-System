@@ -37,7 +37,7 @@ test.group('Admin invite send jobs endpoints', () => {
     assert.isArray(items)
     assert.isDefined(items.find((j: any) => j.id === job.id))
 
-    // attempt retry
+    // attempt retry - retry resets to pending (processQueue call is best-effort and doesn't execute in test)
     const retryResp = await client.loginAs(admin).post(`/admin/invite-send-jobs/${job.id}/retry`)
     retryResp.assertStatus(200)
     await job.refresh()
