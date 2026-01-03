@@ -341,7 +341,9 @@ export default class OpportunitiesController {
       createdBy: user.id
     })
 
-    await opportunity.load('team')
+    if (opportunity.teamId) {
+      await opportunity.load('team')
+    }
     await opportunity.load('creator')
 
     return response.created(opportunity)
@@ -459,7 +461,9 @@ export default class OpportunitiesController {
     if (payload.team_id !== undefined) opportunity.teamId = payload.team_id
 
     await opportunity.save()
-    await opportunity.load('team')
+    if (opportunity.teamId) {
+      await opportunity.load('team')
+    }
     await opportunity.load('creator')
 
     return response.ok(opportunity)
