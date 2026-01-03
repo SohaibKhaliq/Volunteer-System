@@ -4,7 +4,7 @@ import User from 'App/Models/User'
 import OrganizationInvite from 'App/Models/OrganizationInvite'
 
 test.group('Invite sender service', (group) => {
-  test('sendInviteNow calls Mail.send when available', async () => {
+  test('sendInviteNow calls Mail.send when available', async ({ assert }) => {
     const org = await Organization.create({ name: 'InviteSendOrg' })
     const inviter = await User.create({ email: 'inviter2@test', password: 'pass' })
 
@@ -27,7 +27,7 @@ test.group('Invite sender service', (group) => {
       // Mail module not available - just call sendInviteNow to ensure no errors
       const { sendInviteNow } = await import('App/Services/InviteSender')
       const ok = await sendInviteNow(invite.id)
-      test.assert(ok === true || ok === false)
+      assert.isTrue(ok === true || ok === false)
       return
     }
 
@@ -39,8 +39,8 @@ test.group('Invite sender service', (group) => {
 
     const { sendInviteNow } = await import('App/Services/InviteSender')
     const ok = await sendInviteNow(invite.id)
-    test.assert(ok === true)
-    test.assert(called)
+    assert.isTrue(ok === true)
+    assert.isTrue(called)
 
     // restore
     Mail.default.send = orig
