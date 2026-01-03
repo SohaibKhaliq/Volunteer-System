@@ -28,7 +28,8 @@
     "@adonisjs/bouncer",
     "@adonisjs/route-model-binding/build/providers/RmbProvider",
     "@adonisjs/limiter",
-    "@adonisjs/redis"
+    "@adonisjs/redis",
+    "adonis5-swagger"
   ],
   "aceProviders": [
     "@adonisjs/repl"
