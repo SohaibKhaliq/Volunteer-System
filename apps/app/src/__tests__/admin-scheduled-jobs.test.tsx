@@ -27,7 +27,7 @@ describe('Admin Scheduled Jobs page', () => {
       { id: 2, name: 'Job B', type: 'sync', status: 'Scheduled', runAt: new Date().toISOString(), attempts: 0 }
     ];
 
-    (api as any).listScheduledJobs = vi.fn().mockResolvedValue(jobs);
+    (api as any).listScheduledJobs = vi.fn().mockResolvedValue({ data: jobs });
 
     const mockRetry = ((api as any).retryScheduledJob = vi.fn().mockResolvedValue({}));
     const mockCreate = ((api as any).createScheduledJob = vi.fn().mockResolvedValue({}));
