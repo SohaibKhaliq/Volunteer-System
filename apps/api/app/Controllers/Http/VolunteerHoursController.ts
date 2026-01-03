@@ -6,8 +6,11 @@ import {
 } from 'App/Validators/VolunteerHourValidator'
 
 import Event from 'App/Models/Event'
+import AuditLogService from 'App/Services/AuditLogService'
 
 export default class VolunteerHoursController {
+  private auditLogService = new AuditLogService()
+
   public async index({ request, auth }: HttpContextContract) {
     const user = auth.user!
     const { page = 1, limit = 20, status, organizationId } = request.qs()
@@ -87,6 +90,15 @@ export default class VolunteerHoursController {
     if (payload.status && payload.status !== hour.status) {
       // if (!isAdmin) return response.forbid()
       hour.auditedBy = user.id
+      await this.auditLogService.log({
+        userId: user.id,
+        action: 'volunteer_hours_status_changed',
+        message: `Status changed to ${payload.status}`,
+        details: payload.rejectionReason || `Status changed to ${payload.status} for hour ${hour.id}`,
+        targetId: hour.id,
+        targetType: 'volunteer_hour',
+        organizationId: hour.organizationId
+      })
     }
 
     if (payload.status === 'rejected' && !payload.rejectionReason) {
@@ -115,6 +127,15 @@ export default class VolunteerHoursController {
         rejection_reason: status === 'rejected' ? rejectionReason : null,
         audited_by: user.id
       })
+
+    await this.auditLogService.log({
+      userId: user.id,
+      action: 'volunteer_hours_bulk_update',
+      message: `Bulk status update to ${status}`,
+      details: `Bulk status update to ${status} for ${ids.length} items`,
+      targetType: 'volunteer_hour',
+      organizationId: undefined // Could be mixed orgs
+    })
 
     return response.ok({ message: 'Updated successfully' })
   }
