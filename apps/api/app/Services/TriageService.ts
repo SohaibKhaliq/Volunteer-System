@@ -37,7 +37,7 @@ export default class TriageService {
         keywordMatches++
       }
     })
-    
+
     // Cap keyword score contribution
     score += Math.min(keywordMatches * 10, 50)
 
