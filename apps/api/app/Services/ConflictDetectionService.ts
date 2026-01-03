@@ -54,7 +54,7 @@ export default class ConflictDetectionService {
       .where('user_id', userId)
       .where('status', 'accepted')
       .whereHas('opportunity', (oppQuery) => {
-        oppQuery.where('start_date', '<', endDate.toSQL()).where('end_date', '>', startDate.toSQL())
+        oppQuery.where('start_at', '<', endDate.toSQL()).where('end_at', '>', startDate.toSQL())
       })
       .preload('opportunity')
 
@@ -134,8 +134,8 @@ export default class ConflictDetectionService {
       if (application.opportunity) {
         const opp = application.opportunity
         // Opportunities might span multiple days, so we need to check overlap
-        const oppStart = opp.startDate ? DateTime.fromJSDate(opp.startDate) : shiftStartAt
-        const oppEnd = opp.endDate ? DateTime.fromJSDate(opp.endDate) : shiftEndAt
+        const oppStart = opp.startAt || shiftStartAt
+        const oppEnd = opp.endAt || shiftEndAt
 
         if (this.doPeriodsOverlap(shiftStartAt, shiftEndAt, oppStart, oppEnd)) {
           conflicts.push({
