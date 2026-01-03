@@ -6,7 +6,11 @@ test.group('Organizations resource endpoints', () => {
     const org = await Organization.default.create({ name: 'Resource Org' })
 
     const User = await import('App/Models/User')
-    const user = await User.default.create({ email: 'viewer@test', password: 'password' })
+    const user = await User.default.create({
+      email: `viewer-${Date.now()}@test`,
+      password: 'password',
+      isAdmin: true
+    })
 
     const response = await client.loginAs(user).get(`/organizations/${org.id}`)
     response.assertStatus(200)
@@ -18,7 +22,11 @@ test.group('Organizations resource endpoints', () => {
     const org = await Organization.default.create({ name: 'Update Org' })
 
     const User = await import('App/Models/User')
-    const user = await User.default.create({ email: 'updater@test', password: 'password' })
+    const user = await User.default.create({
+      email: `updater-${Date.now()}@test`,
+      password: 'password',
+      isAdmin: true
+    })
 
     const response = await client
       .loginAs(user)
