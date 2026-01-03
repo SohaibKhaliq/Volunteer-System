@@ -10,7 +10,7 @@ test.group('Admin organization lifecycle', (group) => {
     await User.query().where('email', 'like', '%admin-org-lifecycle%').delete()
   })
 
-  test('admin can approve, suspend, reactivate and archive an organization', async ({ client }) => {
+  test('admin can approve, suspend, reactivate and archive an organization', async ({ client, assert }) => {
     const admin = await User.create({
       email: 'admin-org-lifecycle@test',
       password: 'pass',
@@ -27,7 +27,8 @@ test.group('Admin organization lifecycle', (group) => {
       .json()
     approveResp.assertStatus(200)
     const approved = await Organization.find(org.id)
-    test.assert(approved && approved.status === 'active')
+    assert.isDefined(approved)
+    assert.equal(approved?.status, 'active')
 
     // suspend
     const suspendResp = await client
@@ -36,7 +37,8 @@ test.group('Admin organization lifecycle', (group) => {
       .json({ reason: 'Violation' })
     suspendResp.assertStatus(200)
     const suspended = await Organization.find(org.id)
-    test.assert(suspended && suspended.status === 'suspended')
+    assert.isDefined(suspended)
+    assert.equal(suspended?.status, 'suspended')
 
     // reactivate
     const reactResp = await client
@@ -45,7 +47,8 @@ test.group('Admin organization lifecycle', (group) => {
       .json()
     reactResp.assertStatus(200)
     const reactivated = await Organization.find(org.id)
-    test.assert(reactivated && reactivated.status === 'active')
+    assert.isDefined(reactivated)
+    assert.equal(reactivated?.status, 'active')
 
     // archive
     const archResp = await client
@@ -54,7 +57,8 @@ test.group('Admin organization lifecycle', (group) => {
       .json()
     archResp.assertStatus(200)
     const archived = await Organization.find(org.id)
-    test.assert(archived && archived.status === 'archived')
+    assert.isDefined(archived)
+    assert.equal(archived?.status, 'archived')
 
     // ensure audit logs created
     const logs = await AuditLog.query().whereIn('action', [
@@ -63,19 +67,19 @@ test.group('Admin organization lifecycle', (group) => {
       'organization_reactivated',
       'organization_archived'
     ])
-    test.assert(logs.length >= 4)
+    assert.isAtLeast(logs.length, 4)
 
     // verify details of the approve audit entry
     const approvedLog = await AuditLog.query().where('action', 'organization_approved').first()
-    test.assert(approvedLog)
+    assert.isDefined(approvedLog)
     if (typeof approvedLog?.targetType !== 'undefined') {
-      test.assert(approvedLog?.targetType === 'organization')
+      assert.equal(approvedLog?.targetType, 'organization')
     }
     if (typeof approvedLog?.targetId !== 'undefined') {
-      test.assert(approvedLog?.targetId === org.id)
+      assert.equal(approvedLog?.targetId, org.id)
     }
     if (typeof approvedLog?.metadata !== 'undefined') {
-      test.assert(approvedLog?.metadata && approvedLog?.metadata.includes('pending'))
+      assert.include(approvedLog?.metadata || '', 'pending')
     }
   })
 })
