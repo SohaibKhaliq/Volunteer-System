@@ -26,7 +26,7 @@ describe('Admin Pending Hours page', () => {
       }
     ];
 
-    (api as any).getMyVolunteerHours = vi.fn().mockResolvedValue(items);
+    (api as any).getAdminPendingHours = vi.fn().mockResolvedValue({ data: items });
     (api as any).updateHour = vi.fn().mockResolvedValue({});
 
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -44,9 +44,7 @@ describe('Admin Pending Hours page', () => {
     expect(await screen.findByText('Alice Smith')).toBeInTheDocument();
     const approveBtn = await screen.findByText('Approve');
     fireEvent.click(approveBtn);
-    expect((api as any).updateHour).toHaveBeenCalledWith({ id: 101, status: 'Approved' } || 101, {
-      status: 'Approved'
-    });
+    expect((api as any).updateHour).toHaveBeenCalledWith(101, { status: 'Approved' });
   });
 
   it('bulk approve all items on page', async () => {
@@ -73,7 +71,7 @@ describe('Admin Pending Hours page', () => {
       }
     ];
 
-    (api as any).getMyVolunteerHours = vi.fn().mockResolvedValue(items);
+    (api as any).getAdminPendingHours = vi.fn().mockResolvedValue({ data: items });
     (api as any).bulkUpdateHours = vi.fn().mockResolvedValue({ approved_count: 2 });
 
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
