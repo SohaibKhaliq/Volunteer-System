@@ -12,9 +12,9 @@ test.group('Organization communications scheduling', (group) => {
     await Database.rawQuery('DELETE FROM users')
   })
 
-  test('sending a communication schedules it for background sending', async ({ client }) => {
-    const sender = await User.create({ email: 'sender@test', password: 'pass' })
-    const org = await Organization.create({ name: 'CommOrg' })
+  test('sending a communication schedules it for background sending', async ({ client, assert }) => {
+    const sender = await User.create({ email: 'sender_' + Math.floor(Math.random() * 100000) + '@test.com', password: 'pass' })
+    const org = await Organization.create({ name: 'CommOrg_' + Math.floor(Math.random() * 100000) })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: sender.id,
@@ -22,8 +22,8 @@ test.group('Organization communications scheduling', (group) => {
     })
 
     // create recipients and attach as organization volunteers
-    const target = await User.create({ email: 'target1@test', password: 'pass' })
-    await Database.from('organization_volunteers').insert({
+    const target = await User.create({ email: 'target1_' + Math.floor(Math.random() * 100000) + '@test.com', password: 'pass' })
+    await Database.table('organization_volunteers').insert({
       organization_id: org.id,
       user_id: target.id,
       role: 'volunteer',
@@ -37,18 +37,26 @@ test.group('Organization communications scheduling', (group) => {
 
     resp.assertStatus(201)
     const body = resp.body()
-    test.assert(body.communication)
-    test.assert(body.communication.status === 'Scheduled')
-    test.assert(body.communication.sendAt || body.communication.send_at)
+    assert.exists(body.communication)
+    assert.equal(body.communication.status, 'Scheduled')
+    assert.isTrue(!!(body.communication.sendAt || body.communication.send_at))
   })
 
-  test('broadcast schedules a communication for background sending', async ({ client }) => {
-    const sender = await User.create({ email: 'bcast-sender@test', password: 'pass' })
-    const org = await Organization.create({ name: 'BroadcastOrg' })
+  test('broadcast schedules a communication for background sending', async ({ client, assert }) => {
+    const sender = await User.create({ email: 'bcast-sender_' + Math.floor(Math.random() * 100000) + '@test.com', password: 'pass' })
+    const org = await Organization.create({ name: 'BroadcastOrg_' + Math.floor(Math.random() * 100000) })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: sender.id,
       role: 'Admin'
+    })
+
+    const volunteer = await User.create({ email: 'vol_' + Math.floor(Math.random() * 100000) + '@test.com', password: 'pass' })
+    await Database.table('organization_volunteers').insert({
+      organization_id: org.id,
+      user_id: volunteer.id,
+      role: 'volunteer',
+      status: 'active'
     })
 
     const resp = await client
@@ -58,24 +66,24 @@ test.group('Organization communications scheduling', (group) => {
 
     resp.assertStatus(201)
     const body = resp.body()
-    test.assert(body.communication)
-    test.assert(body.communication.status === 'Scheduled')
-    test.assert(body.communication.sendAt || body.communication.send_at)
+    assert.exists(body.communication)
+    assert.equal(body.communication.status, 'Scheduled')
+    assert.isTrue(!!(body.communication.sendAt || body.communication.send_at))
   })
 
   test('processing scheduled communications updates status and creates logs', async ({
-    client
+    client, assert
   }) => {
     // create a scheduled communication in the past
-    const sender = await User.create({ email: 'proc@test', password: 'pass' })
-    const org = await Organization.create({ name: 'ProcessOrg' })
+    const sender = await User.create({ email: 'proc_' + Math.floor(Math.random() * 100000) + '@test.com', password: 'pass' })
+    const org = await Organization.create({ name: 'ProcessOrg_' + Math.floor(Math.random() * 100000) })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: sender.id,
       role: 'Admin'
     })
-    const target = await User.create({ email: 'proc-target@test', password: 'pass' })
-    await Database.from('organization_volunteers').insert({
+    const target = await User.create({ email: 'proc-target_' + Math.floor(Math.random() * 100000) + '@test.com', password: 'pass' })
+    await Database.table('organization_volunteers').insert({
       organization_id: org.id,
       user_id: target.id,
       role: 'volunteer',
@@ -89,7 +97,7 @@ test.group('Organization communications scheduling', (group) => {
       senderId: sender.id,
       type: 'email',
       subject: 'Proc test',
-      message: 'Hello',
+      content: 'Hello',
       recipients: [target.email],
       status: 'Scheduled',
       sendAt: DateTime.local().minus({ minutes: 5 })
@@ -101,10 +109,10 @@ test.group('Organization communications scheduling', (group) => {
 
     // reload comm
     const reloaded = await Communication.default.find(comm.id)
-    test.assert(reloaded && (reloaded.status === 'Sent' || reloaded.status === 'Running'))
+    assert.isTrue(reloaded && (reloaded.status === 'Sent' || reloaded.status === 'Running'))
 
     // ensure a communication_log record exists
     const rows = await Database.from('communication_logs').where('communication_id', comm.id)
-    test.assert(rows && rows.length >= 1)
+    assert.isTrue(rows && rows.length >= 1)
   })
 })
