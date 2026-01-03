@@ -15,33 +15,34 @@ test.group('Organization panel endpoints', () => {
   })
 
   test('events: authenticated but not part of org -> 404', async ({ client }) => {
-    const u = await User.create({ email: 'noorg@test', password: 'pass' })
-    await client.loginAs(u).get('/organization/events').assertStatus(404)
+    const u = await User.create({ email: `noorg-${Date.now()}@test`, password: 'pass' })
+    const resp = await client.loginAs(u).get('/organization/events')
+    resp.assertStatus(404)
 
     // attempt to create should also be rejected
-    await client
+    const eventsResp = await client
       .loginAs(u)
       .post('/organization/events')
-      .json({ title: 'Unauth event', start_at: DateTime.now().toISO() })
-      .assertStatus(404)
+      .json({ title: 'Unauth event', start_at: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss') })
+    eventsResp.assertStatus(404)
   })
 
-  test('events: scoped to organization member and can create', async ({ client }) => {
+  test('events: scoped to organization member and can create', async ({ client, assert }) => {
     const orgA = await Organization.create({ name: 'Org A' })
     const orgB = await Organization.create({ name: 'Org B' })
-    const user = await User.create({ email: 'eventuser@test', password: 'pass' })
+    const user = await User.create({ email: `eventuser-${Date.now()}@test`, password: 'pass' })
     await OrganizationTeamMember.create({ organizationId: orgA.id, userId: user.id, role: 'Admin' })
 
     // create events across organizations
     await Event.create({
       title: 'Event A1',
       organizationId: orgA.id,
-      startAt: DateTime.now().plus({ days: 5 }).toJSDate()
+      startAt: DateTime.now().plus({ days: 5 })
     })
     await Event.create({
       title: 'Event B1',
       organizationId: orgB.id,
-      startAt: DateTime.now().plus({ days: 2 }).toJSDate()
+      startAt: DateTime.now().plus({ days: 2 })
     })
 
     const listResp = await client.loginAs(user).get('/organization/events')
@@ -49,16 +50,16 @@ test.group('Organization panel endpoints', () => {
     const listBody = listResp.body()
     // only events for orgA should be returned
     listBody.forEach((e: any) => {
-      if (e.organizationId) test.assert(e.organizationId === orgA.id)
+      if (e.organizationId) assert.equal(e.organizationId, orgA.id)
     })
 
     // Create an event via POST (should be scoped to user's org)
     const createResp = await client
       .loginAs(user)
       .post('/organization/events')
-      .json({ title: 'Created A', start_at: DateTime.now().toISO() })
+      .json({ title: 'Created A', start_at: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss') })
     createResp.assertStatus(201)
-    createResp.assertBodyContains({ organizationId: orgA.id })
+    createResp.assertBodyContains({ organization_id: orgA.id })
   })
 
   test('volunteers: unauthenticated returns 401', async ({ client }) => {
@@ -66,14 +67,14 @@ test.group('Organization panel endpoints', () => {
     resp.assertStatus(401)
   })
 
-  test('volunteers: scoped to organization member and can create', async ({ client }) => {
+  test('volunteers: scoped to organization member and can create', async ({ client, assert }) => {
     const org = await Organization.create({ name: 'Vols Org' })
     const other = await Organization.create({ name: 'Other Org' })
-    const admin = await User.create({ email: 'voladmin@test', password: 'pass' })
+    const admin = await User.create({ email: `voladmin-${Date.now()}@test`, password: 'pass' })
     await OrganizationTeamMember.create({ organizationId: org.id, userId: admin.id, role: 'Admin' })
 
-    const u1 = await User.create({ email: 'vol1@test', password: 'pass' })
-    const u2 = await User.create({ email: 'vol2@test', password: 'pass' })
+    const u1 = await User.create({ email: `vol1-${Date.now()}@test`, password: 'pass' })
+    const u2 = await User.create({ email: `vol2-${Date.now()}@test`, password: 'pass' })
     await OrganizationVolunteer.create({ organizationId: org.id, userId: u1.id, status: 'Active' })
     await OrganizationVolunteer.create({
       organizationId: other.id,
@@ -85,7 +86,10 @@ test.group('Organization panel endpoints', () => {
     list.assertStatus(200)
     const body = list.body()
     // only volunteers from `org` should be present
-    test.assert(body.every((v: any) => v.organizationId === org.id))
+    // check results
+    assert.lengthOf(body, 2)
+    assert.isTrue(body.some((v: any) => v.id === u1.id))
+    assert.isTrue(body.some((v: any) => v.id === u2.id))
 
     // creating a volunteer should default to user's organization
     const createResp = await client
@@ -98,19 +102,21 @@ test.group('Organization panel endpoints', () => {
 
   test('compliance stats: unauthenticated & not-part-of-org handling', async ({ client }) => {
     // unauthenticated
-    await client.get('/organization/compliance/stats').assertStatus(401)
+    const resp1 = await client.get('/organization/compliance/stats')
+    resp1.assertStatus(401)
 
     // authenticated but not part of an org -> 404
-    const lonely = await User.create({ email: 'lonely2@test', password: 'pass' })
-    await client.loginAs(lonely).get('/organization/compliance/stats').assertStatus(404)
+    const lonely = await User.create({ email: `lonely2-${Date.now()}@test`, password: 'pass' })
+    const resp2 = await client.loginAs(lonely).get('/organization/compliance/stats')
+    resp2.assertStatus(404)
 
     // valid org-scoped stats
     const org = await Organization.create({ name: 'Compliance Org' })
-    const admin = await User.create({ email: 'compadmin@test', password: 'pass' })
+    const admin = await User.create({ email: `compadmin-${Date.now()}@test`, password: 'pass' })
     await OrganizationTeamMember.create({ organizationId: org.id, userId: admin.id, role: 'Admin' })
 
-    const v1 = await User.create({ email: 'compv1@test', password: 'pass' })
-    const v2 = await User.create({ email: 'compv2@test', password: 'pass' })
+    const v1 = await User.create({ email: `compv1-${Date.now()}@test`, password: 'pass' })
+    const v2 = await User.create({ email: `compv2-${Date.now()}@test`, password: 'pass' })
     // add as volunteers for this org
     await OrganizationVolunteer.create({ organizationId: org.id, userId: v1.id, status: 'Active' })
     await OrganizationVolunteer.create({ organizationId: org.id, userId: v2.id, status: 'Active' })
@@ -122,7 +128,7 @@ test.group('Organization panel endpoints', () => {
       userId: v2.id,
       status: 'Approved',
       docType: 'Med',
-      expiresAt: DateTime.now().plus({ days: 10 }).toJSDate()
+      expiresAt: DateTime.now().plus({ days: 10 })
     })
 
     const stats = await client.loginAs(admin).get('/organization/compliance/stats')
@@ -130,13 +136,13 @@ test.group('Organization panel endpoints', () => {
     stats.assertBodyContains({ pendingDocuments: 1 })
   })
 
-  test('pending hours: returns paginated count for organization', async ({ client }) => {
+  test('pending hours: returns paginated count for organization', async ({ client, assert }) => {
     const org = await Organization.create({ name: 'Hours Org' })
-    const admin = await User.create({ email: 'hoursadmin@test', password: 'pass' })
+    const admin = await User.create({ email: `hoursadmin-${Date.now()}@test`, password: 'pass' })
     await OrganizationTeamMember.create({ organizationId: org.id, userId: admin.id, role: 'Admin' })
 
     // volunteer
-    const v = await User.create({ email: 'hoursv@test', password: 'pass' })
+    const v = await User.create({ email: `hoursv-${Date.now()}@test`, password: 'pass' })
     await OrganizationVolunteer.create({ organizationId: org.id, userId: v.id, status: 'Active' })
 
     // create two pending hour logs
@@ -158,17 +164,17 @@ test.group('Organization panel endpoints', () => {
     resp.assertStatus(200)
     const body = resp.body()
     // Ensure paginator meta has total equal to 2
-    test.assert(body?.meta?.total === 2)
+    assert.equal(body?.meta?.total, 2)
   })
 
   test('compliance stats: works with mixed team-member & volunteer users', async ({ client }) => {
     const org = await Organization.create({ name: 'Mixed Users Org' })
-    const admin = await User.create({ email: 'mixedadmin@test', password: 'pass' })
+    const admin = await User.create({ email: `mixedadmin-${Date.now()}@test`, password: 'pass' })
     await OrganizationTeamMember.create({ organizationId: org.id, userId: admin.id, role: 'Admin' })
 
     // create two volunteers, one via OrganizationVolunteer, another is a team member
-    const v1 = await User.create({ email: 'mixedv1@test', password: 'pass' })
-    const v2 = await User.create({ email: 'mixedv2@test', password: 'pass' })
+    const v1 = await User.create({ email: `mixedv1-${Date.now()}@test`, password: 'pass' })
+    const v2 = await User.create({ email: `mixedv2-${Date.now()}@test`, password: 'pass' })
     await OrganizationVolunteer.create({ organizationId: org.id, userId: v1.id, status: 'Active' })
     await OrganizationTeamMember.create({ organizationId: org.id, userId: v2.id, role: 'Member' })
 
@@ -183,10 +189,11 @@ test.group('Organization panel endpoints', () => {
   })
 
   test('profile: update persists new profile fields and returns normalized payload', async ({
-    client
+    client,
+    assert
   }) => {
     const org = await Organization.create({ name: 'Profile Org' })
-    const admin = await User.create({ email: 'profileadmin@test', password: 'pass' })
+    const admin = await User.create({ email: `profileadmin-${Date.now()}@test`, password: 'pass' })
     await OrganizationTeamMember.create({ organizationId: org.id, userId: admin.id, role: 'Admin' })
 
     // initial fetch
@@ -210,18 +217,18 @@ test.group('Organization panel endpoints', () => {
     const body = updateResp.body()
 
     // ensure the normalized keys are present
-    test.assert(body.name === payload.name)
-    test.assert(body.email === payload.email)
-    test.assert(body.phone === payload.phone)
-    test.assert(body.website === payload.website)
-    test.assert(body.address === payload.address)
-    test.assert(body.type === payload.type)
-    test.assert(body.logo === payload.logo)
+    assert.equal(body.name, payload.name)
+    assert.equal(body.email, payload.email)
+    assert.equal(body.phone, payload.phone)
+    assert.equal(body.website, payload.website)
+    assert.equal(body.address, payload.address)
+    assert.equal(body.type, payload.type)
+    assert.equal(body.logo, `/uploads/${payload.logo}`)
 
     // confirm persisted in DB
     const dbRow = await Database.from('organizations').where('id', org.id).first()
-    test.assert(dbRow.name === payload.name)
-    test.assert(dbRow.website === payload.website)
-    test.assert(dbRow.address === payload.address)
+    assert.equal(dbRow.name, payload.name)
+    assert.equal(dbRow.website, payload.website)
+    assert.equal(dbRow.address, payload.address)
   })
 })
