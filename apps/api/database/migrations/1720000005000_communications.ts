@@ -13,6 +13,13 @@ export default class extends BaseSchema {
       table.timestamp('send_at', { useTz: true }).nullable()
       table.timestamp('sent_at', { useTz: true }).nullable()
       table.string('target_audience').nullable() // JSON or string identifier
+
+      // New columns required by implementation
+      table.integer('organization_id').unsigned().references('id').inTable('organizations').onDelete('CASCADE')
+      table.integer('sender_id').unsigned().references('id').inTable('users').onDelete('CASCADE')
+      table.json('recipients').nullable()
+      table.json('metadata').nullable()
+
       table.timestamp('created_at', { useTz: true })
       table.timestamp('updated_at', { useTz: true })
     })
