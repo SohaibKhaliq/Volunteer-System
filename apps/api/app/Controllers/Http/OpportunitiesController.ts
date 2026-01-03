@@ -272,7 +272,9 @@ export default class OpportunitiesController {
       createdBy: user.id
     })
 
-    await opportunity.load('team')
+    if (opportunity.teamId) {
+      await opportunity.load('team')
+    }
     await opportunity.load('creator')
 
     return response.created(opportunity)
