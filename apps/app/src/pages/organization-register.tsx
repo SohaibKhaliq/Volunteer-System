@@ -23,9 +23,19 @@ export default function OrganizationRegister() {
   const navigate = useNavigate();
 
   const mutation = useMutation((data: any) => api.register(data), {
-    // Assuming same register endpoint or specific one
-    onSuccess() {
-      toast({ title: 'Application Submitted', description: 'Your organization registration is under review.' });
+    onSuccess(response: any) {
+      // Check if organization registration is pending approval
+      if (response?.status === 'pending') {
+        toast({
+          title: 'Application Submitted Successfully',
+          description: 'Your organization registration is under review. You will be notified once approved.'
+        });
+      } else {
+        toast({
+          title: 'Registration Successful',
+          description: response?.message || 'Welcome! You can now log in.'
+        });
+      }
       navigate('/login');
     },
     onError(error: any) {
@@ -138,6 +148,16 @@ export default function OrganizationRegister() {
                   required
                 />
               </div>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
+              <h4 className="font-semibold text-blue-900 text-sm">What happens next?</h4>
+              <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+                <li>Your application will be reviewed by our admin team</li>
+                <li>You'll receive an email notification once approved</li>
+                <li>After approval, you can upload compliance documents</li>
+                <li>Once compliance is verified, your organization will be fully activated</li>
+              </ul>
             </div>
 
             <Button type="submit" className="w-full h-11" disabled={mutation.isLoading}>
