@@ -63,13 +63,21 @@ export default class ExportService {
           result = await this.exportVolunteers(operation.organizationId, filters, operation.format)
           break
         case 'opportunities':
-          result = await this.exportOpportunities(operation.organizationId, filters, operation.format)
+          result = await this.exportOpportunities(
+            operation.organizationId,
+            filters,
+            operation.format
+          )
           break
         case 'hours':
           result = await this.exportHours(operation.organizationId, filters, operation.format)
           break
         case 'applications':
-          result = await this.exportApplications(operation.organizationId, filters, operation.format)
+          result = await this.exportApplications(
+            operation.organizationId,
+            filters,
+            operation.format
+          )
           break
         case 'attendances':
           result = await this.exportAttendances(operation.organizationId, filters, operation.format)
@@ -132,7 +140,17 @@ export default class ExportService {
 
     const volunteers = await query.orderBy('organization_volunteers.created_at', 'desc')
 
-    const headers = ['ID', 'Email', 'First Name', 'Last Name', 'Role', 'Status', 'Hours', 'Rating', 'Joined At']
+    const headers = [
+      'ID',
+      'Email',
+      'First Name',
+      'Last Name',
+      'Role',
+      'Status',
+      'Hours',
+      'Rating',
+      'Joined At'
+    ]
     const rows = volunteers.map((v) => [
       v.id,
       v.email,
@@ -177,20 +195,19 @@ export default class ExportService {
     filters: any,
     format: 'csv' | 'xlsx'
   ): Promise<ExportResult> {
-    let query = Database.from('opportunities')
-      .select(
-        'id',
-        'title',
-        'description',
-        'location',
-        'type',
-        'status',
-        'visibility',
-        'capacity',
-        'start_at',
-        'end_at',
-        'created_at'
-      )
+    let query = Database.from('opportunities').select(
+      'id',
+      'title',
+      'description',
+      'location',
+      'type',
+      'status',
+      'visibility',
+      'capacity',
+      'start_at',
+      'end_at',
+      'created_at'
+    )
 
     if (organizationId) {
       query = query.where('organization_id', organizationId)
@@ -210,7 +227,18 @@ export default class ExportService {
 
     const opportunities = await query.orderBy('start_at', 'desc')
 
-    const headers = ['ID', 'Title', 'Description', 'Location', 'Type', 'Status', 'Visibility', 'Capacity', 'Start At', 'End At']
+    const headers = [
+      'ID',
+      'Title',
+      'Description',
+      'Location',
+      'Type',
+      'Status',
+      'Visibility',
+      'Capacity',
+      'Start At',
+      'End At'
+    ]
     const rows = opportunities.map((o) => [
       o.id,
       o.title,
@@ -286,7 +314,16 @@ export default class ExportService {
 
     const hours = await query.orderBy('volunteer_hours.date', 'desc')
 
-    const headers = ['ID', 'Email', 'First Name', 'Last Name', 'Hours', 'Date', 'Description', 'Status']
+    const headers = [
+      'ID',
+      'Email',
+      'First Name',
+      'Last Name',
+      'Hours',
+      'Date',
+      'Description',
+      'Status'
+    ]
     const rows = hours.map((h) => [
       h.id,
       h.email,
@@ -352,7 +389,15 @@ export default class ExportService {
 
     const applications = await query.orderBy('applications.applied_at', 'desc')
 
-    const headers = ['ID', 'Opportunity', 'Email', 'First Name', 'Last Name', 'Status', 'Applied At']
+    const headers = [
+      'ID',
+      'Opportunity',
+      'Email',
+      'First Name',
+      'Last Name',
+      'Status',
+      'Applied At'
+    ]
     const rows = applications.map((a) => [
       a.id,
       a.opportunity_title,
@@ -414,7 +459,17 @@ export default class ExportService {
 
     const attendances = await query.orderBy('attendances.check_in_at', 'desc')
 
-    const headers = ['ID', 'Opportunity', 'Email', 'First Name', 'Last Name', 'Check-in At', 'Check-out At', 'Method', 'Duration (hours)']
+    const headers = [
+      'ID',
+      'Opportunity',
+      'Email',
+      'First Name',
+      'Last Name',
+      'Check-in At',
+      'Check-out At',
+      'Method',
+      'Duration (hours)'
+    ]
     const rows = attendances.map((a) => {
       const checkIn = a.check_in_at ? new Date(a.check_in_at) : null
       const checkOut = a.check_out_at ? new Date(a.check_out_at) : null
