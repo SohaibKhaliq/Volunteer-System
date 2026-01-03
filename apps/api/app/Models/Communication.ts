@@ -26,8 +26,21 @@ export default class Communication extends BaseModel {
   @column()
   public targetAudience?: string
 
+  @column()
+  public organizationId: number
+
+  @column()
+  public senderId: number
+
+  @column({ prepare: (value) => JSON.stringify(value) })
+  public recipients: any
+
+  @column({ prepare: (value) => JSON.stringify(value) })
+  public metadata: any
+
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
+
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   public updatedAt: DateTime
