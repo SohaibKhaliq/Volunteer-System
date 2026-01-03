@@ -150,7 +150,7 @@ export async function processQueue(batch = 10) {
           job.attempts = (job.attempts || 0) + 1
           // exponential backoff in minutes (1,2,4,8,...) up to a cap
           const delayMinutes = Math.min(60, Math.pow(2, Math.max(0, job.attempts - 1)))
-          job.nextAttemptAt = DateTime.now().plus({ minutes: delayMinutes }).toJSDate() as any
+          job.nextAttemptAt = DateTime.now().plus({ minutes: delayMinutes })
           // if exceeded retries mark as failed
           if (job.attempts >= 5) {
             job.status = 'failed'
@@ -163,7 +163,7 @@ export async function processQueue(batch = 10) {
       } catch (e) {
         job.attempts = (job.attempts || 0) + 1
         const delayMinutes = Math.min(60, Math.pow(2, Math.max(0, job.attempts - 1)))
-        job.nextAttemptAt = DateTime.now().plus({ minutes: delayMinutes }).toJSDate() as any
+        job.nextAttemptAt = DateTime.now().plus({ minutes: delayMinutes })
         job.lastError = String(e?.message || e)
         if (job.attempts >= 5) {
           job.status = 'failed'
