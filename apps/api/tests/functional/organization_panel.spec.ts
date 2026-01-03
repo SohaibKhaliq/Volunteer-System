@@ -97,7 +97,7 @@ test.group('Organization panel endpoints', () => {
       .post('/organization/volunteers')
       .json({ user_id: u2.id, status: 'Active' })
     createResp.assertStatus(201)
-    createResp.assertBodyContains({ organizationId: org.id })
+    createResp.assertBodyContains({ organization_id: org.id })
   })
 
   test('compliance stats: unauthenticated & not-part-of-org handling', async ({ client }) => {
