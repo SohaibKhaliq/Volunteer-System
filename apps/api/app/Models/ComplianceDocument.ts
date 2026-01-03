@@ -24,7 +24,10 @@ export default class ComplianceDocument extends BaseModel {
   @column.dateTime({ columnName: 'expires_at' })
   public expiresAt?: DateTime
 
-  @column()
+  @column({
+    prepare: (value: any) => JSON.stringify(value),
+    consume: (value: any) => (typeof value === 'string' ? JSON.parse(value) : value),
+  })
   public metadata?: any
 
   @column.dateTime({ autoCreate: true })
