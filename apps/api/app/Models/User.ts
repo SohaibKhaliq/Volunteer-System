@@ -46,9 +46,8 @@ export default class User extends BaseModel {
   public phone?: string
 
   @column({
-    columnName: 'profile_metadata'
-    // Standard JSON column handling.
-    // Manual prepare/consume removed to prevent SQL syntax errors (double-encoding/quoting issues).
+    columnName: 'profile_metadata',
+    prepare: (value: any) => JSON.stringify(value)
   })
   public profileMetadata?: any
 
