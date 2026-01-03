@@ -30,9 +30,7 @@ export default class CheckComplianceExpiry extends BaseCommand {
       this.logger.info(`Found ${expiringDocuments.length} documents expiring soon`)
 
       for (const doc of expiringDocuments) {
-        const daysUntilExpiry = ComplianceService.getDaysUntilExpiry(
-          doc.expiresAt!.toJSDate()
-        )
+        const daysUntilExpiry = ComplianceService.getDaysUntilExpiry(doc.expiresAt!.toJSDate())
 
         // Update status if expiring soon
         if (ComplianceService.isExpiringSoon(doc.expiresAt!.toJSDate(), 30)) {
@@ -41,12 +39,7 @@ export default class CheckComplianceExpiry extends BaseCommand {
         }
 
         // Send notification to user
-        await this.sendExpiryNotification(
-          doc.userId,
-          doc.docType,
-          daysUntilExpiry,
-          doc.id
-        )
+        await this.sendExpiryNotification(doc.userId, doc.docType, daysUntilExpiry, doc.id)
 
         this.logger.info(
           `Notified user ${doc.userId} about ${doc.docType} expiring in ${daysUntilExpiry} days`
@@ -136,17 +129,15 @@ export default class CheckComplianceExpiry extends BaseCommand {
     }
   }
 
-  private async sendOverdueCheckNotification(
-    userId: number,
-    checkId: number
-  ): Promise<void> {
+  private async sendOverdueCheckNotification(userId: number, checkId: number): Promise<void> {
     try {
       await Notification.create({
         userId,
         type: 'background_check.overdue',
         payload: JSON.stringify({
           checkId,
-          message: 'Your background check has been pending for over 14 days. Please follow up with the administrator.',
+          message:
+            'Your background check has been pending for over 14 days. Please follow up with the administrator.',
           priority: 'medium'
         }),
         read: false
@@ -158,10 +149,10 @@ export default class CheckComplianceExpiry extends BaseCommand {
 
   private formatDocType(docType: string): string {
     const types: Record<string, string> = {
-      'wwcc': 'Working with Children Check',
-      'police_check': 'National Police Check',
-      'first_aid': 'First Aid Certificate',
-      'insurance': 'Insurance Certificate'
+      wwcc: 'Working with Children Check',
+      police_check: 'National Police Check',
+      first_aid: 'First Aid Certificate',
+      insurance: 'Insurance Certificate'
     }
     return types[docType] || docType
   }
