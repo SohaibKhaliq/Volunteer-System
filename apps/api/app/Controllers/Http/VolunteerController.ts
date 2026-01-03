@@ -329,20 +329,20 @@ export default class VolunteerController {
         firstName: user.firstName,
         lastName: user.lastName,
         phone: user.phone,
-        profileMetadata: user.profileMetadata,
+        profileMetadata: user.profileMetadata
       }
 
       // Map to DB columns
       if (payload.firstName !== undefined) user.firstName = payload.firstName
       if (payload.lastName !== undefined) user.lastName = payload.lastName
       if (payload.phone !== undefined) user.phone = payload.phone
-      
+
       if (payload.profileMetadata) {
         // Merge with existing metadata to avoid losing other fields like `avatar_url` or `bookmarkedOpportunities`
         const currentMeta = user.profileMetadata || {}
         user.profileMetadata = {
           ...currentMeta,
-          ...payload.profileMetadata,
+          ...payload.profileMetadata
         }
       }
 
@@ -360,22 +360,22 @@ export default class VolunteerController {
         metadata: JSON.stringify({
           changes: {
             from: oldData,
-            to: payload,
-          },
+            to: payload
+          }
         }),
-        ipAddress: request.ip(),
+        ipAddress: request.ip()
       })
 
       const { password, ...safeUser } = user.toJSON() as any
       return response.ok({
         ...safeUser,
         firstName: safeUser.firstName ?? safeUser.first_name,
-        lastName: safeUser.lastName ?? safeUser.last_name,
+        lastName: safeUser.lastName ?? safeUser.last_name
       })
     } catch (error) {
       if (error.messages) {
         return response.badRequest({
-          error: { message: 'Validation failed', messages: error.messages },
+          error: { message: 'Validation failed', messages: error.messages }
         })
       }
       Logger.error('Volunteer update profile error: %o', error)
@@ -393,7 +393,7 @@ export default class VolunteerController {
 
       const avatar = request.file('avatar', {
         size: '5mb',
-        extnames: ['jpg', 'png', 'jpeg', 'webp'],
+        extnames: ['jpg', 'png', 'jpeg', 'webp']
       })
 
       if (!avatar) {
@@ -402,7 +402,7 @@ export default class VolunteerController {
 
       if (avatar.hasErrors) {
         return response.badRequest({
-          error: { message: 'Invalid file', errors: avatar.errors },
+          error: { message: 'Invalid file', errors: avatar.errors }
         })
       }
 
@@ -419,31 +419,33 @@ export default class VolunteerController {
       // I'll assume standard `moveToDisk` matches existing logic if any.
       // BUT, to be safe and avoid errors, I'll use a simple mock implementation that updates the URL
       // assuming the file *would* be handled by a Drive provider.
-      
+
       // WAIT, `Application.tmpPath` or `publicPath`?
       // Let's just update the metadata with a fake URL for now to satisfy the requirement "allow viewing/updating"
       // effectively assuming the upload middleware would handle it, OR just basic file placement.
-      
+
       // Let's try to actually save it to `public/uploads` if possible.
       // `avatar.moveToDisk('./')` ?
-      
+
       // Simplest robust approach:
       // 1. Generate name
       const fileName = `${user.id}_${new Date().getTime()}.${avatar.extname}`
       // 2. Move (this works if Drive is set up, otherwise we might fail).
       // Let's use `avatar.moveToDisk` if we trust the setup, or `moveTo` to local.
       // I'll use `Application.publicPath('uploads')` if I can import Application.
-      
+
       // Dynamic import
       const { default: Application } = await import('@ioc:Adonis/Core/Application')
-      
+
       await avatar.move(Application.publicPath('uploads'), {
         name: fileName,
         overwrite: true
       })
-      
+
       if (avatar.state !== 'moved') {
-         return response.internalServerError({ error: { message: 'Failed to upload avatar file', details: avatar.errors } })
+        return response.internalServerError({
+          error: { message: 'Failed to upload avatar file', details: avatar.errors }
+        })
       }
 
       const avatarUrl = `/uploads/${fileName}`
@@ -451,14 +453,14 @@ export default class VolunteerController {
       const currentMeta = user.profileMetadata || {}
       user.profileMetadata = {
         ...currentMeta,
-        avatar_url: avatarUrl, // Keeping snake_case if used elsewhere, or standard
+        avatar_url: avatarUrl // Keeping snake_case if used elsewhere, or standard
       }
-      
+
       await user.save()
 
       return response.ok({
         message: 'Avatar updated',
-        avatarUrl,
+        avatarUrl
       })
     } catch (error) {
       Logger.error('Update avatar error: %o', error)
@@ -639,7 +641,7 @@ export default class VolunteerController {
       }
 
       // Check capacity
-      // We count 'accepted' applications against capacity. 
+      // We count 'accepted' applications against capacity.
 
       // --- Compliance Check ---
       const ComplianceRequirement = (await import('App/Models/ComplianceRequirement')).default
@@ -656,7 +658,7 @@ export default class VolunteerController {
       if (requirements.length > 0) {
         // Fetch user's valid documents
         // We need to check doc_type against requirements
-        const docTypes = requirements.map(r => r.docType)
+        const docTypes = requirements.map((r) => r.docType)
         const userDocs = await ComplianceDocument.query()
           .where('user_id', user.id)
           .whereIn('doc_type', docTypes)
@@ -664,15 +666,15 @@ export default class VolunteerController {
           .where((q) => {
             q.whereNull('expires_at').orWhere('expires_at', '>', DateTime.now().toSQL())
           })
-        
-        const validDocTypes = new Set(userDocs.map(d => d.docType))
-        const missingRequirements = requirements.filter(r => !validDocTypes.has(r.docType))
+
+        const validDocTypes = new Set(userDocs.map((d) => d.docType))
+        const missingRequirements = requirements.filter((r) => !validDocTypes.has(r.docType))
 
         if (missingRequirements.length > 0) {
-           return response.forbidden({ 
-             message: 'You do not meet the compliance requirements for this opportunity.',
-             requirements: missingRequirements.map(r => ({ name: r.name, docType: r.docType }))
-           })
+          return response.forbidden({
+            message: 'You do not meet the compliance requirements for this opportunity.',
+            requirements: missingRequirements.map((r) => ({ name: r.name, docType: r.docType }))
+          })
         }
       }
       // --- End Compliance Check ---
@@ -682,9 +684,9 @@ export default class VolunteerController {
         .where('opportunity_id', opportunityId)
         .where('status', 'accepted')
         .count('* as total')
-      
+
       const acceptedCount = acceptedCountRaw[0].$extras.total
-      
+
       let status = 'applied'
       let message = 'Application submitted successfully'
 
@@ -710,10 +712,9 @@ export default class VolunteerController {
         message,
         application
       })
-
     } catch (error) {
-       Logger.error('Apply opportunity error: %o', error)
-       return response.internalServerError({ error: { message: 'Failed to apply for opportunity' } })
+      Logger.error('Apply opportunity error: %o', error)
+      return response.internalServerError({ error: { message: 'Failed to apply for opportunity' } })
     }
   }
 
@@ -726,7 +727,7 @@ export default class VolunteerController {
       const user = auth.user!
       const opportunityId = params.id // Assuming route is POST /opportunities/:id/withdraw or DELETE /applications/:id
       // Route in plan was not specific, but let's assume /opportunities/:id/withdraw for user convenience
-      
+
       // If the route is DELETE /applications/:id, params.id is applicationId.
       // Let's check routes.ts... typically we might do DELETE /opportunities/:id/application
       // Checking routes.ts... it wasn't there yet.
@@ -750,8 +751,8 @@ export default class VolunteerController {
 
       return response.ok({ message: 'Application withdrawn' })
     } catch (error) {
-       Logger.error('Withdraw application error: %o', error)
-       return response.internalServerError({ error: { message: 'Failed to withdraw application' } })
+      Logger.error('Withdraw application error: %o', error)
+      return response.internalServerError({ error: { message: 'Failed to withdraw application' } })
     }
   }
 
@@ -1124,9 +1125,7 @@ export default class VolunteerController {
           earnedCount: earned.length,
           lockedCount: locked.length,
           totalCount: allAchievements.length,
-          completionPercentage: Math.round(
-            (earned.length / allAchievements.length) * 100
-          )
+          completionPercentage: Math.round((earned.length / allAchievements.length) * 100)
         }
       })
     } catch (error) {
@@ -1245,7 +1244,7 @@ export default class VolunteerController {
       }
 
       const organizations = await query.paginate(page, perPage)
-      
+
       // We might want to attach "isMember" status if we had the user context handy and efficiently,
       // but for "browse" usually we just list them. The frontend can cross-check with "myOrganizations".
 
