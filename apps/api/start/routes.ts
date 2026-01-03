@@ -39,7 +39,6 @@ Route.get('/skills', 'SkillsController.search')
 // Home stats (public)
 Route.get('/home/stats', 'HomeController.stats')
 
-
 Route.resource('offers', 'OffersController')
   .middleware({
     // store: ['auth:api'],
@@ -114,8 +113,12 @@ Route.delete(
 
 // Detailed Membership Management (Admin)
 Route.get('/organizations/:id/members', 'MembershipController.index').middleware(['auth'])
-Route.put('/organizations/:id/members/:memberId', 'MembershipController.updateStatus').middleware(['auth'])
-Route.delete('/organizations/:id/members/:memberId', 'MembershipController.remove').middleware(['auth'])
+Route.put('/organizations/:id/members/:memberId', 'MembershipController.updateStatus').middleware([
+  'auth'
+])
+Route.delete('/organizations/:id/members/:memberId', 'MembershipController.remove').middleware([
+  'auth'
+])
 
 // Organization events & tasks
 Route.get('/organizations/:id/events', 'OrganizationsController.getEvents').middleware(['auth'])
@@ -553,7 +556,7 @@ Route.group(() => {
   // Organizations
   Route.get('/organizations/browse', 'VolunteerController.browseOrganizations')
   Route.get('/organizations', 'VolunteerController.myOrganizations')
-  
+
   // Membership management (Volunteer)
   Route.post('/organizations/:id/join', 'MembershipController.join')
   Route.delete('/organizations/:id/leave', 'MembershipController.leave')
