@@ -29,7 +29,7 @@ export default class SurveysController {
         })
       ),
       status: schema.string.optional(),
-      settings: schema.any.optional()
+      settings: schema.object.optional().anyMembers()
     })
 
     try {
