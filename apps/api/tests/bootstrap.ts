@@ -59,61 +59,88 @@ export const runnerHooks: Pick<Required<Config>, 'setup' | 'teardown'> = {
         // Manual check/shim
         if (!(ApiClient.prototype as any).loginAs) {
           console.log('Manually adding loginAs shim...')
-          ApiClient.macro('loginAs', async function (this: any, user: any) {
-            // ... setup provider ...
-            // (Keep existing provider creation logic, just need to change the function signature and internals)
-            // Wait, I need to copy the logic or direct Replace?
-            // I will use replace_file_content carefully.
+          ApiClient.macro('loginAs', function (this: any, user: any) {
+            // Capture 'this' context
+            const client = this
 
-            // Re-declaring vars for scope if needed?
-            // Actually I will replace the WHOLE macro with simplified async version.
+            // Generate token and set header synchronously by wrapping in a promise
+            // that gets resolved before any HTTP method is called
+            const tokenPromise = (async () => {
+              const AuthBinding: any = Application.container.resolveBinding('Adonis/Addons/Auth')
+              const apiConfig = AuthBinding.config?.guards?.api
+              let serializer: any = null
 
-            const AuthBinding: any = Application.container.resolveBinding('Adonis/Addons/Auth')
-            const apiConfig = AuthBinding.config?.guards?.api
-            let serializer: any = null
+              if (apiConfig) {
+                let provider = null
+                if (apiConfig.provider) {
+                  const pDriver = apiConfig.provider.driver
+                  if (pDriver === 'lucid' && AuthBinding.makeLucidProvider) {
+                    provider = AuthBinding.makeLucidProvider(apiConfig.provider)
+                  } else if (AuthBinding.makeUserProviderInstance) {
+                    try {
+                      provider = AuthBinding.makeUserProviderInstance(apiConfig.provider)
+                    } catch (e) {}
+                  }
+                }
 
-            if (apiConfig) {
-              let provider = null
-              if (apiConfig.provider) {
-                const pDriver = apiConfig.provider.driver
-                if (pDriver === 'lucid' && AuthBinding.makeLucidProvider) {
-                  provider = AuthBinding.makeLucidProvider(apiConfig.provider)
-                } else if (AuthBinding.makeUserProviderInstance) {
-                  try {
-                    provider = AuthBinding.makeUserProviderInstance(apiConfig.provider)
-                  } catch (e) {}
+                const driver = apiConfig.driver
+                if (driver === 'oat' && AuthBinding.makeOatGuard) {
+                  serializer = AuthBinding.makeOatGuard('api', apiConfig, provider)
+                } else if (driver === 'session' && AuthBinding.makeSessionGuard) {
+                  serializer = AuthBinding.makeSessionGuard('api', apiConfig, provider)
+                } else if (driver === 'basic' && AuthBinding.makeBasicAuthGuard) {
+                  serializer = AuthBinding.makeBasicAuthGuard('api', apiConfig, provider)
+                } else {
+                  serializer = AuthBinding.makeMapping('api', apiConfig)
                 }
               }
 
-              const driver = apiConfig.driver
-              if (driver === 'oat' && AuthBinding.makeOatGuard) {
-                serializer = AuthBinding.makeOatGuard('api', apiConfig, provider)
-              } else if (driver === 'session' && AuthBinding.makeSessionGuard) {
-                serializer = AuthBinding.makeSessionGuard('api', apiConfig, provider)
-              } else if (driver === 'basic' && AuthBinding.makeBasicAuthGuard) {
-                serializer = AuthBinding.makeBasicAuthGuard('api', apiConfig, provider)
-              } else {
-                serializer = AuthBinding.makeMapping('api', apiConfig)
+              if (serializer) {
+                const tokenResult = await serializer.login(user)
+                const token = tokenResult || serializer.token
+                const tokenString = token?.token || token
+
+                console.log(
+                  'Login Shim Generated Token:',
+                  tokenString || 'undefined',
+                  'Type:',
+                  token?.type || 'bearer'
+                )
+
+                if (tokenString && typeof tokenString === 'string') {
+                  return tokenString
+                }
+              }
+              return null
+            })()
+
+            // Override HTTP methods to wait for token before making request
+            const originalGet = client.get
+            const originalPost = client.post
+            const originalPut = client.put
+            const originalPatch = client.patch
+            const originalDelete = client.delete
+
+            const wrapMethod = (method: Function) => {
+              return function (this: any, ...args: any[]) {
+                return tokenPromise.then((token) => {
+                  if (token) {
+                    // Call the original method and then add the Authorization header
+                    const request = method.apply(this, args)
+                    return request.header('Authorization', `Bearer ${token}`)
+                  }
+                  return method.apply(this, args)
+                })
               }
             }
 
-            if (serializer) {
-              await serializer.login(user)
-              const token = serializer.token
-              // Debug: log token
-              console.log(
-                'Login Shim Generated Token:',
-                token ? token.token : 'null',
-                'Type:',
-                token ? token.type : 'N/A'
-              )
+            client.get = wrapMethod(originalGet)
+            client.post = wrapMethod(originalPost)
+            client.put = wrapMethod(originalPut)
+            client.patch = wrapMethod(originalPatch)
+            client.delete = wrapMethod(originalDelete)
 
-              if (token) {
-                // return token string directly
-                return token.token
-              }
-            }
-            return null
+            return client
           })
         }
 
