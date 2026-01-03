@@ -7,12 +7,7 @@ export default class GeolocationService {
    * Calculate distance between two coordinates using Haversine formula
    * Returns distance in meters
    */
-  public static calculateDistance(
-    lat1: number,
-    lon1: number,
-    lat2: number,
-    lon2: number
-  ): number {
+  public static calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
     const R = 6371e3 // Earth's radius in meters
     const φ1 = (lat1 * Math.PI) / 180
     const φ2 = (lat2 * Math.PI) / 180
@@ -76,10 +71,7 @@ export default class GeolocationService {
   /**
    * Get major Australian city coordinates (for seeding/testing)
    */
-  public static getAustralianCities(): Record<
-    string,
-    { lat: number; lon: number; name: string }
-  > {
+  public static getAustralianCities(): Record<string, { lat: number; lon: number; name: string }> {
     return {
       sydney: { lat: -33.8688, lon: 151.2093, name: 'Sydney, NSW' },
       melbourne: { lat: -37.8136, lon: 144.9631, name: 'Melbourne, VIC' },
