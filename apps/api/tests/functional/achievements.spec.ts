@@ -6,7 +6,12 @@ import Notification from 'App/Models/Notification'
 import { DateTime } from 'luxon'
 import Database from '@ioc:Adonis/Lucid/Database'
 
-test.group('Achievements', () => {
+test.group('Achievements', (group) => {
+  group.each.setup(async () => {
+    await Database.beginGlobalTransaction()
+    return () => Database.rollbackGlobalTransaction()
+  })
+
   test('admin can create a global achievement and users can be awarded automatically', async ({
     client,
     assert
@@ -32,14 +37,14 @@ test.group('Achievements', () => {
     await VolunteerHour.create({
       userId: u.id,
       eventId: null,
-      date: DateTime.now().minus({ days: 10 }).toJSDate(),
+      date: DateTime.now().minus({ days: 10 }),
       hours: 30,
       status: 'approved'
     })
     await VolunteerHour.create({
       userId: u.id,
       eventId: null,
-      date: DateTime.now().minus({ days: 40 }).toJSDate(),
+      date: DateTime.now().minus({ days: 40 }),
       hours: 25,
       status: 'approved'
     })
@@ -54,8 +59,16 @@ test.group('Achievements', () => {
     const notes = await Notification.query()
       .where('user_id', u.id)
       .andWhere('type', 'achievement_awarded')
-      .andWhere('payload', 'like', `%\"key\": \"50-hours\"%`)
-    assert.isTrue(notes.length > 0)
+    
+    // Check payload using JSON checks instead of fuzzy string check
+    const hasNote = notes.some(n => {
+      try {
+        const p = typeof n.payload === 'string' ? JSON.parse(n.payload) : n.payload
+        return p.key === '50-hours'
+      } catch (e) { return false }
+    })
+    
+    assert.isTrue(hasNote, 'Notification for 50-hours achievement not found')
   })
 
   test('achievements with events criteria are awarded', async ({ client, assert }) => {
@@ -72,14 +85,34 @@ test.group('Achievements', () => {
     achResp.assertStatus(201)
 
     const u = await User.create({ email: 'events@t.test', password: 'pass' })
+
+    // Create an organization for events
+    const orgId = await Database.table('organizations').insert({
+      name: 'Event Org',
+      slug: 'event-org',
+      created_at: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss'),
+      updated_at: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss')
+    })
+
     // create 5 distinct event volunteer_hours
     for (let i = 1; i <= 5; i++) {
+      const evt = await Database.table('events').insert({
+        organization_id: orgId[0],
+        title: `Event ${i}`,
+        start_at: DateTime.now().minus({ days: i * 10 }).toFormat('yyyy-MM-dd HH:mm:ss'),
+        end_at: DateTime.now().minus({ days: i * 10 }).plus({ hours: 4 }).toFormat('yyyy-MM-dd HH:mm:ss'),
+        is_recurring: false,
+        created_at: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss'),
+        updated_at: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss')
+      })
+      // insert returns [id] in mysql
+      const evtId = evt[0]
+
       await VolunteerHour.create({
         userId: u.id,
-        eventId: i + 100,
+        eventId: evtId,
         date: DateTime.now()
-          .minus({ days: i * 10 })
-          .toJSDate(),
+          .minus({ days: i * 10 }),
         hours: 2,
         status: 'approved'
       })
@@ -110,7 +143,7 @@ test.group('Achievements', () => {
     // Adjust created_at so user appears older than 2 years
     await Database.from('users')
       .where({ id: u.id })
-      .update({ created_at: DateTime.now().minus({ days: 800 }).toSQL() })
+      .update({ created_at: DateTime.now().minus({ days: 800 }).toFormat('yyyy-MM-dd HH:mm:ss') })
 
     const resp = await client.loginAs(u).get('/me')
     resp.assertStatus(200)
