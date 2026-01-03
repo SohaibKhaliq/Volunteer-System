@@ -22,7 +22,10 @@ export default class ComplianceService {
   /**
    * Validate WWCC number based on state/territory
    */
-  public static validateWWCC(wwccNumber: string, state: string): {
+  public static validateWWCC(
+    wwccNumber: string,
+    state: string
+  ): {
     valid: boolean
     message?: string
   } {
