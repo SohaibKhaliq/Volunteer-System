@@ -257,7 +257,12 @@ export default class ReportGenerationService {
       .where('is_mandatory', true)
       .select('doc_type', 'name')
 
-    const headers = ['Volunteer Name', 'Email', ...requirements.map((r) => r.name), 'Overall Status']
+    const headers = [
+      'Volunteer Name',
+      'Email',
+      ...requirements.map((r) => r.name),
+      'Overall Status'
+    ]
 
     const rows: any[][] = []
 
