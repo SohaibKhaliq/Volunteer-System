@@ -2,7 +2,7 @@ import { test } from '@japa/runner'
 import InviteSendJob from 'App/Models/InviteSendJob'
 
 test.group('Migration and worker startup resilience', () => {
-  test('processQueue should not throw if invite_send_jobs table is missing', async () => {
+  test('processQueue should not throw if invite_send_jobs table is missing', async ({ assert }) => {
     const { processQueue } = await import('App/Services/InviteSender')
 
     // Temporarily monkeypatch InviteSendJob.query to simulate a missing table error
@@ -15,7 +15,7 @@ test.group('Migration and worker startup resilience', () => {
     try {
       // The function should handle the missing-table error and return without throwing
       await processQueue()
-      test.assert(true)
+      assert.isTrue(true)
     } finally {
       model.query = origQuery
     }
