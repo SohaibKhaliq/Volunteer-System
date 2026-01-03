@@ -1,4 +1,4 @@
-import { BaseModel, column, belongsTo, BelongsTo } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, column, belongsTo, BelongsTo, beforeCreate } from '@ioc:Adonis/Lucid/Orm'
 import { DateTime } from 'luxon'
 import Organization from './Organization'
 import User from './User'
@@ -54,6 +54,22 @@ export default class OrganizationInvite extends BaseModel {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   public updatedAt: DateTime
+
+  /**
+   * Set default values before creating an invite
+   */
+  @beforeCreate()
+  public static setDefaults(invite: OrganizationInvite) {
+    // Set default expiration to 7 days from now if not provided
+    if (!invite.expiresAt) {
+      invite.expiresAt = DateTime.now().plus({ days: 7 })
+    }
+
+    // Auto-generate token if not provided
+    if (!invite.token) {
+      invite.token = OrganizationInvite.generateToken()
+    }
+  }
 
   /**
    * Generate a unique invitation token
