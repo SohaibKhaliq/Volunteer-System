@@ -136,8 +136,7 @@ export default class OrganizationAnalyticsService {
     const complianceRate = await this.calculateComplianceRate(organizationId)
 
     // Average hours per volunteer
-    const averageHoursPerVolunteer =
-      activeVolunteers > 0 ? totalHours / activeVolunteers : 0
+    const averageHoursPerVolunteer = activeVolunteers > 0 ? totalHours / activeVolunteers : 0
 
     return {
       totalHours: Math.round(totalHours * 10) / 10,
