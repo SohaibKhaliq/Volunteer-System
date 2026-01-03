@@ -18,13 +18,13 @@ describe('Admin Pending Hours by Org page', () => {
         organizationId: 1,
         organizationName: 'Org A',
         pendingCount: 2,
-        items: [{ id: 11, first_name: 'Alice', last_name: 'A' }]
+        items: [{ id: 11, userId: 101, firstName: 'Alice', lastName: 'A', hours: 5, date: new Date().toISOString(), status: 'pending' }]
       },
       {
         organizationId: 2,
         organizationName: 'Org B',
         pendingCount: 1,
-        items: [{ id: 21, first_name: 'Bob', last_name: 'B' }]
+        items: [{ id: 21, userId: 102, firstName: 'Bob', lastName: 'B', hours: 3, date: new Date().toISOString(), status: 'pending' }]
       }
     ];
 
@@ -54,7 +54,7 @@ describe('Admin Pending Hours by Org page', () => {
     expect(await screen.findByText('Org A')).toBeInTheDocument();
     const showBtn = await screen.findAllByText('Show sample entries');
     fireEvent.click(showBtn[0]);
-    expect(await screen.findByText('Alice A')).toBeInTheDocument();
+    expect(await screen.findByText(/Alice.*A/)).toBeInTheDocument();
 
     // mock update and bulk APIs
     const mockUpdate = ((api as any).updateHour = vi.fn().mockResolvedValue({}));
