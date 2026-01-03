@@ -1,8 +1,9 @@
-import { BaseModel, column, hasMany, HasMany, belongsTo, BelongsTo } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, column, hasMany, HasMany, belongsTo, BelongsTo, beforeCreate } from '@ioc:Adonis/Lucid/Orm'
 import { DateTime } from 'luxon'
 import UserAchievement from './UserAchievement'
 import AchievementCategory from './AchievementCategory'
 import AchievementProgress from './AchievementProgress'
+import crypto from 'crypto'
 
 export default class Achievement extends BaseModel {
   @column({ isPrimary: true })
@@ -54,6 +55,19 @@ export default class Achievement extends BaseModel {
 
   @hasMany(() => AchievementProgress)
   public progress: HasMany<typeof AchievementProgress>
+
+  @beforeCreate()
+  public static setDefaults(achievement: Achievement) {
+    // Auto-generate key from title if not provided
+    if (!achievement.key && achievement.title) {
+      const base = achievement.title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, '')
+      const uniqueId = crypto.randomBytes(2).toString('hex')
+      achievement.key = `${base}-${uniqueId}`
+    }
+  }
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
