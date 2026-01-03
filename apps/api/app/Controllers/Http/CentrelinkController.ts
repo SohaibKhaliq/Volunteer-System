@@ -112,9 +112,8 @@ export default class CentrelinkController {
       .where('status', 'approved')
       .where('date', '>=', fortnight.start)
       .where('date', '<=', fortnight.end)
-      .preload('opportunity', (opportunityQuery) => {
-        opportunityQuery.preload('organization')
-      })
+      .preload('organization')
+      .preload('event')
       .orderBy('date', 'asc')
 
     if (hours.length === 0) {
@@ -125,7 +124,7 @@ export default class CentrelinkController {
 
     // Get organization details from first hour entry
     const firstHour = hours[0]
-    const organization = firstHour.opportunity?.organization
+    const organization = firstHour.organization
 
     if (!organization) {
       return response.badRequest({
@@ -136,7 +135,7 @@ export default class CentrelinkController {
     // Prepare activities
     const activities = hours.map((h) => ({
       date: h.date.toJSDate(),
-      description: h.opportunity?.title || h.notes || 'Volunteer activity',
+      description: h.event?.title || h.notes || 'Volunteer activity',
       hours: h.hours
     }))
 
@@ -214,9 +213,8 @@ export default class CentrelinkController {
         .where('status', 'approved')
         .where('date', '>=', fortnight.start)
         .where('date', '<=', fortnight.end)
-        .preload('opportunity', (opportunityQuery) => {
-          opportunityQuery.preload('organization')
-        })
+        .preload('organization')
+        .preload('event')
         .orderBy('date', 'asc')
 
       if (hours.length === 0) {
@@ -226,7 +224,7 @@ export default class CentrelinkController {
       }
 
       const firstHour = hours[0]
-      const organization = firstHour.opportunity?.organization
+      const organization = firstHour.organization
 
       if (!organization) {
         return response.badRequest({
@@ -236,7 +234,7 @@ export default class CentrelinkController {
 
       const activities = hours.map((h) => ({
         date: h.date.toJSDate(),
-        description: h.opportunity?.title || h.notes || 'Volunteer activity',
+        description: h.event?.title || h.notes || 'Volunteer activity',
         hours: h.hours
       }))
 
