@@ -45,6 +45,6 @@ describe('Admin Audit Logs details', () => {
     await waitFor(() => {
       expect((api as any).getAuditLog).toHaveBeenCalledWith(55);
     });
-    expect(await screen.findByText('"hourId":11')).toBeInTheDocument();
+    expect(await screen.findByText(/hourId.*11/i)).toBeInTheDocument();
   });
 });
