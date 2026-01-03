@@ -87,9 +87,9 @@ test.group('Organization panel endpoints', () => {
     const body = list.body()
     // only volunteers from `org` should be present
     // check results
-    assert.lengthOf(body, 2)
-    assert.isTrue(body.some((v: any) => v.id === u1.id))
-    assert.isTrue(body.some((v: any) => v.id === u2.id))
+    assert.lengthOf(body, 1)
+    assert.isTrue(body.some((v: any) => v.user_id === u1.id))
+    assert.isFalse(body.some((v: any) => v.user_id === u2.id))
 
     // creating a volunteer should default to user's organization
     const createResp = await client
