@@ -4,7 +4,7 @@ export default class extends BaseSchema {
   protected tableName = 'help_requests'
   protected historyTableName = 'help_request_histories'
 
-  public async up () {
+  public async up() {
     this.schema.alterTable(this.tableName, (table) => {
       table.string('case_id').nullable().unique()
       table.enum('severity', ['low', 'medium', 'high', 'critical']).defaultTo('medium')
@@ -25,13 +25,13 @@ export default class extends BaseSchema {
       table.string('action').notNullable() // status_change, assignment, update
       table.json('previous_value').nullable()
       table.json('new_value').nullable()
-      
+
       table.timestamp('created_at', { useTz: true })
       table.timestamp('updated_at', { useTz: true })
     })
   }
 
-  public async down () {
+  public async down() {
     this.schema.dropTable(this.historyTableName)
 
     this.schema.alterTable(this.tableName, (table) => {
