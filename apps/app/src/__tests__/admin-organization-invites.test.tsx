@@ -18,13 +18,14 @@ describe('Admin Organization Invites page', () => {
       { id: 2, email: 'b@example.com', token: 'tok2', created_at: new Date().toISOString() }
     ];
 
-    (api as any).getOrganizationInvites = vi.fn().mockResolvedValue(invites);
+    (api as any).getOrganizationInvites = vi.fn().mockResolvedValue({ data: invites });
     (api as any).sendOrganizationInvite = vi.fn().mockResolvedValue({});
     (api as any).resendOrganizationInvite = vi.fn().mockResolvedValue({});
     (api as any).cancelOrganizationInvite = vi.fn().mockResolvedValue({});
     (api as any).acceptInvite = vi.fn().mockResolvedValue({});
     (api as any).rejectInvite = vi.fn().mockResolvedValue({});
     (api as any).adminAcceptOrganizationInvite = vi.fn().mockResolvedValue({});
+    (api as any).getOrganization = vi.fn().mockResolvedValue({ data: { id: 42, name: 'Test Org' } });
 
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
 
