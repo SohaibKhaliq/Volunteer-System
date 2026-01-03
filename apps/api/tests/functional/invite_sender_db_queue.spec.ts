@@ -5,7 +5,7 @@ import OrganizationInvite from 'App/Models/OrganizationInvite'
 import InviteSendJob from 'App/Models/InviteSendJob'
 
 test.group('Invite sender DB-backed queue', (group) => {
-  test('enqueueInviteSend creates a pending job', async () => {
+  test('enqueueInviteSend creates a pending job', async ({ assert }) => {
     const org = await Organization.create({ name: 'QueueOrg' })
     const inviter = await User.create({ email: 'inviter-q@test', password: 'pass' })
 
@@ -21,11 +21,11 @@ test.group('Invite sender DB-backed queue', (group) => {
     await enqueueInviteSend(invite.id)
 
     const job = await InviteSendJob.findBy('organization_invite_id', invite.id)
-    test.assert(job !== null)
-    test.assert(job?.status === 'pending')
+    assert.isNotNull(job)
+    assert.equal(job?.status, 'pending')
   })
 
-  test('processQueue attempts send and marks job sent', async () => {
+  test('processQueue attempts send and marks job sent', async ({ assert }) => {
     const org = await Organization.create({ name: 'ProcessOrg' })
     const inviter = await User.create({ email: 'inviter-p@test', password: 'pass' })
 
@@ -52,7 +52,7 @@ test.group('Invite sender DB-backed queue', (group) => {
       const { processQueue } = await import('App/Services/InviteSender')
       await processQueue()
       await job.refresh()
-      test.assert(['pending', 'failed', 'sent'].includes(job.status))
+      assert.isTrue(['pending', 'failed', 'sent'].includes(job.status))
       return
     }
 
@@ -66,8 +66,8 @@ test.group('Invite sender DB-backed queue', (group) => {
     await processQueue()
 
     await job.refresh()
-    test.assert(called)
-    test.assert(job.status === 'sent')
+    assert.isTrue(called)
+    assert.equal(job.status, 'sent')
 
     Mail.default.send = orig
   })
