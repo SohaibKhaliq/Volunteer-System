@@ -21,7 +21,7 @@ describe('Admin Audit Logs details', () => {
         createdAt: new Date().toISOString()
       }
     ];
-    (api as any).listAuditLogs = vi.fn().mockResolvedValue(rows);
+    (api as any).listAuditLogs = vi.fn().mockResolvedValue({ data: rows });
     (api as any).getAuditLog = vi
       .fn()
       .mockResolvedValue({ id: 55, action: 'volunteer_hours_update', details: '{"hourId":11}' });
