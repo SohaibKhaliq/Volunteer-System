@@ -15,14 +15,14 @@ test.group('Organization Teams', () => {
   })
 
   test('authenticated user not in org returns 404', async ({ client }) => {
-    const user = await User.create({ email: 'noteam@test', password: 'pass' })
+    const user = await User.create({ email: 'noteam_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
     const resp = await client.loginAs(user).get('/organization/teams')
     resp.assertStatus(404)
   })
 
-  test('can list teams for organization', async ({ client }) => {
+  test('can list teams for organization', async ({ client, assert }) => {
     const org = await Organization.create({ name: 'Teams Org' })
-    const user = await User.create({ email: 'teamsuser@test', password: 'pass' })
+    const user = await User.create({ email: 'teamsuser_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: user.id,
@@ -37,13 +37,13 @@ test.group('Organization Teams', () => {
     const body = resp.body()
     // Should return teams (may be paginated)
     const teams = body.data || body
-    test.assert(Array.isArray(teams))
-    test.assert(teams.length >= 2)
+    assert.isArray(teams)
+    assert.isTrue(teams.length >= 2)
   })
 
   test('can create a team', async ({ client }) => {
     const org = await Organization.create({ name: 'Create Team Org' })
-    const user = await User.create({ email: 'createteam@test', password: 'pass' })
+    const user = await User.create({ email: 'createteam_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: user.id,
@@ -56,12 +56,12 @@ test.group('Organization Teams', () => {
       .json({ name: 'New Team', description: 'Test team description' })
 
     resp.assertStatus(201)
-    resp.assertBodyContains({ name: 'New Team', organizationId: org.id })
+    resp.assertBodyContains({ name: 'New Team', organization_id: org.id })
   })
 
   test('can update a team', async ({ client }) => {
     const org = await Organization.create({ name: 'Update Team Org' })
-    const user = await User.create({ email: 'updateteam@test', password: 'pass' })
+    const user = await User.create({ email: 'updateteam_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: user.id,
@@ -82,9 +82,9 @@ test.group('Organization Teams', () => {
     resp.assertBodyContains({ name: 'Updated Name' })
   })
 
-  test('can delete a team', async ({ client }) => {
+  test('can delete a team', async ({ client, assert }) => {
     const org = await Organization.create({ name: 'Delete Team Org' })
-    const user = await User.create({ email: 'deleteteam@test', password: 'pass' })
+    const user = await User.create({ email: 'deleteteam_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: user.id,
@@ -101,14 +101,14 @@ test.group('Organization Teams', () => {
 
     // Verify deleted
     const deleted = await Team.find(team.id)
-    test.assert(deleted === null)
+    assert.isNull(deleted)
   })
 })
 
 test.group('Organization Opportunities', () => {
-  test('can list opportunities for organization', async ({ client }) => {
+  test('can list opportunities for organization', async ({ client, assert }) => {
     const org = await Organization.create({ name: 'Opportunities Org' })
-    const user = await User.create({ email: 'oppuser@test', password: 'pass' })
+    const user = await User.create({ email: 'oppuser_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: user.id,
@@ -129,13 +129,13 @@ test.group('Organization Opportunities', () => {
     resp.assertStatus(200)
     const body = resp.body()
     const opps = body.data || body
-    test.assert(Array.isArray(opps))
-    test.assert(opps.length >= 1)
+    assert.isArray(opps)
+    assert.isTrue(opps.length >= 1)
   })
 
-  test('can create an opportunity', async ({ client }) => {
+  test('can create an opportunity', async ({ client, assert }) => {
     const org = await Organization.create({ name: 'Create Opp Org' })
-    const user = await User.create({ email: 'createopp@test', password: 'pass' })
+    const user = await User.create({ email: 'createopp_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: user.id,
@@ -154,15 +154,15 @@ test.group('Organization Opportunities', () => {
     })
 
     resp.assertStatus(201)
-    resp.assertBodyContains({ title: 'New Opportunity', organizationId: org.id })
+    resp.assertBodyContains({ title: 'New Opportunity', organization_id: org.id })
     // Should have a slug generated
     const body = resp.body()
-    test.assert(body.slug && body.slug.length > 0)
+    assert.isTrue(body.slug && body.slug.length > 0)
   })
 
   test('can publish/unpublish an opportunity', async ({ client }) => {
     const org = await Organization.create({ name: 'Publish Opp Org' })
-    const user = await User.create({ email: 'publishopp@test', password: 'pass' })
+    const user = await User.create({ email: 'publishopp_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: user.id,
@@ -202,7 +202,7 @@ test.group('Organization Opportunities', () => {
 test.group('Opportunity Applications', () => {
   test('volunteer can apply to published opportunity', async ({ client }) => {
     const org = await Organization.create({ name: 'Apply Org' })
-    const admin = await User.create({ email: 'applyadmin@test', password: 'pass' })
+    const admin = await User.create({ email: 'applyadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: admin.id,
@@ -219,7 +219,7 @@ test.group('Opportunity Applications', () => {
       capacity: 10
     })
 
-    const volunteer = await User.create({ email: 'applyvolunteer@test', password: 'pass' })
+    const volunteer = await User.create({ email: 'applyvolunteer_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
 
     const resp = await client
       .loginAs(volunteer)
@@ -233,7 +233,7 @@ test.group('Opportunity Applications', () => {
 
   test('cannot apply to draft opportunity', async ({ client }) => {
     const org = await Organization.create({ name: 'Draft Apply Org' })
-    const admin = await User.create({ email: 'draftapplyadmin@test', password: 'pass' })
+    const admin = await User.create({ email: 'draftapplyadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: admin.id,
@@ -250,7 +250,7 @@ test.group('Opportunity Applications', () => {
       capacity: 10
     })
 
-    const volunteer = await User.create({ email: 'draftvolunteer@test', password: 'pass' })
+    const volunteer = await User.create({ email: 'draftvolunteer_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
 
     const resp = await client.loginAs(volunteer).post(`/opportunities/${opp.id}/apply`)
     resp.assertStatus(400)
@@ -259,7 +259,7 @@ test.group('Opportunity Applications', () => {
 
   test('cannot apply twice to same opportunity', async ({ client }) => {
     const org = await Organization.create({ name: 'Double Apply Org' })
-    const admin = await User.create({ email: 'doubleapplyadmin@test', password: 'pass' })
+    const admin = await User.create({ email: 'doubleapplyadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: admin.id,
@@ -276,7 +276,7 @@ test.group('Opportunity Applications', () => {
       capacity: 10
     })
 
-    const volunteer = await User.create({ email: 'doublevolunteer@test', password: 'pass' })
+    const volunteer = await User.create({ email: 'doublevolunteer_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
 
     // First application
     await client.loginAs(volunteer).post(`/opportunities/${opp.id}/apply`)
@@ -289,7 +289,7 @@ test.group('Opportunity Applications', () => {
 
   test('admin can accept/reject applications', async ({ client }) => {
     const org = await Organization.create({ name: 'Accept Reject Org' })
-    const admin = await User.create({ email: 'acceptrejectadmin@test', password: 'pass' })
+    const admin = await User.create({ email: 'acceptrejectadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: admin.id,
@@ -306,7 +306,7 @@ test.group('Opportunity Applications', () => {
       capacity: 10
     })
 
-    const volunteer = await User.create({ email: 'acceptrejectvolunteer@test', password: 'pass' })
+    const volunteer = await User.create({ email: 'acceptrejectvolunteer_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
 
     // Create application
     const application = await Application.create({
@@ -328,7 +328,7 @@ test.group('Opportunity Applications', () => {
 
   test('volunteer can withdraw their application', async ({ client }) => {
     const org = await Organization.create({ name: 'Withdraw Org' })
-    const admin = await User.create({ email: 'withdrawadmin@test', password: 'pass' })
+    const admin = await User.create({ email: 'withdrawadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: admin.id,
@@ -345,7 +345,7 @@ test.group('Opportunity Applications', () => {
       capacity: 10
     })
 
-    const volunteer = await User.create({ email: 'withdrawvolunteer@test', password: 'pass' })
+    const volunteer = await User.create({ email: 'withdrawvolunteer_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
 
     const application = await Application.create({
       opportunityId: opp.id,
@@ -363,7 +363,7 @@ test.group('Opportunity Applications', () => {
 test.group('Opportunity Attendance', () => {
   test('accepted volunteer can check in', async ({ client }) => {
     const org = await Organization.create({ name: 'Checkin Org' })
-    const admin = await User.create({ email: 'checkinadmin@test', password: 'pass' })
+    const admin = await User.create({ email: 'checkinadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: admin.id,
@@ -380,7 +380,7 @@ test.group('Opportunity Attendance', () => {
       capacity: 10
     })
 
-    const volunteer = await User.create({ email: 'checkinvolunteer@test', password: 'pass' })
+    const volunteer = await User.create({ email: 'checkinvolunteer_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
 
     // Create accepted application
     await Application.create({
@@ -402,7 +402,7 @@ test.group('Opportunity Attendance', () => {
 
   test('cannot check in without accepted application', async ({ client }) => {
     const org = await Organization.create({ name: 'No Accept Org' })
-    const admin = await User.create({ email: 'noacceptadmin@test', password: 'pass' })
+    const admin = await User.create({ email: 'noacceptadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: admin.id,
@@ -419,16 +419,16 @@ test.group('Opportunity Attendance', () => {
       capacity: 10
     })
 
-    const volunteer = await User.create({ email: 'noacceptvolunteer@test', password: 'pass' })
+    const volunteer = await User.create({ email: 'noacceptvolunteer_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
 
     const resp = await client.loginAs(volunteer).post(`/opportunities/${opp.id}/checkin`)
     resp.assertStatus(403)
     resp.assertBodyContains({ message: 'You must have an accepted application to check in' })
   })
 
-  test('checked in volunteer can check out', async ({ client }) => {
+  test('checked in volunteer can check out', async ({ client, assert }) => {
     const org = await Organization.create({ name: 'Checkout Org' })
-    const admin = await User.create({ email: 'checkoutadmin@test', password: 'pass' })
+    const admin = await User.create({ email: 'checkoutadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: admin.id,
@@ -445,7 +445,7 @@ test.group('Opportunity Attendance', () => {
       capacity: 10
     })
 
-    const volunteer = await User.create({ email: 'checkoutvolunteer@test', password: 'pass' })
+    const volunteer = await User.create({ email: 'checkoutvolunteer_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
 
     // Create accepted application
     await Application.create({
@@ -468,7 +468,7 @@ test.group('Opportunity Attendance', () => {
     resp.assertBodyContains({ message: 'Checked out successfully' })
     // Should have duration_hours
     const body = resp.body()
-    test.assert('duration_hours' in body)
+    assert.isTrue('duration_hours' in body)
   })
 })
 
@@ -479,7 +479,7 @@ test.group('Organization Settings', () => {
       timezone: 'America/New_York',
       status: 'active'
     })
-    const user = await User.create({ email: 'settingsuser@test', password: 'pass' })
+    const user = await User.create({ email: 'settingsuser_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: user.id,
@@ -501,7 +501,7 @@ test.group('Organization Settings', () => {
       timezone: 'UTC',
       status: 'active'
     })
-    const user = await User.create({ email: 'updatesettings@test', password: 'pass' })
+    const user = await User.create({ email: 'updatesettings_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: user.id,
@@ -525,7 +525,7 @@ test.group('Organization Settings', () => {
       name: 'No Admin Settings Org',
       timezone: 'UTC'
     })
-    const user = await User.create({ email: 'noadminsettings@test', password: 'pass' })
+    const user = await User.create({ email: 'noadminsettings_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: user.id,
@@ -543,9 +543,9 @@ test.group('Organization Settings', () => {
 })
 
 test.group('Phase 2 - QR Code Check-in', () => {
-  test('can generate check-in code for opportunity', async ({ client }) => {
+  test('can generate check-in code for opportunity', async ({ client, assert }) => {
     const org = await Organization.create({ name: 'QR Code Org' })
-    const admin = await User.create({ email: 'qradmin@test', password: 'pass' })
+    const admin = await User.create({ email: 'qradmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: admin.id,
@@ -569,13 +569,13 @@ test.group('Phase 2 - QR Code Check-in', () => {
     resp.assertStatus(200)
     resp.assertBodyContains({ message: 'Check-in code generated successfully' })
     const body = resp.body()
-    test.assert(body.checkinCode && body.checkinCode.length > 0)
-    test.assert(body.qrData && body.qrData.opportunityId === opp.id)
+    assert.isTrue(body.checkinCode && body.checkinCode.length > 0)
+    assert.isTrue(body.qrData && body.qrData.opportunityId === opp.id)
   })
 
   test('volunteer can check in via QR code', async ({ client }) => {
     const org = await Organization.create({ name: 'QR Checkin Org' })
-    const admin = await User.create({ email: 'qrcheckinadmin@test', password: 'pass' })
+    const admin = await User.create({ email: 'qrcheckinadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: admin.id,
@@ -594,7 +594,7 @@ test.group('Phase 2 - QR Code Check-in', () => {
       checkinCode
     })
 
-    const volunteer = await User.create({ email: 'qrvolunteer@test', password: 'pass' })
+    const volunteer = await User.create({ email: 'qrvolunteer_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
 
     await Application.create({
       opportunityId: opp.id,
@@ -611,9 +611,9 @@ test.group('Phase 2 - QR Code Check-in', () => {
 })
 
 test.group('Phase 3 - CSV Export', () => {
-  test('admin can export volunteers as CSV', async ({ client }) => {
+  test('admin can export volunteers as CSV', async ({ client, assert }) => {
     const org = await Organization.create({ name: 'Export Test Org' })
-    const admin = await User.create({ email: 'exportadmin@test', password: 'pass' })
+    const admin = await User.create({ email: 'exportadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: admin.id,
@@ -623,15 +623,15 @@ test.group('Phase 3 - CSV Export', () => {
     const resp = await client.loginAs(admin).get('/organization/export/volunteers')
 
     resp.assertStatus(200)
-    resp.assertHeader('content-type', /text\/csv/)
+    assert.match(resp.header('content-type'), /text\/csv/)
     const body = resp.text()
-    test.assert(body.includes('ID'))
-    test.assert(body.includes('Email'))
+    assert.isTrue(body.includes('ID'))
+    assert.isTrue(body.includes('Email'))
   })
 
-  test('admin can export opportunities as CSV', async ({ client }) => {
+  test('admin can export opportunities as CSV', async ({ client, assert }) => {
     const org = await Organization.create({ name: 'Opp Export Org' })
-    const admin = await User.create({ email: 'oppexportadmin@test', password: 'pass' })
+    const admin = await User.create({ email: 'oppexportadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: admin.id,
@@ -651,15 +651,15 @@ test.group('Phase 3 - CSV Export', () => {
     const resp = await client.loginAs(admin).get('/organization/export/opportunities')
 
     resp.assertStatus(200)
-    resp.assertHeader('content-type', /text\/csv/)
+    assert.match(resp.header('content-type'), /text\/csv/)
     const body = resp.text()
-    test.assert(body.includes('Title'))
-    test.assert(body.includes('Export Test Opp'))
+    assert.isTrue(body.includes('Title'))
+    assert.isTrue(body.includes('Export Test Opp'))
   })
 
   test('non-admin cannot export data', async ({ client }) => {
     const org = await Organization.create({ name: 'No Export Org' })
-    const member = await User.create({ email: 'noexport@test', password: 'pass' })
+    const member = await User.create({ email: 'noexport_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: member.id,
@@ -673,9 +673,9 @@ test.group('Phase 3 - CSV Export', () => {
 })
 
 test.group('Phase 3 - Reports & Analytics', () => {
-  test('can get reports summary', async ({ client }) => {
+  test('can get reports summary', async ({ client, assert }) => {
     const org = await Organization.create({ name: 'Reports Org' })
-    const admin = await User.create({ email: 'reportsadmin@test', password: 'pass' })
+    const admin = await User.create({ email: 'reportsadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: admin.id,
@@ -686,14 +686,14 @@ test.group('Phase 3 - Reports & Analytics', () => {
 
     resp.assertStatus(200)
     const body = resp.body()
-    test.assert('volunteers' in body)
-    test.assert('hours' in body)
-    test.assert('opportunities' in body)
+    assert.isTrue('volunteers' in body)
+    assert.isTrue('hours' in body)
+    assert.isTrue('opportunities' in body)
   })
 
-  test('can get volunteer hours report', async ({ client }) => {
+  test('can get volunteer hours report', async ({ client, assert }) => {
     const org = await Organization.create({ name: 'Hours Report Org' })
-    const admin = await User.create({ email: 'hoursreportadmin@test', password: 'pass' })
+    const admin = await User.create({ email: 'hoursreportadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: admin.id,
@@ -704,13 +704,13 @@ test.group('Phase 3 - Reports & Analytics', () => {
 
     resp.assertStatus(200)
     const body = resp.body()
-    test.assert('trend' in body)
-    test.assert('topVolunteers' in body)
+    assert.isTrue('trend' in body)
+    assert.isTrue('topVolunteers' in body)
   })
 
-  test('can get opportunity performance report', async ({ client }) => {
+  test('can get opportunity performance report', async ({ client, assert }) => {
     const org = await Organization.create({ name: 'Perf Report Org' })
-    const admin = await User.create({ email: 'perfreportadmin@test', password: 'pass' })
+    const admin = await User.create({ email: 'perfreportadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: admin.id,
@@ -721,12 +721,12 @@ test.group('Phase 3 - Reports & Analytics', () => {
 
     resp.assertStatus(200)
     const body = resp.body()
-    test.assert('opportunities' in body)
+    assert.isTrue('opportunities' in body)
   })
 })
 
 test.group('Phase 3 - Public Organization Pages', () => {
-  test('can list public organizations', async ({ client }) => {
+  test('can list public organizations', async ({ client, assert }) => {
     await Organization.create({
       name: 'Public Org',
       slug: 'public-org-' + Date.now(),
@@ -738,11 +738,11 @@ test.group('Phase 3 - Public Organization Pages', () => {
 
     resp.assertStatus(200)
     const body = resp.body()
-    test.assert('data' in body)
-    test.assert(Array.isArray(body.data))
+    assert.isTrue('data' in body)
+    assert.isArray(body.data)
   })
 
-  test('can get public organization by slug', async ({ client }) => {
+  test('can get public organization by slug', async ({ client, assert }) => {
     const slug = 'public-detail-org-' + Date.now()
     await Organization.create({
       name: 'Public Detail Org',
@@ -756,9 +756,9 @@ test.group('Phase 3 - Public Organization Pages', () => {
 
     resp.assertStatus(200)
     const body = resp.body()
-    test.assert(body.name === 'Public Detail Org')
-    test.assert(body.slug === slug)
-    test.assert('stats' in body)
+    assert.equal(body.name, 'Public Detail Org')
+    assert.equal(body.slug, slug)
+    assert.isTrue('stats' in body)
   })
 
   test('private organization returns 404', async ({ client }) => {
@@ -775,7 +775,7 @@ test.group('Phase 3 - Public Organization Pages', () => {
     resp.assertStatus(404)
   })
 
-  test('can get public opportunities for organization', async ({ client }) => {
+  test('can get public opportunities for organization', async ({ client, assert }) => {
     const slug = 'opp-org-' + Date.now()
     const org = await Organization.create({
       name: 'Opp Org',
@@ -798,8 +798,8 @@ test.group('Phase 3 - Public Organization Pages', () => {
 
     resp.assertStatus(200)
     const body = resp.body()
-    test.assert('data' in body)
-    test.assert(body.data.length > 0)
-    test.assert(body.data[0].title === 'Public Opportunity')
+    assert.isTrue('data' in body)
+    assert.isTrue(body.data.length > 0)
+    assert.equal(body.data[0].title, 'Public Opportunity')
   })
 })
