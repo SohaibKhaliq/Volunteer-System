@@ -22,6 +22,10 @@ vi.mock('@/hooks/useFeatures', () => ({
 }));
 
 import AdminLayout from '@/components/templates/AdminLayout';
+import api from '@/lib/api';
+
+vi.mock('@/lib/api');
+const mockedApi = api as any;
 
 describe('AdminLayout feature gating', () => {
   it('shows Imports link when dataOps feature is enabled by server', async () => {
@@ -29,6 +33,7 @@ describe('AdminLayout feature gating', () => {
     mockedUseFeatures.mockImplementation(() => ({
       data: { dataOps: true, analytics: false, monitoring: false, scheduling: false }
     }));
+    mockedApi.getAdminFeatures = vi.fn().mockResolvedValue({ dataOps: true, analytics: false, monitoring: false, scheduling: false });
 
     render(
       <Providers>
