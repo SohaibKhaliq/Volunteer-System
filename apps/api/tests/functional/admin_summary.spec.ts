@@ -19,30 +19,37 @@ test.group('Admin summary endpoint', () => {
       isAdmin: true
     })
 
-    // seed some records to ensure counts are non-zero
-    await Database.table('background_checks').insert({
-      user_id: admin.id,
+    const { DateTime } = await import('luxon')
+    const BackgroundCheck = (await import('App/Models/BackgroundCheck')).default
+    const ScheduledJob = (await import('App/Models/ScheduledJob')).default
+    const VolunteerHour = (await import('App/Models/VolunteerHour')).default
+    const Notification = (await import('App/Models/Notification')).default
+
+    await BackgroundCheck.create({
+      userId: admin.id,
       status: 'requested',
-      requested_at: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss')
+      requestedAt: DateTime.now()
     })
-    await Database.table('scheduled_jobs').insert({
+
+    await ScheduledJob.create({
       name: 'import volunteers',
       type: 'import:volunteers',
       status: 'Scheduled',
-      run_at: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss')
+      runAt: DateTime.now()
     })
-    await Database.table('volunteer_hours').insert({
-      user_id: admin.id,
+
+    await VolunteerHour.create({
+      userId: admin.id,
       status: 'pending',
       hours: 1,
-      date: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss')
+      date: DateTime.now()
     })
-    await Database.table('notifications').insert({
-      user_id: admin.id,
+
+    await Notification.create({
+      userId: admin.id,
       type: 'system',
-      payload: JSON.stringify({}),
-      read: false,
-      created_at: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss')
+      payload: {},
+      read: false
     })
 
     const resp = await client.loginAs(admin).get('/admin/summary')
