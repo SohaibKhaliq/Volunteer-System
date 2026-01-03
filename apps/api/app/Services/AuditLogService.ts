@@ -42,6 +42,33 @@ interface SecurityEvent {
 
 export default class AuditLogService {
   /**
+   * Log an action
+   */
+  public async log(data: {
+    userId: number
+    action: string
+    targetType?: string
+    targetId?: number
+    details?: string
+    message?: string
+    metadata?: any
+    ipAddress?: string
+    organizationId?: number
+  }) {
+    // If message is provided but not details, use message as details for backward compatibility
+    const details = data.details || data.message
+
+    return await AuditLog.safeCreate({
+      userId: data.userId,
+      action: data.action,
+      targetType: data.targetType,
+      targetId: data.targetId,
+      details: details,
+      ipAddress: data.ipAddress
+    })
+  }
+
+  /**
    * Search audit logs with advanced filters
    */
   public static async searchLogs(filters: AuditLogFilters, page: number = 1, limit: number = 50) {
