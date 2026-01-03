@@ -6,16 +6,17 @@ import Database from '@ioc:Adonis/Lucid/Database'
 
 test.group('Admin pending hours by organization', (group) => {
   test('unauthenticated returns 401', async ({ client }) => {
-    await client.get('/admin/pending-hours/organizations').assertStatus(401)
+    const response = await client.get('/admin/pending-hours/organizations')
+    response.assertStatus(401)
   })
 
-  test('admin can fetch grouped pending hours', async ({ client }) => {
-    const admin = await User.create({ email: 'admin-ph@test', password: 'pass', isAdmin: true })
+  test('admin can fetch grouped pending hours', async ({ client, assert }) => {
+    const admin = await User.create({ email: `admin-ph-${Date.now()}@test`, password: 'pass', isAdmin: true })
     const org1 = await Organization.create({ name: 'Org A' })
     const org2 = await Organization.create({ name: 'Org B' })
 
-    const u1 = await User.create({ email: 'v1@test', password: 'pass' })
-    const u2 = await User.create({ email: 'v2@test', password: 'pass' })
+    const u1 = await User.create({ email: `v1-${Date.now()}@test`, password: 'pass' })
+    const u2 = await User.create({ email: `v2-${Date.now()}@test`, password: 'pass' })
 
     await OrganizationVolunteer.create({ organizationId: org1.id, userId: u1.id, status: 'Active' })
     await OrganizationVolunteer.create({ organizationId: org2.id, userId: u2.id, status: 'Active' })
@@ -36,9 +37,9 @@ test.group('Admin pending hours by organization', (group) => {
     const resp = await client.loginAs(admin).get('/admin/pending-hours/organizations')
     resp.assertStatus(200)
     const body = resp.body()
-    test.assert(Array.isArray(body))
+    assert.isArray(body)
     // should contain two organizations
-    test.assert(body.length >= 2)
-    test.assert(body.some((g: any) => g.organizationName === 'Org A'))
+    assert.isAtLeast(body.length, 2)
+    assert.isTrue(body.some((g: any) => g.organizationName === 'Org A'))
   })
 })
