@@ -1,10 +1,14 @@
 import { test } from '@japa/runner'
 
 test.group('Organizations', () => {
-  test('create an organization', async ({ client }) => {
+  test('create an organization', async ({ client, assert }) => {
     // create an authenticated user so org creation is permitted
     const User = await import('App/Models/User')
-    const user = await User.default.create({ email: 'creator@test', password: 'password' })
+    const user = await User.default.create({
+      email: `creator-${Date.now()}@test`,
+      password: 'password',
+      isAdmin: true
+    })
 
     const response = await client
       .loginAs(user)
@@ -14,12 +18,12 @@ test.group('Organizations', () => {
     response.assertBodyContains({ name: 'Test Org' })
   })
 
-  test('list organizations', async ({ client }) => {
+  test('list organizations', async ({ client, assert }) => {
     const User = await import('App/Models/User')
-    const user = await User.default.create({ email: 'lister@test', password: 'password' })
+    const user = await User.default.create({ email: `lister-${Date.now()}@test`, password: 'password' })
 
     const response = await client.loginAs(user).get('/organizations')
     response.assertStatus(200)
-    response.assertNotNull(response.body())
+    assert.isNotNull(response.body())
   })
 })
