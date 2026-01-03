@@ -7,17 +7,17 @@ test.group('Admin features endpoint', () => {
     response.assertStatus(401)
   })
 
-  test('authenticated admin receives features object', async ({ client }) => {
+  test('authenticated admin receives features object', async ({ client, assert }) => {
     const email = `admin-feat-${Date.now()}@test`
     const admin = await User.create({ email, password: 'pass', isAdmin: true })
     const token = await client.loginAs(admin)
     const resp = await client.get('/admin/features').header('Authorization', `Bearer ${token}`)
     resp.assertStatus(200)
     const body = resp.body()
-    test.assert(typeof body === 'object')
-    test.assert('dataOps' in body)
-    test.assert('analytics' in body)
-    test.assert('monitoring' in body)
-    test.assert('scheduling' in body)
+    assert.isObject(body)
+    assert.property(body, 'dataOps')
+    assert.property(body, 'analytics')
+    assert.property(body, 'monitoring')
+    assert.property(body, 'scheduling')
   })
 })
