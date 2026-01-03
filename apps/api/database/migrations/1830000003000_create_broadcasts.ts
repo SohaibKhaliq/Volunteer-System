@@ -6,7 +6,13 @@ export default class CreateBroadcasts extends BaseSchema {
   public async up() {
     this.schema.createTable(this.tableName, (table) => {
       table.increments('id')
-      table.integer('created_by_id').unsigned().references('id').inTable('users').onDelete('SET NULL').nullable()
+      table
+        .integer('created_by_id')
+        .unsigned()
+        .references('id')
+        .inTable('users')
+        .onDelete('SET NULL')
+        .nullable()
       table.string('title').notNullable()
       table.text('message').notNullable()
       table.enum('priority', ['normal', 'high', 'emergency']).defaultTo('normal')
