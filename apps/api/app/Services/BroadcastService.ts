@@ -96,7 +96,10 @@ export default class BroadcastService {
                 await notification.markEmailSent()
               }
             } catch (emailError) {
-              Logger.error(`Failed to send emergency broadcast email to user ${userId}: %o`, emailError)
+              Logger.error(
+                `Failed to send emergency broadcast email to user ${userId}: %o`,
+                emailError
+              )
               errorCount++
             }
           }
@@ -110,9 +113,7 @@ export default class BroadcastService {
 
       // Mark as sent
       await broadcast.markAsSent(deliveryCount, errorCount)
-      Logger.info(
-        `Broadcast ${broadcastId} sent: ${deliveryCount} delivered, ${errorCount} errors`
-      )
+      Logger.info(`Broadcast ${broadcastId} sent: ${deliveryCount} delivered, ${errorCount} errors`)
 
       return broadcast
     } catch (error) {
