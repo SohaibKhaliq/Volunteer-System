@@ -12,7 +12,7 @@ export default class EnhanceNotifications extends BaseSchema {
       table.string('action_url').nullable()
       table.string('action_text').nullable()
       table.timestamp('expires_at', { useTz: true }).nullable()
-      
+
       // Email delivery tracking
       table.boolean('sent_via_email').defaultTo(false)
       table.timestamp('email_sent_at', { useTz: true }).nullable()
