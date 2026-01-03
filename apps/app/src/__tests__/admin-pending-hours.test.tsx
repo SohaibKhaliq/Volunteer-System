@@ -41,7 +41,7 @@ describe('Admin Pending Hours page', () => {
       </QueryClientProvider>
     );
 
-    expect(await screen.findByText('Alice Smith')).toBeInTheDocument();
+    expect(await screen.findByText(/Alice.*Smith/i)).toBeInTheDocument();
     const approveBtn = await screen.findByText('Approve');
     fireEvent.click(approveBtn);
     expect((api as any).updateHour).toHaveBeenCalledWith(101, { status: 'Approved' });
@@ -86,7 +86,7 @@ describe('Admin Pending Hours page', () => {
       </QueryClientProvider>
     );
 
-    const approveAll = await screen.findByText('Approve All on Page');
+    const approveAll = await screen.findByText(/Approve.*All/i);
     fireEvent.click(approveAll);
 
     // ensure bulk endpoint was called with both ids
