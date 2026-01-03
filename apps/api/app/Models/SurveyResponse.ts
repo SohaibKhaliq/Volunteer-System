@@ -14,7 +14,7 @@ export default class SurveyResponse extends BaseModel {
   public survey: BelongsTo<typeof Survey>
 
   @column({ columnName: 'user_id' })
-  public userId?: number
+  public userId: number | null
 
   @belongsTo(() => User)
   public user: BelongsTo<typeof User>
