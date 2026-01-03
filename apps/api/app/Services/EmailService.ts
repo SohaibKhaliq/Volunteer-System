@@ -6,14 +6,10 @@ import SystemSetting from 'App/Models/SystemSetting'
 import Logger from '@ioc:Adonis/Core/Logger'
 
 export default class EmailService {
-
   /**
    * Send notification email to a user
    */
-  public static async sendNotificationEmail(
-    user: User,
-    notification: Notification
-  ): Promise<void> {
+  public static async sendNotificationEmail(user: User, notification: Notification): Promise<void> {
     try {
       const subject = notification.title || `New notification: ${notification.type}`
       const message = this.getNotificationMessage(notification)
@@ -101,11 +97,7 @@ export default class EmailService {
   /**
    * Send transactional email
    */
-  public static async sendTransactional(
-    to: string,
-    subject: string,
-    body: string
-  ): Promise<void> {
+  public static async sendTransactional(to: string, subject: string, body: string): Promise<void> {
     try {
       /*
       await Mail.send((message) => {
