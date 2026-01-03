@@ -44,7 +44,14 @@ export default class BackupService {
         'created_at'
       )
 
-      const events = await Database.from('events').select('id', 'title', 'start_at', 'end_at', 'organization_id', 'created_at')
+      const events = await Database.from('events').select(
+        'id',
+        'title',
+        'start_at',
+        'end_at',
+        'organization_id',
+        'created_at'
+      )
 
       const volunteerHours = await Database.from('volunteer_hours').select(
         'id',
