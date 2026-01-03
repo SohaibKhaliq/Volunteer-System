@@ -89,10 +89,13 @@ export default class SystemMonitoringService {
         .count('* as count')
         .groupBy('status')
 
-      const statusCounts = stats.reduce((acc, row) => {
-        acc[row.status.toLowerCase()] = Number(row.count || 0)
-        return acc
-      }, {} as Record<string, number>)
+      const statusCounts = stats.reduce(
+        (acc, row) => {
+          acc[row.status.toLowerCase()] = Number(row.count || 0)
+          return acc
+        },
+        {} as Record<string, number>
+      )
 
       return {
         total: jobs.length,
@@ -153,8 +156,7 @@ export default class SystemMonitoringService {
         const totalRecords = (metadata as any).totalRecords || 0
         const processedRecords = (metadata as any).processedRecords || 0
         const failedRecords = (metadata as any).failedRecords || 0
-        const progress =
-          totalRecords > 0 ? Math.round((processedRecords / totalRecords) * 100) : 0
+        const progress = totalRecords > 0 ? Math.round((processedRecords / totalRecords) * 100) : 0
 
         return {
           id: imp.id,
@@ -223,17 +225,20 @@ export default class SystemMonitoringService {
         deliveredLogs.length > 0 ? totalDeliveryTime / deliveredLogs.length / 1000 : 0 // in seconds
 
       // Group by channel
-      const byChannelMap = logs.reduce((acc, log) => {
-        const channel = log.channel || 'unknown'
-        if (!acc[channel]) {
-          acc[channel] = { sent: 0, failed: 0 }
-        }
-        acc[channel].sent++
-        if (log.status === 'failed') {
-          acc[channel].failed++
-        }
-        return acc
-      }, {} as Record<string, { sent: number; failed: number }>)
+      const byChannelMap = logs.reduce(
+        (acc, log) => {
+          const channel = log.channel || 'unknown'
+          if (!acc[channel]) {
+            acc[channel] = { sent: 0, failed: 0 }
+          }
+          acc[channel].sent++
+          if (log.status === 'failed') {
+            acc[channel].failed++
+          }
+          return acc
+        },
+        {} as Record<string, { sent: number; failed: number }>
+      )
 
       const byChannel = Object.entries(byChannelMap).map(([channel, stats]) => ({
         channel,
