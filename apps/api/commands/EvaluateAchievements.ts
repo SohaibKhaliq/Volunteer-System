@@ -4,7 +4,8 @@ import User from 'App/Models/User'
 
 export default class EvaluateAchievements extends BaseCommand {
   public static commandName = 'evaluate:achievements'
-  public static description = 'Evaluate and award achievements to volunteers based on their activity'
+  public static description =
+    'Evaluate and award achievements to volunteers based on their activity'
 
   @flags.number({ description: 'Evaluate for a specific user ID' })
   public userId?: number
