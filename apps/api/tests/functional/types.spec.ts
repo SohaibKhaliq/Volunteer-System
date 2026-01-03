@@ -42,4 +42,3 @@ test.group('Types API', (group) => {
     assert.isFalse(afterItems.some((t: any) => t.id === created.id))
   })
 })
-
