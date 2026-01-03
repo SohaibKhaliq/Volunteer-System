@@ -95,7 +95,10 @@ export default class AchievementsController {
       isEnabled: payload.isEnabled ?? true
     })
 
-    await ach.load('category')
+
+    if (ach.categoryId) {
+      await ach.load('category')
+    }
     return response.created(ach)
   }
 

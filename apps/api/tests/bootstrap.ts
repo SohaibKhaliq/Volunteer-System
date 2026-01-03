@@ -38,6 +38,7 @@ export const reporters: Required<Config>['reporters'] = [specReporter()]
 export const runnerHooks: Pick<Required<Config>, 'setup' | 'teardown'> = {
   setup: [
     () => TestUtils.ace().loadCommands(),
+    () => TestUtils.db().migrate(),
     async () => {
       console.log('Running auth setup hook...')
       const { defineTestsBindings } = require('@adonisjs/auth/build/src/Bindings/Tests')
@@ -113,50 +114,46 @@ export const runnerHooks: Pick<Required<Config>, 'setup' | 'teardown'> = {
             // Store token promise on client for later use
             client._authTokenPromise = tokenPromise
 
+            // Helper to create a request wrapper that awaits token before executing
+            const createAuthenticatedRequest = (method: string, ...args: any[]) => {
+              const request = (client as any)[method](...args)
+              
+              // Store original then method
+              const originalThen = request.then.bind(request)
+              
+              // Override then to inject auth header before executing
+              request.then = function(onFulfilled: any, onRejected: any) {
+                return tokenPromise.then((token: string | null) => {
+                  if (token) {
+                    // Use .header() instead of .set() as .set() might not exist on Japa wrapper
+                    if (typeof request.header === 'function') {
+                      request.header('Authorization', `Bearer ${token}`)
+                    } else if (typeof request.set === 'function') {
+                      request.set('Authorization', `Bearer ${token}`)
+                    }
+                  }
+                  return originalThen(onFulfilled, onRejected)
+                })
+              }
+              
+              return request
+            }
+
             // Create a thenable wrapper that:
             // 1. When awaited directly: returns token string
-            // 2. When chained with .post(), .get(), etc: returns client with auth
+            // 2. When chained with .post(), .get(), etc: returns authenticated request
             const wrapper: any = {
               // Make it thenable so it can be awaited to get token
               then: (resolve: any, reject: any) => {
                 return tokenPromise.then(resolve, reject)
               },
               
-              // Proxy HTTP methods to return client after setting up auth
-              get: (...args: any[]) => {
-                return tokenPromise.then((token) => {
-                  const request = client.get(...args)
-                  return token ? request.header('Authorization', `Bearer ${token}`) : request
-                })
-              },
-              
-              post: (...args: any[]) => {
-                return tokenPromise.then((token) => {
-                  const request = client.post(...args)
-                  return token ? request.header('Authorization', `Bearer ${token}`) : request
-                })
-              },
-              
-              put: (...args: any[]) => {
-                return tokenPromise.then((token) => {
-                  const request = client.put(...args)
-                  return token ? request.header('Authorization', `Bearer ${token}`) : request
-                })
-              },
-              
-              patch: (...args: any[]) => {
-                return tokenPromise.then((token) => {
-                  const request = client.patch(...args)
-                  return token ? request.header('Authorization', `Bearer ${token}`) : request
-                })
-              },
-              
-              delete: (...args: any[]) => {
-                return tokenPromise.then((token) => {
-                  const request = client.delete(...args)
-                  return token ? request.header('Authorization', `Bearer ${token}`) : request
-                })
-              }
+              // Proxy HTTP methods to return authenticated requests
+              get: (...args: any[]) => createAuthenticatedRequest('get', ...args),
+              post: (...args: any[]) => createAuthenticatedRequest('post', ...args),
+              put: (...args: any[]) => createAuthenticatedRequest('put', ...args),
+              patch: (...args: any[]) => createAuthenticatedRequest('patch', ...args),
+              delete: (...args: any[]) => createAuthenticatedRequest('delete', ...args)
             }
 
             return wrapper
