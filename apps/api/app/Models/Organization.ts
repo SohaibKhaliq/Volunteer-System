@@ -260,25 +260,28 @@ export default class Organization extends BaseModel {
   public async resolveLogoUrls(): Promise<{ logo: string | null; logo_thumb: string | null }> {
     try {
       if (!this.logo) return { logo: null, logo_thumb: null }
-      // const raw = String(this.logo)
-      // const filename = raw.split('/').pop() || raw
-      /*
+      const raw = String(this.logo)
+      const filename = raw.split('/').pop() || raw
+      
       const candidates = [
         raw,
         raw.replace(/^\/?tmp\/uploads\//, ''),
         `organizations/${filename}`,
         `local/${filename}`
       ]
-      */
 
-      /*
       let resolved: string | null = null
+      const Drive = (await import('@ioc:Adonis/Core/Drive')).default
+      
       for (const c of candidates) {
         try {
-          const maybe = await Drive.getUrl(c)
-          if (maybe) {
-            resolved = maybe
-            break
+          // Check if file exists in drive
+          if (await Drive.exists(c)) {
+             const maybe = await Drive.getUrl(c)
+             if (maybe) {
+               resolved = maybe
+               break
+             }
           }
         } catch (e) {
           // continue
@@ -290,14 +293,14 @@ export default class Organization extends BaseModel {
       const thumbCandidate = `organizations/thumbs/${filename}`
       let thumbUrl: string | null = null
       try {
-        thumbUrl = (await Drive.getUrl(thumbCandidate).catch(() => null)) ?? null
+        if(await Drive.exists(thumbCandidate)) {
+           thumbUrl = await Drive.getUrl(thumbCandidate)
+        }
       } catch (e) {
         thumbUrl = null
       }
 
       return { logo: logoUrl, logo_thumb: thumbUrl }
-      */
-      return { logo: null, logo_thumb: null }
     } catch (err) {
       Logger.warn(`resolveLogoUrls failed: ${String(err)}`)
       return { logo: null, logo_thumb: null }
