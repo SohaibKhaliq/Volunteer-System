@@ -46,10 +46,10 @@ export default class Document extends BaseModel {
   @column()
   public status: string // 'draft', 'published', 'archived'
 
-  @column({ columnName: 'published_at' })
+  @column.dateTime({ columnName: 'published_at' })
   public publishedAt?: DateTime
 
-  @column({ columnName: 'expires_at' })
+  @column.dateTime({ columnName: 'expires_at' })
   public expiresAt?: DateTime
 
   @column()
