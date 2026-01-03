@@ -13,11 +13,11 @@ export default class UpdateProfileValidator {
       address: schema.string.optional({ trim: true }, [rules.maxLength(500)]),
       skills: schema.array.optional().members(schema.string()),
       interests: schema.array.optional().members(schema.string()),
-      availability: schema.string.optional({ trim: true }, [rules.maxLength(500)]),
-    }),
+      availability: schema.string.optional({ trim: true }, [rules.maxLength(500)])
+    })
   })
 
   public messages: CustomMessages = {
-    'phone.mobile': 'Please provide a valid mobile phone number',
+    'phone.mobile': 'Please provide a valid mobile phone number'
   }
 }
