@@ -46,6 +46,11 @@ export default class OrganizationInvitesController {
       return response.notFound({ message: 'Organization not found' })
     }
 
+    // Validate email is provided
+    if (!email) {
+      return response.badRequest({ message: 'Email is required' })
+    }
+
     // Check if user already exists and is already a volunteer
     const existingUser = await User.findBy('email', email)
     if (existingUser) {
