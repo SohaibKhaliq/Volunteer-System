@@ -5,6 +5,8 @@ import {
   HasMany,
   manyToMany,
   ManyToMany,
+  belongsTo,
+  BelongsTo,
   beforeDelete,
   beforeSave
 } from '@ioc:Adonis/Lucid/Orm'
@@ -63,7 +65,7 @@ export default class Organization extends BaseModel {
   public settings?: object
 
   @column()
-  public status: string // 'active', 'suspended', 'archived'
+  public status: string // 'active', 'suspended', 'archived', 'pending'
 
   @column({
     columnName: 'billing_meta',
@@ -83,6 +85,14 @@ export default class Organization extends BaseModel {
 
   @column()
   public autoApproveVolunteers?: boolean
+
+  @column({ columnName: 'owner_id' })
+  public ownerId?: number
+
+  @belongsTo(() => User, {
+    foreignKey: 'ownerId'
+  })
+  public owner: BelongsTo<typeof User>
 
   @hasMany(() => Event)
   public events: HasMany<typeof Event>
