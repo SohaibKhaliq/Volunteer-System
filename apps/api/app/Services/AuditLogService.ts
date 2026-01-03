@@ -44,11 +44,7 @@ export default class AuditLogService {
   /**
    * Search audit logs with advanced filters
    */
-  public static async searchLogs(
-    filters: AuditLogFilters,
-    page: number = 1,
-    limit: number = 50
-  ) {
+  public static async searchLogs(filters: AuditLogFilters, page: number = 1, limit: number = 50) {
     const query = AuditLog.query().preload('user')
 
     // Date range filter
