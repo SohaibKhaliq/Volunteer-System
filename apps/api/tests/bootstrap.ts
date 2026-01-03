@@ -38,8 +38,8 @@ export const reporters: Required<Config>['reporters'] = [specReporter()]
 export const runnerHooks: Pick<Required<Config>, 'setup' | 'teardown'> = {
   setup: [
     () => TestUtils.ace().loadCommands(),
-    () => TestUtils.db().migrate(),
     async () => {
+      console.log('BOOTSTRAP LOADED - MIGRATION HOOK COMMENTED OUT')
       console.log('Running auth setup hook...')
       const { defineTestsBindings } = require('@adonisjs/auth/build/src/Bindings/Tests')
       const { default: Application } = await import('@ioc:Adonis/Core/Application')
