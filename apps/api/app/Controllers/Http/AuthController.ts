@@ -2,10 +2,13 @@ import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import { rules, schema } from '@ioc:Adonis/Core/Validator'
 
 import User from '../../Models/User'
+import Organization from '../../Models/Organization'
 
 export default class AuthController {
   public async register({ request, response, auth }: HttpContextContract) {
     try {
+      const { role, name, phone, address, description, ...userData } = request.all()
+
       const userSchema = schema.create({
         email: schema.string({ trim: true }, [
           rules.email(),
@@ -16,9 +19,33 @@ export default class AuthController {
         lastName: schema.string.optional({ trim: true })
       })
 
-      const data = await request.validate({ schema: userSchema })
+      const validatedData = await request.validate({ schema: userSchema })
 
-      const user = await User.create(data)
+      const user = await User.create(validatedData)
+
+      // If registering as an organization, create the organization record
+      if (role === 'organization') {
+        await Organization.create({
+          name: name || `${validatedData.firstName || ''} ${validatedData.lastName || ''}`.trim(),
+          description: description || null,
+          contactEmail: validatedData.email,
+          contactPhone: phone || null,
+          address: address || null,
+          ownerId: user.id,
+          status: 'pending',
+          isApproved: false,
+          isActive: false
+        })
+
+        // Return token but indicate pending approval
+        const token = await auth.use('api').generate(user)
+        return response.json({
+          token,
+          message: 'Organization registration submitted for approval',
+          status: 'pending'
+        })
+      }
+
       const token = await auth.use('api').generate(user)
 
       return response.json({ token })
