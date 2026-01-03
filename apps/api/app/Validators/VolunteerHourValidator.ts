@@ -5,18 +5,12 @@ export class CreateVolunteerHourValidator {
   constructor(protected ctx: HttpContextContract) {}
 
   public schema = schema.create({
-    eventId: schema.number([
-      rules.exists({ table: 'events', column: 'id' })
-    ]),
-    shiftId: schema.number.optional([
-      rules.exists({ table: 'shifts', column: 'id' })
-    ]),
+    eventId: schema.number([rules.exists({ table: 'events', column: 'id' })]),
+    shiftId: schema.number.optional([rules.exists({ table: 'shifts', column: 'id' })]),
     date: schema.date({
       format: 'yyyy-MM-dd'
     }),
-    hours: schema.number([
-      rules.range(0.25, 24)
-    ]),
+    hours: schema.number([rules.range(0.25, 24)]),
     notes: schema.string.optional({ trim: true })
   })
 
@@ -33,8 +27,6 @@ export class UpdateVolunteerHourValidator {
     status: schema.enum.optional(['approved', 'rejected', 'pending']),
     rejectionReason: schema.string.optional({ trim: true }),
     notes: schema.string.optional({ trim: true }),
-    hours: schema.number.optional([
-      rules.range(0.25, 24)
-    ])
+    hours: schema.number.optional([rules.range(0.25, 24)])
   })
 }
