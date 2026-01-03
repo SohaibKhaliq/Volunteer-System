@@ -137,9 +137,7 @@ export default class NotificationService {
       perPage?: number
     } = {}
   ) {
-    const query = Notification.query()
-      .where('user_id', userId)
-      .orderBy('created_at', 'desc')
+    const query = Notification.query().where('user_id', userId).orderBy('created_at', 'desc')
 
     if (filters.category) {
       query.where('category', filters.category)
