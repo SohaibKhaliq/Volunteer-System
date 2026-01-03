@@ -4,6 +4,8 @@ import User from './User'
 import Achievement from './Achievement'
 
 export default class AchievementProgress extends BaseModel {
+  public static table = 'achievement_progress'
+
   @column({ isPrimary: true })
   public id: number
 
