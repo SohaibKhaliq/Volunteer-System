@@ -6,13 +6,24 @@ import Footer from '@/components/molecules/footer';
 import Privacy from '@/pages/privacy';
 import Terms from '@/pages/terms';
 import Cookies from '@/pages/cookies';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { vi } from 'vitest';
+import AppProvider from '@/providers/app-provider';
+
+vi.mock('socket.io-client', () => ({ io: () => ({ on: () => { }, close: () => { } }) }));
+vi.mock('@/lib/api', () => ({ default: { getCurrentUser: vi.fn().mockResolvedValue({ data: null }) } }));
 
 describe('Policy & resource pages', () => {
   it('header shows privacy/terms/help links', async () => {
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
-      <MemoryRouter initialEntries={['/']}>
-        <Header />
-      </MemoryRouter>
+      <QueryClientProvider client={queryClient}>
+        <MemoryRouter initialEntries={['/']}>
+          <AppProvider>
+            <Header />
+          </AppProvider>
+        </MemoryRouter>
+      </QueryClientProvider>
     );
 
     expect(await screen.findByText(/Privacy/i)).toBeTruthy();
@@ -27,7 +38,7 @@ describe('Policy & resource pages', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByText(/Privacy Policy|Privacy/i)).toBeTruthy();
+    expect(screen.getAllByText(/Privacy Policy|Privacy/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Terms of Service|Terms/i)).toBeTruthy();
     expect(screen.getByText(/Cookies/i)).toBeTruthy();
   });
