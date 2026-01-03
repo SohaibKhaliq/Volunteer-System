@@ -462,6 +462,13 @@ Route.group(() => {
   Route.post('/broadcasts/:id/cancel', 'BroadcastsController.cancel')
   Route.get('/broadcasts/:id/stats', 'BroadcastsController.stats')
 
+  // Engagement Campaigns (Re-engagement)
+  Route.get('/engagement-campaigns/stats', 'EngagementCampaignsController.stats')
+  Route.get('/engagement-campaigns', 'EngagementCampaignsController.index')
+  Route.get('/engagement-campaigns/:id', 'EngagementCampaignsController.show')
+  Route.post('/engagement-campaigns/:id/mark-sent', 'EngagementCampaignsController.markSent')
+  Route.delete('/engagement-campaigns/:id', 'EngagementCampaignsController.destroy')
+
   // System Settings (extended)
   Route.get('/system-settings', 'AdminController.getSystemSettings')
   Route.put('/system-settings', 'AdminController.updateSystemSettings')
