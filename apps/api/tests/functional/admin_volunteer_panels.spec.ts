@@ -314,14 +314,14 @@ test.group('Volunteer Panel', (group) => {
       .loginAs(volunteerUser)
 
     response.assertStatus(200)
-  }).skip()
+  })
 
   test('volunteer can view bookmarked opportunities', async ({ client, assert }) => {
     const response = await client.get('/volunteer/bookmarks').loginAs(volunteerUser)
 
     response.assertStatus(200)
     assert.property(response.body(), 'opportunities')
-  }).skip()
+  })
 
   test('volunteer can unbookmark an opportunity', async ({ client }) => {
     const response = await client
@@ -329,15 +329,16 @@ test.group('Volunteer Panel', (group) => {
       .loginAs(volunteerUser)
 
     response.assertStatus(200)
-  }).skip()
+  })
 
   test('volunteer can view their achievements', async ({ client, assert }) => {
     const response = await client.get('/volunteer/achievements').loginAs(volunteerUser)
 
     response.assertStatus(200)
-    assert.property(response.body(), 'achievements')
-    assert.property(response.body(), 'totalPoints')
-  }).skip()
+    assert.property(response.body(), 'earned')
+    assert.property(response.body(), 'locked')
+    assert.property(response.body(), 'stats')
+  })
 })
 
 test.group('Permission Model', (group) => {
@@ -734,7 +735,7 @@ test.group('Admin System Settings', (group) => {
 
     response.assertStatus(200)
     response.assertBodyContains({ message: 'Settings updated successfully' })
-  }).skip()
+  })
 
   test('admin can update branding', async ({ client, assert }) => {
     const response = await client
@@ -749,7 +750,7 @@ test.group('Admin System Settings', (group) => {
     response.assertStatus(200)
     assert.equal(response.body().branding.platform_name, 'Branded Platform')
     assert.equal(response.body().branding.primary_color, '#FF5733')
-  }).skip()
+  })
 
   test('admin can request a backup', async ({ client, assert }) => {
     const response = await client.get('/admin/backup').loginAs(adminUser)
