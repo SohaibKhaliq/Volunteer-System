@@ -23,7 +23,10 @@ export default class ImportService {
   /**
    * Parse CSV or Excel file
    */
-  public static async parseFile(filePath: string, format: 'csv' | 'xlsx'): Promise<Record<string, any>[]> {
+  public static async parseFile(
+    filePath: string,
+    format: 'csv' | 'xlsx'
+  ): Promise<Record<string, any>[]> {
     if (format === 'csv') {
       return this.parseCSV(filePath)
     } else {
