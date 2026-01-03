@@ -117,11 +117,15 @@ export default class ReportsController {
     const since = new Date()
     since.setDate(since.getDate() - daysAgo)
 
+    const eventsByStatus = [] as any[]
+    /*
+    // Status column missing from events table
     const eventsByStatus = await Event.query()
       .where('created_at', '>=', since.toISOString())
       .select('status')
       .count('* as count')
       .groupBy('status')
+    */
 
     const totalEvents = await Event.query()
       .where('created_at', '>=', since.toISOString())
@@ -174,7 +178,7 @@ export default class ReportsController {
 
     const approvedHours = await VolunteerHour.query()
       .where('date', '>=', since.toISOString())
-      .where('status', 'Approved')
+      .where('status', 'approved')
       .sum('hours as total')
 
     const hoursByStatus = await VolunteerHour.query()
@@ -185,7 +189,7 @@ export default class ReportsController {
 
     const topVolunteers = await VolunteerHour.query()
       .where('date', '>=', since.toISOString())
-      .where('status', 'Approved')
+      .where('status', 'approved')
       .select('user_id')
       .sum('hours as totalHours')
       .groupBy('user_id')
