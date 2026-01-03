@@ -6,9 +6,9 @@ import OrganizationTeamMember from 'App/Models/OrganizationTeamMember'
 test.group('Organization team permissions', () => {
   test('non-admin cannot invite members', async ({ client }) => {
     const org = await Organization.create({ name: 'Perms Org' })
-    const admin = await User.create({ email: 'admin@perms.test', password: 'pass' })
-    const member = await User.create({ email: 'member@perms.test', password: 'pass' })
-    const newUser = await User.create({ email: 'new@perms.test', password: 'pass' })
+    const admin = await User.create({ email: `admin-${Date.now()}@perms.test`, password: 'pass' })
+    const member = await User.create({ email: `member-${Date.now()}@perms.test`, password: 'pass' })
+    const newUser = await User.create({ email: `new-${Date.now()}@perms.test`, password: 'pass' })
 
     await OrganizationTeamMember.create({ organizationId: org.id, userId: admin.id, role: 'Admin' })
     await OrganizationTeamMember.create({
@@ -34,9 +34,9 @@ test.group('Organization team permissions', () => {
 
   test('non-admin cannot remove members', async ({ client }) => {
     const org = await Organization.create({ name: 'Remove Org' })
-    const admin = await User.create({ email: 'admin2@perms.test', password: 'pass' })
-    const member = await User.create({ email: 'member2@perms.test', password: 'pass' })
-    const victim = await User.create({ email: 'victim@perms.test', password: 'pass' })
+    const admin = await User.create({ email: `admin2-${Date.now()}@perms.test`, password: 'pass' })
+    const member = await User.create({ email: `member2-${Date.now()}@perms.test`, password: 'pass' })
+    const victim = await User.create({ email: `victim-${Date.now()}@perms.test`, password: 'pass' })
 
     await OrganizationTeamMember.create({ organizationId: org.id, userId: admin.id, role: 'Admin' })
     const memberRec = await OrganizationTeamMember.create({
