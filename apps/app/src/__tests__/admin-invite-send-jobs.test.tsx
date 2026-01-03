@@ -25,7 +25,10 @@ describe('Admin Invite Send Jobs page', () => {
       { id: 2, organizationInviteId: 43, status: 'pending', attempts: 0 }
     ];
 
-    (api as any).listInviteSendJobs = vi.fn().mockResolvedValue(jobs);
+    (api as any).listInviteSendJobs = vi.fn().mockResolvedValue({
+      data: jobs,
+      meta: { current_page: 1, last_page: 1, total: 2, per_page: 20 }
+    });
     (api as any).getInviteSendJobsStats = vi
       .fn()
       .mockResolvedValue({ data: { total: 2, byStatus: { sent: 1, failed: 1 }, successRate: 50 } });
