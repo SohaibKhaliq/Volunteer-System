@@ -10,8 +10,8 @@ test.group('Event join flow', () => {
     client,
     assert
   }) => {
-    const user = await User.create({ email: 'joiner@test', password: 'pass' })
-    const organizer = await User.create({ email: 'org@test', password: 'pass' })
+    const user = await User.create({ email: `joiner-${Date.now()}@test`, password: 'pass' })
+    const organizer = await User.create({ email: `org-${Date.now()}@test`, password: 'pass' })
 
     const event = await Event.create({
       title: 'Joinable Event',
