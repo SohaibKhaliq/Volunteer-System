@@ -29,7 +29,10 @@ export default class Achievement extends BaseModel {
   @column()
   public description?: string
 
-  @column()
+  @column({
+    prepare: (value: any) => (value ? JSON.stringify(value) : null),
+    consume: (value: any) => (value ? JSON.parse(value) : null)
+  })
   public criteria?: any
 
   @column({ columnName: 'rule_type' })
