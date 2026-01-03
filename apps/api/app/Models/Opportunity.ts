@@ -113,6 +113,10 @@ export default class Opportunity extends BaseModel {
    * Generate a unique slug from title using crypto for better uniqueness
    */
   public static generateSlug(title: string): string {
+    if (!title) {
+      // Fallback if title is not provided
+      return `opportunity-${crypto.randomBytes(4).toString('hex')}`
+    }
     const base = title
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
