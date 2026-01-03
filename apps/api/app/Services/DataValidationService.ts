@@ -130,7 +130,10 @@ export default class DataValidationService {
     }
 
     // Capacity validation
-    if (record.capacity && (!Number.isInteger(Number(record.capacity)) || Number(record.capacity) < 0)) {
+    if (
+      record.capacity &&
+      (!Number.isInteger(Number(record.capacity)) || Number(record.capacity) < 0)
+    ) {
       errors.push({
         row: rowNumber,
         field: 'capacity',
@@ -277,11 +280,13 @@ export default class DataValidationService {
           errors = this.validateHours(record, rowNumber)
           break
         default:
-          errors = [{
-            row: rowNumber,
-            field: 'entity_type',
-            message: `Unknown entity type: ${entityType}`
-          }]
+          errors = [
+            {
+              row: rowNumber,
+              field: 'entity_type',
+              message: `Unknown entity type: ${entityType}`
+            }
+          ]
       }
 
       if (errors.length === 0) {
