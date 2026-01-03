@@ -239,7 +239,7 @@ export default class OrganizationInvitesController {
       [auth.user.id]: {
         role: invite.role,
         status: 'active',
-        joined_at: DateTime.now().toSQL()
+        joined_at: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss')
       }
     })
 
@@ -338,7 +338,7 @@ export default class OrganizationInvitesController {
     if (!org) return response.notFound({ message: 'Organization not found' })
 
     await org.related('volunteers').attach({
-      [targetUser.id]: { role: invite.role, status: 'active', joined_at: DateTime.now().toSQL() }
+      [targetUser.id]: { role: invite.role, status: 'active', joined_at: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss') }
     })
 
     // Mark invite accepted
