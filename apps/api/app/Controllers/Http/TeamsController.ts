@@ -81,7 +81,9 @@ export default class TeamsController {
       leadUserId: body.lead_user_id
     })
 
-    await team.load('lead')
+    if (team.leadUserId) {
+      await team.load('lead')
+    }
 
     return response.created(team)
   }
@@ -123,7 +125,9 @@ export default class TeamsController {
       leadUserId: body.lead_user_id
     })
 
-    await team.load('lead')
+    if (team.leadUserId) {
+      await team.load('lead')
+    }
 
     return response.created(team)
   }
@@ -161,7 +165,9 @@ export default class TeamsController {
     if (body.lead_user_id !== undefined) team.leadUserId = body.lead_user_id
 
     await team.save()
-    await team.load('lead')
+    if (team.leadUserId) {
+      await team.load('lead')
+    }
 
     return response.ok(team)
   }
