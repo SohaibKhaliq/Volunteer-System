@@ -78,7 +78,7 @@ test.group('Community & Communications Controllers', (group) => {
     
     await client.loginAs(admin).post(`/surveys/${survey.id}/submit`).json({ answers: { a: 1 } })
 
-    const resp = await client.loginAs(admin).get(`/surveys/${survey.id}/export`)
+    const resp = await client.loginAs(admin).get(`/surveys/${survey.id}/responses/export`)
     resp.assertStatus(200)
     assert.include(resp.header('content-type'), 'text/csv')
     assert.include(resp.text(), 'user_email')
