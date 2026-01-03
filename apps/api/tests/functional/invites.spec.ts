@@ -12,7 +12,7 @@ test.group('Organization invites - notifications', (group) => {
     await Database.rawQuery('DELETE FROM organizations')
   })
 
-  test('creating invite for existing user creates in-app notification', async ({ client }) => {
+  test('creating invite for existing user creates in-app notification', async ({ client, assert }) => {
     const org = await Organization.create({ name: 'NotifyOrg' })
     const inviter = await User.create({ email: 'inviter@test', password: 'pass', isAdmin: false })
     const target = await User.create({ email: 'target@test', password: 'pass' })
@@ -30,14 +30,14 @@ test.group('Organization invites - notifications', (group) => {
       .where('organization_id', org.id)
       .where('email', 'target@test')
       .first()
-    test.assert(inviteRow)
+    assert.isNotNull(inviteRow)
 
     // ensure notification created for existing target user
     const notifs = await Database.from('notifications').where('user_id', target.id)
-    test.assert(Array.isArray(notifs) && notifs.length >= 1)
+    assert.isTrue(Array.isArray(notifs) && notifs.length >= 1)
   })
 
-  test('resend invite creates notification for existing user', async ({ client }) => {
+  test('resend invite creates notification for existing user', async ({ client, assert }) => {
     const admin = await User.create({ email: 'resend-admin@test', password: 'pass', isAdmin: true })
     const org = await Organization.create({ name: 'ResendOrg' })
     const invite = await OrganizationInvite.create({
@@ -59,6 +59,6 @@ test.group('Organization invites - notifications', (group) => {
 
     // ensure notification exists for target
     const notifs = await Database.from('notifications').where('user_id', target.id)
-    test.assert(Array.isArray(notifs) && notifs.length >= 1)
+    assert.isTrue(Array.isArray(notifs) && notifs.length >= 1)
   })
 })
