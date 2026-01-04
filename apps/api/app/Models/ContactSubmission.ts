@@ -15,6 +15,15 @@ export default class ContactSubmission extends BaseModel {
   public email: string
 
   @column()
+  public phone?: string
+
+  @column()
+  public ipAddress?: string
+
+  @column({ columnName: 'user_agent' })
+  public userAgent?: string
+
+  @column()
   public subject: string
 
   @column()
