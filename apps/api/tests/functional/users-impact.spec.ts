@@ -8,10 +8,10 @@ test.group('User impact score', () => {
     client,
     assert
   }) => {
-    const u = await User.create({ email: `impact-${Date.now()}@test`, password: 'pass' })
+    const u = await User.create({ email: `impact-${Date.now()}@test`, password: 'pass', firstName: 'Test', lastName: 'User' })
 
     // create varied hours for this and other users
-    const other = await User.create({ email: `impact2-${Date.now()}@test`, password: 'pass' })
+    const other = await User.create({ email: `impact2-${Date.now()}@test`, password: 'pass', firstName: 'Test', lastName: 'User' })
 
     await VolunteerHour.create({
       userId: u.id,
@@ -60,9 +60,9 @@ test.group('User impact score', () => {
   }) => {
     // Create three users with totals and events arranged so combined-score ordering
     // differs from hours-only ordering.
-    const a = await User.create({ email: `a-${Date.now()}@test`, password: 'pass' })
-    const b = await User.create({ email: `b-${Date.now()}@test`, password: 'pass' })
-    const c = await User.create({ email: `c-${Date.now()}@test`, password: 'pass' })
+    const a = await User.create({ email: `a-${Date.now()}@test`, password: 'pass', firstName: 'Test', lastName: 'User' })
+    const b = await User.create({ email: `b-${Date.now()}@test`, password: 'pass', firstName: 'Test', lastName: 'User' })
+    const c = await User.create({ email: `c-${Date.now()}@test`, password: 'pass', firstName: 'Test', lastName: 'User' })
     const event = await import('App/Models/Event').then((m) => m.default.create({ title: 'Impact Event', startAt: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss') }))
 
     // Use old dates (> 200 days ago) so recent window (90d) does not affect scores
