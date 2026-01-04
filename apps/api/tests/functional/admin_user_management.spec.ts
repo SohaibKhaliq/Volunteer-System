@@ -10,9 +10,11 @@ test.group('Admin user management', (group) => {
     const admin = await User.create({
       email: 'admin-user-mgmt_' + Math.floor(Math.random() * 100000) + '@test.com',
       password: 'pass',
+      firstName: 'Admin',
+      lastName: 'User',
       isAdmin: true
     })
-    const target = await User.create({ email: 'target-user-mgmt_' + Math.floor(Math.random() * 100000) + '@test.com', password: 'pass' })
+    const target = await User.create({ email: 'target-user-mgmt_' + Math.floor(Math.random() * 100000) + '@test.com', password: 'pass', firstName: 'Test', lastName: 'User' })
 
     // disable target
     const resp = await client
@@ -20,8 +22,8 @@ test.group('Admin user management', (group) => {
       .post(`/admin/users/${target.id}/disable`)
       .json({ reason: 'spam' })
     resp.assertStatus(200)
-    const reloaded = await User.find(target.id)
-    assert.isTrue(reloaded && reloaded.isDisabled === 1 || reloaded.isDisabled === true)
+    const reloaded = await User.find(target.id) 
+    assert.isTrue(Boolean(reloaded?.isDisabled))
 
     // cannot disable self
     const selfResp = await client
@@ -31,10 +33,9 @@ test.group('Admin user management', (group) => {
     selfResp.assertStatus(400)
 
     // enable target
-    const enableResp = await client.loginAs(admin).post(`/admin/users/${target.id}/enable`).json()
+    const enableResp = await client.loginAs(admin).post(`/admin/users/${target.id}/enable`).json({})
     enableResp.assertStatus(200)
     const reloaded2 = await User.find(target.id)
-    // Checking for 0 or false just in case boolean/tinyint diff
-    assert.isTrue(reloaded2 && (reloaded2.isDisabled === 0 || reloaded2.isDisabled === false))
+    assert.isFalse(Boolean(reloaded2?.isDisabled))
   })
 })
