@@ -27,6 +27,18 @@ export default class ComplianceDocument extends BaseModel {
   @column()
   public status?: string
 
+  @column()
+  public description?: string
+
+  @column()
+  public isRequired?: boolean
+
+  @column()
+  public isActive?: boolean
+
+  @column()
+  public content?: string
+
   @column.dateTime({ columnName: 'issued_at' })
   public issuedAt?: DateTime
 
