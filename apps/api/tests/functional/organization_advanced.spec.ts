@@ -15,14 +15,14 @@ test.group('Organization Teams', () => {
   })
 
   test('authenticated user not in org returns 404', async ({ client }) => {
-    const user = await User.create({ email: 'noteam_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const user = await User.create({ email: 'noteam_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
     const resp = await client.loginAs(user).get('/organization/teams')
     resp.assertStatus(404)
   })
 
   test('can list teams for organization', async ({ client, assert }) => {
     const org = await Organization.create({ name: 'Teams Org' })
-    const user = await User.create({ email: 'teamsuser_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const user = await User.create({ email: 'teamsuser_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: user.id,
@@ -43,7 +43,7 @@ test.group('Organization Teams', () => {
 
   test('can create a team', async ({ client }) => {
     const org = await Organization.create({ name: 'Create Team Org' })
-    const user = await User.create({ email: 'createteam_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const user = await User.create({ email: 'createteam_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: user.id,
@@ -61,7 +61,7 @@ test.group('Organization Teams', () => {
 
   test('can update a team', async ({ client }) => {
     const org = await Organization.create({ name: 'Update Team Org' })
-    const user = await User.create({ email: 'updateteam_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const user = await User.create({ email: 'updateteam_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: user.id,
@@ -84,7 +84,7 @@ test.group('Organization Teams', () => {
 
   test('can delete a team', async ({ client, assert }) => {
     const org = await Organization.create({ name: 'Delete Team Org' })
-    const user = await User.create({ email: 'deleteteam_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const user = await User.create({ email: 'deleteteam_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: user.id,
@@ -108,7 +108,7 @@ test.group('Organization Teams', () => {
 test.group('Organization Opportunities', () => {
   test('can list opportunities for organization', async ({ client, assert }) => {
     const org = await Organization.create({ name: 'Opportunities Org' })
-    const user = await User.create({ email: 'oppuser_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const user = await User.create({ email: 'oppuser_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: user.id,
@@ -119,6 +119,7 @@ test.group('Organization Opportunities', () => {
       organizationId: org.id,
       title: 'Test Opportunity',
       startAt: DateTime.now().plus({ days: 1 }),
+      slug: `opp-${Math.random().toString(36).substring(7)}`,
       status: 'draft',
       visibility: 'public',
       type: 'event',
@@ -135,7 +136,7 @@ test.group('Organization Opportunities', () => {
 
   test('can create an opportunity', async ({ client, assert }) => {
     const org = await Organization.create({ name: 'Create Opp Org' })
-    const user = await User.create({ email: 'createopp_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const user = await User.create({ email: 'createopp_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: user.id,
@@ -162,7 +163,7 @@ test.group('Organization Opportunities', () => {
 
   test('can publish/unpublish an opportunity', async ({ client }) => {
     const org = await Organization.create({ name: 'Publish Opp Org' })
-    const user = await User.create({ email: 'publishopp_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const user = await User.create({ email: 'publishopp_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: user.id,
@@ -173,6 +174,7 @@ test.group('Organization Opportunities', () => {
       organizationId: org.id,
       title: 'Draft Opportunity',
       startAt: DateTime.now().plus({ days: 1 }),
+      slug: `opp-${Math.random().toString(36).substring(7)}`,
       status: 'draft',
       visibility: 'public',
       type: 'event',
@@ -202,7 +204,7 @@ test.group('Organization Opportunities', () => {
 test.group('Opportunity Applications', () => {
   test('volunteer can apply to published opportunity', async ({ client }) => {
     const org = await Organization.create({ name: 'Apply Org' })
-    const admin = await User.create({ email: 'applyadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const admin = await User.create({ email: 'applyadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: admin.id,
@@ -213,13 +215,14 @@ test.group('Opportunity Applications', () => {
       organizationId: org.id,
       title: 'Published Opportunity',
       startAt: DateTime.now().plus({ days: 1 }),
+      slug: `opp-${Math.random().toString(36).substring(7)}`,
       status: 'published',
       visibility: 'public',
       type: 'event',
       capacity: 10
     })
 
-    const volunteer = await User.create({ email: 'applyvolunteer_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const volunteer = await User.create({ email: 'applyvolunteer_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
 
     const resp = await client
       .loginAs(volunteer)
@@ -233,7 +236,7 @@ test.group('Opportunity Applications', () => {
 
   test('cannot apply to draft opportunity', async ({ client }) => {
     const org = await Organization.create({ name: 'Draft Apply Org' })
-    const admin = await User.create({ email: 'draftapplyadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const admin = await User.create({ email: 'draftapplyadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: admin.id,
@@ -244,13 +247,14 @@ test.group('Opportunity Applications', () => {
       organizationId: org.id,
       title: 'Draft Opportunity',
       startAt: DateTime.now().plus({ days: 1 }),
+      slug: `opp-${Math.random().toString(36).substring(7)}`,
       status: 'draft',
       visibility: 'public',
       type: 'event',
       capacity: 10
     })
 
-    const volunteer = await User.create({ email: 'draftvolunteer_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const volunteer = await User.create({ email: 'draftvolunteer_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
 
     const resp = await client.loginAs(volunteer).post(`/opportunities/${opp.id}/apply`)
     resp.assertStatus(400)
@@ -259,7 +263,7 @@ test.group('Opportunity Applications', () => {
 
   test('cannot apply twice to same opportunity', async ({ client }) => {
     const org = await Organization.create({ name: 'Double Apply Org' })
-    const admin = await User.create({ email: 'doubleapplyadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const admin = await User.create({ email: 'doubleapplyadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: admin.id,
@@ -270,13 +274,14 @@ test.group('Opportunity Applications', () => {
       organizationId: org.id,
       title: 'Double Apply Opportunity',
       startAt: DateTime.now().plus({ days: 1 }),
+      slug: `opp-${Math.random().toString(36).substring(7)}`,
       status: 'published',
       visibility: 'public',
       type: 'event',
       capacity: 10
     })
 
-    const volunteer = await User.create({ email: 'doublevolunteer_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const volunteer = await User.create({ email: 'doublevolunteer_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
 
     // First application
     await client.loginAs(volunteer).post(`/opportunities/${opp.id}/apply`)
@@ -289,7 +294,7 @@ test.group('Opportunity Applications', () => {
 
   test('admin can accept/reject applications', async ({ client }) => {
     const org = await Organization.create({ name: 'Accept Reject Org' })
-    const admin = await User.create({ email: 'acceptrejectadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const admin = await User.create({ email: 'acceptrejectadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: admin.id,
@@ -300,13 +305,14 @@ test.group('Opportunity Applications', () => {
       organizationId: org.id,
       title: 'Accept Reject Opportunity',
       startAt: DateTime.now().plus({ days: 1 }),
+      slug: `opp-${Math.random().toString(36).substring(7)}`,
       status: 'published',
       visibility: 'public',
       type: 'event',
       capacity: 10
     })
 
-    const volunteer = await User.create({ email: 'acceptrejectvolunteer_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const volunteer = await User.create({ email: 'acceptrejectvolunteer_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
 
     // Create application
     const application = await Application.create({
@@ -328,7 +334,7 @@ test.group('Opportunity Applications', () => {
 
   test('volunteer can withdraw their application', async ({ client }) => {
     const org = await Organization.create({ name: 'Withdraw Org' })
-    const admin = await User.create({ email: 'withdrawadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const admin = await User.create({ email: 'withdrawadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: admin.id,
@@ -339,13 +345,14 @@ test.group('Opportunity Applications', () => {
       organizationId: org.id,
       title: 'Withdraw Opportunity',
       startAt: DateTime.now().plus({ days: 1 }),
+      slug: `opp-${Math.random().toString(36).substring(7)}`,
       status: 'published',
       visibility: 'public',
       type: 'event',
       capacity: 10
     })
 
-    const volunteer = await User.create({ email: 'withdrawvolunteer_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const volunteer = await User.create({ email: 'withdrawvolunteer_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
 
     const application = await Application.create({
       opportunityId: opp.id,
@@ -363,7 +370,7 @@ test.group('Opportunity Applications', () => {
 test.group('Opportunity Attendance', () => {
   test('accepted volunteer can check in', async ({ client }) => {
     const org = await Organization.create({ name: 'Checkin Org' })
-    const admin = await User.create({ email: 'checkinadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const admin = await User.create({ email: 'checkinadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: admin.id,
@@ -374,13 +381,14 @@ test.group('Opportunity Attendance', () => {
       organizationId: org.id,
       title: 'Checkin Opportunity',
       startAt: DateTime.now().plus({ days: 1 }),
+      slug: `opp-${Math.random().toString(36).substring(7)}`,
       status: 'published',
       visibility: 'public',
       type: 'event',
       capacity: 10
     })
 
-    const volunteer = await User.create({ email: 'checkinvolunteer_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const volunteer = await User.create({ email: 'checkinvolunteer_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
 
     // Create accepted application
     await Application.create({
@@ -402,7 +410,7 @@ test.group('Opportunity Attendance', () => {
 
   test('cannot check in without accepted application', async ({ client }) => {
     const org = await Organization.create({ name: 'No Accept Org' })
-    const admin = await User.create({ email: 'noacceptadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const admin = await User.create({ email: 'noacceptadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: admin.id,
@@ -413,13 +421,14 @@ test.group('Opportunity Attendance', () => {
       organizationId: org.id,
       title: 'No Accept Opportunity',
       startAt: DateTime.now().plus({ days: 1 }),
+      slug: `opp-${Math.random().toString(36).substring(7)}`,
       status: 'published',
       visibility: 'public',
       type: 'event',
       capacity: 10
     })
 
-    const volunteer = await User.create({ email: 'noacceptvolunteer_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const volunteer = await User.create({ email: 'noacceptvolunteer_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
 
     const resp = await client.loginAs(volunteer).post(`/opportunities/${opp.id}/checkin`)
     resp.assertStatus(403)
@@ -428,7 +437,7 @@ test.group('Opportunity Attendance', () => {
 
   test('checked in volunteer can check out', async ({ client, assert }) => {
     const org = await Organization.create({ name: 'Checkout Org' })
-    const admin = await User.create({ email: 'checkoutadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const admin = await User.create({ email: 'checkoutadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: admin.id,
@@ -439,13 +448,14 @@ test.group('Opportunity Attendance', () => {
       organizationId: org.id,
       title: 'Checkout Opportunity',
       startAt: DateTime.now().plus({ days: 1 }),
+      slug: `opp-${Math.random().toString(36).substring(7)}`,
       status: 'published',
       visibility: 'public',
       type: 'event',
       capacity: 10
     })
 
-    const volunteer = await User.create({ email: 'checkoutvolunteer_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const volunteer = await User.create({ email: 'checkoutvolunteer_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
 
     // Create accepted application
     await Application.create({
@@ -479,7 +489,7 @@ test.group('Organization Settings', () => {
       timezone: 'America/New_York',
       status: 'active'
     })
-    const user = await User.create({ email: 'settingsuser_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const user = await User.create({ email: 'settingsuser_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: user.id,
@@ -501,7 +511,7 @@ test.group('Organization Settings', () => {
       timezone: 'UTC',
       status: 'active'
     })
-    const user = await User.create({ email: 'updatesettings_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const user = await User.create({ email: 'updatesettings_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: user.id,
@@ -525,7 +535,7 @@ test.group('Organization Settings', () => {
       name: 'No Admin Settings Org',
       timezone: 'UTC'
     })
-    const user = await User.create({ email: 'noadminsettings_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const user = await User.create({ email: 'noadminsettings_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: user.id,
@@ -545,7 +555,7 @@ test.group('Organization Settings', () => {
 test.group('Phase 2 - QR Code Check-in', () => {
   test('can generate check-in code for opportunity', async ({ client, assert }) => {
     const org = await Organization.create({ name: 'QR Code Org' })
-    const admin = await User.create({ email: 'qradmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const admin = await User.create({ email: 'qradmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: admin.id,
@@ -556,6 +566,7 @@ test.group('Phase 2 - QR Code Check-in', () => {
       organizationId: org.id,
       title: 'QR Test Opportunity',
       startAt: DateTime.now().plus({ days: 1 }),
+      slug: `opp-${Math.random().toString(36).substring(7)}`,
       status: 'published',
       visibility: 'public',
       type: 'event',
@@ -575,7 +586,7 @@ test.group('Phase 2 - QR Code Check-in', () => {
 
   test('volunteer can check in via QR code', async ({ client }) => {
     const org = await Organization.create({ name: 'QR Checkin Org' })
-    const admin = await User.create({ email: 'qrcheckinadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const admin = await User.create({ email: 'qrcheckinadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: admin.id,
@@ -587,6 +598,7 @@ test.group('Phase 2 - QR Code Check-in', () => {
       organizationId: org.id,
       title: 'QR Checkin Opportunity',
       startAt: DateTime.now().plus({ days: 1 }),
+      slug: `opp-${Math.random().toString(36).substring(7)}`,
       status: 'published',
       visibility: 'public',
       type: 'event',
@@ -594,7 +606,7 @@ test.group('Phase 2 - QR Code Check-in', () => {
       checkinCode
     })
 
-    const volunteer = await User.create({ email: 'qrvolunteer_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const volunteer = await User.create({ email: 'qrvolunteer_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
 
     await Application.create({
       opportunityId: opp.id,
@@ -613,7 +625,7 @@ test.group('Phase 2 - QR Code Check-in', () => {
 test.group('Phase 3 - CSV Export', () => {
   test('admin can export volunteers as CSV', async ({ client, assert }) => {
     const org = await Organization.create({ name: 'Export Test Org' })
-    const admin = await User.create({ email: 'exportadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const admin = await User.create({ email: 'exportadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: admin.id,
@@ -631,7 +643,7 @@ test.group('Phase 3 - CSV Export', () => {
 
   test('admin can export opportunities as CSV', async ({ client, assert }) => {
     const org = await Organization.create({ name: 'Opp Export Org' })
-    const admin = await User.create({ email: 'oppexportadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const admin = await User.create({ email: 'oppexportadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: admin.id,
@@ -642,6 +654,7 @@ test.group('Phase 3 - CSV Export', () => {
       organizationId: org.id,
       title: 'Export Test Opp',
       startAt: DateTime.now().plus({ days: 1 }),
+      slug: `opp-${Math.random().toString(36).substring(7)}`,
       status: 'published',
       visibility: 'public',
       type: 'event',
@@ -659,7 +672,7 @@ test.group('Phase 3 - CSV Export', () => {
 
   test('non-admin cannot export data', async ({ client }) => {
     const org = await Organization.create({ name: 'No Export Org' })
-    const member = await User.create({ email: 'noexport_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const member = await User.create({ email: 'noexport_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: member.id,
@@ -675,7 +688,7 @@ test.group('Phase 3 - CSV Export', () => {
 test.group('Phase 3 - Reports & Analytics', () => {
   test('can get reports summary', async ({ client, assert }) => {
     const org = await Organization.create({ name: 'Reports Org' })
-    const admin = await User.create({ email: 'reportsadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const admin = await User.create({ email: 'reportsadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: admin.id,
@@ -693,7 +706,7 @@ test.group('Phase 3 - Reports & Analytics', () => {
 
   test('can get volunteer hours report', async ({ client, assert }) => {
     const org = await Organization.create({ name: 'Hours Report Org' })
-    const admin = await User.create({ email: 'hoursreportadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const admin = await User.create({ email: 'hoursreportadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: admin.id,
@@ -710,7 +723,7 @@ test.group('Phase 3 - Reports & Analytics', () => {
 
   test('can get opportunity performance report', async ({ client, assert }) => {
     const org = await Organization.create({ name: 'Perf Report Org' })
-    const admin = await User.create({ email: 'perfreportadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const admin = await User.create({ email: 'perfreportadmin_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: admin.id,
@@ -787,7 +800,9 @@ test.group('Phase 3 - Public Organization Pages', () => {
     await Opportunity.create({
       organizationId: org.id,
       title: 'Public Opportunity',
+      slug: `opp-${Math.random().toString(36).substring(7)}`,
       startAt: DateTime.now().plus({ days: 1 }),
+      slug: `opp-${Math.random().toString(36).substring(7)}`,
       status: 'published',
       visibility: 'public',
       type: 'event',
