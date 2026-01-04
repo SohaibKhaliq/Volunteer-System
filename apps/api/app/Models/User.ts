@@ -51,6 +51,12 @@ export default class User extends BaseModel {
   })
   public profileMetadata?: any
 
+  @column({ columnName: 'role_status' })
+  public roleStatus?: string
+
+  @column({ columnName: 'remember_me_token' })
+  public rememberMeToken?: string
+
   @computed()
   public get skills(): string[] {
     const meta = this.profileMetadata || {}
