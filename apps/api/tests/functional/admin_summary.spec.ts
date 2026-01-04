@@ -16,6 +16,8 @@ test.group('Admin summary endpoint', () => {
     const admin = await User.create({
       email: 'admin-summary_' + Math.floor(Math.random() * 100000) + '@test.com',
       password: 'pass',
+      firstName: 'Admin',
+      lastName: 'User',
       isAdmin: true
     })
 
