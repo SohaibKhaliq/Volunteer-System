@@ -13,6 +13,9 @@ export default class Role extends BaseModel {
   @column()
   public description?: string
 
+  @column()
+  public slug?: string
+
   @manyToMany(() => User, {
     pivotTable: 'user_roles',
     localKey: 'id',
