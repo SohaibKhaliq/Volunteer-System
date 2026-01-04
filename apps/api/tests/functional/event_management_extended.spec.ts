@@ -19,7 +19,7 @@ test.group('Event Management Extended', (group) => {
   // ShiftsController Tests
   // ==========================================
   test('shifts: create shift and check conflicts', async ({ client, assert }) => {
-    const admin = await User.create({ email: `sh-adm-${Date.now()}@test.com`, password: 'pass', isAdmin: true })
+    const admin = await User.create({ email: `sh-adm-${Date.now()}@test.com`, password: 'pass', isAdmin: true, firstName: 'Test', lastName: 'User' })
     const org = await Organization.create({ name: 'Shift Org', type: 'Community' })
     const event = await Event.create({ title: 'Shift Event', organizationId: org.id, startAt: DateTime.now(), endAt: DateTime.now().plus({ days: 1 }) })
 
@@ -39,7 +39,7 @@ test.group('Event Management Extended', (group) => {
     const shiftId = createResp.body().id
 
     // Check conflict (empty initially)
-    const volunteer = await User.create({ email: `vol-${Date.now()}@test.com`, password: 'pass' })
+    const volunteer = await User.create({ email: `vol-${Date.now()}@test.com`, password: 'pass', firstName: 'Test', lastName: 'User' })
     const confResp = await client.loginAs(admin).post(`/shifts/${shiftId}/check-conflicts`).json({
       userId: volunteer.id
     })
@@ -48,7 +48,7 @@ test.group('Event Management Extended', (group) => {
   })
 
   test('shifts: recurring creation', async ({ client, assert }) => {
-    const admin = await User.create({ email: `rec-adm-${Date.now()}@test.com`, password: 'pass' })
+    const admin = await User.create({ email: `rec-adm-${Date.now()}@test.com`, password: 'pass', firstName: 'Test', lastName: 'User' })
     const org = await Organization.create({ name: 'Rec Org', type: 'Community' })
     
     const start = DateTime.now().plus({ days: 1, hours: 9 })
@@ -78,8 +78,8 @@ test.group('Event Management Extended', (group) => {
   // ShiftAssignmentsController Tests
   // ==========================================
   test('assignments: assign, check-in, check-out details', async ({ client, assert }) => {
-    const admin = await User.create({ email: `assign-adm-${Date.now()}@test.com`, password: 'pass' })
-    const volunteer = await User.create({ email: `vol-assign-${Date.now()}@test.com`, password: 'pass' })
+    const admin = await User.create({ email: `assign-adm-${Date.now()}@test.com`, password: 'pass', firstName: 'Test', lastName: 'User' })
+    const volunteer = await User.create({ email: `vol-assign-${Date.now()}@test.com`, password: 'pass', firstName: 'Test', lastName: 'User' })
     const org = await Organization.create({ name: 'Assign Org', type: 'Community' })
     
     const start = DateTime.now().minus({ hours: 2 }) // Started 2 hours ago
@@ -122,7 +122,7 @@ test.group('Event Management Extended', (group) => {
   // TasksController Tests
   // ==========================================
   test('tasks: crud', async ({ client, assert }) => {
-    const admin = await User.create({ email: `task-adm-${Date.now()}@test.com`, password: 'pass' })
+    const admin = await User.create({ email: `task-adm-${Date.now()}@test.com`, password: 'pass', firstName: 'Test', lastName: 'User' })
     const event = await Event.create({ title: 'Task Event', startAt: DateTime.now(), endAt: DateTime.now() })
     
     // Create
@@ -152,7 +152,7 @@ test.group('Event Management Extended', (group) => {
   // ResourcesController Tests (Basic)
   // ==========================================
   test('resources: create and manage', async ({ client, assert }) => {
-    const admin = await User.create({ email: `res-adm-${Date.now()}@test.com`, password: 'pass', isAdmin: true })
+    const admin = await User.create({ email: `res-adm-${Date.now()}@test.com`, password: 'pass', isAdmin: true, firstName: 'Test', lastName: 'User' })
     const org = await Organization.create({ name: 'Res Org', type: 'Community' })
 
     // Create
