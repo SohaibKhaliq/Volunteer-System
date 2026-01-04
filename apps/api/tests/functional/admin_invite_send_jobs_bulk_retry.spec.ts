@@ -12,10 +12,10 @@ test.group('Admin invite send jobs bulk retry', () => {
   })
 
   test('admin can retry all failed jobs', async ({ client, assert }) => {
-    const admin = await User.create({ email: `admin-bulk-${Date.now()}@test`, password: 'pass', isAdmin: true })
+    const admin = await User.create({ email: `admin-bulk-${Date.now()}@test`, password: 'pass', isAdmin: true, firstName: 'Test', lastName: 'User' })
 
     const org = await Organization.create({ name: 'BulkOrg' })
-    const inviter = await User.create({ email: `inviter-bulk-${Date.now()}@test`, password: 'pass' })
+    const inviter = await User.create({ email: `inviter-bulk-${Date.now()}@test`, password: 'pass', firstName: 'Test', lastName: 'User' })
 
     // create jobs with failed status
     const invites = [] as any[]
