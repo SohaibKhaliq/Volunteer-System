@@ -18,6 +18,15 @@ export default class Type extends BaseModel {
   @column()
   public description?: string
 
+  @column({ columnName: 'for_entity' })
+  public forEntity?: string
+
+  @column()
+  public icon?: string
+
+  @column({ columnName: 'is_active' })
+  public isActive?: boolean
+
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
 
