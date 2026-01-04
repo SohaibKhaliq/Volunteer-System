@@ -40,6 +40,9 @@ export default class Survey extends BaseModel {
   @column({ columnName: 'created_by' })
   public createdBy?: number
 
+  @column({ columnName: 'organization_id' })
+  public organizationId?: number
+
   @column.dateTime({ columnName: 'published_at' })
   public publishedAt?: DateTime
 
