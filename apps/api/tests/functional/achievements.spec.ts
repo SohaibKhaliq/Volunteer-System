@@ -3,6 +3,7 @@ import User from 'App/Models/User'
 import Achievement from 'App/Models/Achievement'
 import VolunteerHour from 'App/Models/VolunteerHour'
 import Notification from 'App/Models/Notification'
+import Attendance from 'App/Models/Attendance'
 import { DateTime } from 'luxon'
 import Database from '@ioc:Adonis/Lucid/Database'
 
@@ -17,39 +18,49 @@ test.group('Achievements', (group) => {
     assert
   }) => {
     // create an admin
-    const admin = await User.create({ email: 'admin-ach@test', password: 'pass', isAdmin: true })
+    const u = await User.create({
+      email: 'admin-ach@test',
+      password: 'pass',
+      firstName: 'Admin',
+      lastName: 'User',
+      isAdmin: true
+    })
 
     const createResp = await client
-      .loginAs(admin)
+      .loginAs(u)
       .post('/achievements')
       .json({
         key: '50-hours',
-        title: '50 Hours Club',
+        name: '50 Hours Club',
         description: 'Awarded for 50+ hours',
-        criteria: { type: 'hours', threshold: 50 }
+        isActive: true,
+        requirement: { type: 'hours', threshold: 50 }
       })
     createResp.assertStatus(201)
     const ach = await Achievement.findBy('key', '50-hours')
     assert.exists(ach)
 
     // create a user and hours >= 50
-    const u = await User.create({ email: 'achiever@test', password: 'pass' })
+    const u2 = await User.create({
+      email: 'achiever@test',
+      password: 'pass',
+      firstName: 'User',
+      lastName: 'Achiever'
+    })
     await VolunteerHour.create({
-      userId: u.id,
-      eventId: null,
+      userId: u2.id,
       date: DateTime.now().minus({ days: 10 }),
       hours: 30,
       status: 'approved'
     })
     await VolunteerHour.create({
-      userId: u.id,
-      eventId: null,
+      userId: u2.id,
       date: DateTime.now().minus({ days: 40 }),
       hours: 25,
       status: 'approved'
     })
 
-    const resp = await client.loginAs(u).get('/me')
+    const resp = await client.loginAs(u2).get('/me')
     resp.assertStatus(200)
     const body = resp.body()
     assert.isArray(body.achievements)
@@ -57,7 +68,7 @@ test.group('Achievements', (group) => {
 
     // a notification should have been created for this achievement
     const notes = await Notification.query()
-      .where('user_id', u.id)
+      .where('user_id', u2.id)
       .andWhere('type', 'achievement_awarded')
     
     // Check payload using JSON checks instead of fuzzy string check
@@ -72,19 +83,31 @@ test.group('Achievements', (group) => {
   })
 
   test('achievements with events criteria are awarded', async ({ client, assert }) => {
-    const admin = await User.create({ email: 'admin-ach2@test', password: 'pass', isAdmin: true })
+    const u = await User.create({
+      email: 'admin-ach2@test',
+      password: 'pass',
+      firstName: 'Admin',
+      lastName: 'Two',
+      isAdmin: true
+    })
     const achResp = await client
-      .loginAs(admin)
+      .loginAs(u)
       .post('/achievements')
       .json({
         key: '5-events',
-        title: '5 Events Attended',
+        name: '5 Events Attended',
         description: 'Attend 5 distinct events to earn',
-        criteria: { type: 'events', threshold: 5 }
+        isActive: true,
+        requirement: { type: 'events', threshold: 5 }
       })
     achResp.assertStatus(201)
 
-    const u = await User.create({ email: 'events@t.test', password: 'pass' })
+    const u2 = await User.create({
+      email: 'events@t.test',
+      password: 'pass',
+      firstName: 'Event',
+      lastName: 'User'
+    })
 
     // Create an organization for events
     const orgId = await Database.table('organizations').insert({
@@ -109,16 +132,35 @@ test.group('Achievements', (group) => {
       const evtId = evt[0]
 
       await VolunteerHour.create({
-        userId: u.id,
+        userId: u2.id,
         eventId: evtId,
         date: DateTime.now()
           .minus({ days: i * 10 }),
         hours: 2,
         status: 'approved'
       })
+      const opp = await Database.table('opportunities').insert({
+        organization_id: orgId[0],
+        title: `Opportunity ${i}`,
+        slug: `event-opp-${i}`,
+        status: 'published',
+        
+        created_at: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss'),
+        updated_at: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss')
+      })
+      const oppId = opp[0]
+
+      await Attendance.create({
+        userId: u2.id,
+        opportunityId: oppId,
+        method: 'manual', // Set method
+        checkInAt: DateTime.now().minus({ days: i * 10 }), // Use checkInAt
+        checkOutAt: DateTime.now().minus({ days: i * 10 }).plus({ hours: 2 }), // Use checkOutAt
+        metadata: { status: 'Present' }
+      })
     }
 
-    const resp = await client.loginAs(u).get('/me')
+    const resp = await client.loginAs(u2).get('/me')
     resp.assertStatus(200)
     const body = resp.body()
     assert.isArray(body.achievements)
@@ -126,26 +168,42 @@ test.group('Achievements', (group) => {
   })
 
   test('Early Adopter awarded to users created > 2 years ago', async ({ client, assert }) => {
-    const admin = await User.create({ email: 'admin-old@test', password: 'pass', isAdmin: true })
+    const u = await User.create({
+      email: 'admin-old@test',
+      password: 'pass',
+      firstName: 'Old',
+      lastName: 'User',
+      isAdmin: true
+    })
 
     const createResp = await client
-      .loginAs(admin)
+      .loginAs(u)
       .post('/achievements')
       .json({
         key: 'early-adopter',
-        title: 'Early Adopter',
+        name: 'Early Adopter',
         description: 'Joined more than two years ago',
-        criteria: { type: 'member_days', threshold: 365 * 2 }
+        isActive: true,
+        requirement: { type: 'member_days', threshold: 365 * 2 }
       })
     createResp.assertStatus(201)
 
-    const u = await User.create({ email: 'olduser@test', password: 'pass' })
+    const oldUser = await User.create({
+      email: 'olduser@test',
+      password: 'pass',
+      firstName: 'Old',
+      lastName: 'Timer'
+    })
+    // Adjust created_at so user appears older than 2 years
     // Adjust created_at so user appears older than 2 years
     await Database.from('users')
-      .where({ id: u.id })
-      .update({ created_at: DateTime.now().minus({ days: 800 }).toFormat('yyyy-MM-dd HH:mm:ss') })
+      .where('id', oldUser.id)
+      .update({ 
+        created_at: DateTime.now().minus({ years: 2, days: 1 }).toFormat('yyyy-MM-dd HH:mm:ss'),
+        updated_at: DateTime.now().toFormat('yyyy-MM-dd HH:mm:ss') 
+      })
 
-    const resp = await client.loginAs(u).get('/me')
+    const resp = await client.loginAs(oldUser).get('/me')
     resp.assertStatus(200)
     const body = resp.body()
     assert.isArray(body.achievements)
