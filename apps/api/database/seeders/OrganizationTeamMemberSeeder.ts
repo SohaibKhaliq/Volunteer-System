@@ -18,7 +18,7 @@ export default class OrganizationTeamMemberSeeder extends BaseSeeder {
       return
     }
 
-    const roles = ['member', 'coordinator', 'lead']
+    const roles = ['volunteer', 'coordinator', 'team-leader']
     const rows: any[] = []
     const createdPairs = new Set<string>()
 
