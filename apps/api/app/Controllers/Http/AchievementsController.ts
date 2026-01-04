@@ -10,7 +10,7 @@ import Logger from '@ioc:Adonis/Core/Logger'
 export default class AchievementsController {
   // List achievements (optionally filter by organization and category)
   public async index({ request, response }: HttpContextContract) {
-    const { organization_id, category_id, include_progress, user_id } = request.qs()
+    const { organization_id, category, include_progress, user_id } = request.qs()
 
     let query = Achievement.query().orderBy('id', 'desc')
 
@@ -18,12 +18,11 @@ export default class AchievementsController {
       query = query.where('organization_id', Number(organization_id))
     }
 
-    if (category_id) {
-      query = query.where('category_id', Number(category_id))
+    if (category) {
+      query = query.where('category', category)
     }
 
-    // Preload category
-    query = query.preload('category')
+    // Category is now a string column, no preload needed
 
     const achievements = await query
 
@@ -55,17 +54,17 @@ export default class AchievementsController {
     const user = auth.user as User
     const payload = request.only([
       'organizationId',
-      'categoryId',
+      'category',
       'key',
-      'title',
+      'name',
       'description',
-      'criteria',
+      'requirement',
       'ruleType',
       'isMilestone',
       'icon',
       'badgeImageUrl',
       'points',
-      'isEnabled'
+      'isActive'
     ])
 
     // If organizationId is set, ensure user belongs to that organization or is admin
@@ -82,28 +81,28 @@ export default class AchievementsController {
 
     const ach = await Achievement.create({
       organizationId: payload.organizationId,
-      categoryId: payload.categoryId,
+      category: payload.category || 'general',
       key: payload.key,
-      title: payload.title,
+      name: payload.name,
       description: payload.description,
-      criteria: payload.criteria,
+      requirement: payload.requirement,
       ruleType: payload.ruleType,
       isMilestone: payload.isMilestone ?? false,
       icon: payload.icon,
       badgeImageUrl: payload.badgeImageUrl,
       points: payload.points ?? 0,
-      isEnabled: payload.isEnabled ?? true
+      isActive: payload.isActive ?? true
     })
 
 
-    if (ach.categoryId) {
-      await ach.load('category')
+    if (ach.category) {
+      // Category is just a string now
     }
     return response.created(ach)
   }
 
   public async show({ params, response }: HttpContextContract) {
-    const ach = await Achievement.query().where('id', params.id).preload('category').first()
+    const ach = await Achievement.query().where('id', params.id).first()
 
     if (!ach) return response.notFound({ error: { message: 'Achievement not found' } })
     return response.ok(ach)
@@ -127,33 +126,33 @@ export default class AchievementsController {
     }
 
     const payload = request.only([
-      'categoryId',
-      'title',
+      'category',
+      'name',
       'description',
-      'criteria',
+      'requirement',
       'ruleType',
       'isMilestone',
       'icon',
       'badgeImageUrl',
       'points',
-      'isEnabled'
+      'isActive'
     ])
 
     ach.merge({
-      categoryId: payload.categoryId ?? ach.categoryId,
-      title: payload.title ?? ach.title,
+      category: payload.category ?? ach.category,
+      name: payload.name ?? ach.name,
       description: payload.description ?? ach.description,
-      criteria: payload.criteria ?? ach.criteria,
+      requirement: payload.requirement ?? ach.requirement,
       ruleType: payload.ruleType ?? ach.ruleType,
       isMilestone: payload.isMilestone ?? ach.isMilestone,
       icon: payload.icon ?? ach.icon,
       badgeImageUrl: payload.badgeImageUrl ?? ach.badgeImageUrl,
       points: payload.points ?? ach.points,
-      isEnabled: payload.isEnabled ?? ach.isEnabled
+      isActive: payload.isActive ?? ach.isActive
     })
 
     await ach.save()
-    await ach.load('category')
+    // No relation to load
     return response.ok(ach)
   }
 
@@ -287,14 +286,9 @@ export default class AchievementsController {
         })
       }
 
-      let query = AchievementProgress.query().where('user_id', targetUserId).preload('achievement')
-
-      if (achievementId) {
-        query = query.where('achievement_id', Number(achievementId))
-      }
-
       const progress = await query
 
+      // Provide simple output
       return response.ok(progress)
     } catch (error) {
       Logger.error('Get progress error: %o', error)
