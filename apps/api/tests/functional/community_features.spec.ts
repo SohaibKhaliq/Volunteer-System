@@ -18,7 +18,7 @@ test.group('Community & Communications Controllers', (group) => {
   // BroadcastsController Tests
   // ==========================================
   test('broadcast: admin can create and list', async ({ client, assert }) => {
-    const admin = await User.create({ email: `bc-adm-${Date.now()}@test.com`, password: 'pass', isAdmin: true })
+    const admin = await User.create({ email: `bc-adm-${Date.now()}@test.com`, password: 'pass', isAdmin: true, firstName: 'Test', lastName: 'User' })
     
     // Create
     const createResp = await client.loginAs(admin).post('/admin/broadcasts').json({
@@ -37,7 +37,7 @@ test.group('Community & Communications Controllers', (group) => {
   })
 
   test('broadcast: non-admin cannot access', async ({ client }) => {
-    const user = await User.create({ email: `bc-user-${Date.now()}@test.com`, password: 'pass', isAdmin: false })
+    const user = await User.create({ email: `bc-user-${Date.now()}@test.com`, password: 'pass', isAdmin: false, firstName: 'Test', lastName: 'User' })
     const resp = await client.loginAs(user).get('/admin/broadcasts')
     resp.assertStatus(401) // Controller returns 401 Unauthorized for access denied
   })
@@ -46,8 +46,8 @@ test.group('Community & Communications Controllers', (group) => {
   // SurveysController Tests
   // ==========================================
   test('survey: create and submit response', async ({ client, assert }) => {
-    const user = await User.create({ email: `surv-user-${Date.now()}@test.com`, password: 'pass' })
-    const admin = await User.create({ email: `surv-adm-${Date.now()}@test.com`, password: 'pass', isAdmin: true })
+    const user = await User.create({ email: `surv-user-${Date.now()}@test.com`, password: 'pass', firstName: 'Test', lastName: 'User' })
+    const admin = await User.create({ email: `surv-adm-${Date.now()}@test.com`, password: 'pass', isAdmin: true, firstName: 'Test', lastName: 'User' })
 
     // Create Survey
     const survResp = await client.loginAs(admin).post('/surveys').json({
@@ -73,7 +73,7 @@ test.group('Community & Communications Controllers', (group) => {
   })
 
   test('survey: export responses as csv', async ({ client, assert }) => {
-    const admin = await User.create({ email: `surv-exp-${Date.now()}@test.com`, password: 'pass', isAdmin: true })
+    const admin = await User.create({ email: `surv-exp-${Date.now()}@test.com`, password: 'pass', isAdmin: true, firstName: 'Test', lastName: 'User' })
     const survey = await Survey.create({ title: 'Export Test', status: 'Open', createdBy: admin.id })
     
     await client.loginAs(admin).post(`/surveys/${survey.id}/submit`).json({ answers: { a: 1 } })
@@ -89,13 +89,13 @@ test.group('Community & Communications Controllers', (group) => {
   // ==========================================
   test('course: create with assign_all enrolls users', async ({ client, assert }) => {
     // Create some users first
-    const u1 = await User.create({ email: `c-u1-${Date.now()}@test.com`, password: 'pass' })
-    const u2 = await User.create({ email: `c-u2-${Date.now()}@test.com`, password: 'pass' })
+    const u1 = await User.create({ email: `c-u1-${Date.now()}@test.com`, password: 'pass', firstName: 'Test', lastName: 'User' })
+    const u2 = await User.create({ email: `c-u2-${Date.now()}@test.com`, password: 'pass', firstName: 'Test', lastName: 'User' })
     
     // Ensure they are not disabled? Controller filters where is_disabled false.
     // Default is likely false but migration checking might be good. Assuming default false.
 
-    const admin = await User.create({ email: `c-adm-${Date.now()}@test.com`, password: 'pass', isAdmin: true })
+    const admin = await User.create({ email: `c-adm-${Date.now()}@test.com`, password: 'pass', isAdmin: true, firstName: 'Test', lastName: 'User' })
 
     const resp = await client.loginAs(admin).post('/courses').json({
       title: 'Safety 101',
@@ -114,8 +114,8 @@ test.group('Community & Communications Controllers', (group) => {
   })
 
   test('course: update assignments', async ({ client, assert }) => {
-    const u1 = await User.create({ email: `cs-u1-${Date.now()}@test.com`, password: 'pass' })
-    const admin = await User.create({ email: `cs-adm-${Date.now()}@test.com`, password: 'pass', isAdmin: true })
+    const u1 = await User.create({ email: `cs-u1-${Date.now()}@test.com`, password: 'pass', firstName: 'Test', lastName: 'User' })
+    const admin = await User.create({ email: `cs-adm-${Date.now()}@test.com`, password: 'pass', isAdmin: true, firstName: 'Test', lastName: 'User' })
     
     const course = await Course.create({ title: 'Manual Assign' })
 
@@ -131,7 +131,7 @@ test.group('Community & Communications Controllers', (group) => {
   // CommunicationsController Tests
   // ==========================================
   test('comm: create and retry log', async ({ client, assert }) => {
-    const admin = await User.create({ email: `comm-adm-${Date.now()}@test.com`, password: 'pass', isAdmin: true })
+    const admin = await User.create({ email: `comm-adm-${Date.now()}@test.com`, password: 'pass', isAdmin: true, firstName: 'Test', lastName: 'User' })
 
     // Create Comm
     const commResp = await client.loginAs(admin).post('/communications').json({
