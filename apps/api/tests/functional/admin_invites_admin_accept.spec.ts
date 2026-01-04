@@ -6,7 +6,7 @@ import Database from '@ioc:Adonis/Lucid/Database'
 
 test.group('Admin accept invite on behalf', (group) => {
   test('admin can accept invite for an existing user', async ({ client, assert }) => {
-    const admin = await User.create({ email: `admin-accept-${Date.now()}@test`, password: 'pass', isAdmin: true })
+    const admin = await User.create({ email: `admin-accept-${Date.now()}@test`, password: 'pass', isAdmin: true, firstName: 'Test', lastName: 'User' })
     const org = await Organization.create({ name: 'Admin Accept Org' })
     const invite = await OrganizationInvite.create({
       organizationId: org.id,
@@ -18,7 +18,7 @@ test.group('Admin accept invite on behalf', (group) => {
       invitedBy: admin.id
     })
 
-    const target = await User.create({ email: `target-${Date.now()}@test`, password: 'pass' })
+    const target = await User.create({ email: `target-${Date.now()}@test`, password: 'pass', firstName: 'Test', lastName: 'User' })
 
     const resp = await client
       .loginAs(admin)
