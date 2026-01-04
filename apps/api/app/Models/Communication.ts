@@ -17,11 +17,26 @@ export default class Communication extends BaseModel {
   @column()
   public status: string
 
+  @column({ columnName: 'user_id' })
+  public userId: number
+
+  @column({ columnName: 'sent_by' })
+  public sentBy: number
+
+  @column()
+  public body: string
+
   @column.dateTime()
   public sendAt?: DateTime
 
   @column.dateTime()
   public sentAt?: DateTime
+
+  @column.dateTime()
+  public deliveredAt?: DateTime
+
+  @column.dateTime()
+  public readAt?: DateTime
 
   @column()
   public targetAudience?: string
