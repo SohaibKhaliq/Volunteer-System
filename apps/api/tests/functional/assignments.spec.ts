@@ -10,8 +10,8 @@ import { DateTime } from 'luxon'
 
 test.group('Assignments endpoints', () => {
   test('index can filter by user_id and preloads task.event', async ({ client, assert }) => {
-    const u1 = await User.create({ email: 'assign1_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
-    const u2 = await User.create({ email: 'assign2_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const u1 = await User.create({ email: 'assign1_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
+    const u2 = await User.create({ email: 'assign2_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
 
     const ev = await Event.create({
       title: 'Assign Event',
@@ -40,7 +40,7 @@ test.group('Assignments endpoints', () => {
     client,
     assert
   }) => {
-    const user = await User.create({ email: 'cancel_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass' })
+    const user = await User.create({ email: 'cancel_' + Math.floor(Math.random() * 100000) + '@test', password: 'pass', firstName: 'Test', lastName: 'User' })
     const ev = await Event.create({
       title: 'Cancel Event',
       startAt: DateTime.now().plus({ days: 3 })
