@@ -40,6 +40,9 @@ export default class Organization extends BaseModel {
   @column()
   public logo?: string
 
+  @column({ columnName: 'logo_url' })
+  public logoUrl?: string
+
   @column()
   public type?: string
 
@@ -208,10 +211,16 @@ export default class Organization extends BaseModel {
       .where('volunteer_hours.status', 'approved')
 
     if (startDate) {
-      hoursQuery = hoursQuery.where('volunteer_hours.date', '>=', startDate.toSQLDate())
+      const sqlDate = startDate.toSQLDate()
+      if (sqlDate) {
+        hoursQuery = hoursQuery.where('volunteer_hours.date', '>=', sqlDate)
+      }
     }
     if (endDate) {
-      hoursQuery = hoursQuery.where('volunteer_hours.date', '<=', endDate.toSQLDate())
+      const sqlDate = endDate.toSQLDate()
+      if (sqlDate) {
+        hoursQuery = hoursQuery.where('volunteer_hours.date', '<=', sqlDate)
+      }
     }
 
     const hoursResult = await hoursQuery.sum('volunteer_hours.hours as total_hours')
