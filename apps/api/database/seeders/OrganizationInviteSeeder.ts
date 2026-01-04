@@ -19,7 +19,7 @@ export default class OrganizationInviteSeeder extends BaseSeeder {
     }
 
     const statuses = ['pending', 'accepted', 'rejected', 'expired']
-    const roles = ['volunteer', 'coordinator', 'manager']
+    const roles = ['volunteer', 'coordinator', 'volunteer-manager']
     const rows: any[] = []
 
     for (let i = 0; i < RECORD_COUNT; i++) {
