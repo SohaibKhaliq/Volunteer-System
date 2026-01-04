@@ -22,6 +22,9 @@ export default class AuditLog extends BaseModel {
   public targetType?: string
 
   @column({ columnName: 'entity_id' })
+  public entityId?: number
+
+  @column({ columnName: 'target_id' })
   public targetId?: number
 
   @column()
