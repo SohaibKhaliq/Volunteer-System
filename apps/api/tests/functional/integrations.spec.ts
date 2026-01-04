@@ -16,7 +16,7 @@ test.group('Integrations: External Services', (group) => {
   // CentrelinkController Tests (Government Reporting Integration)
   // ==========================================
   test('centrelink: get current fortnight for user', async ({ client, assert }) => {
-    const volunteer = await User.create({ email: `cent-vol-${Date.now()}@test.com`, password: 'pass' })
+    const volunteer = await User.create({ email: `cent-vol-${Date.now()}@test.com`, password: 'pass', firstName: 'Test', lastName: 'User' })
     const org = await Organization.create({ name: 'Govt Org', type: 'Community' })
     
     await OrganizationVolunteer.create({
@@ -44,7 +44,7 @@ test.group('Integrations: External Services', (group) => {
   })
 
   test('centrelink: generate SU462 report (requires opportunity link)', async ({ client, assert }) => {
-    const volunteer = await User.create({ email: `su462-vol-${Date.now()}@test.com`, password: 'pass' })
+    const volunteer = await User.create({ email: `su462-vol-${Date.now()}@test.com`, password: 'pass', firstName: 'Test', lastName: 'User' })
     const org = await Organization.create({ name: 'SU462 Org', type: 'Community' })
     
     await OrganizationVolunteer.create({
