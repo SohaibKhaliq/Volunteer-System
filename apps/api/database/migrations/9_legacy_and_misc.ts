@@ -22,7 +22,7 @@ export default class extends BaseSchema {
       table.text('description').nullable()
       table.string('urgency').defaultTo('medium')
       table.string('status').defaultTo('open')
-      table.string('location').nullable()
+      table.string('address').nullable()
       table.string('contact_phone').nullable()
 
       table.timestamp('created_at', { useTz: true })
@@ -36,7 +36,7 @@ export default class extends BaseSchema {
       table.text('description').nullable()
       table.string('category').notNullable()
       table.string('status').defaultTo('available')
-      table.string('location').nullable()
+      table.string('address').nullable()
       table.string('contact_phone').nullable()
       table.string('availability').nullable()
 
