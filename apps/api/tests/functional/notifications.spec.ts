@@ -4,8 +4,8 @@ import Notification from 'App/Models/Notification'
 
 test.group('Notifications endpoints', () => {
   test('non-admin users see only their notifications', async ({ client, assert }) => {
-    const u1 = await User.create({ email: 'n1_' + Math.floor(Math.random() * 100000) + '@test.com', password: 'pass' })
-    const u2 = await User.create({ email: 'n2_' + Math.floor(Math.random() * 100000) + '@test.com', password: 'pass' })
+    const u1 = await User.create({ email: 'n1_' + Math.floor(Math.random() * 100000) + '@test.com', password: 'pass', firstName: 'Test', lastName: 'User' })
+    const u2 = await User.create({ email: 'n2_' + Math.floor(Math.random() * 100000) + '@test.com', password: 'pass', firstName: 'Test', lastName: 'User' })
 
     await Notification.create({ userId: u1.id, type: 'test', payload: JSON.stringify({ msg: 'a' }), read: false })
     await Notification.create({ userId: u2.id, type: 'test', payload: JSON.stringify({ msg: 'b' }), read: false })
@@ -19,7 +19,7 @@ test.group('Notifications endpoints', () => {
   })
 
   test('admin can see their own notifications', async ({ client, assert }) => {
-    const admin = await User.create({ email: 'admin-not_' + Math.floor(Math.random() * 100000) + '@test.com', password: 'pass', isAdmin: true })
+    const admin = await User.create({ email: 'admin-not_' + Math.floor(Math.random() * 100000) + '@test.com', password: 'pass', isAdmin: true, firstName: 'Test', lastName: 'User' })
     
     // Create notification for admin
     await Notification.create({ userId: admin.id, type: 'x', payload: JSON.stringify({ msg: 'p' }) })
@@ -33,7 +33,7 @@ test.group('Notifications endpoints', () => {
   })
 
   test('can mark notification read and unread', async ({ client, assert }) => {
-    const u = await User.create({ email: 'mark_' + Math.floor(Math.random() * 100000) + '@test.com', password: 'pass' })
+    const u = await User.create({ email: 'mark_' + Math.floor(Math.random() * 100000) + '@test.com', password: 'pass', firstName: 'Test', lastName: 'User' })
     const n = await Notification.create({ userId: u.id, type: 'x', payload: JSON.stringify({ msg: 'p' }), read: false })
 
     const markResp = await client.loginAs(u).put(`/notifications/${n.id}/read`)
