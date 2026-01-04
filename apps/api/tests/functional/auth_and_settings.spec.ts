@@ -34,7 +34,7 @@ test.group('Auth & User Settings Controllers', (group) => {
 
   test('register fails with duplicate email', async ({ client, assert }) => {
     const email = `dup-${Date.now()}@test.com`
-    await User.create({ email, password: 'password123' })
+    await User.create({ email, password: 'password123', firstName: 'Test', lastName: 'User' })
 
     const response = await client.post('/register').json({
       email,
@@ -48,7 +48,7 @@ test.group('Auth & User Settings Controllers', (group) => {
 
   test('login returns token for valid credentials', async ({ client, assert }) => {
     const email = `login-${Date.now()}@test.com`
-    await User.create({ email, password: 'password123' })
+    await User.create({ email, password: 'password123', firstName: 'Test', lastName: 'User' })
 
     const response = await client.post('/login').json({
       email,
@@ -69,7 +69,7 @@ test.group('Auth & User Settings Controllers', (group) => {
   })
 
   test('logout revokes token', async ({ client }) => {
-    const user = await User.create({ email: `logout-${Date.now()}@test.com`, password: 'password123' })
+    const user = await User.create({ email: `logout-${Date.now()}@test.com`, password: 'password123', firstName: 'Test', lastName: 'User' })
     const response = await client.loginAs(user).post('/logout')
 
     response.assertStatus(200)
@@ -80,7 +80,7 @@ test.group('Auth & User Settings Controllers', (group) => {
   // NotificationPreferencesController Tests
   // ==========================================
   test('get preferences returns defaults if none set', async ({ client, assert }) => {
-    const user = await User.create({ email: `pref-${Date.now()}@test.com`, password: 'password123' })
+    const user = await User.create({ email: `pref-${Date.now()}@test.com`, password: 'password123', firstName: 'Test', lastName: 'User' })
     const response = await client.loginAs(user).get('/notification-preferences')
 
     response.assertStatus(200)
@@ -92,7 +92,7 @@ test.group('Auth & User Settings Controllers', (group) => {
   })
 
   test('update preferences modifies settings', async ({ client, assert }) => {
-    const user = await User.create({ email: `pref-upd-${Date.now()}@test.com`, password: 'password123' })
+    const user = await User.create({ email: `pref-upd-${Date.now()}@test.com`, password: 'password123', firstName: 'Test', lastName: 'User' })
     
     const updatePayload = [{
       notificationType: 'event_reminder',
@@ -116,7 +116,7 @@ test.group('Auth & User Settings Controllers', (group) => {
   })
 
   test('reset preferences deletes custom settings', async ({ client, assert }) => {
-    const user = await User.create({ email: `pref-rst-${Date.now()}@test.com`, password: 'password123' })
+    const user = await User.create({ email: `pref-rst-${Date.now()}@test.com`, password: 'password123', firstName: 'Test', lastName: 'User' })
     
     // Create a custom preference
     await NotificationPreference.create({
@@ -159,7 +159,7 @@ test.group('Auth & User Settings Controllers', (group) => {
   })
 
   test('admin can list contact submissions', async ({ client, assert }) => {
-    const admin = await User.create({ email: `admin-contact-${Date.now()}@test.com`, password: 'pass', isAdmin: true })
+    const admin = await User.create({ email: `admin-contact-${Date.now()}@test.com`, password: 'pass', isAdmin: true, firstName: 'Test', lastName: 'User' })
     
     // Seed one
     await ContactSubmission.create({
@@ -182,7 +182,7 @@ test.group('Auth & User Settings Controllers', (group) => {
   // ==========================================
   test('stats returns public metrics', async ({ client, assert }) => {
     // Seed some data to make stats non-zero
-    const u = await User.create({ email: `stats-${Date.now()}@test`, password: 'pass' })
+    const u = await User.create({ email: `stats-${Date.now()}@test`, password: 'pass', firstName: 'Test', lastName: 'User' })
     await VolunteerHour.create({
       userId: u.id,
       date: DateTime.now(),
