@@ -22,8 +22,14 @@ export default class SurveyResponse extends BaseModel {
   @column()
   public answers?: string // JSON string
 
+  @column()
+  public responses?: string // JSON string
+
   @column({ columnName: 'ip_address' })
   public ipAddress?: string
+
+  @column.dateTime({ columnName: 'completed_at' })
+  public completedAt?: DateTime
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
