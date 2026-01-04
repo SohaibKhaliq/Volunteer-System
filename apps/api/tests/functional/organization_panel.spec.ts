@@ -15,7 +15,7 @@ test.group('Organization panel endpoints', () => {
   })
 
   test('events: authenticated but not part of org -> 404', async ({ client }) => {
-    const u = await User.create({ email: `noorg-${Date.now()}@test`, password: 'pass' })
+    const u = await User.create({ email: `noorg-${Date.now()}@test`, password: 'pass', firstName: 'Test', lastName: 'User' })
     const resp = await client.loginAs(u).get('/organization/events')
     resp.assertStatus(404)
 
@@ -30,7 +30,7 @@ test.group('Organization panel endpoints', () => {
   test('events: scoped to organization member and can create', async ({ client, assert }) => {
     const orgA = await Organization.create({ name: 'Org A' })
     const orgB = await Organization.create({ name: 'Org B' })
-    const user = await User.create({ email: `eventuser-${Date.now()}@test`, password: 'pass' })
+    const user = await User.create({ email: `eventuser-${Date.now()}@test`, password: 'pass', firstName: 'Test', lastName: 'User' })
     await OrganizationTeamMember.create({ organizationId: orgA.id, userId: user.id, role: 'Admin' })
 
     // create events across organizations
@@ -70,11 +70,11 @@ test.group('Organization panel endpoints', () => {
   test('volunteers: scoped to organization member and can create', async ({ client, assert }) => {
     const org = await Organization.create({ name: 'Vols Org' })
     const other = await Organization.create({ name: 'Other Org' })
-    const admin = await User.create({ email: `voladmin-${Date.now()}@test`, password: 'pass' })
+    const admin = await User.create({ email: `voladmin-${Date.now()}@test`, password: 'pass', firstName: 'Test', lastName: 'User' })
     await OrganizationTeamMember.create({ organizationId: org.id, userId: admin.id, role: 'Admin' })
 
-    const u1 = await User.create({ email: `vol1-${Date.now()}@test`, password: 'pass' })
-    const u2 = await User.create({ email: `vol2-${Date.now()}@test`, password: 'pass' })
+    const u1 = await User.create({ email: `vol1-${Date.now()}@test`, password: 'pass', firstName: 'Test', lastName: 'User' })
+    const u2 = await User.create({ email: `vol2-${Date.now()}@test`, password: 'pass', firstName: 'Test', lastName: 'User' })
     await OrganizationVolunteer.create({ organizationId: org.id, userId: u1.id, status: 'Active' })
     await OrganizationVolunteer.create({
       organizationId: other.id,
@@ -106,17 +106,17 @@ test.group('Organization panel endpoints', () => {
     resp1.assertStatus(401)
 
     // authenticated but not part of an org -> 404
-    const lonely = await User.create({ email: `lonely2-${Date.now()}@test`, password: 'pass' })
+    const lonely = await User.create({ email: `lonely2-${Date.now()}@test`, password: 'pass', firstName: 'Test', lastName: 'User' })
     const resp2 = await client.loginAs(lonely).get('/organization/compliance/stats')
     resp2.assertStatus(404)
 
     // valid org-scoped stats
     const org = await Organization.create({ name: 'Compliance Org' })
-    const admin = await User.create({ email: `compadmin-${Date.now()}@test`, password: 'pass' })
+    const admin = await User.create({ email: `compadmin-${Date.now()}@test`, password: 'pass', firstName: 'Test', lastName: 'User' })
     await OrganizationTeamMember.create({ organizationId: org.id, userId: admin.id, role: 'Admin' })
 
-    const v1 = await User.create({ email: `compv1-${Date.now()}@test`, password: 'pass' })
-    const v2 = await User.create({ email: `compv2-${Date.now()}@test`, password: 'pass' })
+    const v1 = await User.create({ email: `compv1-${Date.now()}@test`, password: 'pass', firstName: 'Test', lastName: 'User' })
+    const v2 = await User.create({ email: `compv2-${Date.now()}@test`, password: 'pass', firstName: 'Test', lastName: 'User' })
     // add as volunteers for this org
     await OrganizationVolunteer.create({ organizationId: org.id, userId: v1.id, status: 'Active' })
     await OrganizationVolunteer.create({ organizationId: org.id, userId: v2.id, status: 'Active' })
@@ -138,11 +138,11 @@ test.group('Organization panel endpoints', () => {
 
   test('pending hours: returns paginated count for organization', async ({ client, assert }) => {
     const org = await Organization.create({ name: 'Hours Org' })
-    const admin = await User.create({ email: `hoursadmin-${Date.now()}@test`, password: 'pass' })
+    const admin = await User.create({ email: `hoursadmin-${Date.now()}@test`, password: 'pass', firstName: 'Test', lastName: 'User' })
     await OrganizationTeamMember.create({ organizationId: org.id, userId: admin.id, role: 'Admin' })
 
     // volunteer
-    const v = await User.create({ email: `hoursv-${Date.now()}@test`, password: 'pass' })
+    const v = await User.create({ email: `hoursv-${Date.now()}@test`, password: 'pass', firstName: 'Test', lastName: 'User' })
     await OrganizationVolunteer.create({ organizationId: org.id, userId: v.id, status: 'Active' })
 
     // create two pending hour logs
@@ -169,12 +169,12 @@ test.group('Organization panel endpoints', () => {
 
   test('compliance stats: works with mixed team-member & volunteer users', async ({ client }) => {
     const org = await Organization.create({ name: 'Mixed Users Org' })
-    const admin = await User.create({ email: `mixedadmin-${Date.now()}@test`, password: 'pass' })
+    const admin = await User.create({ email: `mixedadmin-${Date.now()}@test`, password: 'pass', firstName: 'Test', lastName: 'User' })
     await OrganizationTeamMember.create({ organizationId: org.id, userId: admin.id, role: 'Admin' })
 
     // create two volunteers, one via OrganizationVolunteer, another is a team member
-    const v1 = await User.create({ email: `mixedv1-${Date.now()}@test`, password: 'pass' })
-    const v2 = await User.create({ email: `mixedv2-${Date.now()}@test`, password: 'pass' })
+    const v1 = await User.create({ email: `mixedv1-${Date.now()}@test`, password: 'pass', firstName: 'Test', lastName: 'User' })
+    const v2 = await User.create({ email: `mixedv2-${Date.now()}@test`, password: 'pass', firstName: 'Test', lastName: 'User' })
     await OrganizationVolunteer.create({ organizationId: org.id, userId: v1.id, status: 'Active' })
     await OrganizationTeamMember.create({ organizationId: org.id, userId: v2.id, role: 'Member' })
 
@@ -193,7 +193,7 @@ test.group('Organization panel endpoints', () => {
     assert
   }) => {
     const org = await Organization.create({ name: 'Profile Org' })
-    const admin = await User.create({ email: `profileadmin-${Date.now()}@test`, password: 'pass' })
+    const admin = await User.create({ email: `profileadmin-${Date.now()}@test`, password: 'pass', firstName: 'Test', lastName: 'User' })
     await OrganizationTeamMember.create({ organizationId: org.id, userId: admin.id, role: 'Admin' })
 
     // initial fetch
