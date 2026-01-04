@@ -10,7 +10,9 @@ test.group('Organizations upload', () => {
     const admin = await User.default.create({
       email: `upload-admin-${Date.now()}@test`,
       password: 'secret',
-      isAdmin: true
+      isAdmin: true,
+      firstName: 'Test',
+      lastName: 'User'
     })
 
     // ensure fixture exists
