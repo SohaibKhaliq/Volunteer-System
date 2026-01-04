@@ -9,7 +9,7 @@ test.group('Organization profile multipart updates', () => {
     const OrganizationTeamMember = await import('App/Models/OrganizationTeamMember')
 
     const org = await Organization.default.create({ name: 'Multipart Org' })
-    const admin = await User.default.create({ email: `multipart-admin-${Date.now()}@test`, password: 'secret' })
+    const admin = await User.default.create({ email: `multipart-admin-${Date.now()}@test`, password: 'secret', firstName: 'Test', lastName: 'User' })
 
     await OrganizationTeamMember.default.create({
       organizationId: org.id,
