@@ -38,6 +38,9 @@ export default class Communication extends BaseModel {
   @column({ prepare: (value) => JSON.stringify(value) })
   public metadata: any
 
+  @column()
+  public category: string
+
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
 
