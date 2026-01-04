@@ -5,7 +5,7 @@ export default class CommunicationSeeder extends BaseSeeder {
   public async run() {
     const RECORD_COUNT = 100
     const now = new Date()
-    const timestamp = now.toISOString()
+    const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
 
     const orgsResult = await Database.rawQuery('SELECT id FROM organizations ORDER BY id ASC LIMIT 50')
     const orgIds = orgsResult[0].map((row: any) => row.id)
@@ -52,9 +52,9 @@ export default class CommunicationSeeder extends BaseSeeder {
         subject: template.subject,
         body: `This is a ${template.category} message for the volunteer.`,
         status: 'delivered',
-        sent_at: sentDate.toISOString(),
-        delivered_at: deliveredDate.toISOString(),
-        read_at: readDate ? readDate.toISOString() : null,
+        sent_at: sentDate.toISOString().slice(0, 19).replace('T', ' '),
+        delivered_at: deliveredDate.toISOString().slice(0, 19).replace('T', ' '),
+        read_at: readDate ? readDate.toISOString().slice(0, 19).replace('T', ' ') : null,
         created_at: timestamp,
         updated_at: timestamp
       })

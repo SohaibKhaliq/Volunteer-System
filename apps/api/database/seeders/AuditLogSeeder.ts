@@ -4,8 +4,7 @@ import Database from '@ioc:Adonis/Lucid/Database'
 export default class AuditLogSeeder extends BaseSeeder {
   public async run() {
     const RECORD_COUNT = 200
-    const now = new Date()
-    const timestamp = now.toISOString()
+
 
     const usersResult = await Database.rawQuery('SELECT id FROM users ORDER BY id ASC LIMIT 50')
     const userIds = usersResult[0].map((row: any) => row.id)
@@ -36,8 +35,8 @@ export default class AuditLogSeeder extends BaseSeeder {
         user_agent: 'Mozilla/5.0',
         old_values: action === 'update' ? JSON.stringify({ status: 'pending' }) : null,
         new_values: action === 'update' ? JSON.stringify({ status: 'approved' }) : null,
-        created_at: actionDate.toISOString(),
-        updated_at: actionDate.toISOString()
+        created_at: actionDate.toISOString().slice(0, 19).replace('T', ' '),
+        updated_at: actionDate.toISOString().slice(0, 19).replace('T', ' ')
       })
     }
 

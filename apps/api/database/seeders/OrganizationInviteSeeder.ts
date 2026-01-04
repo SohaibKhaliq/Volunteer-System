@@ -5,7 +5,7 @@ export default class OrganizationInviteSeeder extends BaseSeeder {
   public async run() {
     const RECORD_COUNT = 30
     const now = new Date()
-    const timestamp = now.toISOString()
+    const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
 
     const orgsResult = await Database.rawQuery('SELECT id FROM organizations ORDER BY id ASC LIMIT 50')
     const orgIds = orgsResult[0].map((row: any) => row.id)
@@ -42,7 +42,7 @@ export default class OrganizationInviteSeeder extends BaseSeeder {
       const expiresAt = new Date()
       expiresAt.setDate(expiresAt.getDate() + 14)
 
-      const respondedAt = status !== 'pending' ? new Date(Date.now() - Math.random() * 10 * 24 * 60 * 60 * 1000).toISOString() : null
+      const respondedAt = status !== 'pending' ? new Date(Date.now() - Math.random() * 10 * 24 * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ') : null
 
       rows.push({
         organization_id: orgId,
@@ -51,7 +51,7 @@ export default class OrganizationInviteSeeder extends BaseSeeder {
         invite_code: inviteCode,
         status: status,
         invited_by: invitedBy,
-        expires_at: expiresAt.toISOString(),
+        expires_at: expiresAt.toISOString().slice(0, 19).replace('T', ' '),
         responded_at: respondedAt,
         created_at: timestamp,
         updated_at: timestamp

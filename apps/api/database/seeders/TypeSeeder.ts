@@ -5,7 +5,7 @@ export default class TypeSeeder extends BaseSeeder {
   public async run() {
     const RECORD_COUNT = 20
     const now = new Date()
-    const timestamp = now.toISOString()
+    const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
 
     const types = [
       { name: 'Transport', for_entity: 'both', icon: '🚗' },

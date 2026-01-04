@@ -5,7 +5,7 @@ export default class SurveyResponseSeeder extends BaseSeeder {
   public async run() {
     const RECORD_COUNT = 200
     const now = new Date()
-    const timestamp = now.toISOString()
+    const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
 
     const surveysResult = await Database.rawQuery('SELECT id, questions FROM surveys ORDER BY id ASC LIMIT 20')
     const surveys = surveysResult[0] as Array<{ id: number; questions: string }>
@@ -57,7 +57,7 @@ export default class SurveyResponseSeeder extends BaseSeeder {
         survey_id: survey.id,
         user_id: userId,
         responses: JSON.stringify(responses),
-        completed_at: completedDate.toISOString(),
+        completed_at: completedDate.toISOString().slice(0, 19).replace('T', ' '),
         created_at: timestamp,
         updated_at: timestamp
       })

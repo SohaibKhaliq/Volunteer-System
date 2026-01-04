@@ -59,7 +59,7 @@ export default class CourseSeeder extends BaseSeeder {
     ]
 
     const now = new Date()
-    const timestamp = now.toISOString()
+    const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
 
     const rows = courseData.slice(0, RECORD_COUNT).map((course) => {
       const startDate = new Date()
@@ -71,8 +71,8 @@ export default class CourseSeeder extends BaseSeeder {
         title: course.title,
         description: course.description,
         instructor: course.instructor,
-        start_at: startDate.toISOString(),
-        end_at: endDate.toISOString(),
+        start_at: startDate.toISOString().slice(0, 19).replace('T', ' '),
+        end_at: endDate.toISOString().slice(0, 19).replace('T', ' '),
         capacity: Math.floor(Math.random() * 20) + 15,
         status: 'Open',
         created_at: timestamp,

@@ -15,6 +15,7 @@ type SeedUser = {
 export default class UserSeeder extends BaseSeeder {
   public async run() {
     const RECORD_COUNT = 50
+    console.log('UserSeeder: starting...')
     const baseUsers: SeedUser[] = [
       {
         firstName: 'Amelia',
@@ -514,7 +515,7 @@ export default class UserSeeder extends BaseSeeder {
     ]
 
     const now = new Date()
-    const timestamp = now.toISOString()
+    const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
     const passwordHash = await Hash.make('12345678')
 
     const rows = baseUsers.slice(0, RECORD_COUNT).map((user, index) => {

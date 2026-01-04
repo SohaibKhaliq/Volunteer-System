@@ -29,7 +29,7 @@ export default class TaskSeeder extends BaseSeeder {
     ]
 
     const now = new Date()
-    const timestamp = now.toISOString()
+    const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
 
     const eventsResult = await Database.rawQuery('SELECT id FROM events ORDER BY id ASC LIMIT 50')
     const eventIds = eventsResult[0].map((row: any) => row.id)
@@ -59,8 +59,8 @@ export default class TaskSeeder extends BaseSeeder {
         event_id: eventId,
         title: template.title,
         description: template.description,
-        start_at: taskStart.toISOString(),
-        end_at: taskEnd.toISOString(),
+        start_at: taskStart.toISOString().slice(0, 19).replace('T', ' '),
+        end_at: taskEnd.toISOString().slice(0, 19).replace('T', ' '),
         slot_count: slotCount,
         required_skills: requiredSkills,
         created_at: timestamp,

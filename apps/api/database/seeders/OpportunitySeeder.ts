@@ -571,7 +571,7 @@ export default class OpportunitySeeder extends BaseSeeder {
     ]
 
     const now = new Date()
-    const timestamp = now.toISOString()
+    const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
 
     const orgResult = await Database.rawQuery('SELECT id FROM organizations ORDER BY id ASC LIMIT 50')
     const organizationIds = orgResult[0].map((row: any) => row.id)
@@ -596,8 +596,8 @@ export default class OpportunitySeeder extends BaseSeeder {
         location: `${opp.location}, ${opp.city}, ${opp.state}`,
         capacity: opp.capacity,
         type: opp.type,
-        start_at: startDate.toISOString(),
-        end_at: endDate.toISOString(),
+        start_at: startDate.toISOString().slice(0, 19).replace('T', ' '),
+        end_at: endDate.toISOString().slice(0, 19).replace('T', ' '),
         status: 'published',
         visibility: 'public',
         created_at: timestamp,

@@ -5,7 +5,7 @@ export default class ShiftAssignmentSeeder extends BaseSeeder {
   public async run() {
     const RECORD_COUNT = 150
     const now = new Date()
-    const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
+    const timestamp = now.toISOString().slice(0, 19).replace('T', ' ').slice(0, 19).replace('T', ' ')
 
     const shiftsResult = await Database.rawQuery('SELECT id FROM shifts ORDER BY id ASC LIMIT 50')
     const shiftIds = shiftsResult[0].map((row: any) => row.id)
@@ -32,9 +32,9 @@ export default class ShiftAssignmentSeeder extends BaseSeeder {
 
       const status = statuses[Math.floor(Math.random() * statuses.length)]
 
-      let checkedInAt = null
-      let checkedOutAt = null
-      let hours = null
+      let checkedInAt: string | null = null
+      let checkedOutAt: string | null = null
+      let hours: number | null = null
 
       if (status === 'completed') {
         const checkIn = new Date()

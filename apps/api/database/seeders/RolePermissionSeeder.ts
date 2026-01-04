@@ -4,7 +4,7 @@ import Database from '@ioc:Adonis/Lucid/Database'
 export default class RolePermissionSeeder extends BaseSeeder {
   public async run() {
     const now = new Date()
-    const timestamp = now.toISOString()
+    const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
 
     const rolesResult = await Database.rawQuery('SELECT id, slug FROM roles ORDER BY id ASC')
     const roles = rolesResult[0] as Array<{ id: number; slug: string }>

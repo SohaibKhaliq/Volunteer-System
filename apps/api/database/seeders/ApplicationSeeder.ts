@@ -6,7 +6,7 @@ export default class ApplicationSeeder extends BaseSeeder {
     const RECORD_COUNT = 100
 
     const now = new Date()
-    const timestamp = now.toISOString()
+    const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
 
     const usersResult = await Database.rawQuery('SELECT id FROM users ORDER BY id ASC LIMIT 50')
     const userIds = usersResult[0].map((row: any) => row.id)
@@ -63,8 +63,8 @@ export default class ApplicationSeeder extends BaseSeeder {
         opportunity_id: oppId,
         user_id: userId,
         status: status,
-        applied_at: appliedDate.toISOString(),
-        responded_at: respondedDate ? respondedDate.toISOString() : null,
+        applied_at: appliedDate.toISOString().slice(0, 19).replace('T', ' '),
+        responded_at: respondedDate ? respondedDate.toISOString().slice(0, 19).replace('T', ' ') : null,
         notes: notes,
         created_at: timestamp,
         updated_at: timestamp

@@ -5,7 +5,7 @@ export default class OrganizationTeamMemberSeeder extends BaseSeeder {
   public async run() {
     const RECORD_COUNT = 100
     const now = new Date()
-    const timestamp = now.toISOString()
+    const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
 
     const teamsResult = await Database.rawQuery('SELECT id FROM teams ORDER BY id ASC LIMIT 50')
     const teamIds = teamsResult[0].map((row: any) => row.id)
@@ -46,7 +46,7 @@ export default class OrganizationTeamMemberSeeder extends BaseSeeder {
         team_id: teamId,
         user_id: userId,
         role: role,
-        joined_at: joinedDate.toISOString(),
+        joined_at: joinedDate.toISOString().slice(0, 19).replace('T', ' '),
         is_active: Math.random() > 0.1 ? 1 : 0,
         created_at: timestamp,
         updated_at: timestamp

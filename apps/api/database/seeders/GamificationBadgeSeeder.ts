@@ -5,7 +5,7 @@ export default class GamificationBadgeSeeder extends BaseSeeder {
   public async run() {
     const RECORD_COUNT = 25
     const now = new Date()
-    const timestamp = now.toISOString()
+    const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
 
     const badges = [
       { name: 'Rising Star', category: 'performance', points: 100, icon: '⭐', criteria: 'Complete 10 tasks in first month' },

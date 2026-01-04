@@ -520,13 +520,13 @@ export default class EventSeeder extends BaseSeeder {
     ]
 
     const now = new Date()
-    const timestamp = now.toISOString()
+    const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
 
     const orgResult = await Database.rawQuery('SELECT id FROM organizations ORDER BY id ASC LIMIT 50')
     const organizationIds = orgResult[0].map((row: any) => row.id)
 
     if (organizationIds.length === 0) {
-      console.log('EventSeeder: no organizations found, skipping')
+      console.log(`EventSeeder: no organizations found (${organizationIds.length}), skipping`)
       return
     }
 
@@ -541,8 +541,8 @@ export default class EventSeeder extends BaseSeeder {
         title: event.title,
         description: event.description,
         location: `${event.location}, ${event.city}, ${event.state}`,
-        start_at: startDate.toISOString(),
-        end_at: endDate.toISOString(),
+        start_at: startDate.toISOString().slice(0, 19).replace('T', ' '),
+        end_at: endDate.toISOString().slice(0, 19).replace('T', ' '),
         capacity: event.capacity,
         is_published: true,
         created_at: timestamp,

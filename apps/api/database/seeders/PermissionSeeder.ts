@@ -122,7 +122,7 @@ export default class PermissionSeeder extends BaseSeeder {
     ]
 
     const now = new Date()
-    const timestamp = now.toISOString()
+    const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
 
     const rows = permissions.slice(0, RECORD_COUNT).map((perm) => ({
       name: perm.name,

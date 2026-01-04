@@ -5,7 +5,7 @@ export default class CommunicationLogSeeder extends BaseSeeder {
   public async run() {
     const RECORD_COUNT = 150
     const now = new Date()
-    const timestamp = now.toISOString()
+    const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
 
     const commsResult = await Database.rawQuery('SELECT id FROM communications ORDER BY id ASC LIMIT 100')
     const commIds = commsResult[0].map((row: any) => row.id)
@@ -30,7 +30,7 @@ export default class CommunicationLogSeeder extends BaseSeeder {
         activity_details: `Communication ${activity} successfully`,
         ip_address: `192.168.1.${Math.floor(Math.random() * 255)}`,
         user_agent: 'Mozilla/5.0',
-        occurred_at: activityDate.toISOString(),
+        occurred_at: activityDate.toISOString().slice(0, 19).replace('T', ' '),
         created_at: timestamp,
         updated_at: timestamp
       })

@@ -59,7 +59,7 @@ export default class RoleSeeder extends BaseSeeder {
     ]
 
     const now = new Date()
-    const timestamp = now.toISOString()
+    const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
 
     const rows = roles.slice(0, RECORD_COUNT).map((role) => ({
       name: role.name,

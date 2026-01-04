@@ -5,7 +5,7 @@ export default class AssignmentSeeder extends BaseSeeder {
   public async run() {
     const RECORD_COUNT = 100
     const now = new Date()
-    const timestamp = now.toISOString()
+    const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
 
     const tasksResult = await Database.rawQuery('SELECT id FROM tasks ORDER BY id ASC LIMIT 100')
     const taskIds = tasksResult[0].map((row: any) => row.id)

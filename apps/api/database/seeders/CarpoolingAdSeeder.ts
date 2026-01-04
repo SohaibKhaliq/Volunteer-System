@@ -5,7 +5,7 @@ export default class CarpoolingAdSeeder extends BaseSeeder {
   public async run() {
     const RECORD_COUNT = 20
     const now = new Date()
-    const timestamp = now.toISOString()
+    const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
 
     const usersResult = await Database.rawQuery('SELECT id FROM users ORDER BY id ASC LIMIT 50')
     const userIds = usersResult[0].map((row: any) => row.id)
@@ -39,7 +39,7 @@ export default class CarpoolingAdSeeder extends BaseSeeder {
         user_id: userId,
         from_location: route.from,
         to_location: route.to,
-        departure_time: departureDate.toISOString(),
+        departure_time: departureDate.toISOString().slice(0, 19).replace('T', ' '),
         available_seats: route.seats,
         price_per_seat: Math.floor(Math.random() * 20) + 5,
         status: status,

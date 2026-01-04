@@ -5,7 +5,7 @@ export default class BackgroundCheckSeeder extends BaseSeeder {
   public async run() {
     const RECORD_COUNT = 50
     const now = new Date()
-    const timestamp = now.toISOString()
+    const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
 
     const usersResult = await Database.rawQuery('SELECT id FROM users ORDER BY id ASC LIMIT 50')
     const userIds = usersResult[0].map((row: any) => row.id)
@@ -40,8 +40,8 @@ export default class BackgroundCheckSeeder extends BaseSeeder {
         user_id: userId,
         check_type: checkType,
         status: status,
-        issued_at: status === 'approved' ? issuedDate.toISOString() : null,
-        expires_at: status === 'approved' ? expiryDate.toISOString() : null,
+        issued_at: status === 'approved' ? issuedDate.toISOString().slice(0, 19).replace('T', ' ') : null,
+        expires_at: status === 'approved' ? expiryDate.toISOString().slice(0, 19).replace('T', ' ') : null,
         reference_number: status === 'approved' ? `CHECK-${userId}-${Date.now().toString().slice(-6)}` : null,
         notes: status === 'rejected' ? 'Additional information required' : null,
         created_at: timestamp,

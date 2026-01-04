@@ -5,7 +5,7 @@ export default class EngagementCampaignSeeder extends BaseSeeder {
   public async run() {
     const RECORD_COUNT = 20
     const now = new Date()
-    const timestamp = now.toISOString()
+    const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
 
     const orgsResult = await Database.rawQuery('SELECT id FROM organizations ORDER BY id ASC LIMIT 50')
     const orgIds = orgsResult[0].map((row: any) => row.id)
@@ -47,8 +47,8 @@ export default class EngagementCampaignSeeder extends BaseSeeder {
         name: `${campaign.name} ${Math.floor(i / campaigns.length) + 1}`,
         description: `${campaign.type} campaign to engage volunteers`,
         campaign_type: campaign.type,
-        start_date: startDate.toISOString(),
-        end_date: endDate.toISOString(),
+        start_date: startDate.toISOString().slice(0, 19).replace('T', ' '),
+        end_date: endDate.toISOString().slice(0, 19).replace('T', ' '),
         target_audience: 'all_volunteers',
         goal_metric: campaign.goal,
         current_metric: Math.floor(campaign.goal * (0.3 + Math.random() * 0.6)),

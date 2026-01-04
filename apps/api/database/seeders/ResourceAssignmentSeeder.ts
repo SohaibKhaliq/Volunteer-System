@@ -5,7 +5,7 @@ export default class ResourceAssignmentSeeder extends BaseSeeder {
   public async run() {
     const RECORD_COUNT = 100
     const now = new Date()
-    const timestamp = now.toISOString()
+    const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
 
     const resourcesResult = await Database.rawQuery('SELECT id FROM resources ORDER BY id ASC LIMIT 50')
     const resourceIds = resourcesResult[0].map((row: any) => row.id)
@@ -38,9 +38,9 @@ export default class ResourceAssignmentSeeder extends BaseSeeder {
         resource_id: resourceId,
         assignment_type: 'event',
         related_id: eventId,
-        assigned_at: assignedDate.toISOString(),
-        expected_return_at: expectedReturnDate.toISOString(),
-        returned_at: returnedDate ? returnedDate.toISOString() : null,
+        assigned_at: assignedDate.toISOString().slice(0, 19).replace('T', ' '),
+        expected_return_at: expectedReturnDate.toISOString().slice(0, 19).replace('T', ' '),
+        returned_at: returnedDate ? returnedDate.toISOString().slice(0, 19).replace('T', ' ') : null,
         status: status,
         notes: 'Assigned for event use',
         created_at: timestamp,

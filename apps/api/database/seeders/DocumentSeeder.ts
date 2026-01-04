@@ -5,7 +5,7 @@ export default class DocumentSeeder extends BaseSeeder {
   public async run() {
     const RECORD_COUNT = 50
     const now = new Date()
-    const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
+    const timestamp = now.toISOString().slice(0, 19).replace('T', ' ').slice(0, 19).replace('T', ' ')
 
     const orgsResult = await Database.rawQuery('SELECT id FROM organizations ORDER BY id ASC LIMIT 50')
     const orgIds = orgsResult[0].map((row: any) => row.id)

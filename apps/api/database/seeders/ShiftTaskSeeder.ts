@@ -5,7 +5,7 @@ export default class ShiftTaskSeeder extends BaseSeeder {
   public async run() {
     const RECORD_COUNT = 100
     const now = new Date()
-    const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
+    const timestamp = now.toISOString().slice(0, 19).replace('T', ' ').slice(0, 19).replace('T', ' ')
 
     const shiftsResult = await Database.rawQuery('SELECT id FROM shifts ORDER BY id ASC LIMIT 50')
     const shiftIds = shiftsResult[0].map((row: any) => row.id)

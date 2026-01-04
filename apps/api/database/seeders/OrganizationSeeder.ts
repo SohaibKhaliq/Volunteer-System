@@ -621,7 +621,7 @@ export default class OrganizationSeeder extends BaseSeeder {
     ]
 
     const now = new Date()
-    const timestamp = now.toISOString()
+    const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
 
     const rows = baseOrganizations.slice(0, RECORD_COUNT).map((org, index) => {
       const slug = `${org.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${(index + 1).toString().padStart(3, '0')}`

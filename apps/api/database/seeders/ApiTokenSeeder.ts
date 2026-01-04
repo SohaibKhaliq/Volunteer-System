@@ -5,7 +5,7 @@ export default class ApiTokenSeeder extends BaseSeeder {
   public async run() {
     const RECORD_COUNT = 10
     const now = new Date()
-    const timestamp = now.toISOString()
+    const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
 
     const usersResult = await Database.rawQuery('SELECT id FROM users ORDER BY id ASC LIMIT 10')
     const userIds = usersResult[0].map((row: any) => row.id)
@@ -30,7 +30,7 @@ export default class ApiTokenSeeder extends BaseSeeder {
         name: tokenName,
         token: token,
         type: 'api',
-        expires_at: expiresDate.toISOString(),
+        expires_at: expiresDate.toISOString().slice(0, 19).replace('T', ' '),
         created_at: timestamp,
         updated_at: timestamp
       })

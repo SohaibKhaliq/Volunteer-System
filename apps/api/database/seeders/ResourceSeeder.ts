@@ -59,7 +59,7 @@ export default class ResourceSeeder extends BaseSeeder {
     ]
 
     const now = new Date()
-    const timestamp = now.toISOString()
+    const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
 
     const orgsResult = await Database.rawQuery('SELECT id FROM organizations ORDER BY id ASC LIMIT 50')
     const orgIds = orgsResult[0].map((row: any) => row.id)
@@ -73,7 +73,7 @@ export default class ResourceSeeder extends BaseSeeder {
 
     const rows = resources.slice(0, RECORD_COUNT).map((res, index) => {
       const maintenanceDue = ['Transport', 'Technology', 'Medical'].includes(res.category)
-        ? new Date(Date.now() + Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString()
+        ? new Date(Date.now() + Math.random() * 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ')
         : null
 
       return {

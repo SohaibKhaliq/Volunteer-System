@@ -6,7 +6,7 @@ export default class CourseEnrollmentSeeder extends BaseSeeder {
     const RECORD_COUNT = 100
 
     const now = new Date()
-    const timestamp = now.toISOString()
+    const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
 
     const usersResult = await Database.rawQuery('SELECT id FROM users ORDER BY id ASC LIMIT 50')
     const userIds = usersResult[0].map((row: any) => row.id)
@@ -55,8 +55,8 @@ export default class CourseEnrollmentSeeder extends BaseSeeder {
         course_id: courseId,
         user_id: userId,
         status: status,
-        enrolled_at: enrolledDate.toISOString(),
-        completed_at: completedDate ? completedDate.toISOString() : null,
+        enrolled_at: enrolledDate.toISOString().slice(0, 19).replace('T', ' '),
+        completed_at: completedDate ? completedDate.toISOString().slice(0, 19).replace('T', ' ') : null,
         created_at: timestamp,
         updated_at: timestamp
       })
