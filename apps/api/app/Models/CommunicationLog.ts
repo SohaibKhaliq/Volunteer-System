@@ -31,6 +31,24 @@ export default class CommunicationLog extends BaseModel {
   @column()
   public error?: string
 
+  @column()
+  public activityType?: string
+
+  @column({
+    prepare: (value: any) => (value ? JSON.stringify(value) : null),
+    consume: (value: any) => (value ? JSON.parse(value) : null)
+  })
+  public activityDetails?: object
+
+  @column()
+  public ipAddress?: string
+
+  @column()
+  public userAgent?: string
+
+  @column.dateTime()
+  public occurredAt?: DateTime
+
   @column.dateTime()
   public lastAttemptAt?: DateTime
 
