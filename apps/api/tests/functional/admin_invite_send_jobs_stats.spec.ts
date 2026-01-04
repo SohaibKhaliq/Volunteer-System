@@ -11,10 +11,10 @@ test.group('Admin invite send jobs stats endpoint', () => {
   })
 
   test('admin can fetch stats', async ({ client, assert }) => {
-    const admin = await User.create({ email: `admin-stats-${Date.now()}@test`, password: 'pass', isAdmin: true })
+    const admin = await User.create({ email: `admin-stats-${Date.now()}@test`, password: 'pass', isAdmin: true, firstName: 'Test', lastName: 'User' })
 
     const org = await Organization.create({ name: 'StatsOrg' })
-    const inviter = await User.create({ email: `inviter-stats-${Date.now()}@test`, password: 'pass' })
+    const inviter = await User.create({ email: `inviter-stats-${Date.now()}@test`, password: 'pass', firstName: 'Test', lastName: 'User' })
 
     // create jobs with varied statuses
     for (let i = 0; i < 6; i++) {
