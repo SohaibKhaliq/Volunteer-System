@@ -3,7 +3,7 @@ import { test } from '@japa/runner'
 test.group('Reports', () => {
   test('overview returns expected shape', async ({ client, assert }) => {
     const User = await import('App/Models/User')
-    const admin = await User.default.create({ email: `rep-admin-${Date.now()}@test`, password: 'pass', isAdmin: true })
+    const admin = await User.default.create({ email: `rep-admin-${Date.now()}@test`, password: 'pass', isAdmin: true, firstName: 'Test', lastName: 'User' })
     const response = await client.loginAs(admin).get('/reports')
     response.assertStatus(200)
     const body = response.body()
@@ -19,7 +19,7 @@ test.group('Reports', () => {
 
   test('events endpoint (overview) returns event completion summary', async ({ client, assert }) => {
     const User = await import('App/Models/User')
-    const admin = await User.default.create({ email: `rep-admin2-${Date.now()}@test`, password: 'pass', isAdmin: true })
+    const admin = await User.default.create({ email: `rep-admin2-${Date.now()}@test`, password: 'pass', isAdmin: true, firstName: 'Test', lastName: 'User' })
     // The previous test expected an array from /reports?type=events, but the controller returns overview.
     // We update this test to verify the eventCompletion section of the overview.
     const response = await client.loginAs(admin).get('/reports') 
@@ -34,7 +34,7 @@ test.group('Reports', () => {
 
   test('participation returns volunteer participation summary', async ({ client, assert }) => {
     const User = await import('App/Models/User')
-    const admin = await User.default.create({ email: `rep-admin3-${Date.now()}@test`, password: 'pass', isAdmin: true })
+    const admin = await User.default.create({ email: `rep-admin3-${Date.now()}@test`, password: 'pass', isAdmin: true, firstName: 'Test', lastName: 'User' })
     const response = await client.loginAs(admin).get('/reports')
     response.assertStatus(200)
     const body = response.body()
