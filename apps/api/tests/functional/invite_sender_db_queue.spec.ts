@@ -7,7 +7,7 @@ import InviteSendJob from 'App/Models/InviteSendJob'
 test.group('Invite sender DB-backed queue', (group) => {
   test('enqueueInviteSend creates a pending job', async ({ assert }) => {
     const org = await Organization.create({ name: 'QueueOrg' })
-    const inviter = await User.create({ email: 'inviter-q@test', password: 'pass' })
+    const inviter = await User.create({ email: 'inviter-q@test', password: 'pass', firstName: 'Test', lastName: 'User' })
 
     const invite = await OrganizationInvite.create({
       organizationId: org.id,
@@ -27,7 +27,7 @@ test.group('Invite sender DB-backed queue', (group) => {
 
   test('processQueue attempts send and marks job sent', async ({ assert }) => {
     const org = await Organization.create({ name: 'ProcessOrg' })
-    const inviter = await User.create({ email: 'inviter-p@test', password: 'pass' })
+    const inviter = await User.create({ email: 'inviter-p@test', password: 'pass', firstName: 'Test', lastName: 'User' })
 
     const invite = await OrganizationInvite.create({
       organizationId: org.id,
