@@ -27,6 +27,15 @@ export default class Offer extends BaseModel {
   @belongsTo(() => User)
   public user: BelongsTo<typeof User>
 
+  @column({ columnName: 'user_id' })
+  public userId: number
+
+  @column()
+  public category: string
+
+  @column()
+  public availability?: string
+
   @column()
   public longitude: number
 
