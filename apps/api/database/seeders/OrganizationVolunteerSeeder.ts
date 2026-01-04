@@ -20,7 +20,15 @@ export default class OrganizationVolunteerSeeder extends BaseSeeder {
     }
 
     const statuses = ['Active', 'Inactive', 'Pending']
-    const roles = ['volunteer', 'team-leader', 'coordinator', 'volunteer-manager']
+    // Fetch valid organization roles from the database to ensure consistency
+    const targetRoles = ['volunteer', 'team-leader', 'coordinator', 'volunteer-manager']
+    const rolesResult = await Database.from('roles').whereIn('slug', targetRoles).select('slug')
+    const roles = rolesResult.map((r) => r.slug)
+
+    if (roles.length === 0) {
+      console.log('OrganizationVolunteerSeeder: no valid organization roles found in roles table')
+      return
+    }
     const skillSets = [
       'First Aid,Communication,Teamwork',
       'Project Management,Leadership,Training',
