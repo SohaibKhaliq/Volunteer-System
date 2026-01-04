@@ -28,7 +28,7 @@ test.group('Compliance & Documents Controllers', (group) => {
   // ComplianceController Tests
   // ==========================================
   test('compliance: list types returns system and org requirements', async ({ client, assert }) => {
-    const user = await User.create({ email: `comp-types-${Date.now()}@test.com`, password: 'pass' })
+    const user = await User.create({ email: `comp-types-${Date.now()}@test.com`, password: 'pass', firstName: 'Test', lastName: 'User' })
     const response = await client.loginAs(user).get('/compliance/types')
 
     response.assertStatus(200)
@@ -38,7 +38,7 @@ test.group('Compliance & Documents Controllers', (group) => {
   })
 
   test('compliance: validate WWCC returns valid for good number', async ({ client, assert }) => {
-    const user = await User.create({ email: `wwcc-${Date.now()}@test.com`, password: 'pass' })
+    const user = await User.create({ email: `wwcc-${Date.now()}@test.com`, password: 'pass', firstName: 'Test', lastName: 'User' })
     const response = await client.loginAs(user).post('/compliance/validate-wwcc').json({
       wwccNumber: 'WWC1234567E',
       state: 'NSW'
@@ -49,7 +49,7 @@ test.group('Compliance & Documents Controllers', (group) => {
   })
 
   test('compliance: validate WWCC returns 422 for bad number', async ({ client }) => {
-    const user = await User.create({ email: `wwcc-bad-${Date.now()}@test.com`, password: 'pass' })
+    const user = await User.create({ email: `wwcc-bad-${Date.now()}@test.com`, password: 'pass', firstName: 'Test', lastName: 'User' })
     const response = await client.loginAs(user).post('/compliance/validate-wwcc').json({
       wwccNumber: 'BAD',
       state: 'NSW'
@@ -59,7 +59,7 @@ test.group('Compliance & Documents Controllers', (group) => {
   })
 
   test('compliance: store creates document', async ({ client, assert }) => {
-    const user = await User.create({ email: `comp-store-${Date.now()}@test.com`, password: 'pass' })
+    const user = await User.create({ email: `comp-store-${Date.now()}@test.com`, password: 'pass', firstName: 'Test', lastName: 'User' })
     const filePath = await prepareFile('cert.pdf')
 
     const response = await client
@@ -78,7 +78,7 @@ test.group('Compliance & Documents Controllers', (group) => {
   })
 
   test('compliance: show returns document', async ({ client, assert }) => {
-    const user = await User.create({ email: `comp-show-${Date.now()}@test.com`, password: 'pass' })
+    const user = await User.create({ email: `comp-show-${Date.now()}@test.com`, password: 'pass', firstName: 'Test', lastName: 'User' })
     const doc = await ComplianceDocument.create({
       userId: user.id,
       docType: 'other',
@@ -91,7 +91,7 @@ test.group('Compliance & Documents Controllers', (group) => {
   })
 
   test('compliance: update modifies document and resets status', async ({ client, assert }) => {
-    const user = await User.create({ email: `comp-upd-${Date.now()}@test.com`, password: 'pass' })
+    const user = await User.create({ email: `comp-upd-${Date.now()}@test.com`, password: 'pass', firstName: 'Test', lastName: 'User' })
     const doc = await ComplianceDocument.create({
       userId: user.id,
       docType: 'other',
@@ -112,7 +112,7 @@ test.group('Compliance & Documents Controllers', (group) => {
   // DocumentsController Tests (Library)
   // ==========================================
   test('documents: store creates items in library', async ({ client, assert }) => {
-    const admin = await User.create({ email: `doc-lib-${Date.now()}@test.com`, password: 'pass', isAdmin: true })
+    const admin = await User.create({ email: `doc-lib-${Date.now()}@test.com`, password: 'pass', isAdmin: true, firstName: 'Test', lastName: 'User' })
     const filePath = await prepareFile('policy.pdf')
 
     const response = await client
@@ -137,11 +137,12 @@ test.group('Compliance & Documents Controllers', (group) => {
       fileName: 'pub.pdf',
       fileType: 'application/pdf',
       fileSize: 1024,
+      category: 'general',
       isPublic: true,
       status: 'published'
     })
 
-    const user = await User.create({ email: `doc-read-${Date.now()}@test.com`, password: 'pass' })
+    const user = await User.create({ email: `doc-read-${Date.now()}@test.com`, password: 'pass', firstName: 'Test', lastName: 'User' })
     const response = await client.loginAs(user).get('/documents')
 
     response.assertStatus(200)
@@ -156,12 +157,13 @@ test.group('Compliance & Documents Controllers', (group) => {
       fileName: 'ack.pdf',
       fileType: 'application/pdf',
       fileSize: 1024,
+      category: 'general',
       isPublic: true,
       requiresAcknowledgment: true,
       status: 'published'
     })
 
-    const user = await User.create({ email: `doc-ack-${Date.now()}@test.com`, password: 'pass' })
+    const user = await User.create({ email: `doc-ack-${Date.now()}@test.com`, password: 'pass', firstName: 'Test', lastName: 'User' })
     
     const response = await client.loginAs(user).post(`/documents/${doc.id}/acknowledge`).json({
       notes: 'Read it'
@@ -195,11 +197,12 @@ test.group('Compliance & Documents Controllers', (group) => {
       fileName: 'dl.txt',
       fileType: 'text/plain',
       fileSize: 10,
+      category: 'general',
       isPublic: true,
       status: 'published'
     })
 
-    const user = await User.create({ email: `doc-dl-${Date.now()}@test.com`, password: 'pass' })
+    const user = await User.create({ email: `doc-dl-${Date.now()}@test.com`, password: 'pass', firstName: 'Test', lastName: 'User' })
     const response = await client.loginAs(user).get(`/documents/${doc.id}/download`)
     
     // Expecting 404 'File not found' if Drive can't find it, OR 200 if we configured it right.
@@ -216,8 +219,8 @@ test.group('Compliance & Documents Controllers', (group) => {
   // BackgroundChecksController Tests
   // ==========================================
   test('bg check: store creates request', async ({ client, assert }) => {
-    const admin = await User.create({ email: `bg-adm-${Date.now()}@test.com`, password: 'pass', isAdmin: true })
-    const target = await User.create({ email: `bg-target-${Date.now()}@test.com`, password: 'pass' })
+    const admin = await User.create({ email: `bg-adm-${Date.now()}@test.com`, password: 'pass', isAdmin: true, firstName: 'Test', lastName: 'User' })
+    const target = await User.create({ email: `bg-target-${Date.now()}@test.com`, password: 'pass', firstName: 'Test', lastName: 'User' })
 
     const response = await client.loginAs(admin).post('/background-checks').json({
       user_id: target.id,
@@ -231,7 +234,7 @@ test.group('Compliance & Documents Controllers', (group) => {
   })
 
   test('bg check: update modifies status', async ({ client, assert }) => {
-    const admin = await User.create({ email: `bg-upd-${Date.now()}@test.com`, password: 'pass', isAdmin: true })
+    const admin = await User.create({ email: `bg-upd-${Date.now()}@test.com`, password: 'pass', isAdmin: true, firstName: 'Test', lastName: 'User' })
     const check = await BackgroundCheck.create({
       userId: admin.id,
       status: 'pending'
