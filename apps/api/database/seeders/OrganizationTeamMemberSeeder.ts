@@ -18,7 +18,15 @@ export default class OrganizationTeamMemberSeeder extends BaseSeeder {
       return
     }
 
-    const roles = ['volunteer', 'coordinator', 'team-leader']
+    // Fetch valid team roles from the database
+    const targetRoles = ['volunteer', 'coordinator', 'team-leader']
+    const rolesResult = await Database.from('roles').whereIn('slug', targetRoles).select('slug')
+    const roles = rolesResult.map((r) => r.slug)
+
+    if (roles.length === 0) {
+      console.log('OrganizationTeamMemberSeeder: no valid team roles found')
+      return
+    }
     const rows: any[] = []
     const createdPairs = new Set<string>()
 
