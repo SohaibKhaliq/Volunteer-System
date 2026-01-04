@@ -14,6 +14,12 @@ export default class SystemSetting extends BaseModel {
   @column()
   public type: string // 'string', 'boolean', 'json'
 
+  @column()
+  public category?: string
+
+  @column({ columnName: 'is_editable' })
+  public isEditable?: boolean
+
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
 
