@@ -320,7 +320,7 @@ export default class UsersController {
         // Achievements evaluation -- fetch enabled achievements (global + org-specific)
         try {
           const orgIds = (user.organizations || []).map((o: any) => o.id)
-          const query = Achievement.query().where('is_enabled', true)
+          const query = Achievement.query().where('is_active', true)
           // include global achievements or those for user's organizations
           query.where((b) => {
             b.whereNull('organization_id')
@@ -328,12 +328,11 @@ export default class UsersController {
           })
 
           const allAchievements = await query
-
           const earned: any[] = []
 
           for (const a of allAchievements) {
             // ensure criteria presence
-            const criteria = a.criteria ?? null
+            const criteria = a.requirement ?? null
             let match = false
 
             if (!criteria) {
@@ -398,7 +397,7 @@ export default class UsersController {
                   await Notification.default.create({
                     userId: user.id,
                     type: 'achievement_awarded',
-                    payload: JSON.stringify({ achievementId: a.id, key: a.key, title: a.title }),
+                    payload: JSON.stringify({ achievementId: a.id, key: a.key, title: a.name }),
                     read: false
                   })
                 } catch (e) {
@@ -409,7 +408,7 @@ export default class UsersController {
               earned.push({
                 id: a.id,
                 key: a.key,
-                title: a.title,
+                title: a.name,
                 description: a.description,
                 points: a.points
               })
@@ -418,6 +417,7 @@ export default class UsersController {
 
           ;(safeUser as any).achievements = earned
         } catch (achErr) {
+          // silently fail if calculation errors occur to avoid blocking /me
           ;(safeUser as any).achievements = []
         }
       } catch (err) {
