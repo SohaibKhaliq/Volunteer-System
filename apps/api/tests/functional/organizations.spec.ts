@@ -7,7 +7,9 @@ test.group('Organizations', () => {
     const user = await User.default.create({
       email: `creator-${Date.now()}@test`,
       password: 'password',
-      isAdmin: true
+      isAdmin: true,
+      firstName: 'Test',
+      lastName: 'User'
     })
 
     const response = await client
@@ -20,7 +22,7 @@ test.group('Organizations', () => {
 
   test('list organizations', async ({ client, assert }) => {
     const User = await import('App/Models/User')
-    const user = await User.default.create({ email: `lister-${Date.now()}@test`, password: 'password' })
+    const user = await User.default.create({ email: `lister-${Date.now()}@test`, password: 'password', firstName: 'Test', lastName: 'User' })
 
     const response = await client.loginAs(user).get('/organizations')
     response.assertStatus(200)
