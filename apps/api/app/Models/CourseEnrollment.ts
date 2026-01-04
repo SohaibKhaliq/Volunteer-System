@@ -26,6 +26,9 @@ export default class CourseEnrollment extends BaseModel {
   public progress: number // 0-100
 
   @column.dateTime()
+  public enrolledAt?: DateTime
+
+  @column.dateTime()
   public completedAt?: DateTime
 
   @column.dateTime({ autoCreate: true })
