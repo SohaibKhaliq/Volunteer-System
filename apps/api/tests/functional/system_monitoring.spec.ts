@@ -19,12 +19,12 @@ test.group('System & Monitoring Controllers', (group) => {
   // ==========================================
   test('system_monitoring: background jobs status requires super admin', async ({ client, assert }) => {
     // Normal admin
-    const admin = await User.create({ email: `sys-adm-${Date.now()}@test.com`, password: 'pass', isAdmin: false })
+    const admin = await User.create({ email: `sys-adm-${Date.now()}@test.com`, password: 'pass', isAdmin: false, firstName: 'Test', lastName: 'User' })
     const resp = await client.loginAs(admin).get('/admin/monitoring/background-jobs')
     resp.assertStatus(403) // Middleware returns 403 Forbidden
 
     // Super admin
-    const superAdmin = await User.create({ email: `sys-super-${Date.now()}@test.com`, password: 'pass', isAdmin: true })
+    const superAdmin = await User.create({ email: `sys-super-${Date.now()}@test.com`, password: 'pass', isAdmin: true, firstName: 'Test', lastName: 'User' })
     const resp2 = await client.loginAs(superAdmin).get('/admin/monitoring/background-jobs')
     resp2.assertStatus(200)
     assert.exists(resp2.body().failed) // assuming mock service returns default struct
@@ -34,7 +34,7 @@ test.group('System & Monitoring Controllers', (group) => {
   // MonitoringController Tests
   // ==========================================
   test('monitoring: stats and recent', async ({ client, assert }) => {
-    const admin = await User.create({ email: `mon-adm-${Date.now()}@test.com`, password: 'pass', isAdmin: true })
+    const admin = await User.create({ email: `mon-adm-${Date.now()}@test.com`, password: 'pass', isAdmin: true, firstName: 'Test', lastName: 'User' })
     
     // Create some data
     await ScheduledJob.create({ name: 'TestJob', type: 'Cleanup', status: 'Scheduled', runAt: DateTime.now() })
@@ -53,7 +53,7 @@ test.group('System & Monitoring Controllers', (group) => {
   // AuditLogsController Tests
   // ==========================================
   test('audit_logs: index and export', async ({ client, assert }) => {
-    const admin = await User.create({ email: `aud-adm-${Date.now()}@test.com`, password: 'pass', isAdmin: true })
+    const admin = await User.create({ email: `aud-adm-${Date.now()}@test.com`, password: 'pass', isAdmin: true, firstName: 'Test', lastName: 'User' })
     
     // Create log
     await AuditLog.create({
@@ -78,7 +78,7 @@ test.group('System & Monitoring Controllers', (group) => {
   // FeatureFlagsController Tests
   // ==========================================
   test('feature_flags: crud and update audit', async ({ client, assert }) => {
-    const admin = await User.create({ email: `ff-adm-${Date.now()}@test.com`, password: 'pass', isAdmin: true }) // Middleware probably requires admin
+    const admin = await User.create({ email: `ff-adm-${Date.now()}@test.com`, password: 'pass', isAdmin: true, firstName: 'Test', lastName: 'User' }) // Middleware probably requires admin
 
     // Create
     const createResp = await client.loginAs(admin).post('/feature-flags').json({
@@ -97,7 +97,7 @@ test.group('System & Monitoring Controllers', (group) => {
     assert.isTrue(updateResp.body().enabled)
 
     // Verify audit log created
-    const log = await AuditLog.query().where('action', 'feature_flag_updated').where('target_id', flagId).first()
+    const log = await AuditLog.query().where('action', 'feature_flag_updated').where('entity_id', flagId).first()
     assert.exists(log)
   })
 
@@ -105,7 +105,7 @@ test.group('System & Monitoring Controllers', (group) => {
   // ScheduledJobsController Tests
   // ==========================================
   test('scheduled_jobs: create and retry', async ({ client, assert }) => {
-    const admin = await User.create({ email: `job-adm-${Date.now()}@test.com`, password: 'pass', isAdmin: true })
+    const admin = await User.create({ email: `job-adm-${Date.now()}@test.com`, password: 'pass', isAdmin: true, firstName: 'Test', lastName: 'User' })
 
     // Create
     const createResp = await client.loginAs(admin).post('/scheduled-jobs').json({
@@ -138,7 +138,7 @@ test.group('System & Monitoring Controllers', (group) => {
   // ImportController Tests
   // ==========================================
   test('imports: volunteers import', async ({ client, assert }) => {
-    const admin = await User.create({ email: `imp-adm-${Date.now()}@test.com`, password: 'pass' })
+    const admin = await User.create({ email: `imp-adm-${Date.now()}@test.com`, password: 'pass', firstName: 'Test', lastName: 'User' })
     const org = await Organization.create({ name: 'Imp Org', type: 'Community' })
     await OrganizationTeamMember.create({ organizationId: org.id, userId: admin.id, role: 'admin' })
 
