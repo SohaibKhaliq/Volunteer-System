@@ -30,6 +30,47 @@
       "aliases": [],
       "flags": []
     },
+    "evaluate:achievements": {
+      "settings": {
+        "loadApp": true,
+        "stayAlive": false
+      },
+      "commandPath": "./commands/EvaluateAchievements",
+      "commandName": "evaluate:achievements",
+      "description": "Evaluate and award achievements to volunteers based on their activity",
+      "args": [],
+      "aliases": [],
+      "flags": [
+        {
+          "name": "user-id",
+          "propertyName": "userId",
+          "type": "number",
+          "description": "Evaluate for a specific user ID"
+        },
+        {
+          "name": "achievement-id",
+          "propertyName": "achievementId",
+          "type": "number",
+          "description": "Evaluate a specific achievement ID"
+        },
+        {
+          "name": "batch-size",
+          "propertyName": "batchSize",
+          "type": "number",
+          "description": "Batch size for processing users",
+          "default": 50
+        }
+      ]
+    },
+    "inspect:schema": {
+      "settings": {},
+      "commandPath": "./commands/InspectSchema",
+      "commandName": "inspect:schema",
+      "description": "Inspect database schema",
+      "args": [],
+      "aliases": [],
+      "flags": []
+    },
     "dump:rcfile": {
       "settings": {},
       "commandPath": "@adonisjs/core/build/commands/DumpRc",
