@@ -14,6 +14,8 @@ test.group('Admin organization lifecycle', (group) => {
     const admin = await User.create({
       email: 'admin-org-lifecycle@test',
       password: 'pass',
+      firstName: 'Admin',
+      lastName: 'User',
       isAdmin: true
     })
 
@@ -70,7 +72,10 @@ test.group('Admin organization lifecycle', (group) => {
     assert.isAtLeast(logs.length, 4)
 
     // verify details of the approve audit entry
-    const approvedLog = await AuditLog.query().where('action', 'organization_approved').first()
+    const approvedLog = await AuditLog.query()
+      .where('action', 'organization_approved')
+      .where('entity_id', org.id)
+      .first()
     assert.isDefined(approvedLog)
     if (typeof approvedLog?.targetType !== 'undefined') {
       assert.equal(approvedLog?.targetType, 'organization')
