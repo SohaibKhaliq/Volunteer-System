@@ -10,7 +10,7 @@ test.group('Organization profile (panel) updates', () => {
     const OrganizationTeamMember = await import('App/Models/OrganizationTeamMember')
 
     const org = await Organization.default.create({ name: 'Settings Org' })
-    const admin = await User.default.create({ email: `orgadmin-${Date.now()}@test`, password: 'secret' })
+    const admin = await User.default.create({ email: `orgadmin-${Date.now()}@test`, password: 'secret', firstName: 'Test', lastName: 'User' })
 
     // Make admin a team member for the organization
     await OrganizationTeamMember.default.create({
