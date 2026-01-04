@@ -18,6 +18,15 @@ export default class BackgroundCheck extends BaseModel {
   @column()
   public result?: string
 
+  @column.dateTime()
+  public issuedAt?: DateTime
+
+  @column.dateTime()
+  public expiresAt?: DateTime
+
+  @column()
+  public referenceNumber?: string
+
   @column.dateTime({ columnName: 'requested_at' })
   public requestedAt?: DateTime
 
