@@ -6,14 +6,19 @@ import Database from '@ioc:Adonis/Lucid/Database'
 
 test.group('Organization communications scheduling', (group) => {
   group.teardown(async () => {
+    await Database.rawQuery('SET FOREIGN_KEY_CHECKS = 0')
+    await Database.rawQuery('DELETE FROM communication_logs')
     await Database.rawQuery('DELETE FROM communications')
+    await Database.rawQuery('DELETE FROM organization_volunteers')
     await Database.rawQuery('DELETE FROM organization_team_members')
     await Database.rawQuery('DELETE FROM organizations')
+    await Database.rawQuery('DELETE FROM volunteer_hours')
     await Database.rawQuery('DELETE FROM users')
+    await Database.rawQuery('SET FOREIGN_KEY_CHECKS = 1')
   })
 
   test('sending a communication schedules it for background sending', async ({ client, assert }) => {
-    const sender = await User.create({ email: 'sender_' + Math.floor(Math.random() * 100000) + '@test.com', password: 'pass' })
+    const sender = await User.create({ email: 'sender_' + Math.floor(Math.random() * 100000) + '@test.com', password: 'pass', firstName: 'Test', lastName: 'User' })
     const org = await Organization.create({ name: 'CommOrg_' + Math.floor(Math.random() * 100000) })
     await OrganizationTeamMember.create({
       organizationId: org.id,
@@ -22,7 +27,7 @@ test.group('Organization communications scheduling', (group) => {
     })
 
     // create recipients and attach as organization volunteers
-    const target = await User.create({ email: 'target1_' + Math.floor(Math.random() * 100000) + '@test.com', password: 'pass' })
+    const target = await User.create({ email: 'target1_' + Math.floor(Math.random() * 100000) + '@test.com', password: 'pass', firstName: 'Test', lastName: 'User' })
     await Database.table('organization_volunteers').insert({
       organization_id: org.id,
       user_id: target.id,
@@ -43,7 +48,7 @@ test.group('Organization communications scheduling', (group) => {
   })
 
   test('broadcast schedules a communication for background sending', async ({ client, assert }) => {
-    const sender = await User.create({ email: 'bcast-sender_' + Math.floor(Math.random() * 100000) + '@test.com', password: 'pass' })
+    const sender = await User.create({ email: 'bcast-sender_' + Math.floor(Math.random() * 100000) + '@test.com', password: 'pass', firstName: 'Test', lastName: 'User' })
     const org = await Organization.create({ name: 'BroadcastOrg_' + Math.floor(Math.random() * 100000) })
     await OrganizationTeamMember.create({
       organizationId: org.id,
@@ -51,7 +56,7 @@ test.group('Organization communications scheduling', (group) => {
       role: 'Admin'
     })
 
-    const volunteer = await User.create({ email: 'vol_' + Math.floor(Math.random() * 100000) + '@test.com', password: 'pass' })
+    const volunteer = await User.create({ email: 'vol_' + Math.floor(Math.random() * 100000) + '@test.com', password: 'pass', firstName: 'Test', lastName: 'User' })
     await Database.table('organization_volunteers').insert({
       organization_id: org.id,
       user_id: volunteer.id,
@@ -75,14 +80,14 @@ test.group('Organization communications scheduling', (group) => {
     client, assert
   }) => {
     // create a scheduled communication in the past
-    const sender = await User.create({ email: 'proc_' + Math.floor(Math.random() * 100000) + '@test.com', password: 'pass' })
+    const sender = await User.create({ email: 'proc_' + Math.floor(Math.random() * 100000) + '@test.com', password: 'pass', firstName: 'Test', lastName: 'User' })
     const org = await Organization.create({ name: 'ProcessOrg_' + Math.floor(Math.random() * 100000) })
     await OrganizationTeamMember.create({
       organizationId: org.id,
       userId: sender.id,
       role: 'Admin'
     })
-    const target = await User.create({ email: 'proc-target_' + Math.floor(Math.random() * 100000) + '@test.com', password: 'pass' })
+    const target = await User.create({ email: 'proc-target_' + Math.floor(Math.random() * 100000) + '@test.com', password: 'pass', firstName: 'Test', lastName: 'User' })
     await Database.table('organization_volunteers').insert({
       organization_id: org.id,
       user_id: target.id,
