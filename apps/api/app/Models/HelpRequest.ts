@@ -27,6 +27,12 @@ export default class HelpRequest extends BaseModel {
   @belongsTo(() => User)
   public user: BelongsTo<typeof User>
 
+  @column({ columnName: 'user_id' })
+  public userId: number
+
+  @column()
+  public urgency: string
+
   @column()
   public longitude: number
 
