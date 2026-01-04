@@ -1,4 +1,5 @@
 import Database from '@ioc:Adonis/Lucid/Database'
+import User from 'App/Models/User'
 import Achievement from 'App/Models/Achievement'
 import UserAchievement from 'App/Models/UserAchievement'
 import AchievementProgress from 'App/Models/AchievementProgress'
@@ -114,7 +115,7 @@ export default class AchievementEvaluationService {
     progress?: { currentValue: number; targetValue: number }
     metadata?: any
   }> {
-    const criteria = achievement.criteria || {}
+    const criteria = achievement.requirement || {}
     const threshold = criteria.threshold || 0
     const organizationId = criteria.organizationId || achievement.organizationId
     const withinDays = criteria.withinDays
@@ -160,7 +161,7 @@ export default class AchievementEvaluationService {
     progress?: { currentValue: number; targetValue: number }
     metadata?: any
   }> {
-    const criteria = achievement.criteria || {}
+    const criteria = achievement.requirement || {}
     const threshold = criteria.threshold || 0
     const organizationId = criteria.organizationId || achievement.organizationId
     const withinDays = criteria.withinDays
@@ -169,8 +170,8 @@ export default class AchievementEvaluationService {
     let query = Attendance.query().where('user_id', userId).where('status', 'Present')
 
     if (organizationId) {
-      query = query.whereHas('event', (eventQuery: any) => {
-        eventQuery.where('organization_id', organizationId)
+      query = query.whereHas('opportunity', (oppQuery) => {
+        oppQuery.where('organization_id', organizationId)
       })
     }
 
@@ -208,7 +209,7 @@ export default class AchievementEvaluationService {
     progress?: { currentValue: number; targetValue: number }
     metadata?: any
   }> {
-    const criteria = achievement.criteria || {}
+    const criteria = achievement.requirement || {}
     const consecutiveMonths = criteria.consecutiveMonths || 3
     const minHoursPerMonth = criteria.minHoursPerMonth || 1
 
@@ -266,7 +267,7 @@ export default class AchievementEvaluationService {
     userId: number,
     achievement: Achievement
   ): Promise<{ earned: boolean; metadata?: any }> {
-    const criteria = achievement.criteria || {}
+    const criteria = achievement.requirement || {}
     const requiredCertifications = criteria.requiredCertifications || []
 
     if (!requiredCertifications.length) {
@@ -313,13 +314,22 @@ export default class AchievementEvaluationService {
     userId: number,
     achievement: Achievement
   ): Promise<{ earned: boolean; metadata?: any }> {
-    const criteria = achievement.criteria || {}
+    const criteria = achievement.requirement || {}
 
     // Detect type from criteria
     if (criteria.type === 'hours') {
       return await this.evaluateHoursAchievement(userId, achievement)
     } else if (criteria.type === 'events') {
       return await this.evaluateEventsAchievement(userId, achievement)
+    } else if (criteria.type === 'member_days') {
+      const user = await User.find(userId)
+      if (user) {
+        const days = Math.floor(Math.abs(DateTime.now().diff(user.createdAt, 'days').days))
+        return {
+          earned: days >= (criteria.threshold || 0),
+          metadata: { memberDays: days, threshold: criteria.threshold, evaluatedAt: DateTime.now().toISO() }
+        }
+      }
     }
 
     // Default: not earned
@@ -355,7 +365,7 @@ export default class AchievementEvaluationService {
         metadata,
         grantedBy,
         grantReason,
-        awardedAt: DateTime.now()
+        unlockedAt: DateTime.now(), // Replaced 'awardedAt' with 'unlockedAt'
       })
 
       // Load achievement details
@@ -366,7 +376,7 @@ export default class AchievementEvaluationService {
         userId,
         type: 'achievement_earned',
         title: '🏆 Achievement Unlocked!',
-        message: `You've earned the "${userAchievement.achievement.title}" achievement!`,
+        message: `You've earned the "${userAchievement.achievement.name}" achievement!`,
         actionUrl: '/volunteer/achievements',
         actionText: 'View Achievements'
       })
@@ -379,7 +389,7 @@ export default class AchievementEvaluationService {
         targetId: achievementId,
         metadata: JSON.stringify({
           recipientUserId: userId,
-          achievementTitle: userAchievement.achievement.title,
+          achievementTitle: userAchievement.achievement.name,
           grantedBy,
           grantReason,
           automatic: !grantedBy
@@ -437,7 +447,7 @@ export default class AchievementEvaluationService {
       targetId: userAchievement.achievementId,
       metadata: JSON.stringify({
         recipientUserId: userAchievement.userId,
-        achievementTitle: userAchievement.achievement.title,
+        achievementTitle: userAchievement.achievement.name,
         revokedBy,
         reason
       })
