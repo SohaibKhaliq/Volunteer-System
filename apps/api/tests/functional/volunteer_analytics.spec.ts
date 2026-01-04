@@ -8,11 +8,11 @@ import { DateTime } from 'luxon'
 test.group('Volunteer analytics endpoints', () => {
   test('trends endpoint (month/week) works on MySQL', async ({ client }) => {
     const org = await Organization.create({ name: 'Analytics Org' })
-    const admin = await User.create({ email: 'analytics_admin@test', password: 'pass' })
+    const admin = await User.create({ email: `analytics_admin_${Date.now()}@test`, password: 'pass', firstName: 'Test', lastName: 'User' })
     await OrganizationTeamMember.create({ organizationId: org.id, userId: admin.id, role: 'Admin' })
 
     // create another user and volunteer_hours tied to this org via organization_volunteers
-    const vol = await User.create({ email: 'vol_analytics@test', password: 'pass' })
+    const vol = await User.create({ email: `vol_analytics_${Date.now()}@test`, password: 'pass', firstName: 'Test', lastName: 'User' })
     await Database.table('organization_volunteers').insert({
       organization_id: org.id,
       user_id: vol.id,
