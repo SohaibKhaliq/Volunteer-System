@@ -31,8 +31,11 @@ export default class UserAchievement extends BaseModel {
   @column({ columnName: 'grant_reason' })
   public grantReason?: string
 
-  @column.dateTime({ columnName: 'awarded_at' })
-  public awardedAt: DateTime
+  @column()
+  public progress: number
+
+  @column.dateTime({ columnName: 'unlocked_at' })
+  public unlockedAt: DateTime
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
