@@ -18,10 +18,10 @@ export default class AuditLog extends BaseModel {
   @column()
   public details?: string
 
-  @column()
+  @column({ columnName: 'entity_type' })
   public targetType?: string
 
-  @column()
+  @column({ columnName: 'entity_id' })
   public targetId?: number
 
   @column()
