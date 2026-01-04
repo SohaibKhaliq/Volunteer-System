@@ -1,7 +1,6 @@
-import { BaseModel, column, hasMany, HasMany, belongsTo, BelongsTo, beforeCreate } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, column, hasMany, HasMany, beforeCreate } from '@ioc:Adonis/Lucid/Orm'
 import { DateTime } from 'luxon'
 import UserAchievement from './UserAchievement'
-import AchievementCategory from './AchievementCategory'
 import AchievementProgress from './AchievementProgress'
 import crypto from 'crypto'
 
@@ -12,28 +11,24 @@ export default class Achievement extends BaseModel {
   @column({ columnName: 'organization_id' })
   public organizationId?: number
 
-  @column({ columnName: 'category_id' })
-  public categoryId?: number
-
-  @belongsTo(() => AchievementCategory, {
-    foreignKey: 'categoryId'
-  })
-  public category: BelongsTo<typeof AchievementCategory>
+  @column({ columnName: 'category' })
+  public category: string
 
   @column()
   public key: string
 
   @column()
-  public title: string
+  public name: string
 
   @column()
   public description?: string
 
   @column({
+    columnName: 'requirement_json',
     prepare: (value: any) => (value ? JSON.stringify(value) : null),
     consume: (value: any) => (value ? JSON.parse(value) : null)
   })
-  public criteria?: any
+  public requirement?: any
 
   @column({ columnName: 'rule_type' })
   public ruleType?: 'hours' | 'events' | 'frequency' | 'certification' | 'custom'
@@ -50,8 +45,8 @@ export default class Achievement extends BaseModel {
   @column()
   public points?: number
 
-  @column({ columnName: 'is_enabled' })
-  public isEnabled: boolean
+  @column({ columnName: 'is_active' })
+  public isActive: boolean
 
   @hasMany(() => UserAchievement)
   public awards: HasMany<typeof UserAchievement>
@@ -61,9 +56,9 @@ export default class Achievement extends BaseModel {
 
   @beforeCreate()
   public static setDefaults(achievement: Achievement) {
-    // Auto-generate key from title if not provided
-    if (!achievement.key && achievement.title) {
-      const base = achievement.title
+    // Auto-generate key from name if not provided
+    if (!achievement.key && achievement.name) {
+      const base = achievement.name
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-|-$/g, '')
