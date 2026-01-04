@@ -6,7 +6,7 @@ import OrganizationInvite from 'App/Models/OrganizationInvite'
 test.group('Invite sender service', (group) => {
   test('sendInviteNow calls Mail.send when available', async ({ assert }) => {
     const org = await Organization.create({ name: 'InviteSendOrg' })
-    const inviter = await User.create({ email: 'inviter2@test', password: 'pass' })
+    const inviter = await User.create({ email: 'inviter2@test', password: 'pass', firstName: 'Test', lastName: 'User' })
 
     const invite = await OrganizationInvite.create({
       organizationId: org.id,
