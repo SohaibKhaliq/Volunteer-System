@@ -5,15 +5,19 @@ import Database from '@ioc:Adonis/Lucid/Database'
 
 test.group('Scheduler service', (group) => {
   group.teardown(async () => {
+    // Delete in correct order to avoid foreign key constraints
     await Database.rawQuery('DELETE FROM scheduled_jobs')
     await Database.rawQuery('DELETE FROM notifications')
+    await Database.rawQuery('SET FOREIGN_KEY_CHECKS = 0')
+    await Database.rawQuery('DELETE FROM volunteer_hours')
     await Database.rawQuery('DELETE FROM users')
+    await Database.rawQuery('SET FOREIGN_KEY_CHECKS = 1')
   })
 
   test('processing due scheduled reminder creates notification and completes job', async ({
     assert
   }) => {
-    const u = await User.create({ email: 'sched-user@test', password: 'pass' })
+    const u = await User.create({ email: `sched-user-${Date.now()}@test`, password: 'pass', firstName: 'Test', lastName: 'User' })
 
     const job = await ScheduledJob.create({
       name: 'remind user',
