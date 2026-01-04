@@ -10,7 +10,7 @@ test.group('Organization registration and onboarding', (group) => {
 
   test('organization can register with pending status', async ({ client, assert }) => {
     const registerData = {
-      email: 'test-org-register@example.com',
+      email: `test-org-register-${Date.now()}@example.com`,
       password: 'password123',
       firstName: 'Test',
       lastName: 'Organization',
@@ -22,7 +22,12 @@ test.group('Organization registration and onboarding', (group) => {
     }
 
     const response = await client.post('/register').json(registerData)
-
+    
+    // Log the response for debugging
+    if (response.status() !== 200) {
+      console.log('Registration failed:', response.body())
+    }
+    
     response.assertStatus(200)
     const body = response.body()
     
@@ -55,7 +60,9 @@ test.group('Organization registration and onboarding', (group) => {
     const admin = await User.create({
       email: 'admin-approve-org@test.com',
       password: 'adminpass',
-      isAdmin: true
+      isAdmin: true,
+      firstName: 'Test',
+      lastName: 'Admin'
     })
 
     // Create pending organization
