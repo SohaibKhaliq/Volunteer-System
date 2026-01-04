@@ -30,6 +30,26 @@ export default class AuditLog extends BaseModel {
   @column()
   public ipAddress?: string
 
+  @column()
+  public description?: string
+
+  @column({ columnName: 'user_agent' })
+  public userAgent?: string
+
+  @column({
+    columnName: 'old_values',
+    prepare: (value: any) => (value ? JSON.stringify(value) : null),
+    consume: (value: any) => (value ? JSON.parse(value) : null)
+  })
+  public oldValues?: object
+
+  @column({
+    columnName: 'new_values',
+    prepare: (value: any) => (value ? JSON.stringify(value) : null),
+    consume: (value: any) => (value ? JSON.parse(value) : null)
+  })
+  public newValues?: object
+
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
 
