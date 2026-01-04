@@ -129,7 +129,7 @@ export default class VolunteerController {
         })),
         recentAchievements: achievements.map((ua) => ({
           id: ua.achievement?.id,
-          title: ua.achievement?.title,
+          title: ua.achievement?.name,
           description: ua.achievement?.description,
           awardedAt: ua.createdAt
         }))
@@ -293,7 +293,7 @@ export default class VolunteerController {
           })),
           recentAchievements: achievements.map((ua) => ({
             id: ua.achievement?.id,
-            title: ua.achievement?.title,
+            title: ua.achievement?.name,
             description: ua.achievement?.description,
             awardedAt: ua.createdAt
           }))
@@ -913,7 +913,7 @@ export default class VolunteerController {
           'organizations.id',
           'organizations.name',
           'organizations.slug',
-          'organizations.logo as logo_url',
+          'organizations.logo_url',
           'organizations.status as org_status',
           'organization_volunteers.role',
           'organization_volunteers.status',
@@ -1011,15 +1011,15 @@ export default class VolunteerController {
       const earnedAchievements = await UserAchievement.query()
         .where('user_id', user.id)
         .preload('achievement', (query) => {
-          query.preload('category')
+          // query.preload('category') // Category is now a string
         })
         .preload('granter')
-        .orderBy('awarded_at', 'desc')
+        .orderBy('unlocked_at', 'desc')
 
       // Get all enabled achievements
       const allAchievements = await Achievement.query()
-        .where('is_enabled', true)
-        .preload('category')
+        //.preload('category') // Category is now a string column on Achievement
+        //.orderBy('points', 'asc') // Already ordered by points
         .orderBy('points', 'asc')
 
       // Get progress for milestone achievements
@@ -1040,19 +1040,19 @@ export default class VolunteerController {
       const earned = earnedAchievements.map((ua) => ({
         id: ua.achievement?.id,
         key: ua.achievement?.key,
-        title: ua.achievement?.title,
+        title: ua.achievement?.name,
         description: ua.achievement?.description,
         icon: ua.achievement?.icon,
         badgeImageUrl: ua.achievement?.badgeImageUrl,
         points: ua.achievement?.points,
         category: ua.achievement?.category
           ? {
-              id: ua.achievement.category.id,
-              name: ua.achievement.category.name,
-              icon: ua.achievement.category.icon
+              id: 0, // computed or dummy
+              name: ua.achievement.category,
+              icon: 'star'
             }
           : null,
-        awardedAt: ua.awardedAt,
+        awardedAt: ua.unlockedAt,
         metadata: ua.metadata,
         grantedBy: ua.grantedBy,
         granter: ua.granter
@@ -1072,16 +1072,16 @@ export default class VolunteerController {
           return {
             id: ach.id,
             key: ach.key,
-            title: ach.title,
+            title: ach.name,
             description: ach.description,
             icon: ach.icon,
             badgeImageUrl: ach.badgeImageUrl,
             points: ach.points,
             category: ach.category
               ? {
-                  id: ach.category.id,
-                  name: ach.category.name,
-                  icon: ach.category.icon
+                  id: 0,
+                  name: ach.category,
+                  icon: 'star'
                 }
               : null,
             isMilestone: ach.isMilestone,
@@ -1102,16 +1102,16 @@ export default class VolunteerController {
         .slice(0, 3)
 
       // Group by category
-      const categories = new Map<number, any>()
+      const categories = new Map<string, any>()
       ;[...earned, ...locked].forEach((ach) => {
         if (ach.category) {
-          if (!categories.has(ach.category.id)) {
-            categories.set(ach.category.id, {
+          if (!categories.has(ach.category.name)) {
+            categories.set(ach.category.name, {
               ...ach.category,
               achievements: []
             })
           }
-          categories.get(ach.category.id)!.achievements.push(ach)
+          categories.get(ach.category.name)!.achievements.push(ach)
         }
       })
 
