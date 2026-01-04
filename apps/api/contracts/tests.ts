@@ -1,18 +1,9 @@
-/**
- * Contract source: https://bit.ly/3DP1ypf
- *
- * Feel free to let us know via PR, if you find something broken in this contract
- * file.
- */
 
-import '@japa/runner'
+import '@japa/api-client'
+import User from 'App/Models/User'
 
-declare module '@japa/runner' {
-  interface TestContext {
-    // Extend context
-  }
-
-  interface Test<TestData> {
-    // Extend test
+declare module '@japa/api-client' {
+  interface ApiClient {
+    loginAs(user: User): this
   }
 }
