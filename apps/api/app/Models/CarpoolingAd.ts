@@ -10,8 +10,14 @@ export default class CarpoolingAd extends BaseModel {
   @belongsTo(() => User)
   public user: BelongsTo<typeof User>
 
+  @column({ columnName: 'user_id' })
+  public userId: number
+
   @column()
   public type: 'offer' | 'request'
+
+  @column()
+  public pricePerSeat: number
 
   @column()
   public departureLongitude: number
