@@ -27,6 +27,12 @@ export default class Assignment extends BaseModel {
   @column()
   public status?: string
 
+  @column()
+  public quantity?: number
+
+  @column()
+  public notes?: string
+
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
 
