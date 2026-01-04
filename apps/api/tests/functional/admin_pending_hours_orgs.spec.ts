@@ -11,12 +11,12 @@ test.group('Admin pending hours by organization', (group) => {
   })
 
   test('admin can fetch grouped pending hours', async ({ client, assert }) => {
-    const admin = await User.create({ email: `admin-ph-${Date.now()}@test`, password: 'pass', isAdmin: true })
+    const admin = await User.create({ email: `admin-ph-${Date.now()}@test`, password: 'pass', isAdmin: true, firstName: 'Test', lastName: 'User' })
     const org1 = await Organization.create({ name: 'Org A' })
     const org2 = await Organization.create({ name: 'Org B' })
 
-    const u1 = await User.create({ email: `v1-${Date.now()}@test`, password: 'pass' })
-    const u2 = await User.create({ email: `v2-${Date.now()}@test`, password: 'pass' })
+    const u1 = await User.create({ email: `v1-${Date.now()}@test`, password: 'pass', firstName: 'Test', lastName: 'User' })
+    const u2 = await User.create({ email: `v2-${Date.now()}@test`, password: 'pass', firstName: 'Test', lastName: 'User' })
 
     await OrganizationVolunteer.create({ organizationId: org1.id, userId: u1.id, status: 'Active' })
     await OrganizationVolunteer.create({ organizationId: org2.id, userId: u2.id, status: 'Active' })
