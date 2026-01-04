@@ -19,7 +19,15 @@ export default class OrganizationInviteSeeder extends BaseSeeder {
     }
 
     const statuses = ['pending', 'accepted', 'rejected', 'expired']
-    const roles = ['volunteer', 'coordinator', 'volunteer-manager']
+    // Fetch valid invite roles from the database
+    const targetRoles = ['volunteer', 'coordinator', 'volunteer-manager']
+    const rolesResult = await Database.from('roles').whereIn('slug', targetRoles).select('slug')
+    const roles = rolesResult.map((r) => r.slug)
+
+    if (roles.length === 0) {
+      console.log('OrganizationInviteSeeder: no valid invite roles found')
+      return
+    }
     const rows: any[] = []
 
     for (let i = 0; i < RECORD_COUNT; i++) {
