@@ -20,7 +20,7 @@ export default class OrganizationVolunteerSeeder extends BaseSeeder {
     }
 
     const statuses = ['Active', 'Inactive', 'Pending']
-    const roles = ['Volunteer', 'Team Leader', 'Coordinator', 'Manager']
+    const roles = ['volunteer', 'team-leader', 'coordinator', 'volunteer-manager']
     const skillSets = [
       'First Aid,Communication,Teamwork',
       'Project Management,Leadership,Training',
