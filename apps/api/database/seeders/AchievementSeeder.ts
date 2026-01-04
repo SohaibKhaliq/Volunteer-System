@@ -5,7 +5,7 @@ export default class AchievementSeeder extends BaseSeeder {
   public async run() {
     const RECORD_COUNT = 30
     const now = new Date()
-    const timestamp = now.toISOString()
+    const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
 
     const achievements = [
       { name: 'First Event', description: 'Attended your first volunteer event', category: 'milestone', points: 10, icon: '🎉', requirement: 'events_attended:1' },
