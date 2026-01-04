@@ -9,7 +9,11 @@ test.group('Admin features endpoint', () => {
 
   test('authenticated admin receives features object', async ({ client, assert }) => {
     const email = `admin-feat-${Date.now()}@test`
-    const admin = await User.create({ email, password: 'pass', isAdmin: true })
+    const admin = await User.create({ email, password: 'pass',
+      firstName: 'Admin',
+      lastName: 'User',
+      isAdmin: true
+    })
     const token = await client.loginAs(admin)
     const resp = await client.get('/admin/features').header('Authorization', `Bearer ${token}`)
     resp.assertStatus(200)
