@@ -60,6 +60,35 @@ export default class MainSeeder extends BaseSeeder {
     
     // Gamification
     await this.seed(await import('./AchievementSeeder'))
+    await this.seed(await import('./UserAchievementSeeder'))
+    await this.seed(await import('./GamificationBadgeSeeder'))
+    await this.seed(await import('./UserBadgeSeeder'))
+    
+    // Documents
+    await this.seed(await import('./DocumentSeeder'))
+    await this.seed(await import('./DocumentAcknowledgmentSeeder'))
+    
+    // Communications
+    await this.seed(await import('./CommunicationSeeder'))
+    await this.seed(await import('./CommunicationLogSeeder'))
+    await this.seed(await import('./EngagementCampaignSeeder'))
+    
+    // Team membership
+    await this.seed(await import('./OrganizationTeamMemberSeeder'))
+    
+    // Audit and logs
+    await this.seed(await import('./AuditLogSeeder'))
+    
+    // Legacy features
+    await this.seed(await import('./TypeSeeder'))
+    await this.seed(await import('./HelpRequestSeeder'))
+    await this.seed(await import('./OfferSeeder'))
+    await this.seed(await import('./CarpoolingAdSeeder'))
+    
+    // System
+    await this.seed(await import('./ContactSubmissionSeeder'))
+    await this.seed(await import('./SystemSettingSeeder'))
+    await this.seed(await import('./ApiTokenSeeder'))
     
     // Notifications
     await this.seed(await import('./NotificationSeeder'))
