@@ -9,7 +9,9 @@ test.group('Organizations resource endpoints', () => {
     const user = await User.default.create({
       email: `viewer-${Date.now()}@test`,
       password: 'password',
-      isAdmin: true
+      isAdmin: true,
+      firstName: 'Test',
+      lastName: 'User'
     })
 
     const response = await client.loginAs(user).get(`/organizations/${org.id}`)
@@ -25,7 +27,9 @@ test.group('Organizations resource endpoints', () => {
     const user = await User.default.create({
       email: `updater-${Date.now()}@test`,
       password: 'password',
-      isAdmin: true
+      isAdmin: true,
+      firstName: 'Test',
+      lastName: 'User'
     })
 
     const response = await client
