@@ -6,9 +6,9 @@ import { DateTime } from 'luxon'
 
 test.group('Volunteer hours audit logging', () => {
   test('update creates an audit log', async ({ client, assert }) => {
-    const admin = await User.create({ email: `va-admin-${Date.now()}@test`, password: 'pass', isAdmin: true })
+    const admin = await User.create({ email: `va-admin-${Date.now()}@test`, password: 'pass', isAdmin: true, firstName: 'Test', lastName: 'User' })
 
-    const u = await User.create({ email: `va-v-${Date.now()}@test`, password: 'pass' })
+    const u = await User.create({ email: `va-v-${Date.now()}@test`, password: 'pass', firstName: 'Test', lastName: 'User' })
     const inserted = await Database.table('volunteer_hours').insert({
       user_id: u.id,
       status: 'pending',
@@ -27,10 +27,10 @@ test.group('Volunteer hours audit logging', () => {
   })
 
   test('bulk update creates an audit log', async ({ client, assert }) => {
-    const admin = await User.create({ email: `va-admin2-${Date.now()}@test`, password: 'pass', isAdmin: true })
+    const admin = await User.create({ email: `va-admin2-${Date.now()}@test`, password: 'pass', isAdmin: true, firstName: 'Test', lastName: 'User' })
 
-    const u1 = await User.create({ email: `va-bulk1-${Date.now()}@test`, password: 'pass' })
-    const u2 = await User.create({ email: `va-bulk2-${Date.now()}@test`, password: 'pass' })
+    const u1 = await User.create({ email: `va-bulk1-${Date.now()}@test`, password: 'pass', firstName: 'Test', lastName: 'User' })
+    const u2 = await User.create({ email: `va-bulk2-${Date.now()}@test`, password: 'pass', firstName: 'Test', lastName: 'User' })
     
     const Organization = await import('App/Models/Organization')
     const org = await Organization.default.create({ name: `Audit Org ${Date.now()}` })
