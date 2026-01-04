@@ -22,6 +22,15 @@ export default class OrganizationTeamMember extends BaseModel {
   @column()
   public role: string // 'Admin', 'Member', 'Viewer'
 
+  @column({ columnName: 'team_id' })
+  public teamId?: number
+
+  @column.dateTime({ columnName: 'joined_at' })
+  public joinedAt?: DateTime
+
+  @column({ columnName: 'is_active' })
+  public isActive?: boolean
+
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
 
