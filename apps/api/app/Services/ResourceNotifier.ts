@@ -29,6 +29,7 @@ async function checkOverdueAssignments() {
           await Notification.create({
             userId: a.relatedId as number,
             type: 'resource.assignment.overdue',
+            title: 'Assignment Overdue',
             payload: JSON.stringify({ assignmentId: a.id, resourceId: a.resourceId })
           })
         }
@@ -42,6 +43,7 @@ async function checkOverdueAssignments() {
             await Notification.create({
               userId: ev.organizationId as any as number,
               type: 'resource.assignment.event.overdue',
+              title: 'Event Assignment Overdue',
               payload: JSON.stringify({
                 assignmentId: a.id,
                 resourceId: a.resourceId,
@@ -125,6 +127,7 @@ async function checkMaintenanceDue() {
           await Notification.create({
             userId: r.assignedTechnicianId,
             type: 'resource.maintenance.due',
+            title: 'Maintenance Due',
             payload: JSON.stringify({ resourceId: r.id })
           })
         }
@@ -133,6 +136,7 @@ async function checkMaintenanceDue() {
           await Notification.create({
             userId: r.organizationId as any as number,
             type: 'resource.maintenance.due.org',
+            title: 'Organization Maintenance Due',
             payload: JSON.stringify({ resourceId: r.id })
           })
         }
