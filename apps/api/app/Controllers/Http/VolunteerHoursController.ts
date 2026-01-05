@@ -22,7 +22,7 @@ export default class VolunteerHoursController {
 
     // Simplistic role check for now - assuming 'admin' role or specific org context
     // Ideally we'd use a Policy here.
-    const isGlobalAdmin = (user as any).roleId === 1 // Assuming 1 is Admin
+    const isGlobalAdmin = user.isAdmin
 
     // For now, if organizationId is passed, we check if user manages that org
     if (organizationId) {
