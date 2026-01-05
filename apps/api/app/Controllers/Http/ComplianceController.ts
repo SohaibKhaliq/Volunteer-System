@@ -268,18 +268,17 @@ export default class ComplianceController {
 
     const filePath: string = fileMeta.path
     try {
-      // Try to get a public URL from Drive (works for local with serveFiles and S3)
-      try {
-        const url = await Drive.getUrl(filePath)
-        // Redirect client to the storage URL (or return it)
-        return response.redirect(url)
-      } catch (e) {
-        // If Drive.getUrl is not available or fails, attempt to stream the file
+      // Check if file exists before attempting to stream
+      const exists = await Drive.exists(filePath)
+      if (!exists) {
+        Logger.warn(`Compliance file not found: ${filePath}`)
+        return response.notFound({ error: 'File not found on disk' })
       }
 
-      // Fallback: stream the file contents
+      // Stream the file contents directly
       const stream = await Drive.getStream(filePath)
       response.header('Content-Type', 'application/octet-stream')
+      response.header('Content-Disposition', `attachment; filename="${fileMeta.originalName || 'document'}"`)
       return response.stream(stream)
     } catch (err) {
       Logger.error('Failed to serve compliance file: ' + String(err))
