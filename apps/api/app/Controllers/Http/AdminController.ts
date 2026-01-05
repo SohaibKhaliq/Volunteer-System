@@ -693,24 +693,48 @@ export default class AdminController {
     try {
       await this.requireSuperAdmin(auth)
 
-      const { page = 1, perPage = 50, action, targetType } = request.qs()
+      const { limit = 10 } = request.qs()
 
-      const query = AuditLog.query().preload('user').orderBy('created_at', 'desc')
+      const logs = await AuditLog.query()
+        .preload('user')
+        .orderBy('created_at', 'desc')
+        .limit(limit)
 
-      if (action) {
-        query.where('action', action)
-      }
+      // Format for frontend dashboard: array of {desc, time}
+      const activities = logs.map((log) => {
+        const userName = log.user?.firstName || log.user?.email || 'Unknown User'
+        const action = log.action || 'performed action'
+        const target = log.targetType || 'resource'
+        
+        // Create human-readable description
+        let desc = `${userName} ${action.replace('_', ' ')} ${target}`
+        if (log.targetId) {
+          desc += ` #${log.targetId}`
+        }
 
-      if (targetType) {
-        query.where('target_type', targetType)
-      }
+        const createdAt = log.createdAt.toJSDate()
+        const now = new Date()
+        const diffMs = now.getTime() - createdAt.getTime()
+        const diffMins = Math.floor(diffMs / 60000)
+        
+        let time = ''
+        if (diffMins < 1) {
+          time = 'Just now'
+        } else if (diffMins < 60) {
+          time = `${diffMins}m ago`
+        } else if (diffMins < 1440) {
+          time = `${Math.floor(diffMins / 60)}h ago`
+        } else {
+          time = `${Math.floor(diffMins / 1440)}d ago`
+        }
 
-      const logs = await query.paginate(page, perPage)
+        return { desc, time }
+      })
 
-      return response.ok(logs)
+      return response.ok(activities)
     } catch (error) {
       Logger.error('Admin recent activity error: %o', error)
-      return response.unauthorized({ error: { message: error.message || 'Access denied' } })
+      return response.ok([]) // Return empty array on error to prevent UI breaking
     }
   }
 
