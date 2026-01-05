@@ -24,8 +24,37 @@ export default class BackgroundChecksController {
     const check = await BackgroundCheck.find(params.id)
     if (!check) return response.notFound()
     check.merge(request.only(['status', 'result', 'completed_at', 'notes']))
+    
+    const file = request.file('file', {
+      size: '10mb',
+      extnames: ['pdf', 'png', 'jpg', 'jpeg', 'doc', 'docx']
+    })
+
+    if (file) {
+      if (!file.isValid) {
+        return response.badRequest(file.errors)
+      }
+      await file.moveToDisk('background_checks')
+      check.filePath = file.fileName
+      check.fileName = file.clientName
+    }
+
     await check.save()
     return response.ok(check)
+  }
+
+  public async getFile({ params, response }: HttpContextContract) {
+    const check = await BackgroundCheck.find(params.id)
+    if (!check || !check.filePath) return response.notFound()
+    
+    // Lazy import Drive to avoid top-level issues if not configured, though typically it is.
+    const Drive = (await import('@ioc:Adonis/Core/Drive')).default
+    
+    if (await Drive.exists(`background_checks/${check.filePath}`)) {
+      const stream = await Drive.getStream(`background_checks/${check.filePath}`)
+      return response.stream(stream)
+    }
+    return response.notFound('File not found on disk')
   }
 
   public async destroy({ params, response }: HttpContextContract) {
