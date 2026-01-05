@@ -1,124 +1,157 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '@/lib/api';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Database } from 'lucide-react';
 import { toast } from '@/components/atoms/use-toast';
+import api from '@/lib/api';
+import { useMutation } from '@tanstack/react-query';
+import { Database, FileArchive, Download, HardDrive, Server } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function AdminBackup() {
-  const queryClient = useQueryClient();
-  const [inProgress, setInProgress] = useState(false);
 
-  const { data: status, isLoading } = useQuery(
-    ['backup', 'status'],
-    async () => {
-      try {
-        const res: any = await api.getBackupStatus();
-        return res?.data ?? res;
-      } catch (e) {
-        return null;
-      }
-    },
-    { refetchInterval: (data) => (data?.status === 'in_progress' ? 3000 : false) }
-  );
+  const downloadDatabaseMutation = useMutation({
+    mutationFn: () => api.downloadDatabaseBackup(),
+    onSuccess: (res: any) => {
+      const data = res?.data ?? res;
+      if (!(data instanceof Blob)) return;
 
-  const createMutation = useMutation({
-    mutationFn: async () => {
-      setInProgress(true);
-      const res: any = await api.createBackup();
-      return res?.data ?? res;
+      const url = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `db-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast({ title: 'Database backup downloaded' });
     },
-    onSuccess: () => {
-      toast({ title: 'Backup started', description: 'Backup task has been queued' });
-      queryClient.invalidateQueries(['backup', 'status']);
-      setInProgress(false);
+    onError: () => toast({ title: 'Backup failed', variant: 'destructive' })
+  });
+
+  const downloadMediaMutation = useMutation({
+    mutationFn: () => api.downloadMediaBackup(),
+    onSuccess: (res: any) => {
+      const data = res?.data ?? res;
+      if (!(data instanceof Blob)) return;
+
+      const url = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `media-backup-${new Date().toISOString().slice(0, 10)}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast({ title: 'Media backup downloaded' });
     },
-    onError: (err: any) => {
-      setInProgress(false);
-      toast({ title: 'Failed to start backup', description: String(err), variant: 'destructive' });
-    }
+    onError: () => toast({ title: 'Backup failed', variant: 'destructive' })
   });
 
   return (
-    <div className="max-w-3xl mx-auto p-4 space-y-6">
-      <header className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Database className="h-6 w-6" />
-          <h2 className="text-2xl font-bold">Backups</h2>
-        </div>
-      </header>
+    <div className="max-w-4xl mx-auto p-6 space-y-8">
+      <div className="flex flex-col gap-2">
+        <h2 className="text-3xl font-bold tracking-tight">Full System Backup</h2>
+        <p className="text-muted-foreground">
+          Download complete copies of your system data and files for safe keeping.
+        </p>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Platform backups</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-muted-foreground">
-            Create and monitor platform backups. Backups are executed on the server and may take a few minutes to
-            complete — you can track status here.
-          </p>
+      <div className="grid gap-6 md:grid-cols-2">
+        {/* Database Backup Card */}
+        <Card className="flex flex-col">
+          <CardHeader>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Database className="h-6 w-6 text-primary" />
+              </div>
+            </div>
+            <CardTitle>Database Dump</CardTitle>
+            <CardDescription>
+              Complete export of all system tables including Users, Events, Shifts, and more in JSON format.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="mt-auto pt-6">
+            <div className="bg-muted p-3 rounded-md mb-6 text-sm flex gap-3">
+              <Server className="h-4 w-4 mt-0.5 text-muted-foreground" />
+              <div className="space-y-1">
+                <p className="font-medium">Includes:</p>
+                <ul className="list-disc list-inside text-muted-foreground text-xs space-y-0.5">
+                  <li>All User Profiles & Roles</li>
+                  <li>Organizations & Members</li>
+                  <li>Events, Shifts & Opportunities</li>
+                  <li>Hours, Attendances & Applications</li>
+                </ul>
+              </div>
+            </div>
 
-          <div className="flex items-center gap-4">
-            <Button onClick={() => createMutation.mutate()} disabled={inProgress || createMutation.isLoading}>
-              {createMutation.isLoading || inProgress ? (
-                <>
-                  <Loader2 className="animate-spin mr-2 h-4 w-4" /> Starting...
-                </>
+            <Button
+              className="w-full"
+              size="lg"
+              onClick={() => downloadDatabaseMutation.mutate()}
+              disabled={downloadDatabaseMutation.isLoading}
+            >
+              {downloadDatabaseMutation.isLoading ? (
+                'Generating Dump...'
               ) : (
-                'Create Backup'
+                <>
+                  <Download className="mr-2 h-4 w-4" /> Download Database.json
+                </>
               )}
             </Button>
+          </CardContent>
+        </Card>
 
-            <div className="text-sm text-muted-foreground">
-              {isLoading ? (
-                <span>Checking status...</span>
-              ) : status ? (
-                <div className="space-y-1">
-                  {(() => {
-                    const last = status.lastBackup ? status.lastBackup : status
-                    return (
-                      <>
-                        <div>
-                          Status: <strong className="capitalize">{String(last?.status ?? 'unknown')}</strong>
-                        </div>
-                        {last?.createdAt && <div>Started: {new Date(last.createdAt).toLocaleString()}</div>}
-                        {last?.completedAt && <div>Completed: {new Date(last.completedAt).toLocaleString()}</div>}
-                        {last?.id && (
-                          <div>
-                            <Button
-                              onClick={async () => {
-                                try {
-                                  const res: any = await api.downloadBackup(last.id)
-                                  const blob = new Blob([res.data], { type: 'application/gzip' })
-                                  const url = window.URL.createObjectURL(blob)
-                                  const a = document.createElement('a')
-                                  a.href = url
-                                  a.download = `backup-${last.id}.json.gz`
-                                  document.body.appendChild(a)
-                                  a.click()
-                                  a.remove()
-                                  window.URL.revokeObjectURL(url)
-                                } catch (err: any) {
-                                  toast({ title: 'Download failed', description: String(err), variant: 'destructive' })
-                                }
-                              }}
-                            >
-                              Download latest backup
-                            </Button>
-                          </div>
-                        )}
-                      </>
-                    )
-                  })()}
-                </div>
-              ) : (
-                <span>No recent backups</span>
-              )}
+        {/* Media Backup Card */}
+        <Card className="flex flex-col">
+          <CardHeader>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="p-2 bg-blue-500/10 rounded-lg">
+                <FileArchive className="h-6 w-6 text-blue-600" />
+              </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+            <CardTitle>Media Files Archive</CardTitle>
+            <CardDescription>
+              Compressed ZIP archive containing all user uploads, documents, and event images.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="mt-auto pt-6">
+            <div className="bg-muted p-3 rounded-md mb-6 text-sm flex gap-3">
+              <HardDrive className="h-4 w-4 mt-0.5 text-muted-foreground" />
+              <div className="space-y-1">
+                <p className="font-medium">Details:</p>
+                <p className="text-xs text-muted-foreground">
+                  Archives the entire <code>/uploads</code> directory. Depending on your storage size, this operation might take a few moments.
+                </p>
+              </div>
+            </div>
+
+            <Button
+              variant="outline"
+              className="w-full border-blue-200 hover:bg-blue-50 dark:border-blue-900 dark:hover:bg-blue-900/20"
+              size="lg"
+              onClick={() => downloadMediaMutation.mutate()}
+              disabled={downloadMediaMutation.isLoading}
+            >
+              {downloadMediaMutation.isLoading ? (
+                'Compressing Files...'
+              ) : (
+                <>
+                  <Download className="mr-2 h-4 w-4" /> Download Media.zip
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Alert>
+        <Server className="h-4 w-4" />
+        <AlertTitle>Off-site Backup Recommended</AlertTitle>
+        <AlertDescription>
+          It is recommended to store these backups on a separate physical drive or cloud storage provider.
+        </AlertDescription>
+      </Alert>
+
     </div>
   );
 }
