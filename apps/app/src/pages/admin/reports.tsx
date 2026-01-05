@@ -22,6 +22,7 @@ interface ReportData {
     completed: number;
     ongoing: number;
     cancelled: number;
+    upcoming: number;
     completionRate: number;
   };
   volunteerHours: {
@@ -89,6 +90,7 @@ export default function AdminReports() {
         completed: getNum(r.eventCompletion?.completed),
         ongoing: getNum(r.eventCompletion?.ongoing),
         cancelled: getNum(r.eventCompletion?.cancelled),
+        upcoming: getNum(r.eventCompletion?.upcoming),
         completionRate: getNum(r.eventCompletion?.completionRate)
       },
       volunteerHours: {
@@ -144,12 +146,23 @@ export default function AdminReports() {
       return;
     }
 
-    // For non-CSV formats show a user-facing message
-    console.log(`Exporting as ${exportFormat}`);
-    try {
-      toast({ title: 'Export started', description: `Preparing ${exportFormat.toUpperCase()} export` });
-    } catch (e) {
-      // noop
+    if (exportFormat === 'pdf') {
+      try {
+        toast({ title: 'Exporting...', description: 'Generating PDF Report' });
+        const blob = await api.downloadReport(reportType, 'pdf');
+        const url = window.URL.createObjectURL(new Blob([blob]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `${reportType}-report.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        toast({ title: 'Success', description: 'Report downloaded successfully' });
+      } catch (e) {
+        console.error(e);
+        toast({ title: 'Error', description: 'Failed to generate report' });
+      }
+      return;
     }
   };
 
@@ -177,7 +190,6 @@ export default function AdminReports() {
             <SelectContent>
               <SelectItem value="pdf">PDF</SelectItem>
               <SelectItem value="csv">CSV</SelectItem>
-              <SelectItem value="excel">Excel</SelectItem>
             </SelectContent>
           </Select>
           <Button onClick={handleExport}>
@@ -363,6 +375,13 @@ export default function AdminReports() {
               </div>
               <span className="font-medium">{reportData?.eventCompletion?.cancelled || 0}</span>
             </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-gray-400" />
+                <span className="text-sm">Upcoming</span>
+              </div>
+              <span className="font-medium">{reportData?.eventCompletion?.upcoming || 0}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -421,15 +440,27 @@ export default function AdminReports() {
       <div className="bg-white p-6 rounded-lg shadow-sm">
         <h3 className="text-lg font-semibold mb-4">Quick Report Actions</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <Button variant="outline" className="justify-start">
+          <Button variant="outline" className="justify-start" onClick={() => {
+            setReportType('hours');
+            setExportFormat('pdf');
+            handleExport();
+          }}>
             <FileText className="h-4 w-4 mr-2" />
             Generate Volunteer Hours Report
           </Button>
-          <Button variant="outline" className="justify-start">
+          <Button variant="outline" className="justify-start" onClick={() => {
+            setReportType('compliance');
+            setExportFormat('pdf');
+            handleExport();
+          }}>
             <FileText className="h-4 w-4 mr-2" />
             Generate Compliance Audit
           </Button>
-          <Button variant="outline" className="justify-start">
+          <Button variant="outline" className="justify-start" onClick={() => {
+            setReportType('organizations');
+            setExportFormat('pdf');
+            handleExport();
+          }}>
             <FileText className="h-4 w-4 mr-2" />
             Generate Performance Summary
           </Button>
