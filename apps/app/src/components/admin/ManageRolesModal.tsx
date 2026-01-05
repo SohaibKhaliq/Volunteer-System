@@ -70,7 +70,7 @@ export default function ManageRolesModal({ open, onClose, user, roles, selectedR
           </div>
 
           {/* Roles List */}
-          <div className="h-[300px] overflow-y-auto pr-4">
+          <div className="max-h-[350px] overflow-y-auto px-1 overflow-x-hidden">
             {roles.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <Shield className="h-12 w-12 text-muted-foreground/50 mb-3" />
