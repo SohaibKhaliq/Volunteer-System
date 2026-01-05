@@ -124,7 +124,7 @@ export default function AdminCompliance() {
       verifiedBy: null,
       notes: c.notes || null,
       riskLevel: c.status === 'rejected' ? 'high' : 'low',
-      file: null,
+      file: c.filePath ? { fileName: c.fileName, path: c.filePath } : null,
       source: 'background_check'
     };
   });
@@ -431,6 +431,27 @@ export default function AdminCompliance() {
                               <Eye className="h-4 w-4 mr-2" />
                               Manage in Background Checks
                             </DropdownMenuItem>
+                            {/* Check if we have file path/name from normalization. 
+                                Note: Normalized checks currently map 'file' to null in line 127. 
+                                We must fix normalization first to include file info from raw check. */}
+                            {doc.file && ( // doc.file is currently null for checks
+                              <DropdownMenuItem onClick={() => {
+                                api.getBackgroundCheckFile(doc.id).then((res: any) => {
+                                  const blob = res.data ?? res;
+                                  if (!(blob instanceof Blob)) return;
+                                  const url = window.URL.createObjectURL(blob);
+                                  const a = document.createElement('a');
+                                  a.href = url;
+                                  a.download = doc.file.fileName || `check-${doc.id}.pdf`;
+                                  document.body.appendChild(a);
+                                  a.click();
+                                  a.remove();
+                                });
+                              }}>
+                                <Download className="h-4 w-4 mr-2" />
+                                View Document
+                              </DropdownMenuItem>
+                            )}
                           </>
                         ) : (
                           <>
