@@ -374,18 +374,37 @@ export default function AdminNotifications() {
               </div>
 
               {/* Action Helper */}
+              {/* Action Helper */}
               {(() => {
                 const p = typeof viewing.payload === 'string' ? JSON.parse(viewing.payload) : viewing.payload || {};
-                if (p.resourceId) {
-                  return (
-                    <div className="pt-2">
-                      <Button size="sm" className="w-full" variant="secondary">
-                        View Related Resource
+                return (
+                  <div className="flex flex-col gap-2 pt-2">
+                    {p.resourceId && (
+                      <Button size="sm" className="w-full" variant="secondary" onClick={() => {
+                        navigate('/admin/resources');
+                        setViewOpen(false);
+                      }}>
+                        View Resource
                       </Button>
-                    </div>
-                  );
-                }
-                return null;
+                    )}
+                    {p.eventId && (
+                      <Button size="sm" className="w-full" variant="secondary" onClick={() => {
+                        navigate('/admin/events');
+                        setViewOpen(false);
+                      }}>
+                        View Event
+                      </Button>
+                    )}
+                    {p.userId && (
+                      <Button size="sm" className="w-full" variant="secondary" onClick={() => {
+                        navigate('/admin/users');
+                        setViewOpen(false);
+                      }}>
+                        View User
+                      </Button>
+                    )}
+                  </div>
+                );
               })()}
             </div>
           )}
