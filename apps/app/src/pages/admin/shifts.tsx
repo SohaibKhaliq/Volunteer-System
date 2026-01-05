@@ -37,8 +37,12 @@ export default function AdminShifts() {
   const { user } = useApp();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [perPage] = useState(20);
 
-  const { data: shiftsRaw, isLoading } = useQuery(['shifts', search], () => api.listShifts({ search }));
+  const { data: shiftsRaw, isLoading } = useQuery(['shifts', search, page, perPage], () =>
+    api.listShifts({ search, page, perPage })
+  );
 
   type Shift = {
     id: number;
@@ -54,6 +58,8 @@ export default function AdminShifts() {
   type UserSnippet = { id: number; firstName?: string; lastName?: string; name?: string; email?: string };
 
   const shifts: Shift[] = Array.isArray(shiftsRaw) ? shiftsRaw : (shiftsRaw?.data ?? []);
+  const totalPages = shiftsRaw?.meta?.lastPage || shiftsRaw?.lastPage || 1;
+  const currentPage = shiftsRaw?.meta?.currentPage || shiftsRaw?.currentPage || page;
 
   const deleteMutation = useMutation<void, unknown, number>({
     mutationFn: (id: number) => api.deleteShift(id),
@@ -357,6 +363,32 @@ export default function AdminShifts() {
               )}
             </TableBody>
           </Table>
+
+          {/* Pagination Controls */}
+          <div className="flex items-center justify-between mt-4 pt-4 border-t">
+            <div className="text-sm text-muted-foreground">
+              Page {currentPage} of {totalPages}
+              {shifts.length > 0 && ` (${shifts.length} shifts)`}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={currentPage <= 1 || isLoading}
+              >
+                Previous
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setPage(p => p + 1)}
+                disabled={isLoading || (totalPages > 1 && currentPage >= totalPages)}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
