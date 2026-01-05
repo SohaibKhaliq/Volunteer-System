@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/atoms/use-toast';
@@ -18,6 +17,7 @@ export default function AdminBackup() {
       const url = URL.createObjectURL(data);
       const a = document.createElement('a');
       a.href = url;
+      // Enforce .json extension
       a.download = `db-backup-${new Date().toISOString().slice(0, 10)}.json`;
       document.body.appendChild(a);
       a.click();
@@ -37,6 +37,7 @@ export default function AdminBackup() {
       const url = URL.createObjectURL(data);
       const a = document.createElement('a');
       a.href = url;
+      // Enforce .zip extension which is critical for restoring backups
       a.download = `media-backup-${new Date().toISOString().slice(0, 10)}.zip`;
       document.body.appendChild(a);
       a.click();
