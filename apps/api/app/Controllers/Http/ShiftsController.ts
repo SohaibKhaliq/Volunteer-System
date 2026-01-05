@@ -79,72 +79,77 @@ export default class ShiftsController {
     const shift = await Shift.find(shiftId)
     if (!shift) return response.notFound({ message: 'Shift not found' })
 
-    // gather required skills from shift tasks (best-effort)
+    // gather required skills from shift tasks
     await shift.load('tasks')
-    const requiredSkills: string[] = []
+    const requiredSkills = new Set<string>()
     for (const t of shift.tasks) {
-      try {
-        const skills = typeof t.skills === 'string' ? JSON.parse(t.skills) : t.skills
-        if (Array.isArray(skills))
-          requiredSkills.push(...skills.map((s: any) => String(s).toLowerCase()))
-      } catch (e) {
-        // ignore parse errors
+      if (t.skillTags) {
+        t.skillTags.forEach((s) => requiredSkills.add(s.toLowerCase()))
       }
     }
 
-    // heuristics: users with matching skills + history of similar tasks
-    // fetch users with non-empty profileMetadata (may contain skills) and recent assignments
-    const users = await Database.from('users').select(
-      'id',
-      'first_name',
-      'last_name',
-      'profile_metadata'
-    )
+    // load existing assignments to exclude them
+    await shift.load('assignments')
+    const assignedUserIds = new Set<number>()
+    shift.assignments.forEach((a) => assignedUserIds.add(a.userId))
 
-    const scores: Record<number, number> = {}
+    // fetch potential candidates (active users)
+    // simplistic fetch all active, optimizable in future
+    const users = await User.query()
+      .where('volunteer_status', 'active')
+      .preload('assignments', (q) => q.limit(20)) // peek at recent assignments for experience score
 
-    // map skill matches
-    for (const u of users) {
-      let score = 0
-      try {
-        const meta = u.profile_metadata ? JSON.parse(u.profile_metadata) : null
-        const userSkills: string[] = meta?.skills ?? meta?.skill_tags ?? []
-        if (Array.isArray(userSkills)) {
-          for (const s of userSkills) {
-            if (requiredSkills.includes(String(s).toLowerCase())) score += 2
-          }
+    // Initial Scoring
+    const scoredCandidates = users
+      .filter((u) => !assignedUserIds.has(u.id))
+      .map((u) => {
+        let score = 0
+        // Skill Match (+10 per skill)
+        const userSkills = u.skills.map((s) => s.toLowerCase())
+        const matchingSkills = userSkills.filter((s) => requiredSkills.has(s))
+        if (matchingSkills.length > 0) {
+          score += matchingSkills.length * 10
         }
-      } catch (e) {}
-      scores[u.id] = score
-    }
 
-    // boost users with past assignments for the same event or similar task titles
-    const past = await ShiftAssignment.query().preload('shift')
-    for (const a of past) {
-      if (!a.shift) continue
-      // if same event, boost
-      if (a.shift.eventId && a.shift.eventId === shift.eventId) {
-        scores[a.userId] = (scores[a.userId] || 0) + 3
-      }
-      // if task title similarity, small boost (we don't have task here)
-    }
+        // Recent Activity (+5 if active in last 30 days)
+        if (u.lastLoginAt) {
+          const daysSince = Math.floor(
+            (Date.now() - new Date(u.lastLoginAt.toString()).getTime()) / (1000 * 60 * 60 * 24)
+          )
+          if (daysSince <= 30) score += 5
+        }
 
-    // convert to list and sort by score
-    const result = Object.keys(scores)
-      .map((k) => ({ user_id: Number(k), score: scores[Number(k)] }))
+        // Experience (+1 per assignment)
+        if (u.assignments && u.assignments.length > 0) {
+          score += Math.min(u.assignments.length, 5)
+        }
+
+        return { user: u, score }
+      })
       .sort((a, b) => b.score - a.score)
-      .slice(0, limit)
+      // Take top subset to check for conflicts (avoid checking everyone)
+      .slice(0, limit * 3)
 
-    // enrich with user names
-    const userIds = result.map((r) => r.user_id)
-    const userRows = await User.query().whereIn('id', userIds)
-    const byId: Record<number, any> = {}
-    userRows.forEach((u) => (byId[u.id] = u))
+    // Conflict Check
+    const suggestions: any[] = []
+    
+    for (const candidate of scoredCandidates) {
+      if (suggestions.length >= limit) break
+      
+      const available = await ConflictDetectionService.isUserAvailable(
+        candidate.user.id,
+        shift.startAt,
+        shift.endAt
+      )
 
-    const suggestions = result.map((r) => ({
-      user: byId[r.user_id] ?? { id: r.user_id },
-      score: r.score
-    }))
+      if (available) {
+        suggestions.push({
+          user: candidate.user,
+          score: candidate.score
+        })
+      }
+    }
+
     return { suggestions }
   }
 
