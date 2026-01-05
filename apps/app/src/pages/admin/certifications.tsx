@@ -68,10 +68,12 @@ export default function AdminCertifications() {
   const [courseUserQuery, setCourseUserQuery] = useState('');
   const [debouncedCourseUserQuery, setDebouncedCourseUserQuery] = useState('');
 
-  const { data: items = [], isLoading } = useQuery<ComplianceDoc[]>({
+  const { data: rawData, isLoading } = useQuery({
     queryKey: ['compliance'],
     queryFn: () => api.listCompliance()
   });
+
+  const items = Array.isArray(rawData) ? rawData : ((rawData as any)?.data ?? []);
 
   // Users for certifications dialog
   const [certUserQuery, setCertUserQuery] = useState('');
@@ -319,6 +321,37 @@ export default function AdminCertifications() {
               </TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">
+                  {/* Verification Actions */}
+                  {cert.status !== 'Valid' && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                      title="Approve / Verify"
+                      onClick={() => {
+                        if (confirm('Verify this certification?')) {
+                          updateCertMutation.mutate({ id: cert.id, data: { status: 'Valid' } });
+                        }
+                      }}
+                    >
+                      <Award className="h-4 w-4" />
+                    </Button>
+                  )}
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    title="Reject / Expire"
+                    onClick={() => {
+                      if (confirm('Mark this certification as Expired/Rejected?')) {
+                        updateCertMutation.mutate({ id: cert.id, data: { status: 'Expired' } });
+                      }
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+
                   <Button
                     variant="ghost"
                     size="sm"
@@ -367,7 +400,7 @@ export default function AdminCertifications() {
                       setDeleteOpen(true);
                     }}
                   >
-                    <Trash2 className="h-4 w-4 text-red-600" />
+                    <Trash2 className="h-4 w-4 text-gray-500" />
                   </Button>
                 </div>
               </TableCell>
@@ -585,7 +618,7 @@ export default function AdminCertifications() {
                     <span>
                       {selectedCertUser
                         ? `${selectedCertUser.firstName || selectedCertUser.name || ''} ${selectedCertUser.lastName || ''}`.trim() ||
-                          'Select volunteer'
+                        'Select volunteer'
                         : certUsersLoading
                           ? 'Loading...'
                           : 'Select volunteer'}
