@@ -233,8 +233,8 @@ export default function AdminLayout() {
           { path: '/admin/feedback', icon: FileText, label: 'Feedback' },
           { path: '/admin/feedback/create', icon: MessageSquare, label: 'Create Feedback' },
           // { path: '/admin/monitoring', icon: Activity, label: 'Monitoring', adminOnly: true, feature: 'monitoring' },
-          { path: '/admin/analytics', icon: BarChart3, label: 'Analytics', adminOnly: true, feature: 'analytics' },
-          { path: '/admin/reports', icon: BarChart3, label: 'Reports & Analytics' },
+          // { path: '/admin/analytics', icon: BarChart3, label: 'Analytics', adminOnly: true, feature: 'analytics' },
+          { path: '/admin/reports', icon: BarChart3, label: 'Analytics & Reports' },
           { path: '/admin/audit-logs', icon: ListOrdered, label: 'Audit Logs', adminOnly: true, feature: 'analytics' },
           { path: '/admin/settings', icon: LogOut, label: 'Settings' }
         ]
