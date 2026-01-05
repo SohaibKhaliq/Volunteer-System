@@ -18,6 +18,18 @@ import { axios } from '@/lib/axios';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
 import { toast } from '@/components/atoms/use-toast';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+} from '@/components/ui/dropdown-menu';
+import { MoreHorizontal } from 'lucide-react';
 
 export default function AdminResources() {
   const queryClient = useQueryClient();
@@ -349,132 +361,121 @@ export default function AdminResources() {
                       })()}
                     </TableCell>
                     <TableCell>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            Actions
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
                           </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-48 p-2">
-                          <div className="flex flex-col">
-                            {canQuickAssign && (
-                              <Button
-                                variant="ghost"
-                                onClick={() => {
-                                  setAssigningResource(r);
-                                  setAssignOpen(true);
-                                }}
-                              >
-                                Quick Assign
-                              </Button>
-                            )}
-                            <Button
-                              variant="ghost"
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          {canQuickAssign && (
+                            <DropdownMenuItem
                               onClick={() => {
-                                setMaintenanceResource(r);
-                                setMaintenanceQuantity(1);
-                                setMaintenanceDate(null);
-                                setMaintenanceTime('09:00');
-                                setMaintenanceNotes(null);
-                                setMaintenanceOpen(true);
+                                setAssigningResource(r);
+                                setAssignOpen(true);
                               }}
                             >
-                              Maintenance
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              onClick={() => {
-                                setHistoryResource(r);
-                                setHistoryOpen(true);
-                                setTimeout(() => refetchHistory(), 10);
+                              Quick Assign
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setMaintenanceResource(r);
+                              setMaintenanceQuantity(1);
+                              setMaintenanceDate(null);
+                              setMaintenanceTime('09:00');
+                              setMaintenanceNotes(null);
+                              setMaintenanceOpen(true);
+                            }}
+                          >
+                            Maintenance
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setHistoryResource(r);
+                              setHistoryOpen(true);
+                              setTimeout(() => refetchHistory(), 10);
+                            }}
+                          >
+                            History
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setEditing(r);
+                              setEditOpen(true);
+                            }}
+                          >
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuSub>
+                            <DropdownMenuSubTrigger>Set Status</DropdownMenuSubTrigger>
+                            <DropdownMenuSubContent>
+                              <DropdownMenuItem
+                                onClick={() => patchStatusMutation.mutate({ id: r.id, status: 'available' })}
+                              >
+                                Available
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => patchStatusMutation.mutate({ id: r.id, status: 'in_use' })}
+                              >
+                                In Use
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => patchStatusMutation.mutate({ id: r.id, status: 'reserved' })}
+                              >
+                                Reserved
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => patchStatusMutation.mutate({ id: r.id, status: 'maintenance' })}
+                              >
+                                Maintenance
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => patchStatusMutation.mutate({ id: r.id, status: 'retired' })}
+                              >
+                                Retired
+                              </DropdownMenuItem>
+                            </DropdownMenuSubContent>
+                          </DropdownMenuSub>
+                          <DropdownMenuSeparator />
+                          {r.status === 'retired' ? (
+                            <DropdownMenuItem
+                              onClick={async () => {
+                                try {
+                                  await api.reactivateResource(r.id);
+                                  queryClient.invalidateQueries({ queryKey: ['resources'] });
+                                  toast.success('Resource reactivated');
+                                } catch (e) {
+                                  toast.error('Failed to reactivate resource');
+                                }
                               }}
                             >
-                              History
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              onClick={() => {
-                                setEditing(r);
-                                setEditOpen(true);
+                              Reactivate
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem
+                              onClick={async () => {
+                                if (!confirm('Retire this resource?')) return;
+                                try {
+                                  await api.retireResource(r.id);
+                                  queryClient.invalidateQueries({ queryKey: ['resources'] });
+                                  toast.success('Resource retired');
+                                } catch (e) {
+                                  toast.error('Failed to retire resource');
+                                }
                               }}
                             >
-                              Edit
-                            </Button>
-
-                            {/* Quick status changes using the server patch endpoint */}
-                            <div className="mt-2 border-t pt-2">
-                              <div className="text-xs text-muted-foreground mb-1">Set status</div>
-                              <div className="flex flex-col">
-                                <Button
-                                  variant="ghost"
-                                  onClick={() => patchStatusMutation.mutate({ id: r.id, status: 'available' })}
-                                >
-                                  Available
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  onClick={() => patchStatusMutation.mutate({ id: r.id, status: 'in_use' })}
-                                >
-                                  In Use
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  onClick={() => patchStatusMutation.mutate({ id: r.id, status: 'reserved' })}
-                                >
-                                  Reserved
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  onClick={() => patchStatusMutation.mutate({ id: r.id, status: 'maintenance' })}
-                                >
-                                  Maintenance
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  onClick={() => patchStatusMutation.mutate({ id: r.id, status: 'retired' })}
-                                >
-                                  Retired
-                                </Button>
-                              </div>
-                            </div>
-                            {r.status === 'retired' ? (
-                              <Button
-                                variant="ghost"
-                                onClick={async () => {
-                                  try {
-                                    await api.reactivateResource(r.id);
-                                    queryClient.invalidateQueries({ queryKey: ['resources'] });
-                                    toast.success('Resource reactivated');
-                                  } catch (e) {
-                                    toast.error('Failed to reactivate resource');
-                                  }
-                                }}
-                              >
-                                Reactivate
-                              </Button>
-                            ) : (
-                              <Button
-                                variant="ghost"
-                                onClick={async () => {
-                                  if (!confirm('Retire this resource?')) return;
-                                  try {
-                                    await api.retireResource(r.id);
-                                    queryClient.invalidateQueries({ queryKey: ['resources'] });
-                                    toast.success('Resource retired');
-                                  } catch (e) {
-                                    toast.error('Failed to retire resource');
-                                  }
-                                }}
-                              >
-                                Retire
-                              </Button>
-                            )}
-                            <Button variant="ghost" className="text-red-600" onClick={() => confirmDelete(r.id)}>
-                              Delete
-                            </Button>
-                          </div>
-                        </PopoverContent>
-                      </Popover>
+                              Retire
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem className="text-red-600" onClick={() => confirmDelete(r.id)}>
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))
