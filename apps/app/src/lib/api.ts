@@ -131,7 +131,12 @@ const api = {
   /* Background checks endpoints */
   listBackgroundChecks: async () => axios.get('/background-checks'),
   createBackgroundCheck: async (data: any) => axios.post('/background-checks', data),
-  updateBackgroundCheck: async (id: number, data: any) => axios.put(`/background-checks/${id}`, data),
+  updateBackgroundCheck: async (id: number, data: any) => {
+    if (data instanceof FormData) {
+      return axios.put(`/background-checks/${id}`, data, { headers: { 'Content-Type': 'multipart/form-data' } });
+    }
+    return axios.put(`/background-checks/${id}`, data);
+  },
   deleteBackgroundCheck: async (id: number) => axios.delete(`/background-checks/${id}`),
 
   // reports endpoint with optional query options
