@@ -28,12 +28,23 @@ import { RequestDetailsModal } from '@/components/organisms/RequestDetailsModal'
 import { AssignVolunteerModal } from '@/components/organisms/AssignVolunteerModal';
 import { cn } from '@/lib/utils';
 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+
 const AdminEmergencyRequests = () => {
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Filter states
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
+  const [severityFilter, setSeverityFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
 
   // Modal states
   const [selectedRequest, setSelectedRequest] = useState<HelpRequest | null>(null);
@@ -41,19 +52,22 @@ const AdminEmergencyRequests = () => {
   const [assignModalOpen, setAssignModalOpen] = useState(false);
 
   const { data: responseData, isLoading } = useQuery({
-    queryKey: ['help-requests', page, limit],
-    queryFn: () => api.listHelpRequests({ page, limit })
+    queryKey: ['help-requests', page, limit, searchTerm, severityFilter, typeFilter],
+    queryFn: () => api.listHelpRequests({
+      page,
+      limit,
+      search: searchTerm,
+      severity: severityFilter,
+      type: typeFilter
+    })
   });
 
   // Handle both paginated and non-paginated potential responses during migration
   const requests = Array.isArray(responseData) ? responseData : responseData?.data || [];
   const meta = !Array.isArray(responseData) ? responseData?.meta : null;
 
-  const filteredRequests = requests?.filter((req: HelpRequest) =>
-    req.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    req.caseId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    req.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Requests are now filtered on the server
+  const filteredRequests = requests;
 
   const getSeverityStyles = (severity: string) => {
     switch (severity?.toLowerCase()) {
@@ -83,10 +97,7 @@ const AdminEmergencyRequests = () => {
           <p className="text-slate-500 mt-1">{t('Manage and triage incoming help requests from the community.')}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" className="bg-white hover:bg-slate-50">
-            <Filter className="mr-2 h-4 w-4" />
-            {t('Filter')}
-          </Button>
+          {/* Filters moved to toolbar */}
           <Button>
             {t('Export Data')}
           </Button>
@@ -94,7 +105,7 @@ const AdminEmergencyRequests = () => {
       </div>
 
       <Card className="border-0 shadow-sm bg-white rounded-xl overflow-hidden ring-1 ring-slate-200/60">
-        <div className="p-6 pb-4 border-b border-slate-100 flex items-center justify-between bg-white">
+        <div className="p-6 pb-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white">
           <div className="flex items-center gap-2">
             <div className="bg-red-50 p-2 rounded-lg">
               <AlertCircle className="h-5 w-5 text-red-600" />
@@ -105,14 +116,44 @@ const AdminEmergencyRequests = () => {
             </Badge>
           </div>
 
-          <div className="relative w-full max-w-sm">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <Input
-              placeholder={t('Search by ID, name, or description...')}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 h-10 bg-slate-50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-primary/20 transition-all rounded-lg"
-            />
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Select value={severityFilter} onValueChange={(v) => { setSeverityFilter(v); setPage(1); }}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Severity" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Severities</SelectItem>
+                <SelectItem value="critical">Critical</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="low">Low</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={typeFilter} onValueChange={(v) => { setTypeFilter(v); setPage(1); }}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Assistance Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="medical">Medical</SelectItem>
+                <SelectItem value="search_rescue">Search & Rescue</SelectItem>
+                <SelectItem value="water">Water</SelectItem>
+                <SelectItem value="food">Food</SelectItem>
+                <SelectItem value="shelter">Shelter</SelectItem>
+                <SelectItem value="logistics">Logistics</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <div className="relative w-full sm:w-[250px]">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input
+                placeholder={t('Search ID, name...')}
+                value={searchTerm}
+                onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
+                className="pl-10 h-10 bg-slate-50 border-slate-200 focus:bg-white focus:ring-2 focus:ring-primary/20 transition-all rounded-lg"
+              />
+            </div>
           </div>
         </div>
 
