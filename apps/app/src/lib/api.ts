@@ -343,9 +343,9 @@ const api = {
   deleteAssignment: async (id: number) => axios.delete(`/assignments/${id}`),
 
   /* Compliance list endpoint */
-  getComplianceTypes: async () => (await axios.get('/compliance/types')).data,
+  getComplianceTypes: async () => axios.get('/compliance/types'),
   // Compliance
-  listCompliance: async () => (await axios.get('/compliance')).data,
+  listCompliance: async () => axios.get('/compliance'),
   // return current authenticated user's profile (roles, flags)
   // _skipAuthRedirect true prevents axios interceptor from forcing a navigation
   // to /login if the token is invalid; AppProvider should decide whether to
