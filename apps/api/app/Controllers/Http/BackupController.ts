@@ -71,6 +71,7 @@ export default class BackupController {
     const filename = `db-backup-${DateTime.now().toFormat('yyyy-MM-dd-HHmm')}.json`
     
     response.header('Content-Type', 'application/json')
+    // Quote filename to handle potential spaces or special chars
     response.header('Content-Disposition', `attachment; filename="${filename}"`)
     
     return response.send(dump)
