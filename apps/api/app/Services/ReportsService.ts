@@ -144,6 +144,15 @@ export default class ReportsService {
       // 3. Event Success Probability
       const successRate = totalEvents > 0 ? Math.round(((completedEvents + ongoingEvents) / totalEvents) * 100) : 100
 
+      const upcomingEventsRes = await Event.query()
+        .where('start_at', '>', now)
+        .count('* as total')
+      const upcomingEvents = Number(
+        Array.isArray(upcomingEventsRes)
+          ? upcomingEventsRes[0]?.$extras?.total
+          : (upcomingEventsRes as any)?.$extras?.total
+      ) || 0
+
       return {
         volunteerParticipation: {
           total: totalVolunteers || 0,
@@ -163,9 +172,11 @@ export default class ReportsService {
           completed: completedEvents || 0,
           ongoing: ongoingEvents || 0,
           cancelled: cancelledEvents || 0,
+          upcoming: upcomingEvents,
           completionRate:
             totalEvents > 0 ? Math.round(((completedEvents || 0) / totalEvents) * 100) : 0
         },
+
         volunteerHours: {
           total: totalHours || 0,
           thisMonth: trend[trend.length - 1].hours,
@@ -206,6 +217,51 @@ export default class ReportsService {
         }
       }
     }
+  }
+
+  public async generatePdf(type: string): Promise<Buffer> {
+    const PdfPrinter = require('pdfmake')
+    const fonts = {
+      Roboto: {
+        normal: 'node_modules/pdfmake/fonts/Roboto/Roboto-Regular.ttf',
+        bold: 'node_modules/pdfmake/fonts/Roboto/Roboto-Medium.ttf',
+        italics: 'node_modules/pdfmake/fonts/Roboto/Roboto-Italic.ttf',
+        bolditalics: 'node_modules/pdfmake/fonts/Roboto/Roboto-MediumItalic.ttf'
+      }
+    }
+    const printer = new PdfPrinter(fonts)
+
+    const docDefinition = {
+      content: [
+        { text: `${type.toUpperCase()} REPORT`, style: 'header' },
+        { text: `Generated on ${new Date().toLocaleDateString()}`, style: 'subheader' },
+        { text: ' ' }, // Spacer
+        {
+          table: {
+            headerRows: 1,
+            widths: ['*', '*'],
+            body: [
+              ['Metric', 'Value'],
+              ['Status', 'Generated'],
+              ['Type', type]
+            ]
+          }
+        }
+      ],
+      styles: {
+        header: { fontSize: 18, bold: true, margin: [0, 0, 0, 10] },
+        subheader: { fontSize: 14, margin: [0, 10, 0, 5] }
+      }
+    }
+
+    return new Promise((resolve, reject) => {
+      const chunks: any[] = []
+      const pdfDoc = printer.createPdfKitDocument(docDefinition)
+      pdfDoc.on('data', (chunk) => chunks.push(chunk))
+      pdfDoc.on('end', () => resolve(Buffer.concat(chunks)))
+      pdfDoc.on('error', (err) => reject(err))
+      pdfDoc.end()
+    })
   }
 
   public async eventsWithCompletion() {
