@@ -183,13 +183,18 @@ export default class HelpRequestController {
     }
   }
 
-  public async index({ response }: HttpContextContract) {
+  public async index({ request, response }: HttpContextContract) {
     try {
-      const helpRequests = await HelpRequest.query().preload('types').orderBy('created_at', 'desc')
+      const page = request.input('page', 1)
+      const limit = request.input('limit', 10)
+      const helpRequests = await HelpRequest.query()
+        .preload('types')
+        .orderBy('created_at', 'desc')
+        .paginate(page, limit)
 
       return helpRequests
     } catch (error) {
-      return response.noContent()
+      return response.badRequest({ message: 'Failed to fetch help requests' })
     }
   }
 
