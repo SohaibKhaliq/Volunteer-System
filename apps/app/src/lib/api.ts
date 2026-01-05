@@ -593,6 +593,9 @@ const api = {
   updateRole: async (id: number, data: any) => axios.put(`/roles/${id}`, data),
   deleteRole: async (id: number) => axios.delete(`/roles/${id}`),
 
+  // Permissions
+  listPermissions: async () => axios.get('/permissions'),
+
   // Types
   listTypes: async () => axios.get('/types'),
   createType: async (data: any) => axios.post('/types', data),
