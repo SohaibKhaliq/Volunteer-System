@@ -32,15 +32,22 @@ const AdminEmergencyRequests = () => {
   const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState('');
 
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+
   // Modal states
   const [selectedRequest, setSelectedRequest] = useState<HelpRequest | null>(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
   const [assignModalOpen, setAssignModalOpen] = useState(false);
 
-  const { data: requests, isLoading } = useQuery({
-    queryKey: ['help-requests'],
-    queryFn: () => api.listHelpRequests()
+  const { data: responseData, isLoading } = useQuery({
+    queryKey: ['help-requests', page, limit],
+    queryFn: () => api.listHelpRequests({ page, limit })
   });
+
+  // Handle both paginated and non-paginated potential responses during migration
+  const requests = Array.isArray(responseData) ? responseData : responseData?.data || [];
+  const meta = !Array.isArray(responseData) ? responseData?.meta : null;
 
   const filteredRequests = requests?.filter((req: HelpRequest) =>
     req.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -94,7 +101,7 @@ const AdminEmergencyRequests = () => {
             </div>
             <h3 className="font-semibold text-lg text-slate-800">{t('Active Cases')}</h3>
             <Badge variant="secondary" className="bg-slate-100 text-slate-600 ml-2 rounded-full px-2.5">
-              {filteredRequests?.length || 0}
+              {meta ? meta.total : (filteredRequests?.length || 0)}
             </Badge>
           </div>
 
@@ -234,6 +241,35 @@ const AdminEmergencyRequests = () => {
               )}
             </TableBody>
           </Table>
+
+          {/* Pagination Controls */}
+          {meta && (
+            <div className="p-4 border-t border-slate-100 flex items-center justify-between">
+              <div className="text-sm text-slate-500">
+                {t('Showing')} <span className="font-medium">{(meta.current_page - 1) * meta.per_page + 1}</span> {t('to')}{' '}
+                <span className="font-medium">{Math.min(meta.current_page * meta.per_page, meta.total)}</span> {t('of')}{' '}
+                <span className="font-medium">{meta.total}</span> {t('results')}
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={meta.current_page <= 1}
+                >
+                  {t('Previous')}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setPage(p => p + 1)}
+                  disabled={meta.current_page >= meta.last_page}
+                >
+                  {t('Next')}
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
