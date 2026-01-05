@@ -46,6 +46,16 @@ const AdminEmergencyRequests = () => {
   const [severityFilter, setSeverityFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
 
+  // Fetch types for filter
+  const { data: typesData } = useQuery({
+    queryKey: ['types'],
+    queryFn: () => api.listTypes()
+  });
+
+  const typesList = Array.isArray(typesData)
+    ? typesData
+    : (typesData?.data || []);
+
   // Modal states
   const [selectedRequest, setSelectedRequest] = useState<HelpRequest | null>(null);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
@@ -136,12 +146,11 @@ const AdminEmergencyRequests = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="medical">Medical</SelectItem>
-                <SelectItem value="search_rescue">Search & Rescue</SelectItem>
-                <SelectItem value="water">Water</SelectItem>
-                <SelectItem value="food">Food</SelectItem>
-                <SelectItem value="shelter">Shelter</SelectItem>
-                <SelectItem value="logistics">Logistics</SelectItem>
+                {typesList?.map((type: any) => (
+                  <SelectItem key={type.id || type.name} value={type.name || type.type}>
+                    {type.name || type.type}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
