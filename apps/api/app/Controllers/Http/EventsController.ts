@@ -28,15 +28,24 @@ export default class EventsController {
         .query()
         .where('user_id', auth.user!.id)
         .first()
-      // When calling the namespaced route used by the organization panel
-      // (/organization/events) we expect the authenticated user to be a
-      // member of an organization. If they're not, return Not Found to
-      // match the dashboard/compliance behavior.
-      if (request.url().startsWith('/organization')) {
-        if (!member) return response.notFound({ message: 'User is not part of any organization' })
-        query.where('organization_id', member.organizationId)
-      } else if (member) {
-        query.where('organization_id', member.organizationId)
+
+      const isOrgContext = request.url().startsWith('/organization')
+
+      // If user is Admin and NOT in org context, they can see everything.
+      // Otherwise (Regular user OR Admin in org context), apply filters.
+      if (auth.user.isAdmin && !isOrgContext) {
+        // Admin viewing global events: Show all (no filter)
+      } else {
+        // When calling the namespaced route used by the organization panel
+        // (/organization/events) we expect the authenticated user to be a
+        // member of an organization. If they're not, return Not Found to
+        // match the dashboard/compliance behavior.
+        if (isOrgContext) {
+          if (!member) return response.notFound({ message: 'User is not part of any organization' })
+          query.where('organization_id', member.organizationId)
+        } else if (member) {
+          query.where('organization_id', member.organizationId)
+        }
       }
     }
 
