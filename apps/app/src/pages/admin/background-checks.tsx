@@ -36,6 +36,43 @@ export default function AdminBackgroundChecks() {
   const markClear = (id: number) => updateMutation.mutate({ id, payload: { status: 'clear' } });
   const markRejected = (id: number) => updateMutation.mutate({ id, payload: { status: 'rejected' } });
 
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  const uploadFile = () => {
+    if (!viewing?.id || !selectedFile) return;
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+    updateMutation.mutate({ id: viewing.id, payload: formData });
+    setSelectedFile(null);
+  };
+
+  const downloadFile = (id: number, fileName: string) => {
+    // We can't use api.get directly for blob download easily without helper, 
+    // but let's assume valid auth session cookies allow direct window open or api helper
+    // Actually, let's use the anchor tag method with token if needed, or api.axios.
+    // For now, let's try direct window.open if it's a simple GET with auth cookies
+    // changing to use api helper in next step if this is complex. 
+    // Actually, `api.ts` has `getComplianceFile` logic we can copy.
+    api.axios.get(`/background-checks/${id}/file`, { responseType: 'blob' })
+      .then((res) => {
+        const url = window.URL.createObjectURL(new Blob([res.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', fileName || `check-${id}.pdf`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+      })
+      .catch((e) => toast({ title: 'Download failed', variant: 'destructive' }));
+  };
+
   return (
     <div className="p-4 max-w-6xl mx-auto space-y-6">
       <header className="flex items-center justify-between">
@@ -86,6 +123,7 @@ export default function AdminBackgroundChecks() {
                             onClick={() => {
                               setViewing(c);
                               setViewOpen(true);
+                              setSelectedFile(null);
                             }}
                           >
                             View
@@ -137,12 +175,34 @@ export default function AdminBackgroundChecks() {
                 <span>{new Date(viewing?.created_at ?? viewing?.createdAt ?? Date.now()).toLocaleString()}</span>
               </div>
 
+              <div className="flex items-center gap-2">
+                <strong>Result File</strong>
+                {viewing?.filePath ? (
+                  <Button variant="link" className="p-0 h-auto" onClick={() => downloadFile(viewing.id, viewing.fileName)}>
+                    {viewing.fileName || 'Download File'}
+                  </Button>
+                ) : (
+                  <span className="text-muted-foreground text-sm">No file uploaded</span>
+                )}
+              </div>
+
               <div>
                 <strong>Notes</strong>
                 <div className="mt-2 p-3 bg-muted-foreground/5 rounded text-sm break-words">
                   {viewing?.notes ?? '—'}
                 </div>
               </div>
+
+              <div className="bg-muted p-3 rounded-md space-y-2">
+                <label className="text-sm font-medium">Upload Result / Report</label>
+                <div className="flex gap-2">
+                  <input type="file" className="text-sm" onChange={handleFileChange} />
+                  <Button size="sm" onClick={uploadFile} disabled={!selectedFile || updateMutation.isLoading}>
+                    Upload
+                  </Button>
+                </div>
+              </div>
+
             </div>
           </div>
           <DialogFooter>
