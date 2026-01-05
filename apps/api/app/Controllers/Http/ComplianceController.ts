@@ -130,7 +130,10 @@ export default class ComplianceController {
       }
 
       // handle optional file upload - Privacy Act compliant storage
-      const file = request.file('file')
+      const file = request.file('file', {
+        size: '10mb',
+        extnames: ['pdf', 'png', 'jpg', 'jpeg', 'doc', 'docx']
+      })
       const metadata = request.input('metadata') || {}
 
       if (file) {
@@ -216,7 +219,10 @@ export default class ComplianceController {
       }
 
       // handle optional file upload
-      const file = request.file('file')
+      const file = request.file('file', {
+        size: '10mb',
+        extnames: ['pdf', 'png', 'jpg', 'jpeg', 'doc', 'docx']
+      })
       const metadata = request.input('metadata') || doc.metadata || {}
       if (file) {
         await file.moveToDisk('local', { dirname: 'compliance' })
