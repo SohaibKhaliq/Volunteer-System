@@ -45,7 +45,7 @@ import AdminMonitoring from '@/pages/admin/monitoring';
 import AdminScheduledJobs from '@/pages/admin/scheduled-jobs';
 import AdminInviteSendJobs from '@/pages/admin/invite-send-jobs';
 import AdminBackup from '@/pages/admin/backup';
-import AdminAnalytics from '@/pages/admin/analytics';
+// // Removed AdminAnalytics
 import AdminCalendar from '@/pages/admin/calendar';
 import AdminFeedback from '@/pages/admin/feedback';
 import AdminFeedbackCreate from '@/pages/admin/feedback/create';
@@ -152,7 +152,7 @@ const routes: RouteObject[] = [
       { path: 'templates', element: <AdminTemplates /> },
       { path: 'communications', element: <AdminCommunications /> },
       { path: 'backup', element: <AdminBackup /> },
-      { path: 'analytics', element: <AdminAnalytics /> },
+      // { path: 'analytics', element: <AdminAnalytics /> },
       { path: 'calendar', element: <AdminCalendar /> },
       { path: 'monitoring', element: <AdminMonitoring /> },
       { path: 'scheduled-jobs', element: <AdminScheduledJobs /> },
