@@ -8,6 +8,7 @@ import SkeletonCard from '@/components/atoms/skeleton-card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Download, TrendingUp, Users, Calendar, Clock, Award, BarChart3, PieChart, FileText } from 'lucide-react';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 
 interface ReportData {
   volunteerParticipation: {
@@ -99,10 +100,10 @@ export default function AdminReports() {
       organizationPerformance: {
         topPerformers: Array.isArray(r.organizationPerformance?.topPerformers)
           ? r.organizationPerformance.topPerformers.map((p: any) => ({
-              name: String(p?.name || 'Unknown'),
-              score: getNum(p?.score),
-              events: getNum(p?.events)
-            }))
+            name: String(p?.name || 'Unknown'),
+            score: getNum(p?.score),
+            events: getNum(p?.events)
+          }))
           : [],
         averageScore: getNum(r.organizationPerformance?.averageScore)
       },
@@ -271,7 +272,24 @@ export default function AdminReports() {
         </div>
       </div>
 
-      {/* Charts Section */}
+      {/* Activity Overview Chart */}
+      <div className="bg-white p-6 rounded-lg shadow-sm">
+        <h3 className="text-lg font-semibold mb-6">Activity Overview (6 Months Trend)</h3>
+        <div className="h-72 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={reportData?.volunteerHours?.trend || []}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" />
+              <YAxis />
+              <Tooltip />
+              <Line type="monotone" dataKey="volunteers" name="Active Volunteers" stroke="#4f46e5" dot={false} strokeWidth={2} />
+              <Line type="monotone" dataKey="hours" name="Total Hours" stroke="#0ea5e9" dot={false} strokeWidth={2} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Detail Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Volunteer Participation Chart */}
         <div className="bg-white p-6 rounded-lg shadow-sm">
@@ -289,11 +307,10 @@ export default function AdminReports() {
                 <div
                   className="bg-green-500 h-2 rounded-full"
                   style={{
-                    width: `${
-                      ((reportData?.volunteerParticipation?.active || 0) /
-                        (reportData?.volunteerParticipation?.total || 1)) *
+                    width: `${((reportData?.volunteerParticipation?.active || 0) /
+                      (reportData?.volunteerParticipation?.total || 1)) *
                       100
-                    }%`
+                      }%`
                   }}
                 />
               </div>
@@ -307,11 +324,10 @@ export default function AdminReports() {
                 <div
                   className="bg-gray-500 h-2 rounded-full"
                   style={{
-                    width: `${
-                      ((reportData?.volunteerParticipation?.inactive || 0) /
-                        (reportData?.volunteerParticipation?.total || 1)) *
+                    width: `${((reportData?.volunteerParticipation?.inactive || 0) /
+                      (reportData?.volunteerParticipation?.total || 1)) *
                       100
-                    }%`
+                      }%`
                   }}
                 />
               </div>
