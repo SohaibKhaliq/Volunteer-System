@@ -72,12 +72,14 @@ export default class NotificationsController {
     })
 
     // Maintain pagination structure
-    if (notifications.toJSON) {
-      const result = notifications.toJSON()
-      result.data = enriched
-      return response.ok(result)
+    if (notifications && 'getMeta' in notifications) {
+      return response.ok({
+        meta: notifications.getMeta(),
+        data: enriched
+      })
     }
-
+    
+    // Fallback for non-paginated result
     return response.ok(enriched)
   }
 
