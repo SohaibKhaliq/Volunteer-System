@@ -17,15 +17,24 @@ export default class NotificationsController {
 
     const notifications = await NotificationService.getForUser(user.id, filters)
     
+    // Extract items safely from Paginator or Array
+    let items: any[] = []
+    let meta: any = null
+
+    if (notifications && typeof notifications.toJSON === 'function') {
+      const json = notifications.toJSON()
+      items = json.data
+      meta = json.meta
+    } else if (Array.isArray(notifications)) {
+      items = notifications
+    }
+    
     // Data Enrichment: Collect IDs
     const resourceIds = new Set<number>()
     const eventIds = new Set<number>()
     const userIds = new Set<number>()
     const orgIds = new Set<number>()
     const assignmentIds = new Set<number>()
-
-    const data = notifications.data || notifications
-    const items = Array.isArray(data) ? data : []
 
     items.forEach((n: any) => {
       let p = n.payload
@@ -72,11 +81,8 @@ export default class NotificationsController {
     })
 
     // Maintain pagination structure
-    if (notifications && 'getMeta' in notifications) {
-      return response.ok({
-        meta: notifications.getMeta(),
-        data: enriched
-      })
+    if (meta) {
+      return response.ok({ meta, data: enriched })
     }
     
     // Fallback for non-paginated result
