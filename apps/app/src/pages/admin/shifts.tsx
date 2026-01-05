@@ -145,6 +145,21 @@ export default function AdminShifts() {
 
   const suggestions: UserSnippet[] = Array.isArray(suggestionsRaw) ? suggestionsRaw : (suggestionsRaw?.data ?? []);
 
+  // Edit Shift
+  const [editOpen, setEditOpen] = useState(false);
+  const [editShift, setEditShift] = useState<Shift | null>(null);
+
+  const editMutation = useMutation({
+    mutationFn: (data: { id: number; data: any }) => api.updateShift(data.id, data.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['shifts']);
+      toast.success('Shift updated successfully');
+      setEditOpen(false);
+      setEditShift(null);
+    },
+    onError: () => toast.error('Failed to update shift')
+  });
+
   const canQuickAssign = isAdmin;
 
   const bulkButtonLabel = bulkAssignMutation.isLoading
@@ -255,7 +270,14 @@ export default function AdminShifts() {
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => (window.location.href = `/admin/shifts/${s.id}`)}
+                          onClick={() => {
+                            setEditShift({
+                              ...s,
+                              startAt: s.start_at || s.startAt,
+                              endAt: s.end_at || s.endAt
+                            });
+                            setEditOpen(true);
+                          }}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -456,6 +478,77 @@ export default function AdminShifts() {
                 )}
               </Button>
             </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Shift Dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Shift</DialogTitle>
+          </DialogHeader>
+          {editShift && (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Title</label>
+                <Input
+                  value={editShift.title ?? ''}
+                  onChange={(e) => setEditShift({ ...editShift, title: e.target.value })}
+                  placeholder="Shift Title"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Start Time</label>
+                  <Input
+                    type="datetime-local"
+                    value={editShift.startAt ? new Date(editShift.startAt).toISOString().slice(0, 16) : ''}
+                    onChange={(e) => setEditShift({ ...editShift, startAt: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">End Time</label>
+                  <Input
+                    type="datetime-local"
+                    value={editShift.endAt ? new Date(editShift.endAt).toISOString().slice(0, 16) : ''}
+                    onChange={(e) => setEditShift({ ...editShift, endAt: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Capacity</label>
+                <Input
+                  type="number"
+                  value={editShift.capacity ?? 0}
+                  onChange={(e) => setEditShift({ ...editShift, capacity: parseInt(e.target.value) })}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (editShift) {
+                  editMutation.mutate({
+                    id: editShift.id,
+                    data: {
+                      title: editShift.title,
+                      start_at: editShift.startAt, // API expects start_at
+                      end_at: editShift.endAt,
+                      capacity: editShift.capacity
+                    }
+                  });
+                }
+              }}
+              disabled={editMutation.isLoading}
+            >
+              {editMutation.isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Save Changes
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
