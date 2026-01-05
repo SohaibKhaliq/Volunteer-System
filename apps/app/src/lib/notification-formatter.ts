@@ -63,12 +63,19 @@ export const NotificationFormatter = {
     const p = typeof payload === 'string' ? JSON.parse(payload) : payload || {};
     
     if (type.includes('resource.assignment')) {
+      const resName = p.resourceName ? `'${p.resourceName}'` : (p.resourceId ? `#${p.resourceId}` : 'Resource');
+      const eventName = p.eventName ? `'${p.eventName}'` : (p.eventId ? `#${p.eventId}` : 'Event');
+      
       if (p.resourceId && p.eventId) {
-        return `Resource #${p.resourceId} is overdue for Event #${p.eventId}`;
+        return `Resource ${resName} is overdue for Event ${eventName}`;
       }
       if (p.assignmentId) {
         return `Assignment #${p.assignmentId} requires attention`;
       }
+    }
+
+    if (p.userName && p.userRegistered) {
+       return `User ${p.userName} has registered`;
     }
     
     if (p.message) return p.message;
