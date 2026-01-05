@@ -230,7 +230,7 @@ const AdminEmergencyRequests = () => {
                       <div className="flex flex-wrap gap-1">
                         {request.types?.map((t: any, idx: number) => (
                           <Badge key={idx} variant="secondary" className="bg-slate-100 text-slate-600 hover:bg-slate-200 border-0 text-xs font-normal">
-                            {t.type}
+                            {t.name || t.type}
                           </Badge>
                         ))}
                       </div>
