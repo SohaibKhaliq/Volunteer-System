@@ -71,6 +71,9 @@ export default function AdminEvents() {
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [editEvent, setEditEvent] = useState<Event | null>(null);
+  // AI Match state
+  const [showAiMatchesDialog, setShowAiMatchesDialog] = useState(false);
+  const [aiMatches, setAiMatches] = useState<any[]>([]);
   const navigate = useNavigate();
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
@@ -185,8 +188,12 @@ export default function AdminEvents() {
 
   const aiMatchMutation = useMutation({
     mutationFn: (eventId: number) => api.aiMatchVolunteers(eventId),
-    onSuccess: () => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries(['events']);
+      // data.data.matches contains the array
+      const matches = data?.data?.matches || data?.matches || [];
+      setAiMatches(matches);
+      setShowAiMatchesDialog(true);
       toast({ title: 'AI matching completed', variant: 'success' });
     }
   });
@@ -392,7 +399,7 @@ export default function AdminEvents() {
                   </select>
                 </div>
                 <div className="flex items-center gap-2">
-                  <input id="create-recurring" type="checkbox" checked={false} onChange={() => {}} />
+                  <input id="create-recurring" type="checkbox" checked={false} onChange={() => { }} />
                   <label htmlFor="create-recurring" className="text-sm">
                     Recurring Event
                   </label>
@@ -725,6 +732,50 @@ export default function AdminEvents() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowDetailsDialog(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* AI Matches Dialog */}
+      <Dialog open={showAiMatchesDialog} onOpenChange={setShowAiMatchesDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>AI Volunteer Recommendations</DialogTitle>
+            <DialogDescription>
+              Based on skills, availability, and past activity.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4 max-h-[60vh] overflow-y-auto">
+            {aiMatches.length === 0 ? (
+              <div className="text-center text-muted-foreground py-8">
+                No matching volunteers found for this event.
+              </div>
+            ) : (
+              aiMatches.map((match: any, i: number) => (
+                <div key={i} className="flex items-start justify-between p-4 border rounded-lg bg-gray-50">
+                  <div className="space-y-1">
+                    <div className="font-medium">{match.user.name}</div>
+                    <div className="text-sm text-muted-foreground">{match.user.email}</div>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {match.reasons.map((r: string, idx: number) => (
+                        <Badge key={idx} variant="outline" className="text-xs bg-white">
+                          {r}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold text-blue-600">{match.score}</div>
+                    <div className="text-xs text-muted-foreground">Match Score</div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAiMatchesDialog(false)}>
               Close
             </Button>
           </DialogFooter>
