@@ -53,15 +53,17 @@ export default function AdminBackgroundChecks() {
   };
 
   const downloadFile = (id: number, fileName: string) => {
-    // We can't use api.get directly for blob download easily without helper, 
-    // but let's assume valid auth session cookies allow direct window open or api helper
-    // Actually, let's use the anchor tag method with token if needed, or api.axios.
-    // For now, let's try direct window.open if it's a simple GET with auth cookies
-    // changing to use api helper in next step if this is complex. 
-    // Actually, `api.ts` has `getComplianceFile` logic we can copy.
-    api.axios.get(`/background-checks/${id}/file`, { responseType: 'blob' })
-      .then((res) => {
-        const url = window.URL.createObjectURL(new Blob([res.data]));
+    api.getBackgroundCheckFile(id)
+      .then((res: any) => {
+        // Handle both axios response object or direct data if interceptor unwraps it
+        // Our api.ts usually returns the response for blobs if not intercepted, but let's be safe
+        const blob = res.data ?? res;
+        if (!(blob instanceof Blob)) {
+          // fallback if something went wrong
+          console.error('Response is not a blob', blob);
+          return;
+        }
+        const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
         link.setAttribute('download', fileName || `check-${id}.pdf`);
@@ -70,7 +72,7 @@ export default function AdminBackgroundChecks() {
         link.remove();
         window.URL.revokeObjectURL(url);
       })
-      .catch((e) => toast({ title: 'Download failed', variant: 'destructive' }));
+      .catch((e: any) => toast({ title: 'Download failed', description: String(e), variant: 'destructive' }));
   };
 
   return (
