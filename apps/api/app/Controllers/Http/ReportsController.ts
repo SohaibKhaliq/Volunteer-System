@@ -338,7 +338,9 @@ export default class ReportsController {
           response.header('Content-Length', pdfBuffer.length)
           return response.send(pdfBuffer)
         } catch (e) {
-          Logger.error('PDF Generation failed: %o', e)
+          Logger.error('PDF Generation failed: %s', e.message)
+          Logger.error('Stack: %s', e.stack)
+          console.error('Full Error Object:', e)
           return response.status(500).send('Failed to generate PDF: ' + e.message)
         }
       }
