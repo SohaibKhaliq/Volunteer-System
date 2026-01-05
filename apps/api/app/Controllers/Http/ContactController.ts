@@ -1,18 +1,22 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Logger from '@ioc:Adonis/Core/Logger'
+import { schema, rules } from '@ioc:Adonis/Core/Validator'
 
 import ContactSubmission from 'App/Models/ContactSubmission'
 
 export default class ContactController {
   public async store({ request, response }: HttpContextContract) {
-    const data = request.only(['firstName', 'lastName', 'email', 'subject', 'message'])
-
-    // Validate data (basic validation)
-    if (!data.email || !data.message || !data.firstName) {
-      return response.badRequest({ message: 'Missing required fields' })
-    }
+    const contactSchema = schema.create({
+      firstName: schema.string({ trim: true }),
+      lastName: schema.string.optional({ trim: true }),
+      email: schema.string({ trim: true }, [rules.email()]),
+      subject: schema.string.optional({ trim: true }),
+      message: schema.string({ trim: true })
+    })
 
     try {
+      const data = await request.validate({ schema: contactSchema })
+
       await ContactSubmission.create({
         ...data,
         status: 'unread'
@@ -22,6 +26,9 @@ export default class ContactController {
       return response.ok({ message: 'Message sent successfully' })
     } catch (error) {
       Logger.error(error)
+      if (error.messages) {
+        return response.badRequest({ message: 'Validation failed', errors: error.messages })
+      }
       return response.internalServerError({ message: 'Failed to save message' })
     }
   }
