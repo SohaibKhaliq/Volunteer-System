@@ -13,9 +13,9 @@ export default class ReportsService {
       // Let's generate a 6-month trend for volunteer hours.
 
       const totalVolunteersRes = await User.query().count('* as total')
-      const totalVolunteers = Array.isArray(totalVolunteersRes)
-        ? totalVolunteersRes[0]?.$extras?.total || 0
-        : (totalVolunteersRes as any)?.$extras?.total || 0
+      let totalVolunteers = Array.isArray(totalVolunteersRes)
+        ? Number(totalVolunteersRes[0]?.$extras?.total || 0)
+        : Number((totalVolunteersRes as any)?.$extras?.total || 0)
 
       const totalEventsRes = await Event.query().count('* as total')
       const totalEvents = Array.isArray(totalEventsRes)
@@ -51,6 +51,11 @@ export default class ReportsService {
       const activeVolunteers = Array.isArray(activeVolunteersRes)
         ? activeVolunteersRes[0]?.$extras?.total || 0
         : (activeVolunteersRes as any)?.$extras?.total || 0
+      
+      // Consistency check
+      if (Number(activeVolunteers) > totalVolunteers) {
+        totalVolunteers = Number(activeVolunteers)
+      }
 
       // Event stats
       // Event stats
