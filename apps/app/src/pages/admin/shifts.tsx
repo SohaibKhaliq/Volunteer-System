@@ -6,12 +6,14 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Plus, Edit, Trash2 } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Loader2, Plus, Edit, Trash2, Clock } from 'lucide-react';
 import { toast } from '@/components/atoms/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useApp } from '@/providers/app-provider';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/atoms/popover';
 import { Command, CommandGroup, CommandInput, CommandItem } from '@/components/atoms/command';
+import SkeletonCard from '@/components/atoms/skeleton-card';
 
 // Format date to human-readable string
 const formatDate = (dateStr?: string) => {
@@ -63,6 +65,12 @@ export default function AdminShifts() {
   const [assignShift, setAssignShift] = useState<Shift | null>(null);
   const [userQuery, setUserQuery] = useState('');
   const [debouncedUserQuery, setDebouncedUserQuery] = useState('');
+
+  // Scheduled Jobs state
+  const [jobName, setJobName] = useState('');
+  const [jobType, setJobType] = useState('communication');
+  const [jobRunAt, setJobRunAt] = useState('');
+  const [jobPayload, setJobPayload] = useState('');
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedUserQuery(userQuery), 250);
@@ -171,6 +179,37 @@ export default function AdminShifts() {
   );
 
   const suggestions: UserSnippet[] = Array.isArray(suggestionsRaw) ? suggestionsRaw : (suggestionsRaw?.data ?? []);
+
+  // Scheduled Jobs query and mutations
+  const { data: jobsData, isLoading: jobsLoading } = useQuery({
+    queryKey: ['scheduledJobs'],
+    queryFn: () => api.listScheduledJobs()
+  });
+  const jobs = Array.isArray(jobsData) ? jobsData : [];
+
+  const createJobMutation = useMutation({
+    mutationFn: api.createScheduledJob,
+    onSuccess: () => {
+      queryClient.invalidateQueries(['scheduledJobs']);
+      toast({ title: 'Scheduled job created' });
+      setJobName('');
+      setJobRunAt('');
+      setJobPayload('');
+    },
+    onError: (err: any) => {
+      console.error('createScheduledJob error', err?.response?.data ?? err);
+      toast({ title: 'Failed to create scheduled job', variant: 'destructive' });
+    }
+  });
+
+  const retryJobMutation = useMutation({
+    mutationFn: (id: number) => api.retryScheduledJob(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['scheduledJobs']);
+      toast({ title: 'Retry scheduled' });
+    },
+    onError: () => toast({ title: 'Retry failed', variant: 'destructive' })
+  });
 
   // Edit Shift
   const [editOpen, setEditOpen] = useState(false);
@@ -579,6 +618,113 @@ export default function AdminShifts() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Scheduled Jobs */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Clock className="h-5 w-5" />
+            Scheduled Jobs
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="text-sm block mb-1">Name</label>
+              <Input value={jobName} onChange={(e) => setJobName(e.target.value)} />
+            </div>
+            <div>
+              <label className="text-sm block mb-1">Run at (ISO)</label>
+              <Input
+                value={jobRunAt}
+                onChange={(e) => setJobRunAt(e.target.value)}
+                placeholder="2026-01-06T12:00:00Z"
+              />
+            </div>
+            <div>
+              <label className="text-sm block mb-1">Type</label>
+              <select
+                value={jobType}
+                onChange={(e) => setJobType(e.target.value)}
+                className="w-full p-2 border rounded"
+              >
+                <option value="communication">Communication</option>
+                <option value="reminder">Reminder</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-sm block mb-1">Payload (JSON)</label>
+              <Textarea
+                value={jobPayload}
+                onChange={(e) => setJobPayload(e.target.value)}
+                rows={4}
+                placeholder='{"message": "example"}'
+              />
+            </div>
+          </div>
+          <div className="mb-4">
+            <Button
+              onClick={() => {
+                if (!jobName || !jobRunAt) return toast({ title: 'Name and runAt are required', variant: 'destructive' });
+                let parsedPayload = undefined;
+                try {
+                  parsedPayload = jobPayload ? JSON.parse(jobPayload) : undefined;
+                } catch (e) {
+                  return toast({ title: 'Payload must be valid JSON', variant: 'destructive' });
+                }
+                createJobMutation.mutate({ name: jobName, type: jobType, runAt: jobRunAt, payload: parsedPayload } as any);
+              }}
+            >
+              Create Scheduled Job
+            </Button>
+          </div>
+
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Run At</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Attempts</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {jobsLoading ? (
+                <TableRow>
+                  <TableCell colSpan={6}>
+                    <SkeletonCard />
+                  </TableCell>
+                </TableRow>
+              ) : jobs.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center text-muted-foreground">
+                    No scheduled jobs
+                  </TableCell>
+                </TableRow>
+              ) : (
+                jobs.map((j: any) => (
+                  <TableRow key={j.id}>
+                    <TableCell>{j.name}</TableCell>
+                    <TableCell>{j.type}</TableCell>
+                    <TableCell>{j.runAt ? new Date(j.runAt).toLocaleString() : '—'}</TableCell>
+                    <TableCell>{j.status}</TableCell>
+                    <TableCell>{j.attempts}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button variant="ghost" size="sm" onClick={() => retryJobMutation.mutate(j.id)}>
+                          Retry
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }
