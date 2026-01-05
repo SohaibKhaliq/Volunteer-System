@@ -10,6 +10,16 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Pencil, Trash2, X } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '@/components/ui/alert-dialog';
 
 export default function AdminAchievements() {
   const queryClient = useQueryClient();
@@ -20,6 +30,7 @@ export default function AdminAchievements() {
   const [key, setKey] = useState('');
   const [title, setTitle] = useState('');
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
   // Criteria Builder State
   const [ruleType, setRuleType] = useState('hours');
@@ -58,6 +69,7 @@ export default function AdminAchievements() {
     onSuccess: () => {
       queryClient.invalidateQueries(['achievements']);
       toast({ title: 'Achievement deleted', variant: 'success' });
+      setDeleteId(null);
     },
     onError: () => toast({ title: 'Failed to delete achievement', variant: 'destructive' })
   });
@@ -241,11 +253,7 @@ export default function AdminAchievements() {
                           variant="ghost"
                           size="icon"
                           className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                          onClick={() => {
-                            if (confirm('Delete this achievement?')) {
-                              deleteMutation.mutate(a.id);
-                            }
-                          }}
+                          onClick={() => setDeleteId(a.id)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -258,6 +266,26 @@ export default function AdminAchievements() {
           </Table>
         </CardContent>
       </Card>
+
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the achievement.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={() => deleteId && deleteMutation.mutate(deleteId)}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
