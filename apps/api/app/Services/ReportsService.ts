@@ -220,13 +220,21 @@ export default class ReportsService {
   }
 
   public async generatePdf(type: string): Promise<Buffer> {
-    const PdfPrinter = require('pdfmake')
+    const PdfPrinter = require('pdfmake/js/Printer').default
+    const path = require('path')
+    
+    // Resolve absolute path to pdfmake
+    // require.resolve('pdfmake') points to the main entry file (usually js/index.js or similar)
+    // We walk up to the package root to find the fonts folder
+    const pdfMakePath = require.resolve('pdfmake')
+    const pdfMakeRoot = path.join(path.dirname(pdfMakePath), '..')
+
     const fonts = {
       Roboto: {
-        normal: 'node_modules/pdfmake/fonts/Roboto/Roboto-Regular.ttf',
-        bold: 'node_modules/pdfmake/fonts/Roboto/Roboto-Medium.ttf',
-        italics: 'node_modules/pdfmake/fonts/Roboto/Roboto-Italic.ttf',
-        bolditalics: 'node_modules/pdfmake/fonts/Roboto/Roboto-MediumItalic.ttf'
+        normal: path.join(pdfMakeRoot, 'fonts/Roboto/Roboto-Regular.ttf'),
+        bold: path.join(pdfMakeRoot, 'fonts/Roboto/Roboto-Medium.ttf'),
+        italics: path.join(pdfMakeRoot, 'fonts/Roboto/Roboto-Italic.ttf'),
+        bolditalics: path.join(pdfMakeRoot, 'fonts/Roboto/Roboto-MediumItalic.ttf')
       }
     }
     const printer = new PdfPrinter(fonts)
@@ -254,13 +262,22 @@ export default class ReportsService {
       }
     }
 
+
     return new Promise((resolve, reject) => {
-      const chunks: any[] = []
-      const pdfDoc = printer.createPdfKitDocument(docDefinition)
-      pdfDoc.on('data', (chunk) => chunks.push(chunk))
-      pdfDoc.on('end', () => resolve(Buffer.concat(chunks)))
-      pdfDoc.on('error', (err) => reject(err))
-      pdfDoc.end()
+      try {
+        const chunks: any[] = []
+        const pdfDoc = printer.createPdfKitDocument(docDefinition)
+        pdfDoc.on('data', (chunk) => chunks.push(chunk))
+        pdfDoc.on('end', () => resolve(Buffer.concat(chunks)))
+        pdfDoc.on('error', (err) => {
+             console.error('PDFMake Error Event:', err);
+             reject(err);
+        })
+        pdfDoc.end()
+      } catch (err) {
+        console.error('PDFMake Synchronous Error:', err);
+        reject(err)
+      }
     })
   }
 
