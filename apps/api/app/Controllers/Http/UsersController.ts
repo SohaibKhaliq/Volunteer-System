@@ -24,7 +24,7 @@ export default class UsersController {
         sortOrder = 'desc'
       } = request.qs()
 
-      const query = User.query().preload('roles')
+      const query = User.query().preload('roles').preload('complianceDocuments')
 
       // Search filter (use DB column names)
       if (search) {
@@ -76,8 +76,32 @@ export default class UsersController {
       const mapped = (pag.data || []).map((user: any) => {
         // Support multiple shapes: Lucid model JSON, or plain object
         const src = user.$attributes ?? user.attributes ?? user.$original ?? user
+        
+
 
         const rolesFromPreload = user.$preloaded?.roles ?? user.roles ?? []
+        const docs = user.$preloaded?.complianceDocuments ?? user.complianceDocuments ?? []
+
+        // Compute compliance status
+        let complianceStatus = 'pending' // default
+        if (Array.isArray(docs) && docs.length > 0) {
+           const hasExpired = docs.some((d: any) => 
+             d.status === 'expired' || 
+             (d.expiresAt && new Date(d.expiresAt) < new Date())
+           )
+           const hasPending = docs.some((d: any) => d.status === 'pending' || d.status === 'submitted')
+           const isCompliant = docs.every((d: any) => d.status === 'approved' || d.status === 'verified')
+
+           if (hasExpired) complianceStatus = 'expired'
+           else if (hasPending) complianceStatus = 'pending'
+           else if (isCompliant) complianceStatus = 'compliant'
+        } else {
+           // If no docs, check if any global requirements exist? 
+           // For now, assume pending/unknown. 
+           // If we return 'pending', the badge is yellow. If 'unknown', grey.
+           // Let's stick with 'pending' as a safer default for volunteers who might need to upload things.
+           complianceStatus = 'pending'
+        }
 
         const safe: any = {
           id: src.id,
@@ -93,7 +117,8 @@ export default class UsersController {
           createdAt: src.createdAt ?? src.created_at ?? undefined,
           updatedAt: src.updatedAt ?? src.updated_at ?? undefined,
           // include roles as simple objects
-          roles: (rolesFromPreload || []).map((r: any) => ({ id: r.id, name: r.name }))
+          roles: (rolesFromPreload || []).map((r: any) => ({ id: r.id, name: r.name })),
+          complianceStatus
         }
 
         return safe
