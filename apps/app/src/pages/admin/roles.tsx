@@ -14,10 +14,18 @@ export default function AdminRoles() {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingRole, setEditingRole] = useState<any>(null);
-  const [formData, setFormData] = useState({ name: '', description: '' });
+  const [formData, setFormData] = useState<{
+    name: string;
+    description: string;
+    permissions: number[];
+  }>({ name: '', description: '', permissions: [] });
 
   const { data: roles = [], isLoading } = useQuery(['roles'], () =>
     api.listRoles().then((res: any) => (Array.isArray(res) ? res : res.data || []))
+  );
+
+  const { data: permissions = [], isLoading: isLoadingPermissions } = useQuery(['permissions'], () =>
+    api.listPermissions().then((res: any) => (Array.isArray(res) ? res : res.data || []))
   );
 
   const createMutation = useMutation({
@@ -59,13 +67,17 @@ export default function AdminRoles() {
 
   const openCreate = () => {
     setEditingRole(null);
-    setFormData({ name: '', description: '' });
+    setFormData({ name: '', description: '', permissions: [] });
     setIsDialogOpen(true);
   };
 
   const openEdit = (role: any) => {
     setEditingRole(role);
-    setFormData({ name: role.name, description: role.description || '' });
+    setFormData({
+      name: role.name,
+      description: role.description || '',
+      permissions: role.permissions?.map((p: any) => p.id) || []
+    });
     setIsDialogOpen(true);
   };
 
@@ -141,7 +153,7 @@ export default function AdminRoles() {
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>{editingRole ? 'Edit Role' : 'Create Role'}</DialogTitle>
           </DialogHeader>
@@ -163,6 +175,49 @@ export default function AdminRoles() {
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Role description..."
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Permissions</Label>
+              <div className="border rounded-md p-4 h-60 overflow-y-auto space-y-2">
+                {isLoadingPermissions ? (
+                  <p className="text-sm text-muted-foreground">Loading permissions...</p>
+                ) : (
+                  permissions.map((perm: any) => (
+                    <div key={perm.id} className="flex items-start space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`perm-${perm.id}`}
+                        className="mt-1"
+                        checked={(formData.permissions || []).includes(perm.id)}
+                        onChange={(e) => {
+                          const checked = e.target.checked
+                          const current = formData.permissions || []
+                          if (checked) {
+                            setFormData({ ...formData, permissions: [...current, perm.id] })
+                          } else {
+                            setFormData({
+                              ...formData,
+                              permissions: current.filter((id) => id !== perm.id)
+                            })
+                          }
+                        }}
+                      />
+                      <div className="grid gap-1.5 leading-none">
+                        <label
+                          htmlFor={`perm-${perm.id}`}
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                        >
+                          {perm.name}
+                        </label>
+                        {perm.description && (
+                          <p className="text-xs text-muted-foreground">{perm.description}</p>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
           <DialogFooter>
