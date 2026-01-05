@@ -149,15 +149,15 @@ export default function AdminHours() {
   // Apply client-side filtering only if the server returned a full array
   const allFiltered = !serverPaginated
     ? hours.filter((e: any) => {
-        if (filterStatus !== 'All' && e.status !== filterStatus) return false;
-        if (selectedVolunteer && e.user?.id !== selectedVolunteer.id) return false;
-        if (search) {
-          const searchText =
-            `${e.user?.firstName || ''} ${e.user?.lastName || ''} ${e.event?.title || ''}`.toLowerCase();
-          if (!searchText.includes(search.toLowerCase())) return false;
-        }
-        return true;
-      })
+      if (filterStatus !== 'All' && e.status !== filterStatus) return false;
+      if (selectedVolunteer && e.user?.id !== selectedVolunteer.id) return false;
+      if (search) {
+        const searchText =
+          `${e.user?.firstName || ''} ${e.user?.lastName || ''} ${e.event?.title || ''}`.toLowerCase();
+        if (!searchText.includes(search.toLowerCase())) return false;
+      }
+      return true;
+    })
     : hours;
 
   // If server returned paginated data, `hours` represents the current page and `totalFromServer` is authoritative.
@@ -308,7 +308,7 @@ export default function AdminHours() {
                       />
                     </TableCell>
                     <TableCell>
-                      {h.user?.firstName} {h.user?.lastName}
+                      {h.user?.firstName || h.user?.first_name} {h.user?.lastName || h.user?.last_name}
                     </TableCell>
                     <TableCell>{h.event?.title || 'N/A'}</TableCell>
                     <TableCell>{new Date(h.date).toLocaleDateString()}</TableCell>
