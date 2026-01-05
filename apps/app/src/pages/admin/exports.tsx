@@ -48,12 +48,20 @@ export default function AdminExports() {
       const url = URL.createObjectURL(blobObj);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${exportType}-export.${format}`;
+
+      // Ensure extension is present
+      const extension = format.toLowerCase();
+      let filename = `${exportType}-export-${new Date().toISOString().slice(0, 10)}`;
+      if (!filename.endsWith(`.${extension}`)) {
+        filename += `.${extension}`;
+      }
+
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
-      toast({ title: 'Export ready', description: 'Download started successfully.' });
+      toast({ title: 'Export ready', description: `Download started: ${filename}` });
     },
     onError: (err: any) => {
       toast({ title: 'Export failed', description: err.response?.data?.message || String(err), variant: 'destructive' });
