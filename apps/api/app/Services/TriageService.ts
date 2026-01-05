@@ -45,11 +45,30 @@ export default class TriageService {
     return Math.min(score, 100)
   }
 
-  public static generateCaseId(): string {
+  public static async generateCaseId(): Promise<string> {
     const prefix = 'REQ'
     const year = new Date().getFullYear()
-    const random = Math.floor(1000 + Math.random() * 9000)
-    const timestamp = Date.now().toString().slice(-4)
-    return `${prefix}-${year}-${timestamp}-${random}`
+
+    // Find the last request for the current year to determine the sequence
+    const lastRequest = await HelpRequest.query()
+      .where('case_id', 'like', `${prefix}-${year}-%`)
+      .orderBy('id', 'desc')
+      .first()
+
+    let sequence = 1
+
+    if (lastRequest && lastRequest.caseId) {
+      const parts = lastRequest.caseId.split('-')
+      // Expected format: REQ-YYYY-XXXX
+      if (parts.length === 3) {
+        const lastSeq = parseInt(parts[2], 10)
+        if (!isNaN(lastSeq)) {
+          sequence = lastSeq + 1
+        }
+      }
+    }
+
+    const paddedSequence = sequence.toString().padStart(4, '0')
+    return `${prefix}-${year}-${paddedSequence}`
   }
 }
