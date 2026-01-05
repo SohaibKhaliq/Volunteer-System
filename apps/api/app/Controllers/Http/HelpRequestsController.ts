@@ -187,10 +187,31 @@ export default class HelpRequestController {
     try {
       const page = request.input('page', 1)
       const limit = request.input('limit', 10)
-      const helpRequests = await HelpRequest.query()
-        .preload('types')
-        .orderBy('created_at', 'desc')
-        .paginate(page, limit)
+      const search = request.input('search')
+      const severity = request.input('severity')
+      const type = request.input('type')
+
+      const query = HelpRequest.query().preload('types').orderBy('created_at', 'desc')
+
+      if (search) {
+        query.where((q) => {
+          q.where('case_id', 'ilike', `%${search}%`)
+            .orWhere('name', 'ilike', `%${search}%`)
+            .orWhere('description', 'ilike', `%${search}%`)
+        })
+      }
+
+      if (severity && severity !== 'all') {
+        query.where('severity', severity)
+      }
+
+      if (type && type !== 'all') {
+        query.whereHas('types', (q) => {
+          q.where('type', type)
+        })
+      }
+
+      const helpRequests = await query.paginate(page, limit)
 
       return helpRequests
     } catch (error) {
