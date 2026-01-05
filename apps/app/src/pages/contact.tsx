@@ -113,13 +113,13 @@ const Contact = () => {
                     <label htmlFor="firstName" className="text-sm font-medium text-slate-700">
                       {t('First Name')}
                     </label>
-                    <Input id="firstName" required placeholder="John" />
+                    <Input id="firstName" name="firstName" required placeholder="John" />
                   </div>
                   <div className="space-y-2">
                     <label htmlFor="lastName" className="text-sm font-medium text-slate-700">
                       {t('Last Name')}
                     </label>
-                    <Input id="lastName" required placeholder="Doe" />
+                    <Input id="lastName" name="lastName" required placeholder="Doe" />
                   </div>
                 </div>
 
@@ -127,14 +127,14 @@ const Contact = () => {
                   <label htmlFor="email" className="text-sm font-medium text-slate-700">
                     {t('Email Address')}
                   </label>
-                  <Input id="email" type="email" required placeholder="john@example.com" />
+                  <Input id="email" name="email" type="email" required placeholder="john@example.com" />
                 </div>
 
                 <div className="space-y-2">
                   <label htmlFor="subject" className="text-sm font-medium text-slate-700">
                     {t('Subject')}
                   </label>
-                  <Input id="subject" required placeholder={t('How can we help?')} />
+                  <Input id="subject" name="subject" required placeholder={t('How can we help?')} />
                 </div>
 
                 <div className="space-y-2">
@@ -143,6 +143,7 @@ const Contact = () => {
                   </label>
                   <Textarea
                     id="message"
+                    name="message"
                     required
                     placeholder={t('Tell us more about your inquiry...')}
                     className="min-h-[150px]"
