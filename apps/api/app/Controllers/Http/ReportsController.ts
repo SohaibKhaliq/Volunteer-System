@@ -117,32 +117,51 @@ export default class ReportsController {
     const since = new Date()
     since.setDate(since.getDate() - daysAgo)
 
-    const eventsByStatus = [] as any[]
-    /*
-    // Status column missing from events table
-    const eventsByStatus = await Event.query()
-      .where('created_at', '>=', since.toISOString())
-      .select('status')
-      .count('* as count')
-      .groupBy('status')
-    */
+    // Fetch all events in the date range
+    const events = await Event.query().where('created_at', '>=', since.toISOString())
 
-    const totalEvents = await Event.query()
-      .where('created_at', '>=', since.toISOString())
-      .count('* as total')
+    const now = new Date()
+    const statusCounts = {
+      upcoming: 0,
+      ongoing: 0,
+      completed: 0,
+    }
 
-    const completedEvents = eventsByStatus.find((e: any) => e.status === 'completed')
-    const completedCount = Number(
-      (completedEvents as any)?.$extras?.count ?? (completedEvents as any)?.count ?? 0
-    )
-    const totalEventsCount = Number(totalEvents[0].$extras.total ?? 0)
+    // Calculate status based on event dates
+    events.forEach((event) => {
+      const startAt = event.startAt ? event.startAt.toJSDate() : null
+      const endAt = event.endAt ? event.endAt.toJSDate() : null
+
+      if (!startAt) {
+        // If no start date, consider it upcoming
+        statusCounts.upcoming++
+      } else if (now < startAt) {
+        // Event hasn't started yet
+        statusCounts.upcoming++
+      } else if (endAt && now > endAt) {
+        // Event has ended
+        statusCounts.completed++
+      } else {
+        // Event is currently ongoing
+        statusCounts.ongoing++
+      }
+    })
+
+    // Format for frontend: array of {status, count}
+    const byStatus = [
+      { status: 'Upcoming', count: statusCounts.upcoming },
+      { status: 'Ongoing', count: statusCounts.ongoing },
+      { status: 'Completed', count: statusCounts.completed },
+    ].filter((item) => item.count > 0) // Only include statuses with events
+
+    const totalEvents = events.length
     const completionRate =
-      totalEventsCount > 0 ? Math.round((completedCount / totalEventsCount) * 100) : 0
+      totalEvents > 0 ? Math.round((statusCounts.completed / totalEvents) * 100) : 0
 
     return {
-      total: totalEvents[0].$extras.total || 0,
-      byStatus: eventsByStatus,
-      completionRate
+      total: totalEvents,
+      byStatus,
+      completionRate,
     }
   }
 
