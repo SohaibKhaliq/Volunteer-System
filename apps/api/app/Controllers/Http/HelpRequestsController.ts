@@ -70,7 +70,7 @@ export default class HelpRequestController {
         parsedPayload.types
       )
 
-      const caseId = TriageService.generateCaseId()
+      const caseId = await TriageService.generateCaseId()
 
       const helpRequest = await HelpRequest.create({
         caseId,
