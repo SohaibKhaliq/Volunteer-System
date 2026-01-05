@@ -241,6 +241,10 @@ Route.group(() => {
   Route.get('/:id/status', 'ImportController.getStatus')
   Route.get('/templates/volunteers', 'ImportController.volunteersTemplate')
   Route.get('/templates/opportunities', 'ImportController.opportunitiesTemplate')
+  
+  // Generic Import Routes
+  Route.get('/template', 'ImportsController.getTemplate')
+  Route.post('/process', 'ImportsController.processImport')
 })
   .prefix('/imports')
   .middleware(['auth'])
