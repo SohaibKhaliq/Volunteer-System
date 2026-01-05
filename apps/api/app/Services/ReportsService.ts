@@ -52,13 +52,20 @@ export default class ReportsService {
         : (activeVolunteersRes as any)?.$extras?.total || 0
 
       // Event stats
+      // Event stats
+      const now = new Date().toISOString()
+
       const completedEventsRes = await Event.query()
-        .where('status', 'completed')
+        .where('end_at', '<', now)
         .count('* as total')
-      const ongoingEventsRes = await Event.query().where('status', 'ongoing').count('* as total')
-      const cancelledEventsRes = await Event.query()
-        .where('status', 'cancelled')
+
+      const ongoingEventsRes = await Event.query()
+        .where('start_at', '<=', now)
+        .where('end_at', '>', now)
         .count('* as total')
+
+      // Schema does not support cancelled status for simple Events
+      const cancelledEventsRes: any[] = [{ $extras: { total: 0 } }]
 
       const completedEvents = Array.isArray(completedEventsRes)
         ? completedEventsRes[0]?.$extras?.total || 0
