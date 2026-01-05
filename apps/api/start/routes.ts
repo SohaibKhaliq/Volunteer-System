@@ -259,8 +259,19 @@ Route.group(() => {
   Route.post('/queue', 'ExportController.queueExport')
   Route.get('/:id/status', 'ExportController.getExportStatus')
   Route.get('/:id/download', 'ExportController.downloadExport')
+  
+  // Generic Export Route
+  Route.get('/download', 'ExportsController.download')
 })
   .prefix('/exports')
+  .middleware(['auth'])
+
+// Backup Routes
+Route.group(() => {
+  Route.get('/database', 'BackupController.downloadDatabase')
+  Route.get('/media', 'BackupController.downloadMedia')
+})
+  .prefix('/admin/backup')
   .middleware(['auth'])
 
 Route.resource('communications', 'CommunicationsController')
