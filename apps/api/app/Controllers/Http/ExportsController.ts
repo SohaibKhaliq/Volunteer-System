@@ -25,13 +25,13 @@ export default class ExportsController {
     }
 
     const { type, format = 'csv', startDate, endDate } = request.qs()
-    // For global admins without an org, we might want to export ALL data or just let them query
-    // For now, if no orgId, we might need to handle it in the sub-functions or fail if org context is strictly required
-    const orgId = memberRecord?.organizationId ?? (isGlobalAdmin ? -1 : 0) // -1 or 0 to signify ALL or handle specifically
-
+    // For global admins without an org, we use -1 (or handle specifically in queries)
+    const orgId = memberRecord?.organizationId ?? (isGlobalAdmin ? -1 : 0)
 
     let data: any[] = []
-    let filename = `${type}-${DateTime.now().toFormat('yyyy-MM-dd')}`
+    // ENFORCE EXTENSION: Ensure filename has the correct extension
+    const baseFilename = `${type}-${DateTime.now().toFormat('yyyy-MM-dd')}`
+    const filename = `${baseFilename}.${format}`
 
     // Fetch Data based on Type
     switch (type) {
@@ -48,32 +48,32 @@ export default class ExportsController {
         data = await this.getOpportunities(orgId, startDate, endDate)
         break
       case 'organizations': 
-         // Only if super admin? or just current org info? 
-         // For now, let's just return current org info for regular admins
-         data = [await Organization.find(orgId)].map(o => o?.toJSON())
+         if (isGlobalAdmin && orgId === -1) {
+           // Export ALL organizations for global admin
+           const allOrgs = await Organization.all()
+           data = allOrgs.map(o => o.toJSON())
+         } else {
+           // Export current org info
+           const org = await Organization.find(orgId)
+           data = org ? [org.toJSON()] : []
+         }
          break
       default:
         return response.badRequest({ message: 'Invalid export type' })
     }
 
+    // Force the Content-Disposition header even if data is empty, so client gets a file with right name
+    response.header('Content-Type', format === 'json' ? 'application/json' : format === 'pdf' ? 'application/pdf' : 'text/csv')
+    response.header('Content-Disposition', `attachment; filename="${filename}"`)
+
     if (format === 'json') {
-      response.header('Content-Type', 'application/json')
-      response.header('Content-Disposition', `attachment; filename="${filename}.json"`)
       return response.send(data)
     } else if (format === 'pdf') {
       const pdfBuffer = await this.getPDF(data, type)
-      response.header('Content-Type', 'application/pdf')
-      response.header('Content-Disposition', `attachment; filename="${filename}.pdf"`)
       return response.send(pdfBuffer)
     } else {
       // CSV Export
-      if (data.length === 0) {
-        return response.send('')
-      }
-      
       const csv = this.convertToCSV(data)
-      response.header('Content-Type', 'text/csv')
-      response.header('Content-Disposition', `attachment; filename="${filename}.csv"`)
       return response.send(csv)
     }
   }
