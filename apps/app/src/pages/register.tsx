@@ -35,7 +35,7 @@ export default function Register() {
 
         try {
           toast({ title: 'Account created!', description: 'Welcome to Local Aid.' });
-        } catch (e) {}
+        } catch (e) { }
         navigate('/');
       } else {
         // maybe email verification required?
@@ -72,6 +72,7 @@ export default function Register() {
                 <Label htmlFor="firstName">First name</Label>
                 <Input
                   id="firstName"
+                  name="firstName"
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
                   placeholder="John"
@@ -83,6 +84,7 @@ export default function Register() {
                 <Label htmlFor="lastName">Last name</Label>
                 <Input
                   id="lastName"
+                  name="lastName"
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
                   placeholder="Doe"
@@ -96,6 +98,7 @@ export default function Register() {
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
+                name="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -109,6 +112,7 @@ export default function Register() {
               <Label htmlFor="password">Password</Label>
               <Input
                 id="password"
+                name="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
