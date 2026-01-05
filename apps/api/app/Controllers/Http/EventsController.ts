@@ -297,8 +297,88 @@ export default class EventsController {
   public async aiMatch({ params, response }: HttpContextContract) {
     const event = await AppEvent.find(params.id)
     if (!event) return response.notFound()
-    // AI matching logic stub
-    return response.ok({ message: 'AI matching initiated', matches: [] })
+
+    // Load tasks to get required skills
+    await event.load('tasks', (q) => q.preload('assignments'))
+    const tasks = event.tasks
+    const assignedUserIds = new Set<number>()
+
+    // Collect all unique required skills from all tasks
+    const requiredSkills = new Set<string>()
+    tasks.forEach((t) => {
+      // track already assigned users to exclude them
+      t.assignments.forEach((a) => assignedUserIds.add(a.userId))
+
+      if (t.requiredSkills) {
+        let skills: string[] = []
+        if (Array.isArray(t.requiredSkills)) {
+          skills = t.requiredSkills
+        } else if (typeof t.requiredSkills === 'string') {
+          skills = t.requiredSkills.split(',').map((s) => s.trim())
+        }
+        skills.forEach((s) => requiredSkills.add(s.toLowerCase()))
+      }
+    })
+
+    // Fetch active volunteers
+    const User = (await import('App/Models/User')).default
+    const candidates = await User.query()
+      .where('volunteer_status', 'active')
+      .preload('assignments') // to check past experience
+
+    // Filter and Score
+    const matches = candidates
+      .filter((u) => !assignedUserIds.has(u.id)) // Exclude already assigned
+      .map((u) => {
+        let score = 0
+        const reasons: string[] = []
+
+        // 1. Skill Match (+10 per skill)
+        const userSkills = u.skills.map((s) => s.toLowerCase())
+        const matchingSkills = userSkills.filter((s) => requiredSkills.has(s))
+        if (matchingSkills.length > 0) {
+          score += matchingSkills.length * 10
+          reasons.push(`Matches skills: ${matchingSkills.join(', ')}`)
+        }
+
+        // 2. Recent Activity (+5 if active in last 30 days)
+        if (u.lastLoginAt) {
+          const daysSinceLogin = Math.floor(
+            (Date.now() - new Date(u.lastLoginAt.toString()).getTime()) / (1000 * 60 * 60 * 24)
+          )
+          if (daysSinceLogin <= 30) {
+            score += 5
+            reasons.push('Recently active')
+          }
+        }
+
+        // 3. Experience (+1 per past assignment, max 10)
+        const experience = u.assignments.length
+        if (experience > 0) {
+          const points = Math.min(experience, 10)
+          score += points
+          reasons.push(`${experience} past assignments`)
+        }
+
+        return {
+          user: {
+            id: u.id,
+            name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email,
+            email: u.email,
+            skills: u.skills
+          },
+          score,
+          reasons
+        }
+      })
+      .filter((m) => m.score > 0) // Only return candidates with some score
+      .sort((a, b) => b.score - a.score) // Sort by highest score
+      .slice(0, 10) // Top 10
+
+    return response.ok({
+      message: `Found ${matches.length} matching volunteers`,
+      matches
+    })
   }
 
   /**
