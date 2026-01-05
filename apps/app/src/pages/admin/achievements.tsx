@@ -9,6 +9,7 @@ import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Pencil, Trash2, X } from 'lucide-react';
 
 export default function AdminAchievements() {
   const queryClient = useQueryClient();
@@ -18,25 +19,50 @@ export default function AdminAchievements() {
 
   const [key, setKey] = useState('');
   const [title, setTitle] = useState('');
+  const [editingId, setEditingId] = useState<number | null>(null);
 
   // Criteria Builder State
   const [ruleType, setRuleType] = useState('hours');
   const [threshold, setThreshold] = useState('');
+
+  const resetForm = () => {
+    setKey('');
+    setTitle('');
+    setRuleType('hours');
+    setThreshold('');
+    setEditingId(null);
+  };
 
   const createMutation = useMutation({
     mutationFn: (payload: any) => api.createAchievement(payload),
     onSuccess: () => {
       queryClient.invalidateQueries(['achievements']);
       toast({ title: 'Achievement created', variant: 'success' });
-      setKey('');
-      setTitle('');
-      setRuleType('hours');
-      setThreshold('');
+      resetForm();
     },
     onError: () => toast({ title: 'Failed to create achievement', variant: 'destructive' })
   });
 
-  const handleCreate = () => {
+  const updateMutation = useMutation({
+    mutationFn: (payload: any) => api.updateAchievement(editingId!, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['achievements']);
+      toast({ title: 'Achievement updated', variant: 'success' });
+      resetForm();
+    },
+    onError: () => toast({ title: 'Failed to update achievement', variant: 'destructive' })
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => api.deleteAchievement(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['achievements']);
+      toast({ title: 'Achievement deleted', variant: 'success' });
+    },
+    onError: () => toast({ title: 'Failed to delete achievement', variant: 'destructive' })
+  });
+
+  const handleSave = () => {
     if (!key || !title || !threshold) {
       toast({ title: 'Please fill all fields', variant: 'destructive' });
       return;
@@ -44,7 +70,7 @@ export default function AdminAchievements() {
 
     const payload = {
       key,
-      name: title, // Backend expects 'name'
+      name: title,
       requirement: {
         type: ruleType,
         threshold: Number(threshold)
@@ -52,7 +78,20 @@ export default function AdminAchievements() {
       isActive: true
     };
 
-    createMutation.mutate(payload);
+    if (editingId) {
+      updateMutation.mutate(payload);
+    } else {
+      createMutation.mutate(payload);
+    }
+  };
+
+  const startEdit = (a: any) => {
+    setEditingId(a.id);
+    setKey(a.key);
+    setTitle(a.name || a.title);
+    setRuleType(a.requirement?.type || 'hours');
+    setThreshold(a.requirement?.threshold ? String(a.requirement.threshold) : '');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
@@ -64,11 +103,16 @@ export default function AdminAchievements() {
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Create New Achievement</CardTitle>
+      <Card className={editingId ? 'border-primary' : ''}>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle>{editingId ? 'Edit Achievement' : 'Create New Achievement'}</CardTitle>
+          {editingId && (
+            <Button variant="ghost" size="sm" onClick={resetForm}>
+              <X className="mr-2 h-4 w-4" /> Cancel Edit
+            </Button>
+          )}
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-4">
           <div className="grid gap-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -126,8 +170,14 @@ export default function AdminAchievements() {
             </div>
 
             <div className="flex justify-end pt-2">
-              <Button onClick={handleCreate} disabled={createMutation.isLoading}>
-                {createMutation.isLoading ? 'Creating...' : 'Create Achievement'}
+              <Button
+                onClick={handleSave}
+                disabled={createMutation.isLoading || updateMutation.isLoading}
+              >
+                {editingId
+                  ? (updateMutation.isLoading ? 'Updating...' : 'Update Achievement')
+                  : (createMutation.isLoading ? 'Creating...' : 'Create Achievement')
+                }
               </Button>
             </div>
           </div>
@@ -146,12 +196,13 @@ export default function AdminAchievements() {
                 <TableHead>Title</TableHead>
                 <TableHead>Criteria</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {(list || []).length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">
+                  <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">
                     No achievements found.
                   </TableCell>
                 </TableRow>
@@ -180,6 +231,25 @@ export default function AdminAchievements() {
                       <Badge variant={a.isActive || a.is_active ? 'default' : 'secondary'}>
                         {a.isActive || a.is_active ? 'Active' : 'Inactive'}
                       </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button variant="ghost" size="icon" onClick={() => startEdit(a)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                          onClick={() => {
+                            if (confirm('Delete this achievement?')) {
+                              deleteMutation.mutate(a.id);
+                            }
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
