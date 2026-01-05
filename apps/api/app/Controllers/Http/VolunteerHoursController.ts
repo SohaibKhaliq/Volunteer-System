@@ -22,7 +22,10 @@ export default class VolunteerHoursController {
 
     // Simplistic role check for now - assuming 'admin' role or specific org context
     // Ideally we'd use a Policy here.
-    const isGlobalAdmin = user.isAdmin
+    // Check for admin privileges via flag or role
+    await user.load('roles')
+    const hasAdminRole = user.roles.some((r) => r.name === 'admin' || r.name === 'Admin')
+    const isGlobalAdmin = user.isAdmin || hasAdminRole
 
     // For now, if organizationId is passed, we check if user manages that org
     if (organizationId) {
