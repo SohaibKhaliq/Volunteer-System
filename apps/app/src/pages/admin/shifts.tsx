@@ -14,6 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/atoms/popo
 import { Command, CommandGroup, CommandInput, CommandItem } from '@/components/atoms/command';
 
 export default function AdminShifts() {
+  const { user } = useApp();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
 
@@ -63,19 +64,35 @@ export default function AdminShifts() {
     { staleTime: 1000 * 60 * 5 }
   );
 
+  const isAdmin = !!(
+    user?.isAdmin ||
+    user?.is_admin ||
+    (user?.roles &&
+      Array.isArray(user.roles) &&
+      user.roles.some((r: { name?: string; role?: string }) => {
+        const n = (r?.name || r?.role || '').toLowerCase();
+        return n === 'admin' || n === 'organization_admin' || n === 'organization_manager';
+      }))
+  );
+
   const { data: possibleUsersRaw } = useQuery<UserSnippet[] | { data: UserSnippet[] }>(
     ['organization-volunteers', orgProfile?.data?.id ?? orgProfile?.id, debouncedUserQuery],
     async () => {
-      if (!orgProfile) return [] as const;
       const orgId = orgProfile?.data?.id ?? orgProfile?.id;
-      const res = await api.getOrganizationVolunteers(orgId, { search: debouncedUserQuery });
-      if (Array.isArray(res)) return res;
-      if (res && Array.isArray((res as { data?: unknown }).data)) {
-        return (res as { data?: unknown }).data as UserSnippet[];
+      if (orgId) {
+        const res = await api.getOrganizationVolunteers(orgId, { search: debouncedUserQuery });
+        if (Array.isArray(res)) return res;
+        if (res && Array.isArray((res as { data?: unknown }).data)) {
+          return (res as { data?: unknown }).data as UserSnippet[];
+        }
+        return [] as const;
+      } else if (isAdmin) {
+        // Fallback for platform admins: search all users
+        return await api.listUsers(debouncedUserQuery);
       }
       return [] as const;
     },
-    { enabled: !!orgProfile }
+    { enabled: !!orgProfile || isAdmin }
   );
 
   const possibleUsers: UserSnippet[] = Array.isArray(possibleUsersRaw)
@@ -128,17 +145,7 @@ export default function AdminShifts() {
 
   const suggestions: UserSnippet[] = Array.isArray(suggestionsRaw) ? suggestionsRaw : (suggestionsRaw?.data ?? []);
 
-  const { user } = useApp();
-  const canQuickAssign = !!(
-    user?.isAdmin ||
-    user?.is_admin ||
-    (user?.roles &&
-      Array.isArray(user.roles) &&
-      user.roles.some((r: { name?: string; role?: string }) => {
-        const n = (r?.name || r?.role || '').toLowerCase();
-        return n === 'admin' || n === 'organization_admin' || n === 'organization_manager';
-      }))
-  );
+  const canQuickAssign = isAdmin;
 
   const bulkButtonLabel = bulkAssignMutation.isLoading
     ? `Assigning (${selectedShifts.length})…`
