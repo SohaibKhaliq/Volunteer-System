@@ -88,11 +88,10 @@ export default function ManageRolesModal({ open, onClose, user, roles, selectedR
                       className={`
                         w-full flex items-center justify-between gap-3 p-4 
                         border-2 rounded-lg transition-all
-                        hover:shadow-md hover:scale-[1.02]
-                        ${
-                          isAssigned
-                            ? 'border-violet-500 bg-violet-50 hover:bg-violet-100'
-                            : 'border-gray-200 bg-white hover:border-violet-200 hover:bg-gray-50'
+                        hover:shadow-md
+                        ${isAssigned
+                          ? 'border-violet-500 bg-violet-50 hover:bg-violet-100'
+                          : 'border-gray-200 bg-white hover:border-violet-200 hover:bg-gray-50'
                         }
                       `}
                     >
