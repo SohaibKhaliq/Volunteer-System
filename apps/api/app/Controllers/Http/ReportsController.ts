@@ -327,6 +327,22 @@ export default class ReportsController {
           data = await this.reportsService.overview('30days')
       }
 
+      if (type === 'pdf') {
+        try {
+          const pdfBuffer = await this.reportsService.generatePdf(String(reportType || 'report'))
+          response.header('Content-Type', 'application/pdf')
+          response.header(
+            'Content-Disposition',
+            `attachment; filename="${reportType}-${Date.now()}.pdf"`
+          )
+          response.header('Content-Length', pdfBuffer.length)
+          return response.send(pdfBuffer)
+        } catch (e) {
+          Logger.error('PDF Generation failed: %o', e)
+          return response.status(500).send('Failed to generate PDF: ' + e.message)
+        }
+      }
+
       if (type === 'csv') {
         // Support CSV exports for some report types
         if (reportType === 'communications') {
