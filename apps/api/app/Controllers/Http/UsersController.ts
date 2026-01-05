@@ -7,6 +7,7 @@ import UserAchievement from 'App/Models/UserAchievement'
 import VolunteerHour from 'App/Models/VolunteerHour'
 import User from 'App/Models/User'
 import AuthorizationService from 'App/Services/AuthorizationService'
+import AuditLog from 'App/Models/AuditLog'
 
 export default class UsersController {
   /**
@@ -590,6 +591,26 @@ export default class UsersController {
 
       // Return the refreshed user with roles
       const user = await User.query().where('id', params.id).preload('roles').firstOrFail()
+      
+      // Audit log
+      try {
+           // changes: flatten updateData to from/to structure if needed, or just log the payload as metadata
+           // For simplicity in this step, we log the payload as specific changes is complex to diff here without previous state
+           // But wait, logProfileChange expects { from, to }. 
+           // Let's use generic safeCreate for flexibility or construct a simple changes object
+           await AuditLog.safeCreate({
+                userId: (request as any).auth?.user?.id || 0,
+                action: 'user_update',
+                targetType: 'user',
+                targetId: user.id,
+                details: `Updated user ${user.email}`,
+                metadata: JSON.stringify({ updates: updateData }),
+                ipAddress: request.ip()
+           })
+      } catch (err) {
+           Logger.warn('Failed to audit user update: %o', err)
+      }
+
       const { password, ...safeUser } = user.toJSON() as any
       safeUser.firstName = safeUser.firstName ?? safeUser.first_name ?? ''
       safeUser.lastName = safeUser.lastName ?? safeUser.last_name ?? ''
@@ -679,11 +700,25 @@ export default class UsersController {
   /**
    * Activate a single user (set is_disabled = 0)
    */
-  public async activate({ params, response }: HttpContextContract) {
+  public async activate({ params, request, response }: HttpContextContract) {
     try {
       await User.query()
         .where('id', params.id)
         .update({ is_disabled: 0, volunteer_status: 'active', email_verified_at: new Date() })
+        
+      try {
+           await AuditLog.safeCreate({
+                userId: (request as any).auth?.user?.id || 0, // In standard setup, auth.user is available via middleware
+                action: 'user_activate',
+                targetType: 'user',
+                targetId: params.id,
+                details: `Activated user ${params.id}`,
+                ipAddress: request.ip()
+           })
+      } catch (e) {
+         Logger.warn('Audit log failed for activate: %o', e)
+      }
+      
       return response.ok({ message: 'User activated' })
     } catch (error) {
       Logger.error('Failed to activate user: %o', error)
@@ -694,7 +729,7 @@ export default class UsersController {
   /**
    * Delete a user
    */
-  public async destroy({ params, response, auth, bouncer }: HttpContextContract) {
+  public async destroy({ params, request, response, auth, bouncer }: HttpContextContract) {
     try {
       await auth.use('api').authenticate()
 
@@ -713,6 +748,20 @@ export default class UsersController {
       }
 
       await user.delete()
+      
+      try {
+           await AuditLog.safeCreate({
+                userId: authenticatedUser.id,
+                action: 'user_delete',
+                targetType: 'user',
+                targetId: user.id,
+                details: `Deleted user ${user.email} (${user.id})`,
+                ipAddress: request.ip()
+           })
+      } catch (e) {
+           Logger.warn('Audit log failed for delete: %o', e)
+      }
+
       return response.noContent()
     } catch (error) {
       Logger.error('Failed to delete user: %o', error)
@@ -762,6 +811,19 @@ export default class UsersController {
           break
         default:
           return response.badRequest({ message: 'Invalid action' })
+      }
+
+      try {
+           await AuditLog.safeCreate({
+                userId: (request as any).auth?.user?.id || 0,
+                action: 'user_bulk_update',
+                targetType: 'user',
+                details: `Bulk ${action} on ${ids.length} users`,
+                metadata: JSON.stringify({ ids, action }),
+                ipAddress: request.ip()
+           })
+      } catch (e) {
+           Logger.warn('Audit log failed for bulk update: %o', e)
       }
 
       return response.ok({ message: 'Bulk update successful' })
