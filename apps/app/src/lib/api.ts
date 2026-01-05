@@ -137,6 +137,7 @@ const api = {
     }
     return axios.put(`/background-checks/${id}`, data);
   },
+  getBackgroundCheckFile: async (id: number) => axios.get(`/background-checks/${id}/file`, { responseType: 'blob' }),
   deleteBackgroundCheck: async (id: number) => axios.delete(`/background-checks/${id}`),
 
   // reports endpoint with optional query options
