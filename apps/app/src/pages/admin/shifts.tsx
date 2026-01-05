@@ -13,6 +13,24 @@ import { useApp } from '@/providers/app-provider';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/atoms/popover';
 import { Command, CommandGroup, CommandInput, CommandItem } from '@/components/atoms/command';
 
+// Format date to human-readable string
+const formatDate = (dateStr?: string) => {
+  if (!dateStr) return '—';
+  try {
+    const date = new Date(dateStr);
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  } catch {
+    return dateStr;
+  }
+};
+
 export default function AdminShifts() {
   const { user } = useApp();
   const queryClient = useQueryClient();
@@ -136,9 +154,18 @@ export default function AdminShifts() {
     async () => {
       if (!suggestShift) return [] as const;
       const res: any = await api.getShiftSuggestions(suggestShift.id, 10);
-      // API may return wrapped or raw array
-      if (Array.isArray(res)) return res;
-      return res?.data ?? [];
+      // API returns { suggestions: [{user: {...}, score: number}] } format
+      let suggestions = [];
+      if (Array.isArray(res)) {
+        suggestions = res;
+      } else if (res?.suggestions) {
+        suggestions = res.suggestions;
+      } else {
+        suggestions = res?.data ?? [];
+      }
+
+      // Extract user objects from {user, score} format
+      return suggestions.map((item: any) => item?.user ?? item);
     },
     { enabled: !!suggestOpen && !!suggestShift }
   );
@@ -240,8 +267,8 @@ export default function AdminShifts() {
                     </TableCell>
                     <TableCell>{s.title}</TableCell>
                     <TableCell>{s.event?.name ?? s.event?.title ?? '—'}</TableCell>
-                    <TableCell>{s.start_at ?? s.startAt ?? ''}</TableCell>
-                    <TableCell>{s.end_at ?? s.endAt ?? ''}</TableCell>
+                    <TableCell>{formatDate(s.start_at ?? s.startAt)}</TableCell>
+                    <TableCell>{formatDate(s.end_at ?? s.endAt)}</TableCell>
                     <TableCell>{s.capacity ?? 0}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
