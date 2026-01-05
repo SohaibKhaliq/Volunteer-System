@@ -64,7 +64,7 @@ export default function AdminNotifications() {
     { keepPreviousData: true }
   );
 
-  const notifications = res?.data || [];
+  const notifications = Array.isArray(res?.data) ? res.data : [];
   const meta = res?.meta || {};
 
   // Mutations
