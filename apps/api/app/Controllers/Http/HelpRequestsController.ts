@@ -207,7 +207,7 @@ export default class HelpRequestController {
 
       if (type && type !== 'all') {
         query.whereHas('types', (q) => {
-          q.where('type', type)
+          q.where('type', type).orWhere('category', type)
         })
       }
 
