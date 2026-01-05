@@ -26,7 +26,15 @@ export default class Achievement extends BaseModel {
   @column({
     columnName: 'requirement_json',
     prepare: (value: any) => (value ? JSON.stringify(value) : null),
-    consume: (value: any) => (value ? JSON.parse(value) : null)
+    consume: (value: any) => {
+      if (!value) return null
+      if (typeof value === 'object') return value
+      try {
+        return JSON.parse(value)
+      } catch (error) {
+        return value
+      }
+    }
   })
   public requirement?: any
 
