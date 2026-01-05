@@ -263,19 +263,19 @@ export default class ReportsService {
     }
 
 
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       try {
         const chunks: any[] = []
-        const pdfDoc = printer.createPdfKitDocument(docDefinition)
+        const pdfDoc = await printer.createPdfKitDocument(docDefinition)
         pdfDoc.on('data', (chunk) => chunks.push(chunk))
         pdfDoc.on('end', () => resolve(Buffer.concat(chunks)))
         pdfDoc.on('error', (err) => {
-             console.error('PDFMake Error Event:', err);
+             Logger.error('PDFMake Error Event: %o', err)
              reject(err);
         })
         pdfDoc.end()
       } catch (err) {
-        console.error('PDFMake Synchronous Error:', err);
+        Logger.error('PDFMake Synchronous Error: %o', err)
         reject(err)
       }
     })
