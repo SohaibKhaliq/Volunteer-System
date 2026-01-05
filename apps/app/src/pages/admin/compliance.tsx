@@ -44,6 +44,7 @@ interface ComplianceDocument {
   verifiedBy?: string;
   notes?: string;
   riskLevel?: 'low' | 'medium' | 'high';
+  source?: 'compliance' | 'background_check';
 }
 
 export default function AdminCompliance() {
@@ -52,12 +53,17 @@ export default function AdminCompliance() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [docTypeFilter, setDocTypeFilter] = useState<string>('all');
 
-  const { data: docsRaw, isLoading } = useQuery(['compliance'], () => api.listCompliance());
+  const { data: docsRaw, isLoading: isLoadingDocs } = useQuery(['compliance'], () => api.listCompliance());
+  const { data: checksRaw, isLoading: isLoadingChecks } = useQuery(['background-checks'], () => api.listBackgroundChecks());
   const { data: usersRaw } = useQuery(['users', 'all'], () => api.listUsers());
 
+  const isLoading = isLoadingDocs || isLoadingChecks;
+
+  const users = Array.isArray(usersRaw) ? usersRaw : ((usersRaw as any)?.data ?? []);
+
+  // normalize compliance documents
   const rawDocs = Array.isArray(docsRaw) ? docsRaw : ((docsRaw as any)?.data ?? []);
-  // normalize documents to expected UI shape
-  const docs = (rawDocs || []).map((d: any) => {
+  const normalizedDocs = (rawDocs || []).map((d: any) => {
     const user = d.user || d.user_data || (d.user_id ? users.find((u: any) => u.id === d.user_id) : null) || {};
     // metadata may be json string
     let metadata: any = d.metadata || {};
@@ -92,10 +98,40 @@ export default function AdminCompliance() {
       verifiedBy: metadata?.verifiedBy || metadata?.verified_by || d.verified_by || d.verifiedBy || null,
       notes: d.notes || metadata?.notes || null,
       riskLevel: d.risk_level || d.riskLevel || metadata?.riskLevel || null,
-      file: metadata?.file || null
-    } as ComplianceDocument;
+      file: metadata?.file || null,
+      source: 'compliance'
+    };
   });
-  const users = Array.isArray(usersRaw) ? usersRaw : ((usersRaw as any)?.data ?? []);
+
+  // normalize background checks
+  const rawChecks = Array.isArray(checksRaw) ? checksRaw : ((checksRaw as any)?.data ?? []);
+  const normalizedChecks = (rawChecks || []).map((c: any) => {
+    const user = c.user || (c.user_id ? users.find((u: any) => u.id === c.user_id) : null) || {};
+
+    let status = (c.status || '').toString().toLowerCase();
+    if (status === 'clear') status = 'approved';
+
+    return {
+      id: c.id,
+      userId: c.user_id || c.userId || user?.id,
+      userName: user?.name || (user?.first_name ? `${user.first_name} ${user.last_name}` : '') || c.user?.email || 'Unknown',
+      userEmail: user?.email || c.user?.email || '',
+      docType: 'background_check',
+      status: status,
+      uploadedAt: c.created_at || c.createdAt || null,
+      expiresAt: null, // Background checks might not have explicit expiry in this model yet
+      verifiedAt: status === 'approved' ? (c.updated_at || c.updatedAt) : null,
+      verifiedBy: null,
+      notes: c.notes || null,
+      riskLevel: c.status === 'rejected' ? 'high' : 'low',
+      file: null,
+      source: 'background_check'
+    };
+  });
+
+  const docs = [...normalizedDocs, ...normalizedChecks].sort((a, b) =>
+    new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
+  );
 
   // Mutations
   const approveMutation = useMutation({
@@ -389,44 +425,55 @@ export default function AdminCompliance() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => openDocument(doc)}>
-                          <Eye className="h-4 w-4 mr-2" />
-                          View Document
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => openDetails(doc)}>
-                          <FileText className="h-4 w-4 mr-2" />
-                          View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        {/* show approve/reject for pending, and always allow verify via details modal */}
-                        {doc.status === 'pending' && (
+                        {doc.source === 'background_check' ? (
                           <>
-                            <DropdownMenuItem onClick={() => approveMutation.mutate(doc.id)} className="text-green-600">
-                              <CheckCircle className="h-4 w-4 mr-2" />
-                              Approve
+                            <DropdownMenuItem onClick={() => window.location.href = '/admin/background-checks'}>
+                              <Eye className="h-4 w-4 mr-2" />
+                              Manage in Background Checks
                             </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => {
-                                const notes = prompt('Rejection reason:');
-                                if (notes) rejectMutation.mutate({ docId: doc.id, notes });
-                              }}
-                              className="text-red-600"
-                            >
-                              <XCircle className="h-4 w-4 mr-2" />
-                              Reject
+                          </>
+                        ) : (
+                          <>
+                            <DropdownMenuItem onClick={() => openDocument(doc)}>
+                              <Eye className="h-4 w-4 mr-2" />
+                              View Document
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => openDetails(doc)}>
+                              <FileText className="h-4 w-4 mr-2" />
+                              View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            {/* show approve/reject for pending, and always allow verify via details modal */}
+                            {doc.status === 'pending' && (
+                              <>
+                                <DropdownMenuItem onClick={() => approveMutation.mutate(doc.id)} className="text-green-600">
+                                  <CheckCircle className="h-4 w-4 mr-2" />
+                                  Approve
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    const notes = prompt('Rejection reason:');
+                                    if (notes) rejectMutation.mutate({ docId: doc.id, notes });
+                                  }}
+                                  className="text-red-600"
+                                >
+                                  <XCircle className="h-4 w-4 mr-2" />
+                                  Reject
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => openDetails(doc)}>
+                              <Shield className="h-4 w-4 mr-2" />
+                              Verify / Edit Risk
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => sendReminderMutation.mutate(doc.userId)}>
+                              <Mail className="h-4 w-4 mr-2" />
+                              Send Reminder
                             </DropdownMenuItem>
                           </>
                         )}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => openDetails(doc)}>
-                          <Shield className="h-4 w-4 mr-2" />
-                          Verify / Edit Risk
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => sendReminderMutation.mutate(doc.userId)}>
-                          <Mail className="h-4 w-4 mr-2" />
-                          Send Reminder
-                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
