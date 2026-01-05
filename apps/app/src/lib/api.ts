@@ -436,8 +436,26 @@ const api = {
   },
   getVolunteersTemplate: async () => axios.get('/organization/import/volunteers/template'),
   getOpportunitiesTemplate: async () => axios.get('/organization/import/opportunities/template'),
+  
+  // Generic Import Helpers
+  getImportTemplate: async (type: string) => axios.get('/imports/template', { params: { type }, responseType: 'blob' }),
+  processGenericImport: async (file: File, type: string) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('type', type);
+    return axios.post('/imports/process', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
 
   // CSV Export endpoints
+  downloadGenericExport: async (type: string, format: 'csv' | 'json', params?: any) => 
+    axios.get('/exports/download', { params: { type, format, ...params }, responseType: 'blob' }),
+
+  // System Backup
+  downloadDatabaseBackup: async () => axios.get('/admin/backup/database', { responseType: 'blob' }),
+  downloadMediaBackup: async () => axios.get('/admin/backup/media', { responseType: 'blob' }),
+
   exportVolunteers: async (params?: any) =>
     axios.get('/organization/export/volunteers', { params, responseType: 'blob' }),
   exportOpportunities: async (params?: any) =>
