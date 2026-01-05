@@ -36,6 +36,12 @@ export default class BackgroundCheck extends BaseModel {
   @column()
   public notes?: string
 
+  @column({ columnName: 'file_path' })
+  public filePath?: string
+
+  @column({ columnName: 'file_name' })
+  public fileName?: string
+
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
 
