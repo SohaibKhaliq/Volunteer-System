@@ -171,8 +171,7 @@ export default class AdminController {
 
       const isSuper =
         roleNames.some((r: string) => r.includes('super') || r.includes('owner')) ||
-        !!user.isAdmin ||
-        !!user.is_admin
+        !!user.isAdmin
 
       const defaults: Record<string, boolean> = {
         dataOps: false,
@@ -789,40 +788,9 @@ export default class AdminController {
   public async getSystemSettings({ auth, response }: HttpContextContract) {
     try {
       await this.requireSuperAdmin(auth)
-
-      // Get all system settings from settings table
-      const settings = await Database.from('system_settings').select('key', 'value')
-
-      const settingsMap: Record<string, any> = {}
-      for (const s of settings) {
-        try {
-          settingsMap[s.key] = JSON.parse(s.value)
-        } catch {
-          settingsMap[s.key] = s.value
-        }
-      }
-
-      // Default settings structure
-      const defaults = {
-        platform_name: 'Volunteer System',
-        platform_tagline: 'Connecting volunteers with opportunities',
-        primary_color: '#3B82F6',
-        secondary_color: '#10B981',
-        logo_url: null,
-        favicon_url: null,
-        support_email: 'support@example.com',
-        default_timezone: 'UTC',
-        require_email_verification: true,
-        allow_public_registration: true,
-        auto_approve_organizations: false,
-        max_volunteers_per_opportunity: 100,
-        enable_qr_checkin: true,
-        enable_calendar_export: true,
-        maintenance_mode: false,
-        maintenance_message: 'System is under maintenance. Please check back later.'
-      }
-
-      return response.ok({ ...defaults, ...settingsMap })
+      const { default: SystemSetting } = await import('App/Models/SystemSetting')
+      const settings = await SystemSetting.query().orderBy('category', 'asc').orderBy('key', 'asc')
+      return response.ok(settings)
     } catch (error) {
       Logger.error('Get system settings error: %o', error)
       return response.unauthorized({ error: { message: error.message || 'Access denied' } })
@@ -875,10 +843,12 @@ export default class AdminController {
       // Log the action with previous and new values for full auditability
       await AuditLog.safeCreate({
         userId: admin.id,
-        action: 'system_settings_updated',
+        action: 'system_setting_updated',
         targetType: 'system',
         targetId: null,
-        metadata: JSON.stringify({ keys, previousValues, newValues: settings })
+        details: `Updated multiple system settings: ${keys.join(', ')}`,
+        metadata: JSON.stringify({ keys, previousValues, newValues: settings }),
+        ipAddress: request.ip()
       })
 
       return response.ok({ message: 'Settings updated successfully' })
@@ -935,10 +905,12 @@ export default class AdminController {
       // Log the action with previous values
       await AuditLog.safeCreate({
         userId: admin.id,
-        action: 'branding_updated',
+        action: 'system_setting_updated',
         targetType: 'system',
         targetId: null,
-        metadata: JSON.stringify({ previous: previousBranding, new: branding })
+        details: `Updated branding settings: ${keys.join(', ')}`,
+        metadata: JSON.stringify({ previous: previousBranding, new: branding }),
+        ipAddress: request.ip()
       })
 
       return response.ok({ message: 'Branding updated successfully', branding })
