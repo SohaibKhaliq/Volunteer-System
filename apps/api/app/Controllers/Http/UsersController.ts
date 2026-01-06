@@ -612,7 +612,7 @@ export default class UsersController {
            // But wait, logProfileChange expects { from, to }. 
            // Let's use generic safeCreate for flexibility or construct a simple changes object
            await AuditLog.safeCreate({
-                userId: (request as any).auth?.user?.id || 0,
+                userId: auth.user!.id,
                 action: 'user_update',
                 targetType: 'user',
                 targetId: user.id,
