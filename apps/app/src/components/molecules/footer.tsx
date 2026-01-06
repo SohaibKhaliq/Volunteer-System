@@ -1,9 +1,14 @@
 import { Link } from 'react-router-dom';
 import { Facebook, Twitter, Instagram, Linkedin, Mail, Phone, MapPin } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useApp } from '@/providers/app-provider';
 
 const Footer = () => {
   const { t } = useTranslation();
+  const { settings } = useApp();
+
+  const logoUrl = settings?.find((s: any) => s.key === 'logo_url')?.value;
+  const platformName = settings?.find((s: any) => s.key === 'platform_name')?.value || 'Local Aid';
 
   return (
     <footer className="bg-slate-900 text-slate-200 pt-16 pb-8">
@@ -12,8 +17,12 @@ const Footer = () => {
           {/* Brand Column */}
           <div className="space-y-4">
             <Link to="/" className="flex items-center gap-2">
-              <img src="/logo-light.svg" alt="Local Aid Logo" className="h-10 w-auto" />
-              <span className="text-xl font-bold text-white">Local Aid</span>
+              {logoUrl ? (
+                <img src={logoUrl} alt={`${platformName} Logo`} className="h-10 w-auto object-contain" />
+              ) : (
+                <img src="/logo-light.svg" alt="Local Aid Logo" className="h-10 w-auto" />
+              )}
+              <span className="text-xl font-bold text-white">{platformName}</span>
             </Link>
             <p className="text-slate-400 text-sm leading-relaxed">
               {t('Empowering communities through volunteerism. Connect, contribute, and make a difference today.')}
@@ -115,7 +124,7 @@ const Footer = () => {
 
         <div className="border-t border-slate-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-500">
           <p>
-            &copy; {new Date().getFullYear()} Local Aid. {t('All rights reserved.')}
+            &copy; {new Date().getFullYear()} {platformName}. {t('All rights reserved.')}
           </p>
           <div className="flex gap-6">
             <Link to="/privacy" className="hover:text-white transition-colors">
