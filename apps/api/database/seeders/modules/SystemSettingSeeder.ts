@@ -3,7 +3,7 @@ import Database from '@ioc:Adonis/Lucid/Database'
 
 export default class SystemSettingSeeder extends BaseSeeder {
   public async run() {
-    const RECORD_COUNT = 20
+    const RECORD_COUNT = 30
     const now = new Date()
     const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
 
@@ -27,7 +27,17 @@ export default class SystemSettingSeeder extends BaseSeeder {
       { key: 'time_format', value: '24h', type: 'string', category: 'general' },
       { key: 'enable_gamification', value: 'true', type: 'boolean', category: 'features' },
       { key: 'enable_resources', value: 'true', type: 'boolean', category: 'features' },
-      { key: 'enable_shifts', value: 'true', type: 'boolean', category: 'features' }
+      { key: 'enable_shifts', value: 'true', type: 'boolean', category: 'features' },
+      // Branding
+      { key: 'platform_name', value: 'Eghata Volunteer System', type: 'string', category: 'branding' },
+      { key: 'platform_tagline', value: 'Connecting volunteers with opportunities', type: 'string', category: 'branding' },
+      { key: 'primary_color', value: '#3B82F6', type: 'string', category: 'branding' },
+      { key: 'secondary_color', value: '#10B981', type: 'string', category: 'branding' },
+      { key: 'logo_url', value: '', type: 'string', category: 'branding' },
+      { key: 'favicon_url', value: '', type: 'string', category: 'branding' },
+      // System Extensions
+      { key: 'support_email', value: 'support@eghata.gov.au', type: 'string', category: 'system' },
+      { key: 'maintenance_message', value: 'System is under maintenance. Please check back later.', type: 'string', category: 'system' }
     ]
 
     const rows = settings.slice(0, RECORD_COUNT).map((setting) => ({
