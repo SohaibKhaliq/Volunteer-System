@@ -212,4 +212,30 @@ export default class DynamicConfigService {
 
     return sizeConfigs[uploadType] || sizeConfigs.general
   }
+
+  /**
+   * Get a system setting value with a fallback default
+   */
+  public static async getSetting(key: string, defaultValue: any = null): Promise<any> {
+    try {
+      const SystemSetting = (await import('App/Models/SystemSetting')).default
+      const setting = await SystemSetting.findBy('key', key)
+      
+      if (!setting) return defaultValue
+      
+      if (setting.type === 'boolean') return setting.value === 'true'
+      if (setting.type === 'number') return Number(setting.value)
+      if (setting.type === 'json') {
+        try {
+          return JSON.parse(setting.value)
+        } catch {
+          return setting.value
+        }
+      }
+      
+      return setting.value
+    } catch (e) {
+      return defaultValue
+    }
+  }
 }
