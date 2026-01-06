@@ -13,6 +13,7 @@ type AppProviderState = {
   showBackButton: boolean;
   authenticated: boolean;
   user?: any;
+  settings?: any[];
 };
 
 const AppProviderContext = createContext<AppProviderState | undefined>(undefined);
@@ -36,7 +37,7 @@ export default function AppProvider({ children }: AppProviderProps) {
       // any achievements auto-awarded by the backend show up in the UI quickly.
       try {
         queryClient.invalidateQueries(['notifications']);
-      } catch (e) {}
+      } catch (e) { }
     },
     onError: (error: any) => {
       const status = error?.response?.status;
@@ -92,10 +93,17 @@ export default function AppProvider({ children }: AppProviderProps) {
     }
   });
 
+  const { data: settings } = useQuery({
+    queryKey: ['system-settings'],
+    queryFn: () => api.getSettings(),
+    enabled: !!token,
+  });
+
   const value: AppProviderState = {
     showBackButton,
     authenticated: !!token,
-    user: me?.data ?? me // supports Axios or direct JSON
+    user: me?.data ?? me, // supports Axios or direct JSON
+    settings: (settings as any)?.data ?? settings
   };
 
   useEffect(() => {
