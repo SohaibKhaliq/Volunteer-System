@@ -85,8 +85,15 @@ export default class UserRoleSeeder extends BaseSeeder {
     const trx = await Database.transaction()
     try {
       await trx.rawQuery(sql, bindings)
+      
+      // Also update is_admin flag for super admins
+      const superAdminRoleId = roleMap['super-admin']
+      if (superAdminRoleId) {
+          await trx.rawQuery('UPDATE users SET is_admin = 1 WHERE id IN (SELECT user_id FROM user_roles WHERE role_id = ?)', [superAdminRoleId])
+      }
+
       await trx.commit()
-      console.log(`UserRoleSeeder: upserted ${rows.length} user-role assignments`)
+      console.log(`UserRoleSeeder: upserted ${rows.length} user-role assignments and updated admin flags`)
     } catch (error) {
       await trx.rollback()
       console.error('UserRoleSeeder failed', error)
