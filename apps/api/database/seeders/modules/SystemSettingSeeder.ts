@@ -3,7 +3,7 @@ import Database from '@ioc:Adonis/Lucid/Database'
 
 export default class SystemSettingSeeder extends BaseSeeder {
   public async run() {
-    const RECORD_COUNT = 30
+    const RECORD_COUNT = 31
     const now = new Date()
     const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
 
@@ -21,6 +21,7 @@ export default class SystemSettingSeeder extends BaseSeeder {
       { key: 'registration_open', value: 'true', type: 'boolean', category: 'volunteers' },
       { key: 'max_volunteers_per_event', value: '100', type: 'number', category: 'events' },
       { key: 'background_check_required', value: 'true', type: 'boolean', category: 'compliance' },
+      { key: 'enable_compliance_enforcement', value: 'false', type: 'boolean', category: 'compliance' },
       { key: 'min_volunteer_age', value: '16', type: 'number', category: 'volunteers' },
       { key: 'currency', value: 'AUD', type: 'string', category: 'general' },
       { key: 'date_format', value: 'DD/MM/YYYY', type: 'string', category: 'general' },
