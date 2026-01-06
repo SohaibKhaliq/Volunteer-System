@@ -7,6 +7,7 @@ import { useLocation, useNavigate, Link, useSearchParams } from 'react-router-do
 import { Shield, AlertTriangle, ArrowRight, FileCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import MaintenanceLock from '@/components/organisms/MaintenanceLock';
 
 /**
  * Converts a hex color to an HSL string compatible with Tailwind space-separated HSL variables.
@@ -176,6 +177,16 @@ export default function AppProvider({ children }: AppProviderProps) {
   const isLocked = complianceEnforcement && !isCompliant && !isAdmin &&
     (!lockExemptPaths.includes(location.pathname) || isProfileLocked) && !isAdminRoute;
 
+  // Maintenance Mode Logic
+  const maintenanceModeSetting = settings?.find((s: any) => s.key === 'maintenance_mode')?.value;
+  const isMaintenanceMode = maintenanceModeSetting === 'true' || maintenanceModeSetting === true || maintenanceModeSetting === '1';
+  const maintenanceMessage = settings?.find((s: any) => s.key === 'maintenance_message')?.value;
+  const supportEmail = settings?.find((s: any) => s.key === 'support_email')?.value;
+  const platformName = settings?.find((s: any) => s.key === 'platform_name')?.value;
+
+  const isMaintenanceLocked = isMaintenanceMode && !isAdmin && !isAdminRoute &&
+    !['/login', '/logout', '/register'].includes(location.pathname);
+
   const value: AppProviderState = {
     showBackButton,
     authenticated: !!token,
@@ -227,7 +238,14 @@ export default function AppProvider({ children }: AppProviderProps) {
 
   return (
     <AppProviderContext.Provider value={value}>
-      {isLocked ? (
+      {isMaintenanceLocked ? (
+        <MaintenanceLock
+          message={maintenanceMessage}
+          supportEmail={supportEmail}
+          platformName={platformName}
+        />
+      ) : null}
+      {isLocked && !isMaintenanceLocked ? (
         <div className="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
           <Card className="w-full max-w-md shadow-2xl border-primary/20">
             <CardHeader className="text-center">
