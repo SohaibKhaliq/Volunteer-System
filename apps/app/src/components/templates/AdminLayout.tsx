@@ -13,11 +13,9 @@ import {
   CalendarClock,
   Award,
   Package,
-  Clock,
   Activity,
   FileText,
   MessageSquare,
-  Mail,
   ListOrdered,
   LogOut,
   Bell,
@@ -143,8 +141,22 @@ export default function AdminLayout() {
     dataOps: serverFeatures.dataOps ?? isSuperAdmin, // imports/exports/backups
     analytics: serverFeatures.analytics ?? (isAdmin || isSuperAdmin),
     monitoring: serverFeatures.monitoring ?? isAdmin,
-    scheduling: serverFeatures.scheduling ?? true
+    scheduling: serverFeatures.scheduling ?? true,
+    // Module toggles
+    shifts: serverFeatures.shifts ?? true,
+    resources: serverFeatures.resources ?? true,
+    gamification: serverFeatures.gamification ?? true,
   };
+
+  // Dynamically update primary color from settings
+  useEffect(() => {
+    const primaryColor = settings?.find((s: any) => s.key === 'primary_color')?.value;
+    if (primaryColor) {
+      document.documentElement.style.setProperty('--primary', primaryColor);
+      // Optional: Generate a RGB version for shades if your Tailwind uses rgb variables
+      // but for now, direct hex to --primary works for many shadcn components
+    }
+  }, [settings]);
 
   // Group sidebar links into semantic sections for clarity
   const sidebarGroups: {
@@ -178,18 +190,24 @@ export default function AdminLayout() {
         items: [
           { path: '/admin/events', icon: Calendar, label: 'Events & Tasks' },
           { path: '/admin/tasks', icon: ClipboardCheck, label: 'Task Management' },
-          { path: '/admin/shifts', icon: CalendarClock, label: 'Shifts' },
-          { path: '/admin/hours', icon: CalendarClock, label: 'Volunteer Hours', showBadge: true },
-          { path: '/admin/pending-hours/orgs', icon: CalendarClock, label: 'Pending Hours (by org)', adminOnly: true }
+          ...(features.shifts ? [
+            { path: '/admin/shifts', icon: CalendarClock, label: 'Shifts' },
+            { path: '/admin/hours', icon: CalendarClock, label: 'Volunteer Hours', showBadge: true },
+            { path: '/admin/pending-hours/orgs', icon: CalendarClock, label: 'Pending Hours (by org)', adminOnly: true }
+          ] : [])
         ]
       },
       {
         title: 'Data & Ops',
         items: [
-          { path: '/admin/resources', icon: Package, label: 'Resources' },
-          { path: '/admin/resources/dashboard', icon: Activity, label: 'Resources Dashboard' },
+          ...(features.resources ? [
+            { path: '/admin/resources', icon: Package, label: 'Resources' },
+            { path: '/admin/resources/dashboard', icon: Activity, label: 'Resources Dashboard' }
+          ] : []),
           { path: '/admin/types', icon: FileText, label: 'Types' },
-          { path: '/admin/achievements', icon: Award, label: 'Achievements' }
+          ...(features.gamification ? [
+            { path: '/admin/achievements', icon: Award, label: 'Achievements' }
+          ] : [])
         ]
       },
       {
