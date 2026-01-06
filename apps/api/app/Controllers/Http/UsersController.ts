@@ -571,8 +571,10 @@ export default class UsersController {
   /**
    * Update an existing user
    */
-  public async update({ params, request, response }: HttpContextContract) {
+  public async update({ params, request, response, auth }: HttpContextContract) {
     try {
+      const user = await User.query().where('id', params.id).preload('roles').firstOrFail()
+
       // Use a safe update that maps camelCase payload keys to DB columns
       Logger.info('Update payload', request.all())
       const payload = request.only([
@@ -582,33 +584,26 @@ export default class UsersController {
         'phone',
         'profileMetadata',
         'isDisabled',
-        'volunteerStatus'
+        'volunteerStatus',
+        'isAdmin'
       ])
 
-      // Map incoming fields to DB column names
-      const updateData: Record<string, any> = {}
+      // Map incoming fields to Model properties
+      const updateData: any = {}
       if (payload.email !== undefined) updateData.email = payload.email
-      if (payload.firstName !== undefined) updateData.first_name = payload.firstName
-      if (payload.lastName !== undefined) updateData.last_name = payload.lastName
+      if (payload.firstName !== undefined) updateData.firstName = payload.firstName
+      if (payload.lastName !== undefined) updateData.lastName = payload.lastName
       if (payload.phone !== undefined) updateData.phone = payload.phone
-      if (payload.profileMetadata !== undefined)
-        updateData.profile_metadata = payload.profileMetadata
-      if (payload.isDisabled !== undefined) updateData.is_disabled = payload.isDisabled
-      if (payload.volunteerStatus !== undefined)
-        updateData.volunteer_status = payload.volunteerStatus
+      if (payload.profileMetadata !== undefined) updateData.profileMetadata = payload.profileMetadata
+      if (payload.isDisabled !== undefined) updateData.isDisabled = payload.isDisabled
+      if (payload.volunteerStatus !== undefined) updateData.volunteerStatus = payload.volunteerStatus
+      if (payload.isAdmin !== undefined) updateData.isAdmin = payload.isAdmin
 
-      // perform direct update via query builder to avoid model save race conditions
-      const updatedCount = await User.query()
-        .where('id', params.id)
-        .update({ ...updateData, updated_at: new Date() })
+      // Merge and save (executes hooks like profileMetadata preparation)
+      user.merge(updateData)
+      await user.save()
 
-      if (!updatedCount) {
-        Logger.warn('No rows updated for user id %s', params.id)
-        return response.notFound({ error: { message: 'User not found' } })
-      }
-
-      // Return the refreshed user with roles
-      const user = await User.query().where('id', params.id).preload('roles').firstOrFail()
+      // Return the refreshed user (already preloaded and updated)
       
       // Audit log
       try {
