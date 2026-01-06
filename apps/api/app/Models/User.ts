@@ -47,7 +47,8 @@ export default class User extends BaseModel {
 
   @column({
     columnName: 'profile_metadata',
-    prepare: (value: any) => JSON.stringify(value)
+    prepare: (value: any) => JSON.stringify(value),
+    consume: (value: any) => (typeof value === 'string' ? JSON.parse(value) : value)
   })
   public profileMetadata?: any
 
