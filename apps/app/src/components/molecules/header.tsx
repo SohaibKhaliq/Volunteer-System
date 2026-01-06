@@ -15,7 +15,7 @@ import DarkModeToggle from './dark-mode-toggle';
 import { useTranslation } from 'react-i18next';
 
 const Header = () => {
-  const { authenticated, user } = useApp();
+  const { authenticated, user, settings } = useApp();
   const { theme } = useTheme();
   const { setToken, setUser } = useStore();
   const queryClient = useQueryClient();
@@ -54,8 +54,18 @@ const Header = () => {
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-8">
           <Link to="/" className="flex items-center gap-2">
-            <img src={theme === 'dark' ? '/logo-light.svg' : '/logo.svg'} alt="logo" className="h-8 w-auto" />
-            <span className="text-xl font-bold hidden md:inline-block">Local Aid</span>
+            {settings?.find((s: any) => s.key === 'logo_url')?.value ? (
+              <img
+                src={settings.find((s: any) => s.key === 'logo_url')?.value}
+                alt="logo"
+                className="h-8 w-auto object-contain"
+              />
+            ) : (
+              <img src={theme === 'dark' ? '/logo-light.svg' : '/logo.svg'} alt="logo" className="h-8 w-auto" />
+            )}
+            <span className="text-xl font-bold hidden md:inline-block">
+              {settings?.find((s: any) => s.key === 'platform_name')?.value || 'Local Aid'}
+            </span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-6">
