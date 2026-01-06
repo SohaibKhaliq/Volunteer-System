@@ -152,7 +152,7 @@ export default function AppProvider({ children }: AppProviderProps) {
   const isAdmin = user?.roles?.some((r: any) => {
     const roleName = String(r.name || r.slug || r).toLowerCase().replace(/-/g, '_');
     return ['admin', 'super_admin', 'owner', 'organization_admin', 'volunteer_manager', 'team_leader', 'coordinator', 'training_coordinator', 'resource_manager'].includes(roleName);
-  }) || user?.isAdmin;
+  }) || user?.isAdmin === true || user?.isAdmin === 1;
 
   // Paths that are NEVER locked (essential for fixing compliance or basic navigation)
   const lockExemptPaths = [
@@ -170,8 +170,11 @@ export default function AppProvider({ children }: AppProviderProps) {
   // Custom logic for /profile: only exempt if the compliance tab is active
   const isProfileLocked = location.pathname === '/profile' && currentTab !== 'compliance';
 
+  // Exempt all /admin routes from the lock
+  const isAdminRoute = location.pathname.startsWith('/admin');
+
   const isLocked = complianceEnforcement && !isCompliant && !isAdmin &&
-    (!lockExemptPaths.includes(location.pathname) || isProfileLocked);
+    (!lockExemptPaths.includes(location.pathname) || isProfileLocked) && !isAdminRoute;
 
   const value: AppProviderState = {
     showBackButton,
