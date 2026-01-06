@@ -8,6 +8,9 @@ import AuditLog from 'App/Models/AuditLog'
 import Notification from 'App/Models/Notification'
 import Team from 'App/Models/Team'
 import OrganizationTeamMember from 'App/Models/OrganizationTeamMember'
+import Application from '@ioc:Adonis/Core/Application'
+import fs from 'fs'
+import Drive from '@ioc:Adonis/Core/Drive'
 
 /**
  * AdminController - Platform-level super admin operations
@@ -181,10 +184,14 @@ export default class AdminController {
       }
 
       const final: Record<string, boolean> = {
-        dataOps: (settingsFeatures?.dataOps ?? defaults.dataOps) || isSuper || !!user.isAdmin,
+        dataOps: (settingsFeatures?.dataOps ?? defaults.dataOps) || isSuper,
         analytics: settingsFeatures?.analytics ?? defaults.analytics,
         monitoring: settingsFeatures?.monitoring ?? defaults.monitoring,
-        scheduling: settingsFeatures?.scheduling ?? defaults.scheduling
+        scheduling: settingsFeatures?.scheduling ?? defaults.scheduling,
+        // System-wide module toggles
+        shifts: (await Database.from('system_settings').where('key', 'enable_shifts').first())?.value === 'true',
+        resources: (await Database.from('system_settings').where('key', 'enable_resources').first())?.value === 'true',
+        gamification: (await Database.from('system_settings').where('key', 'enable_gamification').first())?.value === 'true'
       }
 
       return response.ok(final)
@@ -859,13 +866,14 @@ export default class AdminController {
   }
 
   /**
-   * Update platform branding
+   * Update platform branding (supports JSON body Or Multipart for file uploads)
    */
   public async updateBranding({ auth, request, response }: HttpContextContract) {
     try {
       const admin = await this.requireSuperAdmin(auth)
+      const SystemSetting = (await import('App/Models/SystemSetting')).default
 
-      const branding = request.only([
+      const branding: Record<string, any> = request.only([
         'platform_name',
         'platform_tagline',
         'primary_color',
@@ -874,42 +882,80 @@ export default class AdminController {
         'favicon_url'
       ])
 
-      const keys = Object.keys(branding).filter((k) => branding[k] !== undefined)
+      // Handle file uploads for logo and favicon if present (multipart)
+      const files = {
+        logo: request.file('logo'),
+        favicon: request.file('favicon')
+      }
 
-      // Fetch previous branding values for audit
-      const existingRows = keys.length
-        ? await Database.from('system_settings').whereIn('key', keys).select('key', 'value')
-        : []
+      for (const [key, file] of Object.entries(files)) {
+        if (file) {
+          await file.moveToDisk('local', { dirname: 'branding' })
+          const filename = file.fileName
+          const tmpRoot = Application.tmpPath('uploads')
+          const destDir = `${tmpRoot}/branding`
+          if (!fs.existsSync(destDir)) fs.mkdirSync(destDir, { recursive: true })
 
-      const previousBranding: Record<string, any> = {}
-      for (const row of existingRows) {
-        try {
-          previousBranding[row.key] = JSON.parse(row.value)
-        } catch {
-          previousBranding[row.key] = row.value
+          const candidates = [
+            `${tmpRoot}/branding/${filename}`,
+            `${tmpRoot}/local/branding/${filename}`,
+            `${tmpRoot}/local/${filename}`,
+            `${tmpRoot}/${filename}`
+          ]
+
+          let found: string | null = null
+          for (const c of candidates) {
+            if (fs.existsSync(c)) {
+              found = c
+              break
+            }
+          }
+
+          if (found && found !== `${destDir}/${filename}`) {
+            fs.renameSync(found, `${destDir}/${filename}`)
+          }
+
+          branding[`${key}_url`] = `/uploads/branding/${filename}`
+
+          // Generate thumbnail for logo only
+          if (key === 'logo') {
+            try {
+              const thumbDir = `${destDir}/thumbs`
+              if (!fs.existsSync(thumbDir)) fs.mkdirSync(thumbDir, { recursive: true })
+              const maybeSharp = await import('sharp').catch(() => null)
+              const sharpLib = maybeSharp ? (maybeSharp.default ?? maybeSharp) : null
+              if (sharpLib) {
+                await sharpLib(`${destDir}/${filename}`).resize(200, 200, { fit: 'contain' }).toFile(`${thumbDir}/${filename}`)
+              }
+            } catch (err) {
+              Logger.warn('Branding logo thumbnail generation failed: %o', err)
+            }
+          }
         }
       }
 
-      // Save branding settings
-      const SystemSetting = (await import('App/Models/SystemSetting')).default
+      const keys = Object.keys(branding).filter((k) => branding[k] !== undefined)
+      if (keys.length === 0) return response.badRequest({ message: 'No branding data provided' })
 
+      // Fetch previous values for audit log
+      const rows = await Database.from('system_settings').whereIn('key', keys).select('key', 'value')
+      const previous: Record<string, any> = {}
+      rows.forEach((r) => (previous[r.key] = r.value))
+
+      // Update settings
       for (const [key, value] of Object.entries(branding)) {
         if (value !== undefined) {
-          await SystemSetting.updateOrCreate(
-            { key },
-            { value: String(value) }
-          )
+          await SystemSetting.updateOrCreate({ key }, { value: String(value) })
         }
       }
 
-      // Log the action with previous values
       await AuditLog.safeCreate({
         userId: admin.id,
         action: 'system_setting_updated',
         targetType: 'system',
         targetId: null,
         details: `Updated branding settings: ${keys.join(', ')}`,
-        metadata: JSON.stringify({ previous: previousBranding, new: branding }),
+        metadata: JSON.stringify({ previous, new: branding }),
         ipAddress: request.ip()
       })
 
