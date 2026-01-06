@@ -43,8 +43,8 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 export default function Profile() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
-  // use combined endpoint (profile + dashboard)
-  const { data: meResponse, isLoading } = useQuery(['me'], () => api.getVolunteerDashboard());
+  // use profile endpoint to get user data with org statuses
+  const { data: meResponse, isLoading } = useQuery(['me'], () => api.getVolunteerProfile());
   const { setToken } = useStore();
   const navigate = useNavigate();
   const location = useLocation();
