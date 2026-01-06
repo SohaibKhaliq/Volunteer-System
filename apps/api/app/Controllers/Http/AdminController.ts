@@ -191,7 +191,8 @@ export default class AdminController {
         // System-wide module toggles
         shifts: (await Database.from('system_settings').where('key', 'enable_shifts').first())?.value === 'true',
         resources: (await Database.from('system_settings').where('key', 'enable_resources').first())?.value === 'true',
-        gamification: (await Database.from('system_settings').where('key', 'enable_gamification').first())?.value === 'true'
+        gamification: (await Database.from('system_settings').where('key', 'enable_gamification').first())?.value === 'true',
+        complianceEnforcement: (await Database.from('system_settings').where('key', 'enable_compliance_enforcement').first())?.value === 'true'
       }
 
       return response.ok(final)
