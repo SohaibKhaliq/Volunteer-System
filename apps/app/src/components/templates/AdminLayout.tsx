@@ -148,15 +148,7 @@ export default function AdminLayout() {
     gamification: serverFeatures.gamification ?? true,
   };
 
-  // Dynamically update primary color from settings
-  useEffect(() => {
-    const primaryColor = settings?.find((s: any) => s.key === 'primary_color')?.value;
-    if (primaryColor) {
-      document.documentElement.style.setProperty('--primary', primaryColor);
-      // Optional: Generate a RGB version for shades if your Tailwind uses rgb variables
-      // but for now, direct hex to --primary works for many shadcn components
-    }
-  }, [settings]);
+
 
   // Group sidebar links into semantic sections for clarity
   const sidebarGroups: {
