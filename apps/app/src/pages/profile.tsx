@@ -35,10 +35,9 @@ import VolunteerCompliance from '@/pages/volunteer/compliance';
 import { Building2, List } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useStore } from '@/lib/store';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import volunteerApi from '@/lib/api/volunteerApi';
 import { AssignmentStatus } from '@/lib/constants/assignmentStatus';
-import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function Profile() {
@@ -50,6 +49,7 @@ export default function Profile() {
   const navigate = useNavigate();
   const location = useLocation();
   const { token } = useStore();
+  const [searchParams, setSearchParams] = useSearchParams();
   // tab state for compact navigation
   const [activeTab, setActiveTab] = useState('overview');
   // Cache buster for avatar
@@ -57,31 +57,32 @@ export default function Profile() {
   // Pagination state for schedule (must be before any early returns)
   const [schedulePage, setSchedulePage] = useState(1);
 
-  // Initialize active tab from localStorage or navigation state (scroll instruction)
+  // Initialize active tab from URL, then localStorage or navigation state
   useEffect(() => {
+    const urlTab = searchParams.get('tab');
     const saved = localStorage.getItem('profile.activeTab');
     const stateScrollTo = (location.state as any)?.scrollTo as string | undefined;
-    const initial = saved || stateScrollTo || 'overview';
+
+    const initial = urlTab || saved || stateScrollTo || 'overview';
     setActiveTab(initial);
 
-    // If navigation sent a scroll instruction, scroll to that section once
+    // If navigation sent a scroll instruction, scroll to that section
     if (stateScrollTo) {
-      // clear the navigation state so repeated navigations don't re-trigger
-      navigate(location.pathname, { replace: true, state: {} });
       setTimeout(() => {
         const el = document.getElementById(stateScrollTo);
         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 60);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Persist active tab across reloads
-  useEffect(() => {
+  // Update URL and localStorage when tab changes
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    setSearchParams({ tab: value }, { replace: true });
     try {
-      localStorage.setItem('profile.activeTab', activeTab);
+      localStorage.setItem('profile.activeTab', value);
     } catch (e) { }
-  }, [activeTab]);
+  };
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -342,7 +343,7 @@ export default function Profile() {
       </div>
 
       <div className="container mx-auto max-w-5xl px-4 -mt-12">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
           <TabsList className="bg-white shadow-sm p-1 h-12 w-full md:w-auto grid grid-cols-3 md:flex">
             <TabsTrigger value="overview" className="flex gap-2">
               <Award className="h-4 w-4" /> <span className="hidden md:inline">Overview</span>
