@@ -34,6 +34,7 @@ export default function AdminSettings() {
     mutationFn: (payload: Record<string, any>) => api.updateSystemSettings(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'system-settings'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'features'] });
       setModifiedKeys(new Set());
       toast.success('Settings saved successfully');
     },
@@ -83,6 +84,23 @@ export default function AdminSettings() {
     );
   }
 
+  // Mapping for technical keys to human-friendly labels
+  const labelMap: Record<string, string> = {
+    background_check_required: 'Background Check Required',
+    event_auto_publish: 'Auto-publish Events',
+    max_volunteers_per_event: 'Max Volunteers Per Event',
+    volunteer_approval_required: 'Volunteer Approval Required',
+    enable_gamification: 'Enable Gamification',
+    enable_resources: 'Enable Resources',
+    enable_shifts: 'Enable Shifts',
+    platform_name: 'Platform Name',
+    platform_tagline: 'Platform Tagline',
+    primary_color: 'Primary Color',
+    secondary_color: 'Secondary Color',
+    logo_url: 'Logo URL',
+    favicon_url: 'Favicon URL',
+  };
+
   // Group settings by category
   const categories = Array.from(new Set(localSettings.map((s) => s.category || 'General')));
   const groupedSettings = categories.reduce((acc, cat) => {
@@ -90,20 +108,90 @@ export default function AdminSettings() {
     return acc;
   }, {} as Record<string, any[]>);
 
+  const handleBrandingUpload = async (key: string, file: File) => {
+    const formData = new FormData();
+    formData.append(key, file);
+    try {
+      await api.updateBranding(formData as any);
+      queryClient.invalidateQueries({ queryKey: ['admin', 'system-settings'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'features'] });
+      toast.success(`${key.replace('_', ' ')} uploaded successfully`);
+    } catch (err) {
+      toast.error(`Failed to upload ${key.replace('_', ' ')}`);
+    }
+  };
+
   const renderField = (setting: any) => {
     const { key, value, type } = setting;
     const isEditable = setting.isEditable !== false && setting.is_editable !== false;
-    const label = key.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
+    const label = labelMap[key] || key.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
+
+    // Special handling for branding colors
+    if (key.includes('_color')) {
+      return (
+        <div className="space-y-1 py-2" key={key}>
+          <Label htmlFor={key}>{label}</Label>
+          <div className="flex gap-2">
+            <Input
+              id={key}
+              type="color"
+              value={value}
+              onChange={(e) => handleValueChange(key, e.target.value)}
+              className="w-12 p-1 h-10"
+              disabled={!isEditable}
+            />
+            <Input
+              value={value}
+              onChange={(e) => handleValueChange(key, e.target.value)}
+              placeholder="#000000"
+              className="flex-1"
+              disabled={!isEditable}
+            />
+          </div>
+          <div className="text-xs text-muted-foreground">{key}</div>
+        </div>
+      );
+    }
+
+    // Special handling for branding assets (logo/favicon)
+    if (key === 'logo_url' || key === 'favicon_url') {
+      const uploadKey = key.replace('_url', '');
+      return (
+        <div className="space-y-2 py-2 border-b last:border-0" key={key}>
+          <Label>{label}</Label>
+          <div className="flex items-center gap-4">
+            {value && (
+              <div className="h-12 w-12 border rounded p-1 bg-slate-50 flex items-center justify-center">
+                <img src={value} alt={label} className="max-h-full max-w-full object-contain" />
+              </div>
+            )}
+            <div className="flex-1">
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleBrandingUpload(uploadKey, file);
+                }}
+                disabled={!isEditable}
+              />
+              <div className="text-xs text-muted-foreground mt-1">Current: {value || 'None'}</div>
+            </div>
+          </div>
+        </div>
+      );
+    }
 
     switch (type) {
       case 'boolean':
         return (
           <div className="flex items-center justify-between py-2 border-b last:border-0" key={key}>
             <div>
-              <Label className="font-medium">{label}</Label>
+              <Label className="font-medium cursor-pointer" htmlFor={`sw-${key}`}>{label}</Label>
               <div className="text-xs text-muted-foreground">{key}</div>
             </div>
             <Switch
+              id={`sw-${key}`}
               checked={value === 'true' || value === '1'}
               onCheckedChange={(checked) => handleValueChange(key, checked ? 'true' : 'false')}
               disabled={!isEditable}
@@ -191,14 +279,14 @@ export default function AdminSettings() {
           ))}
         </TabsList>
 
-        {Object.entries(groupedSettings).map(([cat, settings]) => (
+        {Object.entries(groupedSettings).map(([cat, catSettings]: [string, any[]]) => (
           <TabsContent key={cat} value={cat}>
             <Card>
               <CardHeader>
                 <CardTitle className="capitalize">{cat} Settings</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {settings.map((s) => renderField(s))}
+                {catSettings.map((s: any) => renderField(s))}
               </CardContent>
             </Card>
           </TabsContent>
