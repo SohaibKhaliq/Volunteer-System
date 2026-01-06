@@ -35,7 +35,7 @@ import { toast } from '@/components/atoms/use-toast';
 import { useNavigate } from 'react-router-dom';
 
 export default function AdminLayout() {
-  const { user, authenticated } = useApp();
+  const { user, authenticated, settings } = useApp();
   const location = useLocation();
   const navigate = useNavigate();
   const { setToken } = useStore();
@@ -252,8 +252,19 @@ export default function AdminLayout() {
           {/* Sidebar */}
           <aside className="w-64 bg-white border-r border-gray-200 h-screen sticky top-0 flex flex-col min-h-0">
             <div className="p-6 border-b border-gray-200">
-              <h2 className="font-bold text-xl text-gray-800">Admin Panel</h2>
-              <p className="text-sm text-gray-500 mt-1">Volunteer Management System</p>
+              <div className="flex items-center gap-2">
+                {settings?.find((s: any) => s.key === 'logo_url')?.value && (
+                  <img src={settings.find((s: any) => s.key === 'logo_url')?.value} alt="Logo" className="h-8 w-8 object-contain" />
+                )}
+                <h2 className="font-bold text-xl text-gray-800">
+                  {settings?.find((s: any) => s.key === 'platform_name')?.value ||
+                    settings?.find((s: any) => s.key === 'app_name')?.value ||
+                    'Admin Panel'}
+                </h2>
+              </div>
+              <p className="text-sm text-gray-500 mt-1">
+                {settings?.find((s: any) => s.key === 'platform_tagline')?.value || 'Volunteer Management System'}
+              </p>
             </div>
 
             <nav className="flex-1 p-4 space-y-1 overflow-y-auto min-h-0">
@@ -378,7 +389,9 @@ export default function AdminLayout() {
             </main>
 
             <footer className="bg-white border-t border-gray-200 px-8 py-4">
-              <div className="text-sm text-gray-500 text-center">© 2025 Local Aid. All rights reserved.</div>
+              <div className="text-sm text-gray-500 text-center">
+                © {new Date().getFullYear()} {settings?.find((s: any) => s.key === 'platform_name')?.value || 'Local Aid'}. All rights reserved.
+              </div>
             </footer>
           </div>
         </div>
