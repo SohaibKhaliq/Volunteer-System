@@ -180,6 +180,7 @@ export default class UsersController {
         .preload('roles')
         .preload('organizations')
         .preload('teamMemberships')
+        .preload('complianceDocuments')
         .firstOrFail()
       const { password, ...safeUser } = user.toJSON() as any
       // compute impact score for the user (0-1000)
@@ -446,6 +447,23 @@ export default class UsersController {
           // silently fail if calculation errors occur to avoid blocking /me
           ;(safeUser as any).achievements = []
         }
+
+        // Compute compliance status
+        const docs = user.complianceDocuments || []
+        let complianceStatus = 'pending'
+        if (Array.isArray(docs) && docs.length > 0) {
+          const hasExpired = docs.some((d: any) =>
+            d.status === 'expired' ||
+            (d.expiresAt && new Date(d.expiresAt.toString()) < new Date())
+          )
+          const hasPending = docs.some((d: any) => d.status === 'pending' || d.status === 'submitted')
+          const isCompliant = docs.every((d: any) => d.status === 'approved' || d.status === 'verified')
+
+          if (hasExpired) complianceStatus = 'expired'
+          else if (hasPending) complianceStatus = 'pending'
+          else if (isCompliant) complianceStatus = 'compliant'
+        }
+        ;(safeUser as any).complianceStatus = complianceStatus
       } catch (err) {
         // If any of the analytics queries fail, keep impactScore undefined and continue
         ;(safeUser as any).impactScore = undefined
