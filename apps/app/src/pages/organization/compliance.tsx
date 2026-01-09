@@ -61,7 +61,10 @@ export default function OrganizationCompliance() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organizationDocuments'] });
       setIsUploadOpen(false);
-      toast({ title: editingDoc ? 'Document updated successfully' : 'Document uploaded successfully', variant: 'success' });
+      toast({
+        title: editingDoc ? 'Document updated successfully' : 'Document uploaded successfully',
+        variant: 'success'
+      });
     },
     onError: () => {
       toast({ title: 'Failed to save document', variant: 'destructive' });
@@ -122,15 +125,16 @@ export default function OrganizationCompliance() {
   const displayDocs = Array.isArray(documents)
     ? documents
     : Array.isArray((documents as any)?.data)
-    ? (documents as any).data
-    : [];
+      ? (documents as any).data
+      : [];
 
   // Normalize stats which may be returned as { data: {...} } or directly as object
-  const displayStats = (stats as any)?.data ?? stats ?? {
-    compliantVolunteers: 0,
-    pendingDocuments: 0,
-    expiringSoon: 0
-  };
+  const displayStats = (stats as any)?.data ??
+    stats ?? {
+      compliantVolunteers: 0,
+      pendingDocuments: 0,
+      expiringSoon: 0
+    };
 
   // Map common backend field names to the UI-friendly shape
   const mapDoc = (doc: any) => ({
@@ -275,46 +279,49 @@ export default function OrganizationCompliance() {
                   </TableCell>
                 </TableRow>
               ) : (
-                displayDocs.map((doc: any) => (
-                  <TableRow key={doc.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        <FileText className="h-4 w-4 text-muted-foreground" />
-                        {doc.name}
-                      </div>
-                    </TableCell>
-                    <TableCell>{doc.type}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant={
-                          doc.status === 'Valid' ? 'default' : doc.status === 'Expiring' ? 'destructive' : 'secondary'
-                        }
-                        className={doc.status === 'Valid' ? 'bg-green-500' : ''}
-                      >
-                        {doc.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{doc.expiry}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon">
-                          <Download className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(doc)}>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-red-600"
-                          onClick={() => deleteDocMutation.mutate(doc.id)}
+                displayDocs.map((raw: any) => {
+                  const doc = mapDoc(raw);
+                  return (
+                    <TableRow key={doc.id}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          {doc.name}
+                        </div>
+                      </TableCell>
+                      <TableCell>{doc.type}</TableCell>
+                      <TableCell>
+                        <Badge
+                          variant={
+                            doc.status === 'Valid' ? 'default' : doc.status === 'Expiring' ? 'destructive' : 'secondary'
+                          }
+                          className={doc.status === 'Valid' ? 'bg-green-500' : ''}
                         >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
+                          {doc.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{doc.expiry}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="ghost" size="icon">
+                            <Download className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(doc)}>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-red-600"
+                            onClick={() => deleteDocMutation.mutate(doc.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
               )}
             </TableBody>
           </Table>
