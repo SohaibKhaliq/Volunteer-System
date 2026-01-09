@@ -42,13 +42,13 @@ const api = {
   getOrganizationVolunteers: async (orgId: number, filters?: any) =>
     axios.get(`/organizations/${orgId}/volunteers`, { params: filters }),
   /* New Membership Controller Methods */
-  getOrganizationMembers: async (orgId: number, filters?: any) => 
-    axios.get(`/organizations/${orgId}/members`, { params: filters }), 
+  getOrganizationMembers: async (orgId: number, filters?: any) =>
+    axios.get(`/organizations/${orgId}/members`, { params: filters }),
   updateOrganizationMemberStatus: async (orgId: number, memberId: number, status: string, notes?: string) =>
     axios.put(`/organizations/${orgId}/members/${memberId}`, { status, notes }),
   removeOrganizationMember: async (orgId: number, memberId: number) =>
     axios.delete(`/organizations/${orgId}/members/${memberId}`),
-  
+
   addOrganizationVolunteerForOrg: async (orgId: number, data: any) =>
     axios.post(`/organizations/${orgId}/volunteers`, data),
   joinOrganization: async (orgId: number) => axios.post(`/organizations/${orgId}/volunteers`, {}),
@@ -274,6 +274,8 @@ const api = {
   getAdminSummary: async () => axios.get('/admin/summary'),
   /* Admin server-driven feature flags */
   getAdminFeatures: async () => axios.get('/admin/features'),
+  // Backwards-compatible alias used by older consumers
+  getFeatures: async () => axios.get('/admin/features'),
   /* Admin: pending hours grouped by organization */
   getAdminPendingHoursByOrg: async (params?: any) => axios.get('/admin/pending-hours/organizations', { params }),
 
@@ -311,7 +313,8 @@ const api = {
   getBroadcast: async (id: number) => axios.get(`/admin/broadcasts/${id}`),
   updateBroadcast: async (id: number, data: any) => axios.put(`/admin/broadcasts/${id}`, data),
   sendBroadcast: async (id: number) => axios.post(`/admin/broadcasts/${id}/send`),
-  scheduleBroadcast: async (id: number, scheduledAt: string) => axios.post(`/admin/broadcasts/${id}/schedule`, { scheduledAt }),
+  scheduleBroadcast: async (id: number, scheduledAt: string) =>
+    axios.post(`/admin/broadcasts/${id}/schedule`, { scheduledAt }),
   cancelBroadcast: async (id: number) => axios.post(`/admin/broadcasts/${id}/cancel`),
   getBroadcastStats: async (id: number) => axios.get(`/admin/broadcasts/${id}/stats`),
 
@@ -436,7 +439,7 @@ const api = {
   },
   getVolunteersTemplate: async () => axios.get('/organization/import/volunteers/template'),
   getOpportunitiesTemplate: async () => axios.get('/organization/import/opportunities/template'),
-  
+
   // Generic Import Helpers
   getImportTemplate: async (type: string) => axios.get('/imports/template', { params: { type }, responseType: 'blob' }),
   processGenericImport: async (file: File, type: string) => {
@@ -449,7 +452,7 @@ const api = {
   },
 
   // CSV Export endpoints
-  downloadGenericExport: async (type: string, format: 'csv' | 'json', params?: any) => 
+  downloadGenericExport: async (type: string, format: 'csv' | 'json', params?: any) =>
     axios.get('/exports/download', { params: { type, format, ...params }, responseType: 'blob' }),
 
   // System Backup
@@ -583,8 +586,7 @@ const api = {
   getVolunteerDashboard: async () => axios.get('/volunteer/dashboard'),
   getVolunteerProfile: async () => axios.get('/volunteer/profile'),
   updateVolunteerProfile: async (data: any) => axios.put('/volunteer/profile', data),
-  updateVolunteerAvatar: async (data: FormData) =>
-    axios.put('/volunteer/profile/avatar', data),
+  updateVolunteerAvatar: async (data: FormData) => axios.put('/volunteer/profile/avatar', data),
   browseOrganizations: async (params?: any) => axios.get('/volunteer/organizations/browse', { params }),
 
   // Volunteer Opportunities
@@ -603,7 +605,8 @@ const api = {
 
   // Volunteer Organizations
   getVolunteerOrganizations: async () => axios.get('/volunteer/organizations'),
-  joinVolunteerOrganization: async (id: number, data?: { notes?: string }) => axios.post(`/volunteer/organizations/${id}/join`, data),
+  joinVolunteerOrganization: async (id: number, data?: { notes?: string }) =>
+    axios.post(`/volunteer/organizations/${id}/join`, data),
   leaveVolunteerOrganization: async (id: number) => axios.delete(`/volunteer/organizations/${id}/leave`),
 
   // Volunteer Achievements
