@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { useApp } from '@/providers/app-provider';
+import useSystemRoles from '@/hooks/useSystemRoles';
 
 /**
  * Organization Team Management Page
@@ -29,7 +30,8 @@ export default function OrganizationTeam() {
   const organizationId =
     membership?.organizationId || membership?.organization_id || membership?.organization?.id || user?.organizationId;
   const actorRole = (membership?.role || '').toLowerCase();
-  const canManage = ['admin', 'coordinator'].includes(actorRole) || user?.isAdmin;
+  const { isPrivilegedUser } = useSystemRoles();
+  const canManage = ['admin', 'coordinator'].includes(actorRole) || isPrivilegedUser(user);
 
   const queryClient = useQueryClient();
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
