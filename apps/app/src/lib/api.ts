@@ -1,6 +1,7 @@
 import { QueryFunction, QueryKey, useQuery } from '@tanstack/react-query';
 import { LoginDTO } from 'shared';
 import { axios } from './axios';
+import organizationApi from './api/organizationApi';
 
 const api = {
   /* User endpoints */
@@ -358,26 +359,27 @@ const api = {
   // Roles + Permissions
   getRoles: async () => axios.get('/roles'),
 
-  updateOrganizationProfile: async (data: any) => {
-    // If FormData, let axios/browser set the Content-Type (with boundary) so server can parse multipart
-    return axios.put('/organization/profile', data);
-  },
-  getOrganizationProfile: async () => axios.get('/organization/profile'),
-  getOrganizationSettings: async () => axios.get('/organization/settings'),
-  updateOrganizationSettings: async (data: any) => axios.patch('/organization/settings', data),
+  updateOrganizationProfile: async (data: any, organizationId?: number) =>
+    organizationApi.updateProfile(data, organizationId),
+  getOrganizationProfile: async (organizationId?: number) => organizationApi.getProfile(organizationId),
+  getOrganizationSettings: async (organizationId?: number) => organizationApi.getSettings(organizationId),
+  updateOrganizationSettings: async (data: any, organizationId?: number) =>
+    organizationApi.updateSettings(data, organizationId),
 
   // Team
-  listOrganizationTeam: async () => axios.get('/organization/team'),
-  inviteTeamMember: async (data: any) => axios.post('/organization/team/invite', data),
-  updateTeamMember: async (id: number, data: any) => axios.put(`/organization/team/${id}`, data),
-  deleteTeamMember: async (id: number) => axios.delete(`/organization/team/${id}`),
+  listOrganizationTeam: async (organizationId?: number) => organizationApi.listTeam(organizationId),
+  inviteTeamMember: async (data: any, organizationId?: number) =>
+    organizationApi.inviteTeamMember(data, organizationId),
+  updateTeamMember: async (id: number, data: any, organizationId?: number) =>
+    organizationApi.updateTeamMember(id, data, organizationId),
+  deleteTeamMember: async (id: number, organizationId?: number) => organizationApi.deleteTeamMember(id, organizationId),
 
   // Teams/Departments
-  listOrganizationTeams: async (params?: any) => axios.get('/organization/teams', { params }),
-  createOrganizationTeam: async (data: any) => axios.post('/organization/teams', data),
-  getOrganizationTeam: async (id: number) => axios.get(`/organization/teams/${id}`),
-  updateOrganizationTeam: async (id: number, data: any) => axios.put(`/organization/teams/${id}`, data),
-  deleteOrganizationTeam: async (id: number) => axios.delete(`/organization/teams/${id}`),
+  listOrganizationTeams: async (params?: any) => organizationApi.listTeams(params),
+  createOrganizationTeam: async (data: any) => organizationApi.createTeam(data),
+  getOrganizationTeam: async (id: number) => organizationApi.getTeam(id),
+  updateOrganizationTeam: async (id: number, data: any) => organizationApi.updateTeam(id, data),
+  deleteOrganizationTeam: async (id: number) => organizationApi.deleteTeam(id),
 
   // Events
   listOrganizationEvents: async () => axios.get('/organization/events'),
