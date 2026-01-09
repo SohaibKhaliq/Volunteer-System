@@ -121,8 +121,15 @@ export default function OrganizationCompliance() {
     queryFn: () => api.getComplianceTypes()
   });
 
-  const systemTypes = typesData?.system || [];
-  const orgTypes = typesData?.organization || [];
+  // Normalize compliance types response and support org requirement tokens like `req_<id>`
+  const rawTypes = (typesData && (typesData.data ?? typesData)) || typesData || {};
+  const systemTypes = (rawTypes.system || rawTypes.systemTypes || []).map((t: any) => ({
+    value: t.value ?? t.slug ?? t.name ?? t.label ?? String(t.id),
+    label: t.label ?? t.name ?? t.title ?? String(t.value ?? t.slug ?? t.id)
+  }));
+  const orgTypes = (rawTypes.organization || rawTypes.organization_requirements || rawTypes.organizationRequirements || []).map(
+    (t: any) => ({ value: t.value ?? `req_${t.id}`, label: t.label ?? t.name ?? t.title ?? `Requirement ${t.id}` })
+  );
 
   const handleOpenUpload = () => {
     setEditingDoc(null);
