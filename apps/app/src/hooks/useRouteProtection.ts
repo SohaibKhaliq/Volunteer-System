@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
+import useSystemRoles from '@/hooks/useSystemRoles';
 import { useStore } from '@/lib/store';
 
 export type UserRole = 'admin' | 'organization_admin' | 'volunteer';
@@ -22,6 +23,8 @@ export function useRouteProtection(allowedRoles: UserRole[], redirectTo: string 
     retry: false
   });
 
+  const { isPrivilegedUser, isOrganizationAdminUser } = useSystemRoles();
+
   useEffect(() => {
     if (isLoading || !token) return;
 
@@ -31,9 +34,12 @@ export function useRouteProtection(allowedRoles: UserRole[], redirectTo: string 
       return;
     }
 
-    const userRole = getUserRole(userData);
+    // Map user to simplified role and check via dynamic helpers
+    const isAdmin = isPrivilegedUser(userData);
+    const isOrgAdmin = isOrganizationAdminUser(userData);
 
-    if (!allowedRoles.includes(userRole)) {
+    const mappedRole = isAdmin ? 'admin' : isOrgAdmin ? 'organization_admin' : 'volunteer';
+    if (!allowedRoles.includes(mappedRole as any)) {
       navigate(redirectTo, { replace: true });
       return;
     }
@@ -51,64 +57,31 @@ export function useRouteProtection(allowedRoles: UserRole[], redirectTo: string 
  */
 export function getUserRole(user: any): UserRole {
   if (!user) return 'volunteer';
-
-  // Check if user is a global admin
-  if (user.isAdmin === true || user.is_admin === true || user.is_admin === 1 || user.isAdmin === 1) {
-    return 'admin';
-  }
-
-  // Check if user is an organization admin/team member
-  // Look in organizations array (with multiple relationship possibilities)
+  // Prefer DB-driven checks via useSystemRoles
+  // Fallback to simple checks if hooks cannot be used here
+  if (user.isAdmin === true || user.is_admin === true || user.is_admin === 1 || user.isAdmin === 1) return 'admin';
   if (user.organizations && Array.isArray(user.organizations)) {
     for (const org of user.organizations) {
       const orgRole = org.role || org.pivot?.role;
-      if (
-        orgRole === 'Admin' ||
-        orgRole === 'admin' ||
-        orgRole === 'owner' ||
-        orgRole === 'Owner' ||
-        orgRole === 'manager' ||
-        orgRole === 'Manager'
-      ) {
-        return 'organization_admin';
-      }
+      if (orgRole && /admin|owner|manager/i.test(String(orgRole))) return 'organization_admin';
     }
   }
-
-  // Also check top-level roles array for organization-scoped roles
-  // Backend may return roles like `organization_admin`, `org_admin`, or similar
+  if (user.teamMemberships && Array.isArray(user.teamMemberships)) {
+    const hasAdmin = user.teamMemberships.some((m: any) => {
+      const role = m.role || m.pivot?.role;
+      return role && /admin|owner|manager/i.test(String(role));
+    });
+    if (hasAdmin) return 'organization_admin';
+  }
   if (user.roles && Array.isArray(user.roles)) {
     const roleNames = user.roles.map((r: any) => String(r.name || r).toLowerCase());
     if (
       roleNames.includes('organization_admin') ||
       roleNames.includes('org_admin') ||
-      roleNames.includes('organization') ||
-      roleNames.some((n: string) => n.includes('organization')) ||
-      roleNames.some((n: string) => n.includes('org'))
-    ) {
+      roleNames.some((n: string) => n.includes('organization') || n.includes('org'))
+    )
       return 'organization_admin';
-    }
   }
-
-  // Check team memberships if present (organization_team_members)
-  if (user.teamMemberships && Array.isArray(user.teamMemberships)) {
-    const hasAdminTeamRole = user.teamMemberships.some((member: any) => {
-      const role = member.role || member.pivot?.role;
-      return (
-        role === 'Admin' ||
-        role === 'admin' ||
-        role === 'owner' ||
-        role === 'Owner' ||
-        role === 'manager' ||
-        role === 'Manager'
-      );
-    });
-
-    if (hasAdminTeamRole) {
-      return 'organization_admin';
-    }
-  }
-
   return 'volunteer';
 }
 
@@ -125,7 +98,15 @@ export function isAuthorized(user: any, allowedRoles: UserRole[]): boolean {
  * Check if user is global admin
  */
 export function isGlobalAdmin(user: any): boolean {
-  return user?.isAdmin === true || user?.is_admin === true || user?.is_admin === 1 || user?.isAdmin === 1;
+  if (!user) return false;
+  if (user?.isAdmin === true || user?.is_admin === true || user?.is_admin === 1 || user?.isAdmin === 1) return true;
+  if (user.roles && Array.isArray(user.roles)) {
+    return user.roles.some((r: any) => {
+      const name = String(r?.slug || r?.name || r).toLowerCase();
+      return name.includes('admin') || name.includes('owner') || name.includes('super');
+    });
+  }
+  return false;
 }
 
 /**
