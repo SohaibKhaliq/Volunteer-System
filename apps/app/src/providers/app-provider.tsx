@@ -176,52 +176,10 @@ export default function AppProvider({ children }: AppProviderProps) {
     enabled: !!token
   });
 
-  // Fetch system roles (including permissions) so the UI can determine admin-like roles from DB
-  const { data: rolesData } = useQuery({
-    queryKey: ['system-roles'],
-    queryFn: () => api.getRoles(),
-    enabled: !!token
-  });
-
   const features = featuresData?.data ?? featuresData ?? {};
   const complianceEnforcement = features.complianceEnforcement === true;
   const user = me?.data ?? me;
   const isCompliant = user?.complianceStatus === 'compliant';
-  // Determine admin-like roles dynamically using role permissions from the server
-  const privilegedPermissions = new Set([
-    'manage_permissions',
-    'manage_user_roles',
-    'manage_org_members',
-    'manage_org_settings',
-    'manage_compliance_docs'
-  ]);
-
-  const privilegedRoleSlugs = new Set<string>();
-  try {
-    const rolesList = (rolesData && (rolesData.data ?? rolesData)) || [];
-    for (const r of rolesList) {
-      const perms = r.permissions || [];
-      for (const p of perms) {
-        const pn = (p.name || p.slug || p) as string;
-        if (privilegedPermissions.has(pn)) {
-          privilegedRoleSlugs.add(String(r.slug || r.name).toLowerCase());
-          break;
-        }
-      }
-    }
-  } catch (e) {}
-
-  const isAdmin =
-    user?.isAdmin === true ||
-    user?.isAdmin === 1 ||
-    Boolean(
-      user?.roles?.some((r: any) => {
-        const roleSlug = String(r.slug || r.name || r)
-          .toLowerCase()
-          .replace(/-/g, '_');
-        return privilegedRoleSlugs.has(roleSlug);
-      })
-    );
 
   // Paths that are NEVER locked (essential for fixing compliance or basic navigation)
   const lockExemptPaths = [
@@ -236,7 +194,7 @@ export default function AppProvider({ children }: AppProviderProps) {
 
   const { isPrivilegedUser, isOrganizationAdminUser } = useSystemRoles();
 
-  const isAdmin = isPrivilegedUser(user) || user?.isAdmin === true || user?.isAdmin === 1;
+  const isAdmin = isPrivilegedUser(user);
 
   const isOrganization = isOrganizationAdminUser(user);
 
