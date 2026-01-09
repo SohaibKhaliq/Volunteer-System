@@ -118,12 +118,28 @@ export default function OrganizationCompliance() {
     );
   }
 
-  const displayDocs = Array.isArray(documents) ? documents : [];
-  const displayStats = stats || {
+  // Normalize documents responses which may be either an array or an object wrapper { data: [...] }
+  const displayDocs = Array.isArray(documents)
+    ? documents
+    : Array.isArray((documents as any)?.data)
+    ? (documents as any).data
+    : [];
+
+  // Normalize stats which may be returned as { data: {...} } or directly as object
+  const displayStats = (stats as any)?.data ?? stats ?? {
     compliantVolunteers: 0,
     pendingDocuments: 0,
     expiringSoon: 0
   };
+
+  // Map common backend field names to the UI-friendly shape
+  const mapDoc = (doc: any) => ({
+    id: doc.id ?? doc.document_id ?? doc.file_id,
+    name: doc.name ?? doc.title ?? doc.file_name ?? 'Untitled document',
+    type: doc.type ?? doc.category ?? doc.document_type ?? 'Document',
+    status: doc.status ?? doc.state ?? doc.verification_status ?? 'Pending',
+    expiry: doc.expiry ?? doc.expires_at ?? doc.expiry_date ?? ''
+  });
 
   return (
     <div className="space-y-6">
