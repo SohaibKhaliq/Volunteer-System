@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import SkeletonCard from '@/components/atoms/skeleton-card';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useApp } from '@/providers/app-provider';
+import useSystemRoles from '@/hooks/useSystemRoles';
 import api from '@/lib/api';
 import { axios } from '@/lib/axios';
 import { DayPicker } from 'react-day-picker';
@@ -27,24 +28,15 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSub,
   DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
+  DropdownMenuSubTrigger
 } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal } from 'lucide-react';
 
 export default function AdminResources() {
   const queryClient = useQueryClient();
   const { user } = useApp();
-
-  const canQuickAssign = !!(
-    user?.isAdmin ||
-    user?.is_admin ||
-    (user?.roles &&
-      Array.isArray(user.roles) &&
-      user.roles.some((r: any) => {
-        const n = (r?.name || r?.role || '').toLowerCase();
-        return n === 'admin' || n === 'organization_admin' || n === 'organization_manager';
-      }))
-  );
+  const { isPrivilegedUser } = useSystemRoles();
+  const canQuickAssign = isPrivilegedUser(user);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<'All' | 'Available' | 'Low Stock' | 'Out of Stock'>('All');
   const [editOpen, setEditOpen] = useState(false);
