@@ -5,55 +5,65 @@
 
 import { axios } from '../axios';
 
+const getSelectedOrgName = () => {
+  try {
+    return localStorage.getItem('selectedOrganizationName') || null;
+  } catch (e) {
+    return null;
+  }
+};
+
+const withOrgParams = (params?: any) => {
+  const base = { ...(params || {}) };
+  if (!base.organizationName) {
+    const name = getSelectedOrgName();
+    if (name) base.organizationName = name;
+  }
+  return Object.keys(base).length ? base : undefined;
+};
+
 export const organizationApi = {
-  // ==========================================
   // PROFILE & DASHBOARD
   // ==========================================
   getProfile: async (organizationId?: number) =>
-    axios.get('/organization/profile', {
-      params: organizationId ? { organizationId } : undefined
-    }),
+    axios.get('/organization/profile', { params: withOrgParams(organizationId ? { organizationId } : undefined) }),
   updateProfile: async (data: any, organizationId?: number) =>
     axios.put('/organization/profile', data, {
-      params: organizationId ? { organizationId } : undefined
+      params: withOrgParams(organizationId ? { organizationId } : undefined)
     }),
   getDashboardStats: async (organizationId?: number) =>
     axios.get('/organization/dashboard-stats', {
-      params: organizationId ? { organizationId } : undefined
+      params: withOrgParams(organizationId ? { organizationId } : undefined)
     }),
   getSettings: async (organizationId?: number) =>
-    axios.get('/organization/settings', {
-      params: organizationId ? { organizationId } : undefined
-    }),
+    axios.get('/organization/settings', { params: withOrgParams(organizationId ? { organizationId } : undefined) }),
   updateSettings: async (data: any, organizationId?: number) =>
     axios.patch('/organization/settings', data, {
-      params: organizationId ? { organizationId } : undefined
+      params: withOrgParams(organizationId ? { organizationId } : undefined)
     }),
 
   // ==========================================
   // TEAM MANAGEMENT
   // ==========================================
   listTeam: async (organizationId?: number) =>
-    axios.get('/organization/team', {
-      params: organizationId ? { organizationId } : undefined
-    }),
+    axios.get('/organization/team', { params: withOrgParams(organizationId ? { organizationId } : undefined) }),
   inviteTeamMember: async (data: any, organizationId?: number) =>
     axios.post('/organization/team/invite', data, {
-      params: organizationId ? { organizationId } : undefined
+      params: withOrgParams(organizationId ? { organizationId } : undefined)
     }),
   updateTeamMember: async (id: number, data: any, organizationId?: number) =>
     axios.put(`/organization/team/${id}`, data, {
-      params: organizationId ? { organizationId } : undefined
+      params: withOrgParams(organizationId ? { organizationId } : undefined)
     }),
   deleteTeamMember: async (id: number, organizationId?: number) =>
     axios.delete(`/organization/team/${id}`, {
-      params: organizationId ? { organizationId } : undefined
+      params: withOrgParams(organizationId ? { organizationId } : undefined)
     }),
 
   // ==========================================
   // TEAMS/DEPARTMENTS
   // ==========================================
-  listTeams: async (params?: any) => axios.get('/organization/teams', { params }),
+  listTeams: async (params?: any) => axios.get('/organization/teams', { params: withOrgParams(params) }),
   createTeam: async (data: any) => axios.post('/organization/teams', data),
   getTeam: async (id: number) => axios.get(`/organization/teams/${id}`),
   updateTeam: async (id: number, data: any) => axios.put(`/organization/teams/${id}`, data),
@@ -62,27 +72,32 @@ export const organizationApi = {
   // ==========================================
   // EVENTS
   // ==========================================
-  listEvents: async () => axios.get('/organization/events'),
-  createEvent: async (data: any) => axios.post('/organization/events', data),
-  updateEvent: async (id: number, data: any) => axios.put(`/organization/events/${id}`, data),
-  deleteEvent: async (id: number) => axios.delete(`/organization/events/${id}`),
+  listEvents: async () => axios.get('/organization/events', { params: withOrgParams(undefined) }),
+  createEvent: async (data: any) => axios.post('/organization/events', data, { params: withOrgParams(undefined) }),
+  updateEvent: async (id: number, data: any) =>
+    axios.put(`/organization/events/${id}`, data, { params: withOrgParams(undefined) }),
+  deleteEvent: async (id: number) => axios.delete(`/organization/events/${id}`, { params: withOrgParams(undefined) }),
 
   // ==========================================
   // OPPORTUNITIES
   // ==========================================
-  listOpportunities: async (params?: any) => axios.get('/organization/opportunities', { params }),
-  createOpportunity: async (data: any) => axios.post('/organization/opportunities', data),
-  updateOpportunity: async (id: number, data: any) => axios.put(`/organization/opportunities/${id}`, data),
-  deleteOpportunity: async (id: number) => axios.delete(`/organization/opportunities/${id}`),
+  listOpportunities: async (params?: any) =>
+    axios.get('/organization/opportunities', { params: withOrgParams(params) }),
+  createOpportunity: async (data: any) =>
+    axios.post('/organization/opportunities', data, { params: withOrgParams(undefined) }),
+  updateOpportunity: async (id: number, data: any) =>
+    axios.put(`/organization/opportunities/${id}`, data, { params: withOrgParams(undefined) }),
+  deleteOpportunity: async (id: number) =>
+    axios.delete(`/organization/opportunities/${id}`, { params: withOrgParams(undefined) }),
   publishOpportunity: async (id: number, publish = true) =>
     axios.post(`/organization/opportunities/${id}/publish`, { publish }),
 
   // ==========================================
   // APPLICATIONS
   // ==========================================
-  listApplications: async (params?: any) => axios.get('/organization/applications', { params }),
+  listApplications: async (params?: any) => axios.get('/organization/applications', { params: withOrgParams(params) }),
   getOpportunityApplications: async (opportunityId: number, params?: any) =>
-    axios.get(`/organization/opportunities/${opportunityId}/applications`, { params }),
+    axios.get(`/organization/opportunities/${opportunityId}/applications`, { params: withOrgParams(params) }),
   updateApplication: async (id: number, data: any) => axios.patch(`/organization/applications/${id}`, data),
   bulkUpdateApplications: async (ids: number[], status: string, notes?: string) =>
     axios.post('/organization/applications/bulk', { ids, status, notes }),
@@ -90,9 +105,9 @@ export const organizationApi = {
   // ==========================================
   // ATTENDANCES
   // ==========================================
-  listAttendances: async (params?: any) => axios.get('/organization/attendances', { params }),
+  listAttendances: async (params?: any) => axios.get('/organization/attendances', { params: withOrgParams(params) }),
   getOpportunityAttendances: async (opportunityId: number, params?: any) =>
-    axios.get(`/organization/opportunities/${opportunityId}/attendances`, { params }),
+    axios.get(`/organization/opportunities/${opportunityId}/attendances`, { params: withOrgParams(params) }),
   manualCheckIn: async (opportunityId: number, data: any) =>
     axios.post(`/organization/opportunities/${opportunityId}/manual-checkin`, data),
   getAttendanceSummary: async (opportunityId: number) =>
@@ -107,7 +122,7 @@ export const organizationApi = {
   // ==========================================
   // VOLUNTEERS
   // ==========================================
-  listVolunteers: async (params?: any) => axios.get('/organization/volunteers', { params }),
+  listVolunteers: async (params?: any) => axios.get('/organization/volunteers', { params: withOrgParams(params) }),
   addVolunteer: async (data: any) => axios.post('/organization/volunteers', data),
   updateVolunteer: async (id: number, data: any) => axios.put(`/organization/volunteers/${id}`, data),
   deleteVolunteer: async (id: number) => axios.delete(`/organization/volunteers/${id}`),
@@ -115,15 +130,18 @@ export const organizationApi = {
   // ==========================================
   // COMPLIANCE
   // ==========================================
-  listDocuments: async () => axios.get('/organization/documents'),
-  uploadDocument: async (data: any) => axios.post('/organization/documents', data),
-  deleteDocument: async (id: number) => axios.delete(`/organization/documents/${id}`),
-  getComplianceStats: async () => axios.get('/organization/compliance/stats'),
+  listDocuments: async () => axios.get('/organization/documents', { params: withOrgParams(undefined) }),
+  uploadDocument: async (data: any) =>
+    axios.post('/organization/documents', data, { params: withOrgParams(undefined) }),
+  deleteDocument: async (id: number) =>
+    axios.delete(`/organization/documents/${id}`, { params: withOrgParams(undefined) }),
+  getComplianceStats: async () => axios.get('/organization/compliance/stats', { params: withOrgParams(undefined) }),
 
   // ==========================================
   // HOURS MANAGEMENT
   // ==========================================
-  getPendingHours: async (filters?: any) => axios.get('/organization/hours/pending', { params: filters }),
+  getPendingHours: async (filters?: any) =>
+    axios.get('/organization/hours/pending', { params: withOrgParams(filters) }),
   approveHour: async (id: number, notes?: string) => axios.post(`/organization/hours/${id}/approve`, { notes }),
   rejectHour: async (id: number, reason?: string) => axios.post(`/organization/hours/${id}/reject`, { reason }),
   bulkApproveHours: async (ids: number[]) => axios.post('/organization/hours/bulk-approve', { ids }),
@@ -134,22 +152,28 @@ export const organizationApi = {
   // ANALYTICS
   // ==========================================
   getVolunteerAnalytics: async (dateRange?: any) =>
-    axios.get('/organization/analytics/volunteers', { params: dateRange }),
-  getVolunteerLeaderboard: async (params?: any) => axios.get('/organization/analytics/leaderboard', { params }),
-  getVolunteerTrends: async (dateRange?: any) => axios.get('/organization/analytics/trends', { params: dateRange }),
+    axios.get('/organization/analytics/volunteers', { params: withOrgParams(dateRange) }),
+  getVolunteerLeaderboard: async (params?: any) =>
+    axios.get('/organization/analytics/leaderboard', { params: withOrgParams(params) }),
+  getVolunteerTrends: async (dateRange?: any) =>
+    axios.get('/organization/analytics/trends', { params: withOrgParams(dateRange) }),
 
   // ==========================================
   // COMMUNICATIONS
   // ==========================================
-  getCommunications: async (filters?: any) => axios.get('/organization/communications', { params: filters }),
-  sendMessage: async (data: any) => axios.post('/organization/communications/send', data),
-  getCommunication: async (id: number) => axios.get(`/organization/communications/${id}`),
-  broadcastMessage: async (data: any) => axios.post('/organization/communications/broadcast', data),
+  getCommunications: async (filters?: any) =>
+    axios.get('/organization/communications', { params: withOrgParams(filters) }),
+  sendMessage: async (data: any) =>
+    axios.post('/organization/communications/send', data, { params: withOrgParams(undefined) }),
+  getCommunication: async (id: number) =>
+    axios.get(`/organization/communications/${id}`, { params: withOrgParams(undefined) }),
+  broadcastMessage: async (data: any) =>
+    axios.post('/organization/communications/broadcast', data, { params: withOrgParams(undefined) }),
 
   // ==========================================
   // ACHIEVEMENTS
   // ==========================================
-  listAchievements: async (params?: any) => axios.get('/organization/achievements', { params }),
+  listAchievements: async (params?: any) => axios.get('/organization/achievements', { params: withOrgParams(params) }),
   createAchievement: async (data: any) => axios.post('/organization/achievements', data),
   updateAchievement: async (id: number, data: any) => axios.put(`/organization/achievements/${id}`, data),
   deleteAchievement: async (id: number) => axios.delete(`/organization/achievements/${id}`),
@@ -157,7 +181,7 @@ export const organizationApi = {
   // ==========================================
   // RESOURCES
   // ==========================================
-  listResources: async (params?: any) => axios.get('/organization/resources', { params }),
+  listResources: async (params?: any) => axios.get('/organization/resources', { params: withOrgParams(params) }),
 
   // ==========================================
   // IMPORT/EXPORT
@@ -166,42 +190,50 @@ export const organizationApi = {
     const formData = new FormData();
     formData.append('file', file);
     return axios.post('/organization/import/volunteers', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
+      headers: { 'Content-Type': 'multipart/form-data' },
+      params: withOrgParams(undefined)
     });
   },
   importOpportunities: async (file: File) => {
     const formData = new FormData();
     formData.append('file', file);
     return axios.post('/organization/import/opportunities', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
+      headers: { 'Content-Type': 'multipart/form-data' },
+      params: withOrgParams(undefined)
     });
   },
-  getVolunteersTemplate: async () => axios.get('/organization/import/volunteers/template'),
-  getOpportunitiesTemplate: async () => axios.get('/organization/import/opportunities/template'),
+  getVolunteersTemplate: async () =>
+    axios.get('/organization/import/volunteers/template', { params: withOrgParams(undefined) }),
+  getOpportunitiesTemplate: async () =>
+    axios.get('/organization/import/opportunities/template', { params: withOrgParams(undefined) }),
   exportVolunteers: async (params?: any) =>
-    axios.get('/organization/export/volunteers', { params, responseType: 'blob' }),
+    axios.get('/organization/export/volunteers', { params: withOrgParams(params), responseType: 'blob' }),
   exportOpportunities: async (params?: any) =>
-    axios.get('/organization/export/opportunities', { params, responseType: 'blob' }),
+    axios.get('/organization/export/opportunities', { params: withOrgParams(params), responseType: 'blob' }),
   exportApplications: async (params?: any) =>
-    axios.get('/organization/export/applications', { params, responseType: 'blob' }),
+    axios.get('/organization/export/applications', { params: withOrgParams(params), responseType: 'blob' }),
   exportAttendances: async (params?: any) =>
-    axios.get('/organization/export/attendances', { params, responseType: 'blob' }),
-  exportHours: async (params?: any) => axios.get('/organization/export/hours', { params, responseType: 'blob' }),
+    axios.get('/organization/export/attendances', { params: withOrgParams(params), responseType: 'blob' }),
+  exportHours: async (params?: any) =>
+    axios.get('/organization/export/hours', { params: withOrgParams(params), responseType: 'blob' }),
 
   // ==========================================
   // REPORTS
   // ==========================================
-  getReportsSummary: async (params?: any) => axios.get('/organization/reports/summary', { params }),
-  getVolunteerHoursReport: async (params?: any) => axios.get('/organization/reports/volunteer-hours', { params }),
+  getReportsSummary: async (params?: any) =>
+    axios.get('/organization/reports/summary', { params: withOrgParams(params) }),
+  getVolunteerHoursReport: async (params?: any) =>
+    axios.get('/organization/reports/volunteer-hours', { params: withOrgParams(params) }),
   getOpportunityPerformanceReport: async (params?: any) =>
-    axios.get('/organization/reports/opportunity-performance', { params }),
-  getVolunteerRetentionReport: async () => axios.get('/organization/reports/volunteer-retention'),
+    axios.get('/organization/reports/opportunity-performance', { params: withOrgParams(params) }),
+  getVolunteerRetentionReport: async () =>
+    axios.get('/organization/reports/volunteer-retention', { params: withOrgParams(undefined) }),
 
   // ==========================================
   // CALENDAR
   // ==========================================
   getOrganizationOpportunitiesCalendar: async (params?: { from?: string; to?: string; status?: string }) =>
-    axios.get('/calendar/organization-opportunities', { params, responseType: 'blob' })
+    axios.get('/calendar/organization-opportunities', { params: withOrgParams(params), responseType: 'blob' })
 };
 
 export default organizationApi;
