@@ -5,9 +5,15 @@
 
 import { axios } from '../axios';
 
-const getSelectedOrgName = () => {
+const getSelectedOrg = () => {
   try {
-    return localStorage.getItem('selectedOrganizationName') || null;
+    const raw = localStorage.getItem('selectedOrganization') || localStorage.getItem('selectedOrganizationName');
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw);
+    } catch (e) {
+      return { id: 0, name: raw } as any;
+    }
   } catch (e) {
     return null;
   }
@@ -15,10 +21,9 @@ const getSelectedOrgName = () => {
 
 const withOrgParams = (params?: any) => {
   const base = { ...(params || {}) };
-  if (!base.organizationName) {
-    const name = getSelectedOrgName();
-    if (name) base.organizationName = name;
-  }
+  const sel = getSelectedOrg();
+  if (!base.organizationId && sel && sel.id) base.organizationId = sel.id;
+  if (!base.organizationName && sel && sel.name) base.organizationName = sel.name;
   return Object.keys(base).length ? base : undefined;
 };
 
