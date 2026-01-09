@@ -75,6 +75,21 @@ export function getUserRole(user: any): UserRole {
     }
   }
 
+  // Also check top-level roles array for organization-scoped roles
+  // Backend may return roles like `organization_admin`, `org_admin`, or similar
+  if (user.roles && Array.isArray(user.roles)) {
+    const roleNames = user.roles.map((r: any) => String(r.name || r).toLowerCase());
+    if (
+      roleNames.includes('organization_admin') ||
+      roleNames.includes('org_admin') ||
+      roleNames.includes('organization') ||
+      roleNames.some((n: string) => n.includes('organization')) ||
+      roleNames.some((n: string) => n.includes('org'))
+    ) {
+      return 'organization_admin';
+    }
+  }
+
   // Check team memberships if present (organization_team_members)
   if (user.teamMemberships && Array.isArray(user.teamMemberships)) {
     const hasAdminTeamRole = user.teamMemberships.some((member: any) => {
@@ -145,6 +160,19 @@ export function isOrganizationAdmin(user: any): boolean {
         role === 'Manager'
       );
     });
+  }
+
+  // Fallback: check top-level roles for organization role indicators
+  if (user.roles && Array.isArray(user.roles)) {
+    const roleNames = user.roles.map((r: any) => String(r.name || r).toLowerCase());
+    if (
+      roleNames.includes('organization_admin') ||
+      roleNames.includes('org_admin') ||
+      roleNames.some((n: string) => n.includes('organization')) ||
+      roleNames.some((n: string) => n.includes('org'))
+    ) {
+      return true;
+    }
   }
 
   return false;
