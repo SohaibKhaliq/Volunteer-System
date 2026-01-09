@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { toast } from '@/components/atoms/use-toast';
@@ -20,6 +20,7 @@ import { Label } from '@/components/ui/label';
 import {
   FileText,
   Upload,
+  RefreshCw,
   CheckCircle,
   AlertCircle,
   AlertTriangle,
@@ -36,6 +37,9 @@ export default function OrganizationCompliance() {
   const queryClient = useQueryClient();
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [editingDoc, setEditingDoc] = useState<any>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [lastUploadedId, setLastUploadedId] = useState<string | number | null>(null);
+  const lastUploadedTimeoutRef = useRef<number | null>(null);
 
   // Fetch Documents
   const { data: documents, isLoading: isDocsLoading } = useQuery({
@@ -52,17 +56,39 @@ export default function OrganizationCompliance() {
   // Upload/Update Document Mutation
   const saveDocMutation = useMutation({
     mutationFn: (data: any) => {
-      // Logic would go here
+      // Expecting FormData for file uploads — pass through to API helper
       if (editingDoc) {
+        // ensure id present when editing
+        if (data instanceof FormData) {
+          data.append('id', String(editingDoc.id));
+          return api.uploadOrganizationDocument(data);
+        }
         return api.uploadOrganizationDocument({ ...data, id: editingDoc.id });
       }
       return api.uploadOrganizationDocument(data);
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['organizationDocuments'] });
+    onSuccess: (res: any) => {
+      // API wrapper returns response.data in many places — normalize
+      const created = (res && (res.data ?? res)) || res;
+      const mapped = mapDoc(created ?? {});
+      // set last uploaded id for temporary highlight
+      try {
+        if (mapped?.id) {
+          setLastUploadedId(mapped.id);
+          if (lastUploadedTimeoutRef.current) window.clearTimeout(lastUploadedTimeoutRef.current);
+          lastUploadedTimeoutRef.current = window.setTimeout(() => setLastUploadedId(null), 6000);
+        }
+      } catch (e) {}
+      try {
+        queryClient.invalidateQueries({ queryKey: ['organizationDocuments'] });
+      } catch (e) {}
       setIsUploadOpen(false);
+      setSelectedFile(null);
+      setEditingDoc(null);
+      setDocFormData({ name: '', type: 'License', expiry: '' });
       toast({
         title: editingDoc ? 'Document updated successfully' : 'Document uploaded successfully',
+        description: `${mapped.name} • ${mapped.type}`,
         variant: 'success'
       });
     },
@@ -106,11 +132,22 @@ export default function OrganizationCompliance() {
   };
 
   const handleDocSubmit = () => {
-    saveDocMutation.mutate({
-      ...docFormData,
-      status: 'Pending',
-      uploadedAt: new Date().toISOString().split('T')[0]
-    });
+    try {
+      const form = new FormData();
+      form.append('name', docFormData.name || '');
+      form.append('type', docFormData.type || '');
+      if (docFormData.expiry) form.append('expiry', docFormData.expiry);
+      form.append('status', 'Pending');
+      form.append('uploadedAt', new Date().toISOString().split('T')[0]);
+      if (selectedFile) form.append('file', selectedFile);
+      saveDocMutation.mutate(form);
+    } catch (e) {
+      saveDocMutation.mutate({
+        ...docFormData,
+        status: 'Pending',
+        uploadedAt: new Date().toISOString().split('T')[0]
+      });
+    }
   };
 
   if (isDocsLoading || isStatsLoading) {
@@ -159,6 +196,13 @@ export default function OrganizationCompliance() {
               Manage Requirements
             </Link>
           </Button>
+          <Button
+            variant="ghost"
+            onClick={() => queryClient.invalidateQueries({ queryKey: ['organizationDocuments'] })}
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
           <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
             <DialogTrigger asChild>
               <Button onClick={handleOpenUpload}>
@@ -205,7 +249,11 @@ export default function OrganizationCompliance() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="file">File</Label>
-                  <Input id="file" type="file" />
+                  <Input
+                    id="file"
+                    type="file"
+                    onChange={(e) => setSelectedFile(e.target.files && e.target.files[0] ? e.target.files[0] : null)}
+                  />
                 </div>
               </div>
               <DialogFooter>
@@ -281,8 +329,9 @@ export default function OrganizationCompliance() {
               ) : (
                 displayDocs.map((raw: any) => {
                   const doc = mapDoc(raw);
+                  const isNew = lastUploadedId != null && String(doc.id) === String(lastUploadedId);
                   return (
-                    <TableRow key={doc.id}>
+                    <TableRow key={doc.id} className={isNew ? 'bg-yellow-50 animate-pulse' : ''}>
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
                           <FileText className="h-4 w-4 text-muted-foreground" />
