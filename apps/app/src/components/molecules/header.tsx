@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import { useApp } from '@/providers/app-provider';
+import useSystemRoles from '@/hooks/useSystemRoles';
 import { useTheme } from '@/providers/theme-provider';
 import Language from '../atoms/language';
 import { Button } from '../ui/button';
@@ -23,8 +24,9 @@ const Header = () => {
   const location = useLocation();
   const { t } = useTranslation();
 
-  const isAdmin = user?.roles?.some((r: any) => r.name === 'admin');
-  const isOrganization = user?.roles?.some((r: any) => r.name === 'organization_admin' || r.name === 'organization_member') || !!user?.organizationId;
+  const { isPrivilegedUser, isOrganizationAdminUser } = useSystemRoles();
+  const isAdmin = isPrivilegedUser(user);
+  const isOrganization = isOrganizationAdminUser(user) || !!user?.organizationId;
   const isVolunteer = authenticated && !isAdmin && !isOrganization;
   const isPublicOrVolunteer = !isAdmin && !isOrganization;
 
@@ -41,7 +43,7 @@ const Header = () => {
 
       try {
         toast({ title: 'Signed out', description: 'You have been logged out.' });
-      } catch (e) { }
+      } catch (e) {}
       navigate('/login');
     },
     onError: (err: any) => {
@@ -69,7 +71,6 @@ const Header = () => {
           </Link>
 
           <nav className="hidden md:flex items-center gap-6">
-
             {isPublicOrVolunteer && (
               <>
                 <Link
@@ -102,7 +103,15 @@ const Header = () => {
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className={cn('text-sm font-medium transition-colors', location.pathname.includes('transport') || location.pathname.includes('help-') ? 'text-primary' : 'text-muted-foreground')}>
+                    <Button
+                      variant="ghost"
+                      className={cn(
+                        'text-sm font-medium transition-colors',
+                        location.pathname.includes('transport') || location.pathname.includes('help-')
+                          ? 'text-primary'
+                          : 'text-muted-foreground'
+                      )}
+                    >
                       {t('Services')}
                     </Button>
                   </DropdownMenuTrigger>
