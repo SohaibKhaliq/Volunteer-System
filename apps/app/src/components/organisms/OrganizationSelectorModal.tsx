@@ -18,14 +18,14 @@ interface Props {
   open: boolean;
   organizations: Org[];
   onClose: () => void;
-  onSelect: (name: string) => void;
+  onSelect: (org: Org) => void;
 }
 
 export default function OrganizationSelectorModal({ open, organizations, onClose, onSelect }: Props) {
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Org | null>(null);
 
   useEffect(() => {
-    if (open && organizations?.length > 0) setSelected(organizations[0].name);
+    if (open && organizations?.length > 0) setSelected(organizations[0]);
     if (!open) setSelected(null);
   }, [open, organizations]);
 
@@ -48,8 +48,8 @@ export default function OrganizationSelectorModal({ open, organizations, onClose
                   type="radio"
                   name="organization"
                   value={org.name}
-                  checked={selected === org.name}
-                  onChange={() => setSelected(org.name)}
+                  checked={selected?.id === org.id}
+                  onChange={() => setSelected(org)}
                 />
                 <div className="font-medium">{org.name}</div>
               </label>
