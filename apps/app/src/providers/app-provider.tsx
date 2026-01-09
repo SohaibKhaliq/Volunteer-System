@@ -1,13 +1,14 @@
 import api from '@/lib/api';
 import { useStore } from '@/lib/store';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react';
 import { toast } from '@/components/atoms/use-toast';
 import { useLocation, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Shield, AlertTriangle, ArrowRight, FileCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import MaintenanceLock from '@/components/organisms/MaintenanceLock';
+import OrganizationSelectorModal from '@/components/organisms/OrganizationSelectorModal';
 
 /**
  * Converts a hex color to an HSL string compatible with Tailwind space-separated HSL variables.
@@ -24,8 +25,11 @@ function hexToHsl(hex: string): string {
   const g = parseInt(hex.substring(2, 4), 16) / 255;
   const b = parseInt(hex.substring(4, 6), 16) / 255;
 
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  let h = 0, s, l = (max + min) / 2;
+  const max = Math.max(r, g, b),
+    min = Math.min(r, g, b);
+  let h = 0,
+    s,
+    l = (max + min) / 2;
 
   if (max === min) {
     h = s = 0; // achromatic
@@ -33,9 +37,15 @@ function hexToHsl(hex: string): string {
     const d = max - min;
     s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
     switch (max) {
-      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-      case g: h = (b - r) / d + 2; break;
-      case b: h = (r - g) / d + 4; break;
+      case r:
+        h = (g - b) / d + (g < b ? 6 : 0);
+        break;
+      case g:
+        h = (b - r) / d + 2;
+        break;
+      case b:
+        h = (r - g) / d + 4;
+        break;
     }
     h /= 6;
   }
@@ -52,6 +62,8 @@ type AppProviderState = {
   authenticated: boolean;
   user?: any;
   settings?: any[];
+  selectedOrganizationName?: string | null;
+  openOrganizationSelector?: () => void;
 };
 
 const AppProviderContext = createContext<AppProviderState | undefined>(undefined);
@@ -75,7 +87,7 @@ export default function AppProvider({ children }: AppProviderProps) {
       // any achievements auto-awarded by the backend show up in the UI quickly.
       try {
         queryClient.invalidateQueries(['notifications']);
-      } catch (e) { }
+      } catch (e) {}
     },
     onError: (error: any) => {
       const status = error?.response?.status;
@@ -134,26 +146,51 @@ export default function AppProvider({ children }: AppProviderProps) {
   const { data: settings } = useQuery({
     queryKey: ['system-settings'],
     queryFn: () => api.getSettings(),
-    enabled: !!token,
+    enabled: !!token
   });
 
   const [searchParams] = useSearchParams();
   const currentTab = searchParams.get('tab');
 
+  const [showOrgSelector, setShowOrgSelector] = useState(false);
+  const [selectedOrganizationName, setSelectedOrganizationName] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem('selectedOrganizationName');
+    } catch (e) {
+      return null;
+    }
+  });
+  const prevPathRef = useRef<string>(location.pathname);
+
   const { data: featuresData } = useQuery({
     queryKey: ['admin', 'features'],
     queryFn: () => api.getFeatures(),
-    enabled: !!token,
+    enabled: !!token
   });
 
   const features = featuresData?.data ?? featuresData ?? {};
   const complianceEnforcement = features.complianceEnforcement === true;
   const user = me?.data ?? me;
   const isCompliant = user?.complianceStatus === 'compliant';
-  const isAdmin = user?.roles?.some((r: any) => {
-    const roleName = String(r.name || r.slug || r).toLowerCase().replace(/-/g, '_');
-    return ['admin', 'super_admin', 'owner', 'organization_admin', 'volunteer_manager', 'team_leader', 'coordinator', 'training_coordinator', 'resource_manager'].includes(roleName);
-  }) || user?.isAdmin === true || user?.isAdmin === 1;
+  const isAdmin =
+    user?.roles?.some((r: any) => {
+      const roleName = String(r.name || r.slug || r)
+        .toLowerCase()
+        .replace(/-/g, '_');
+      return [
+        'admin',
+        'super_admin',
+        'owner',
+        'organization_admin',
+        'volunteer_manager',
+        'team_leader',
+        'coordinator',
+        'training_coordinator',
+        'resource_manager'
+      ].includes(roleName);
+    }) ||
+    user?.isAdmin === true ||
+    user?.isAdmin === 1;
 
   // Paths that are NEVER locked (essential for fixing compliance or basic navigation)
   const lockExemptPaths = [
@@ -166,7 +203,11 @@ export default function AppProvider({ children }: AppProviderProps) {
     '/contact'
   ];
 
-  const isVolunteer = user?.roles?.some((r: any) => String(r.name || r).toLowerCase().includes('volunteer'));
+  const isVolunteer = user?.roles?.some((r: any) =>
+    String(r.name || r)
+      .toLowerCase()
+      .includes('volunteer')
+  );
 
   // Custom logic for /profile: only exempt if the compliance tab is active
   const isProfileLocked = location.pathname === '/profile' && currentTab !== 'compliance';
@@ -174,18 +215,23 @@ export default function AppProvider({ children }: AppProviderProps) {
   // Exempt all /admin routes from the lock
   const isAdminRoute = location.pathname.startsWith('/admin');
 
-  const isLocked = complianceEnforcement && !isCompliant && !isAdmin &&
-    (!lockExemptPaths.includes(location.pathname) || isProfileLocked) && !isAdminRoute;
+  const isLocked =
+    complianceEnforcement &&
+    !isCompliant &&
+    !isAdmin &&
+    (!lockExemptPaths.includes(location.pathname) || isProfileLocked) &&
+    !isAdminRoute;
 
   // Maintenance Mode Logic
   const maintenanceModeSetting = settings?.find((s: any) => s.key === 'maintenance_mode')?.value;
-  const isMaintenanceMode = maintenanceModeSetting === 'true' || maintenanceModeSetting === true || maintenanceModeSetting === '1';
+  const isMaintenanceMode =
+    maintenanceModeSetting === 'true' || maintenanceModeSetting === true || maintenanceModeSetting === '1';
   const maintenanceMessage = settings?.find((s: any) => s.key === 'maintenance_message')?.value;
   const supportEmail = settings?.find((s: any) => s.key === 'support_email')?.value;
   const platformName = settings?.find((s: any) => s.key === 'platform_name')?.value;
 
-  const isMaintenanceLocked = isMaintenanceMode && !isAdmin && !isAdminRoute &&
-    !['/login', '/logout', '/register'].includes(location.pathname);
+  const isMaintenanceLocked =
+    isMaintenanceMode && !isAdmin && !isAdminRoute && !['/login', '/logout', '/register'].includes(location.pathname);
 
   const value: AppProviderState = {
     showBackButton,
@@ -193,6 +239,10 @@ export default function AppProvider({ children }: AppProviderProps) {
     user: me?.data ?? me, // supports Axios or direct JSON
     settings: (settings as any)?.data ?? settings
   };
+
+  // expose selected org name and a method to open selector
+  value.selectedOrganizationName = selectedOrganizationName;
+  value.openOrganizationSelector = () => setShowOrgSelector(true);
 
   useEffect(() => {
     if (!settings) return;
@@ -228,6 +278,27 @@ export default function AppProvider({ children }: AppProviderProps) {
     }
   }, [settings]);
 
+  // Show organization selector when user belongs to multiple orgs and is in org panel route
+  useEffect(() => {
+    try {
+      const selected = localStorage.getItem('selectedOrganizationName');
+      const hasMultiple = (user?.organizations && user.organizations.length > 1) || false;
+
+      const prevPath = prevPathRef.current || '';
+      const enteringOrg = !prevPath.startsWith('/organization') && location.pathname.startsWith('/organization');
+
+      // update previous path for next transition
+      prevPathRef.current = location.pathname;
+
+      // Only show selector when transitioning into the organization panel (not on other renders)
+      if (hasMultiple && !selected && enteringOrg) {
+        setShowOrgSelector(true);
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, [user, location.pathname]);
+
   useEffect(() => {
     setShowBackButton(location.pathname !== '/');
   }, [location]);
@@ -238,12 +309,28 @@ export default function AppProvider({ children }: AppProviderProps) {
 
   return (
     <AppProviderContext.Provider value={value}>
+      <OrganizationSelectorModal
+        open={showOrgSelector}
+        organizations={user?.organizations ?? []}
+        onClose={() => setShowOrgSelector(false)}
+        onSelect={(name) => {
+          try {
+            localStorage.setItem('selectedOrganizationName', name);
+          } catch (e) {}
+          setSelectedOrganizationName(name);
+          setShowOrgSelector(false);
+          // Show a small confirmation toast
+          try {
+            toast({ title: 'Organization selected', description: `Using ${name} for organization panel` });
+          } catch (e) {}
+          // Refresh queries so organization panel picks up selected org
+          try {
+            queryClient.invalidateQueries();
+          } catch (e) {}
+        }}
+      />
       {isMaintenanceLocked ? (
-        <MaintenanceLock
-          message={maintenanceMessage}
-          supportEmail={supportEmail}
-          platformName={platformName}
-        />
+        <MaintenanceLock message={maintenanceMessage} supportEmail={supportEmail} platformName={platformName} />
       ) : null}
       {isLocked && !isMaintenanceLocked ? (
         <div className="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
@@ -254,13 +341,17 @@ export default function AppProvider({ children }: AppProviderProps) {
               </div>
               <CardTitle className="text-2xl font-bold">Compliance Required</CardTitle>
               <CardDescription>
-                System-wide compliance enforcement is currently active. You must submit your verification documents to unlock full access.
+                System-wide compliance enforcement is currently active. You must submit your verification documents to
+                unlock full access.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex gap-3 text-sm text-amber-800">
                 <AlertTriangle className="w-5 h-5 shrink-0" />
-                <p>Features like event joining, shift management, and resource access are disabled until your status is <strong>Compliant</strong>.</p>
+                <p>
+                  Features like event joining, shift management, and resource access are disabled until your status is{' '}
+                  <strong>Compliant</strong>.
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -275,7 +366,7 @@ export default function AppProvider({ children }: AppProviderProps) {
             </CardContent>
             <CardFooter className="flex flex-col gap-2">
               <Button asChild className="w-full py-6 text-lg font-semibold group">
-                <Link to={isVolunteer ? "/profile?tab=compliance" : "/organization/compliance"}>
+                <Link to={isVolunteer ? '/profile?tab=compliance' : '/organization/compliance'}>
                   <FileCheck className="mr-2 h-5 w-5" />
                   Upload Documents
                   <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
