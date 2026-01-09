@@ -22,7 +22,7 @@ import {
 import { Button } from '@/components/ui/button';
 
 export default function OrganizationLayout() {
-  const { user, authenticated } = useApp();
+  const { user, authenticated, selectedOrganizationName, openOrganizationSelector } = useApp();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -137,8 +137,17 @@ export default function OrganizationLayout() {
                     <Bell className="h-5 w-5 text-gray-600" />
                     <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full"></span>
                   </Button>
-                  <div className="text-sm text-gray-600">
-                    Organization: <span className="font-medium"></span>
+                  <div className="text-sm text-gray-600 flex items-center gap-3">
+                    <div>
+                      Organization: <span className="font-medium">{selectedOrganizationName || '—'}</span>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openOrganizationSelector && openOrganizationSelector()}
+                    >
+                      Change
+                    </Button>
                   </div>
                 </div>
               </div>
