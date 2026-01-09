@@ -7,22 +7,15 @@ import { useNavigate } from 'react-router-dom';
 import api from '@/lib/api';
 // toast handled via sonner in volunteer pages; not needed here
 import { useApp } from '@/providers/app-provider';
+import useSystemRoles from '@/hooks/useSystemRoles';
 
 export default function FeedbackDashboard() {
   const navigate = useNavigate();
 
   const { data: surveys = [] } = useQuery(['surveys'], () => api.listSurveys());
   const { user } = useApp();
-  const isAdmin = !!(
-    user?.isAdmin ||
-    user?.is_admin ||
-    (user?.roles &&
-      Array.isArray(user.roles) &&
-      user.roles.some((r: any) => {
-        const n = (r?.name || r?.role || '').toLowerCase();
-        return n === 'admin' || n === 'organization_admin' || n === 'organization_manager';
-      }))
-  );
+  const { isPrivilegedUser } = useSystemRoles();
+  const isAdmin = isPrivilegedUser(user);
 
   useEffect(() => {
     if (isAdmin) {
