@@ -25,6 +25,8 @@ import { Button } from '@/components/ui/button';
 import api from '@/lib/api';
 import useAdminSummary from '@/hooks/useAdminSummary';
 import useFeatures from '@/hooks/useFeatures';
+import useSystemRoles from '@/hooks/useSystemRoles';
+import useSystemRoles from '@/hooks/useSystemRoles';
 import { useMutation } from '@tanstack/react-query';
 import { Badge } from '@/components/ui/badge';
 import { useStore } from '@/lib/store';
@@ -43,7 +45,7 @@ export default function AdminLayout() {
       setToken('');
       try {
         toast({ title: 'Signed out', description: 'You have been logged out.' });
-      } catch (e) { }
+      } catch (e) {}
       navigate('/login');
     },
     onError: (err: any) => {
@@ -51,17 +53,9 @@ export default function AdminLayout() {
     }
   });
 
-  // Check if user has admin privileges
-  // Support multiple ways: isAdmin flag, is_admin flag, or 'admin' role
-  const isAdmin = !!(
-    user?.isAdmin ||
-    user?.is_admin ||
-    (user?.roles &&
-      Array.isArray(user.roles) &&
-      user.roles.some(
-        (r: any) => r?.name === 'admin' || r?.name === 'Admin' || r?.role === 'admin' || r?.role === 'Admin'
-      ))
-  );
+  // Check if user has admin privileges via DB-driven roles/permissions
+  const { isPrivilegedUser } = useSystemRoles();
+  const isAdmin = isPrivilegedUser(user);
 
   // Keep admin checks quiet in production — no debug logs here
 
@@ -124,14 +118,23 @@ export default function AdminLayout() {
   const unreadNotificationsCount = Number(adminSummary.unreadNotifications || 0);
 
   // Feature flags — prefer server-driven flags and fall back to local role heuristic
-  const isSuperAdmin = !!(
-    user?.roles &&
-    Array.isArray(user.roles) &&
-    user.roles.some((r: any) => {
-      const s = String(r?.name ?? r?.role ?? '').toLowerCase();
-      return s.includes('owner') || s.includes('super') || s.includes('superadmin');
-    })
-  );
+  const { rolesList } = useSystemRoles();
+  const isSuperAdmin = (() => {
+    try {
+      if (user?.roles && Array.isArray(user.roles)) {
+        for (const r of user.roles) {
+          const s = String(r?.slug || r?.name || r).toLowerCase();
+          if (s.includes('owner') || s.includes('super') || s.includes('superadmin')) return true;
+        }
+      }
+      // also check system roles list for any super-like slugs
+      for (const rs of rolesList || []) {
+        const s = String(rs?.slug || rs?.name || '').toLowerCase();
+        if (s.includes('owner') || s.includes('super') || s.includes('superadmin')) return true;
+      }
+    } catch (e) {}
+    return false;
+  })();
 
   const { data: featuresData } = useFeatures();
 
@@ -145,10 +148,8 @@ export default function AdminLayout() {
     // Module toggles
     shifts: serverFeatures.shifts ?? true,
     resources: serverFeatures.resources ?? true,
-    gamification: serverFeatures.gamification ?? true,
+    gamification: serverFeatures.gamification ?? true
   };
-
-
 
   // Group sidebar links into semantic sections for clarity
   const sidebarGroups: {
@@ -162,94 +163,99 @@ export default function AdminLayout() {
       feature?: string;
     }>;
   }[] = [
-      {
-        title: 'Overview',
-        items: [
-          { path: '/admin', icon: Home, label: 'Dashboard' },
-          { path: '/admin/emergency-requests', icon: Siren, label: 'Emergency Requests', showBadge: true }
-        ]
-      },
-      {
-        title: 'Management',
-        items: [
-          { path: '/admin/users', icon: Users, label: 'Users & Roles' },
-          { path: '/admin/roles', icon: Shield, label: 'Roles' },
-          { path: '/admin/organizations', icon: Building2, label: 'Organizations' }
-        ]
-      },
-      {
-        title: 'Programs',
-        items: [
-          { path: '/admin/events', icon: Calendar, label: 'Events & Tasks' },
-          { path: '/admin/tasks', icon: ClipboardCheck, label: 'Task Management' },
-          ...(features.shifts ? [
-            { path: '/admin/shifts', icon: CalendarClock, label: 'Shifts' },
-            { path: '/admin/hours', icon: CalendarClock, label: 'Volunteer Hours', showBadge: true },
-            { path: '/admin/pending-hours/orgs', icon: CalendarClock, label: 'Pending Hours (by org)', adminOnly: true }
-          ] : [])
-        ]
-      },
-      {
-        title: 'Data & Ops',
-        items: [
-          ...(features.resources ? [
-            { path: '/admin/resources', icon: Package, label: 'Resources' },
-            { path: '/admin/resources/dashboard', icon: Activity, label: 'Resources Dashboard' }
-          ] : []),
-          { path: '/admin/types', icon: FileText, label: 'Types' },
-          ...(features.gamification ? [
-            { path: '/admin/achievements', icon: Award, label: 'Achievements' }
-          ] : [])
-        ]
-      },
-      {
-        title: 'Safety & Compliance',
-        items: [
-          { path: '/admin/compliance', icon: Shield, label: 'Compliance' },
-          { path: '/admin/certifications', icon: Award, label: 'Certifications' },
-          { path: '/admin/background-checks', icon: ClipboardCheck, label: 'Background Checks', showBadge: true }
-        ]
-      },
-      {
-        title: 'Integrations',
-        items: [
-          { path: '/admin/calendar', icon: Calendar, label: 'Calendars' }
-        ]
-      },
-      {
-        title: 'Data & Exports',
-        items: [
-          {
-            path: '/admin/imports',
-            icon: ListOrdered,
-            label: 'Imports',
-            adminOnly: true,
-            feature: 'dataOps',
-            showBadge: true
-          },
-          { path: '/admin/exports', icon: ListOrdered, label: 'Exports', adminOnly: true, feature: 'dataOps' },
-          { path: '/admin/backup', icon: Package, label: 'Backups', adminOnly: true, feature: 'dataOps' }
-        ]
-      },
-      {
-        title: 'Admin Tools',
-        items: [
-          { path: '/admin/notifications', icon: Bell, label: 'Notifications', showBadge: true },
-          { path: '/admin/contact-submissions', icon: MessageSquare, label: 'Contact Submissions' },
-          // { path: '/admin/templates', icon: FileText, label: 'Templates' },
-          // { path: '/admin/communications', icon: MessageSquare, label: 'Communications' },
-          // { path: '/admin/invite-send-jobs', icon: Mail, label: 'Invite Send Jobs', adminOnly: true },
-          // { path: '/admin/scheduled-jobs', icon: Clock, label: 'Scheduled Jobs', adminOnly: true },
-          { path: '/admin/feedback', icon: FileText, label: 'Feedback' },
-          { path: '/admin/feedback/create', icon: MessageSquare, label: 'Create Feedback' },
-          // { path: '/admin/monitoring', icon: Activity, label: 'Monitoring', adminOnly: true, feature: 'monitoring' },
-          // { path: '/admin/analytics', icon: BarChart3, label: 'Analytics', adminOnly: true, feature: 'analytics' },
-          { path: '/admin/reports', icon: BarChart3, label: 'Analytics & Reports' },
-          { path: '/admin/audit-logs', icon: ListOrdered, label: 'Audit Logs', adminOnly: true, feature: 'analytics' },
-          { path: '/admin/settings', icon: LogOut, label: 'Settings' }
-        ]
-      }
-    ];
+    {
+      title: 'Overview',
+      items: [
+        { path: '/admin', icon: Home, label: 'Dashboard' },
+        { path: '/admin/emergency-requests', icon: Siren, label: 'Emergency Requests', showBadge: true }
+      ]
+    },
+    {
+      title: 'Management',
+      items: [
+        { path: '/admin/users', icon: Users, label: 'Users & Roles' },
+        { path: '/admin/roles', icon: Shield, label: 'Roles' },
+        { path: '/admin/organizations', icon: Building2, label: 'Organizations' }
+      ]
+    },
+    {
+      title: 'Programs',
+      items: [
+        { path: '/admin/events', icon: Calendar, label: 'Events & Tasks' },
+        { path: '/admin/tasks', icon: ClipboardCheck, label: 'Task Management' },
+        ...(features.shifts
+          ? [
+              { path: '/admin/shifts', icon: CalendarClock, label: 'Shifts' },
+              { path: '/admin/hours', icon: CalendarClock, label: 'Volunteer Hours', showBadge: true },
+              {
+                path: '/admin/pending-hours/orgs',
+                icon: CalendarClock,
+                label: 'Pending Hours (by org)',
+                adminOnly: true
+              }
+            ]
+          : [])
+      ]
+    },
+    {
+      title: 'Data & Ops',
+      items: [
+        ...(features.resources
+          ? [
+              { path: '/admin/resources', icon: Package, label: 'Resources' },
+              { path: '/admin/resources/dashboard', icon: Activity, label: 'Resources Dashboard' }
+            ]
+          : []),
+        { path: '/admin/types', icon: FileText, label: 'Types' },
+        ...(features.gamification ? [{ path: '/admin/achievements', icon: Award, label: 'Achievements' }] : [])
+      ]
+    },
+    {
+      title: 'Safety & Compliance',
+      items: [
+        { path: '/admin/compliance', icon: Shield, label: 'Compliance' },
+        { path: '/admin/certifications', icon: Award, label: 'Certifications' },
+        { path: '/admin/background-checks', icon: ClipboardCheck, label: 'Background Checks', showBadge: true }
+      ]
+    },
+    {
+      title: 'Integrations',
+      items: [{ path: '/admin/calendar', icon: Calendar, label: 'Calendars' }]
+    },
+    {
+      title: 'Data & Exports',
+      items: [
+        {
+          path: '/admin/imports',
+          icon: ListOrdered,
+          label: 'Imports',
+          adminOnly: true,
+          feature: 'dataOps',
+          showBadge: true
+        },
+        { path: '/admin/exports', icon: ListOrdered, label: 'Exports', adminOnly: true, feature: 'dataOps' },
+        { path: '/admin/backup', icon: Package, label: 'Backups', adminOnly: true, feature: 'dataOps' }
+      ]
+    },
+    {
+      title: 'Admin Tools',
+      items: [
+        { path: '/admin/notifications', icon: Bell, label: 'Notifications', showBadge: true },
+        { path: '/admin/contact-submissions', icon: MessageSquare, label: 'Contact Submissions' },
+        // { path: '/admin/templates', icon: FileText, label: 'Templates' },
+        // { path: '/admin/communications', icon: MessageSquare, label: 'Communications' },
+        // { path: '/admin/invite-send-jobs', icon: Mail, label: 'Invite Send Jobs', adminOnly: true },
+        // { path: '/admin/scheduled-jobs', icon: Clock, label: 'Scheduled Jobs', adminOnly: true },
+        { path: '/admin/feedback', icon: FileText, label: 'Feedback' },
+        { path: '/admin/feedback/create', icon: MessageSquare, label: 'Create Feedback' },
+        // { path: '/admin/monitoring', icon: Activity, label: 'Monitoring', adminOnly: true, feature: 'monitoring' },
+        // { path: '/admin/analytics', icon: BarChart3, label: 'Analytics', adminOnly: true, feature: 'analytics' },
+        { path: '/admin/reports', icon: BarChart3, label: 'Analytics & Reports' },
+        { path: '/admin/audit-logs', icon: ListOrdered, label: 'Audit Logs', adminOnly: true, feature: 'analytics' },
+        { path: '/admin/settings', icon: LogOut, label: 'Settings' }
+      ]
+    }
+  ];
   const currentLabel =
     sidebarGroups
       .flatMap((g) => g.items)
@@ -264,7 +270,11 @@ export default function AdminLayout() {
             <div className="p-6 border-b border-gray-200">
               <div className="flex items-center gap-2">
                 {settings?.find((s: any) => s.key === 'logo_url')?.value && (
-                  <img src={settings.find((s: any) => s.key === 'logo_url')?.value} alt="Logo" className="h-8 w-8 object-contain" />
+                  <img
+                    src={settings.find((s: any) => s.key === 'logo_url')?.value}
+                    alt="Logo"
+                    className="h-8 w-8 object-contain"
+                  />
                 )}
                 <h2 className="font-bold text-xl text-gray-800">
                   {settings?.find((s: any) => s.key === 'platform_name')?.value ||
@@ -400,7 +410,8 @@ export default function AdminLayout() {
 
             <footer className="bg-white border-t border-gray-200 px-8 py-4">
               <div className="text-sm text-gray-500 text-center">
-                © {new Date().getFullYear()} {settings?.find((s: any) => s.key === 'platform_name')?.value || 'Local Aid'}. All rights reserved.
+                © {new Date().getFullYear()}{' '}
+                {settings?.find((s: any) => s.key === 'platform_name')?.value || 'Local Aid'}. All rights reserved.
               </div>
             </footer>
           </div>
