@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import MaintenanceLock from '@/components/organisms/MaintenanceLock';
 import OrganizationSelectorModal from '@/components/organisms/OrganizationSelectorModal';
+import useSystemRoles from '@/hooks/useSystemRoles';
 
 /**
  * Converts a hex color to an HSL string compatible with Tailwind space-separated HSL variables.
@@ -153,9 +154,16 @@ export default function AppProvider({ children }: AppProviderProps) {
   const currentTab = searchParams.get('tab');
 
   const [showOrgSelector, setShowOrgSelector] = useState(false);
-  const [selectedOrganizationName, setSelectedOrganizationName] = useState<string | null>(() => {
+  const [selectedOrganization, setSelectedOrganization] = useState<{ id: number; name: string } | null>(() => {
     try {
-      return localStorage.getItem('selectedOrganizationName');
+      const raw = localStorage.getItem('selectedOrganization') || localStorage.getItem('selectedOrganizationName');
+      if (!raw) return null;
+      try {
+        return JSON.parse(raw);
+      } catch (e) {
+        // legacy string stored as name only
+        return { id: 0, name: raw } as any;
+      }
     } catch (e) {
       return null;
     }
@@ -168,29 +176,52 @@ export default function AppProvider({ children }: AppProviderProps) {
     enabled: !!token
   });
 
+  // Fetch system roles (including permissions) so the UI can determine admin-like roles from DB
+  const { data: rolesData } = useQuery({
+    queryKey: ['system-roles'],
+    queryFn: () => api.getRoles(),
+    enabled: !!token
+  });
+
   const features = featuresData?.data ?? featuresData ?? {};
   const complianceEnforcement = features.complianceEnforcement === true;
   const user = me?.data ?? me;
   const isCompliant = user?.complianceStatus === 'compliant';
+  // Determine admin-like roles dynamically using role permissions from the server
+  const privilegedPermissions = new Set([
+    'manage_permissions',
+    'manage_user_roles',
+    'manage_org_members',
+    'manage_org_settings',
+    'manage_compliance_docs'
+  ]);
+
+  const privilegedRoleSlugs = new Set<string>();
+  try {
+    const rolesList = (rolesData && (rolesData.data ?? rolesData)) || [];
+    for (const r of rolesList) {
+      const perms = r.permissions || [];
+      for (const p of perms) {
+        const pn = (p.name || p.slug || p) as string;
+        if (privilegedPermissions.has(pn)) {
+          privilegedRoleSlugs.add(String(r.slug || r.name).toLowerCase());
+          break;
+        }
+      }
+    }
+  } catch (e) {}
+
   const isAdmin =
-    user?.roles?.some((r: any) => {
-      const roleName = String(r.name || r.slug || r)
-        .toLowerCase()
-        .replace(/-/g, '_');
-      return [
-        'admin',
-        'super_admin',
-        'owner',
-        'organization_admin',
-        'volunteer_manager',
-        'team_leader',
-        'coordinator',
-        'training_coordinator',
-        'resource_manager'
-      ].includes(roleName);
-    }) ||
     user?.isAdmin === true ||
-    user?.isAdmin === 1;
+    user?.isAdmin === 1 ||
+    Boolean(
+      user?.roles?.some((r: any) => {
+        const roleSlug = String(r.slug || r.name || r)
+          .toLowerCase()
+          .replace(/-/g, '_');
+        return privilegedRoleSlugs.has(roleSlug);
+      })
+    );
 
   // Paths that are NEVER locked (essential for fixing compliance or basic navigation)
   const lockExemptPaths = [
@@ -203,11 +234,20 @@ export default function AppProvider({ children }: AppProviderProps) {
     '/contact'
   ];
 
-  const isVolunteer = user?.roles?.some((r: any) =>
-    String(r.name || r)
-      .toLowerCase()
-      .includes('volunteer')
-  );
+  const { isPrivilegedUser, isOrganizationAdminUser } = useSystemRoles();
+
+  const isAdmin = isPrivilegedUser(user) || user?.isAdmin === true || user?.isAdmin === 1;
+
+  const isOrganization = isOrganizationAdminUser(user);
+
+  const isVolunteer =
+    user?.roles?.some((r: any) =>
+      String(r.name || r)
+        .toLowerCase()
+        .includes('volunteer')
+    ) &&
+    !isAdmin &&
+    !isOrganization;
 
   // Custom logic for /profile: only exempt if the compliance tab is active
   const isProfileLocked = location.pathname === '/profile' && currentTab !== 'compliance';
@@ -241,7 +281,7 @@ export default function AppProvider({ children }: AppProviderProps) {
   };
 
   // expose selected org name and a method to open selector
-  value.selectedOrganizationName = selectedOrganizationName;
+  value.selectedOrganizationName = selectedOrganization?.name ?? null;
   value.openOrganizationSelector = () => setShowOrgSelector(true);
 
   useEffect(() => {
@@ -313,15 +353,15 @@ export default function AppProvider({ children }: AppProviderProps) {
         open={showOrgSelector}
         organizations={user?.organizations ?? []}
         onClose={() => setShowOrgSelector(false)}
-        onSelect={(name) => {
+        onSelect={(org) => {
           try {
-            localStorage.setItem('selectedOrganizationName', name);
+            localStorage.setItem('selectedOrganization', JSON.stringify(org));
           } catch (e) {}
-          setSelectedOrganizationName(name);
+          setSelectedOrganization(org);
           setShowOrgSelector(false);
           // Show a small confirmation toast
           try {
-            toast({ title: 'Organization selected', description: `Using ${name} for organization panel` });
+            toast({ title: 'Organization selected', description: `Using ${org.name} for organization panel` });
           } catch (e) {}
           // Refresh queries so organization panel picks up selected org
           try {
