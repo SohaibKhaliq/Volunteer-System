@@ -57,9 +57,12 @@ export function useRouteProtection(allowedRoles: UserRole[], redirectTo: string 
  */
 export function getUserRole(user: any): UserRole {
   if (!user) return 'volunteer';
-  // Prefer DB-driven checks via useSystemRoles
-  // Fallback to simple checks if hooks cannot be used here
-  if (user.isAdmin === true || user.is_admin === true || user.is_admin === 1 || user.isAdmin === 1) return 'admin';
+  // Prefer DB-driven role names and organization/team roles. Avoid direct isAdmin flag checks here.
+  if (user.roles && Array.isArray(user.roles)) {
+    const roleNames = user.roles.map((r: any) => String(r.name || r.slug || r).toLowerCase());
+    if (roleNames.some((n: string) => n.includes('admin') || n.includes('owner') || n.includes('super')))
+      return 'admin';
+  }
   if (user.organizations && Array.isArray(user.organizations)) {
     for (const org of user.organizations) {
       const orgRole = org.role || org.pivot?.role;
@@ -99,7 +102,6 @@ export function isAuthorized(user: any, allowedRoles: UserRole[]): boolean {
  */
 export function isGlobalAdmin(user: any): boolean {
   if (!user) return false;
-  if (user?.isAdmin === true || user?.is_admin === true || user?.is_admin === 1 || user?.isAdmin === 1) return true;
   if (user.roles && Array.isArray(user.roles)) {
     return user.roles.some((r: any) => {
       const name = String(r?.slug || r?.name || r).toLowerCase();
