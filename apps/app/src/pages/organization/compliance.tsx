@@ -16,6 +16,7 @@ import {
   DialogTrigger
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import {
   FileText,
@@ -111,9 +112,18 @@ export default function OrganizationCompliance() {
 
   const [docFormData, setDocFormData] = useState({
     name: '',
-    type: 'License',
+    type: '',
     expiry: ''
   });
+
+  // Fetch available compliance types (system + org requirements)
+  const { data: typesData } = useQuery({
+    queryKey: ['compliance-types'],
+    queryFn: () => api.getComplianceTypes()
+  });
+
+  const systemTypes = typesData?.system || [];
+  const orgTypes = typesData?.organization || [];
 
   const handleOpenUpload = () => {
     setEditingDoc(null);
@@ -140,6 +150,18 @@ export default function OrganizationCompliance() {
       form.append('status', 'Pending');
       form.append('uploadedAt', new Date().toISOString().split('T')[0]);
       if (selectedFile) form.append('file', selectedFile);
+      // append selected organization id if available
+      try {
+        const raw = localStorage.getItem('selectedOrganization') || localStorage.getItem('selectedOrganizationName');
+        if (raw) {
+          try {
+            const parsed = JSON.parse(raw);
+            if (parsed && parsed.id) form.append('organization_id', String(parsed.id));
+          } catch (e) {
+            // legacy string - no id available
+          }
+        }
+      } catch (e) {}
       saveDocMutation.mutate(form);
     } catch (e) {
       saveDocMutation.mutate({
@@ -230,12 +252,37 @@ export default function OrganizationCompliance() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="doc-type">Type</Label>
-                    <Input
-                      id="doc-type"
-                      placeholder="e.g. Insurance"
-                      value={docFormData.type}
-                      onChange={(e) => setDocFormData({ ...docFormData, type: e.target.value })}
-                    />
+                    <Select onValueChange={(v) => setDocFormData({ ...docFormData, type: v })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="" disabled>
+                          Select a Document Type
+                        </SelectItem>
+                        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+                          Standard Documents
+                        </div>
+                        {systemTypes.map((t: any) => (
+                          <SelectItem key={t.value} value={t.value}>
+                            {t.label}
+                          </SelectItem>
+                        ))}
+
+                        {orgTypes.length > 0 && (
+                          <>
+                            <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground mt-2 border-t pt-2">
+                              Organization Requirements
+                            </div>
+                            {orgTypes.map((t: any) => (
+                              <SelectItem key={t.value} value={t.value}>
+                                {t.label}
+                              </SelectItem>
+                            ))}
+                          </>
+                        )}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="doc-expiry">Expiry Date</Label>
