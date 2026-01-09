@@ -11,6 +11,7 @@ import { Loader2, Plus, Edit, Trash2, Clock } from 'lucide-react';
 import { toast } from '@/components/atoms/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useApp } from '@/providers/app-provider';
+import useSystemRoles from '@/hooks/useSystemRoles';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/atoms/popover';
 import { Command, CommandGroup, CommandInput, CommandItem } from '@/components/atoms/command';
 import SkeletonCard from '@/components/atoms/skeleton-card';
@@ -96,16 +97,8 @@ export default function AdminShifts() {
     { staleTime: 1000 * 60 * 5 }
   );
 
-  const isAdmin = !!(
-    user?.isAdmin ||
-    user?.is_admin ||
-    (user?.roles &&
-      Array.isArray(user.roles) &&
-      user.roles.some((r: { name?: string; role?: string }) => {
-        const n = (r?.name || r?.role || '').toLowerCase();
-        return n === 'admin' || n === 'organization_admin' || n === 'organization_manager';
-      }))
-  );
+  const { isPrivilegedUser } = useSystemRoles();
+  const isAdmin = isPrivilegedUser(user);
 
   const { data: possibleUsersRaw } = useQuery<UserSnippet[] | { data: UserSnippet[] }>(
     ['organization-volunteers', orgProfile?.data?.id ?? orgProfile?.id, debouncedUserQuery],
@@ -374,7 +367,7 @@ export default function AdminShifts() {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => setPage(p => Math.max(1, p - 1))}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={currentPage <= 1 || isLoading}
               >
                 Previous
@@ -382,7 +375,7 @@ export default function AdminShifts() {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => setPage(p => p + 1)}
+                onClick={() => setPage((p) => p + 1)}
                 disabled={isLoading || (totalPages > 1 && currentPage >= totalPages)}
               >
                 Next
@@ -697,14 +690,20 @@ export default function AdminShifts() {
           <div className="mb-4">
             <Button
               onClick={() => {
-                if (!jobName || !jobRunAt) return toast({ title: 'Name and runAt are required', variant: 'destructive' });
+                if (!jobName || !jobRunAt)
+                  return toast({ title: 'Name and runAt are required', variant: 'destructive' });
                 let parsedPayload = undefined;
                 try {
                   parsedPayload = jobPayload ? JSON.parse(jobPayload) : undefined;
                 } catch (e) {
                   return toast({ title: 'Payload must be valid JSON', variant: 'destructive' });
                 }
-                createJobMutation.mutate({ name: jobName, type: jobType, runAt: jobRunAt, payload: parsedPayload } as any);
+                createJobMutation.mutate({
+                  name: jobName,
+                  type: jobType,
+                  runAt: jobRunAt,
+                  payload: parsedPayload
+                } as any);
               }}
             >
               Create Scheduled Job
