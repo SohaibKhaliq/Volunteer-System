@@ -35,7 +35,7 @@ export default function Login() {
   }, [token, returnTo, navigate]);
 
   const mutation = useMutation((credentials: any) => api.login(credentials), {
-    onSuccess(data) {
+    async onSuccess(data) {
       const token = (data as any)?.token?.token;
       if (token) {
         setToken(token);
@@ -47,7 +47,6 @@ export default function Login() {
         }
 
         // Invalidate the 'me' query to force AppProvider to refetch user data
-        // This ensures we always have the latest user data with correct roles
         queryClient.invalidateQueries(['me']);
 
         try {
@@ -56,12 +55,42 @@ export default function Login() {
           console.warn('Unable to show toast', e);
         }
 
+        // Determine redirect target. Prefer explicit returnTo param when valid.
         let target = '/';
         try {
           const decoded = decodeURIComponent(returnTo);
           if (decoded.startsWith('/')) target = decoded;
         } catch (e) {
           // fallback to root
+        }
+
+        // If response didn't include user data, fetch current user to determine role
+        let currentUser = userData;
+        try {
+          if (!currentUser) {
+            const meRes = await api.getCurrentUser();
+            currentUser = (meRes as any)?.data ?? meRes;
+          }
+        } catch (e) {
+          // ignore - proceed with default target
+        }
+
+        // If user is organization admin and no explicit returnTo provided, send to /organization
+        try {
+          const isOrgAdmin = !!(
+            currentUser &&
+            Array.isArray(currentUser.organizations) &&
+            currentUser.organizations.some((org: any) => {
+              const role = org.role || org.pivot?.role;
+              return ['admin', 'Admin', 'owner', 'Owner', 'manager', 'Manager'].includes(role);
+            })
+          );
+
+          if (isOrgAdmin && (returnTo === '/' || !returnTo)) {
+            target = '/organization';
+          }
+        } catch (e) {
+          // ignore and fallback to previously determined target
         }
 
         navigate(target);
