@@ -355,6 +355,9 @@ const api = {
   // redirect based on the current route. Cast to any to allow our custom flag.
   getCurrentUser: async () => axios.get('/me', { _skipAuthRedirect: true } as any),
 
+  // Roles + Permissions
+  getRoles: async () => axios.get('/roles'),
+
   updateOrganizationProfile: async (data: any) => {
     // If FormData, let axios/browser set the Content-Type (with boundary) so server can parse multipart
     return axios.put('/organization/profile', data);
