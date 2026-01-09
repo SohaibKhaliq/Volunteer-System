@@ -121,6 +121,8 @@ const api = {
   getAdminAnalytics: adminApi.getAnalytics,
   getAdminSummary: adminApi.getSummary,
   getAdminFeatures: adminApi.getFeatures,
+  // Backwards-compatible alias used in some consumers
+  getFeatures: adminApi.getFeatures,
   getAdminActivity: adminApi.getActivity,
   getAdminPendingHoursByOrg: adminApi.getPendingHoursByOrg,
   exportAdminSummary: adminApi.exportSummary,
@@ -335,7 +337,7 @@ const api = {
   list: async (resource: string, params?: any) => axios.get(`/${resource}`, { params }),
   create: async (resource: string, data: any) => axios.post(`/${resource}`, data),
   update: async (resource: string, id: number, data: any) => axios.put(`/${resource}/${id}`, data),
-  delete: async (resource: string, id: number) => axios.delete(`/${resource}/${id}`),
+  delete: async (resource: string, id: number) => axios.delete(`/${resource}/${id}`)
 } as const;
 
 export default api as any;
