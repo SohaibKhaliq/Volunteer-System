@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/atoms/use-toast';
 import { useApp } from '@/providers/app-provider';
+import useSystemRoles from '@/hooks/useSystemRoles';
 
 export default function TakeSurvey() {
   const { id } = useParams();
@@ -14,18 +15,9 @@ export default function TakeSurvey() {
   const { data: survey }: any = useQuery(['survey', id], () => api.getSurvey(Number(id)), { enabled: !!id });
   const [answers, setAnswers] = useState<Record<number | string, any>>({});
   const { user } = useApp();
+  const { isPrivilegedUser, isOrganizationAdminUser } = useSystemRoles();
   const navigate = useNavigate();
-
-  const isAdmin = !!(
-    user?.isAdmin ||
-    user?.is_admin ||
-    (user?.roles &&
-      Array.isArray(user.roles) &&
-      user.roles.some((r: any) => {
-        const n = (r?.name || r?.role || '').toLowerCase();
-        return n === 'admin' || n === 'organization_admin' || n === 'organization_manager';
-      }))
-  );
+  const isAdmin = isPrivilegedUser(user);
 
   const isVolunteer = !!(
     (user?.role && String(user.role).toLowerCase() === 'volunteer') ||
