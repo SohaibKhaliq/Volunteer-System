@@ -23,13 +23,25 @@ export default class OpportunitiesController {
     membership: any | null
     multipleMemberships: boolean
     hasMembership: boolean
+    invalidOrganizationName?: boolean
   }> {
     const rawOrgId =
       request.input('organizationId') ||
       request.qs().organizationId ||
       request.params().organizationId
-    const parsedOrgId = rawOrgId ? Number(rawOrgId) : undefined
 
+    const rawOrgName =
+      request.input('organizationName') ||
+      request.qs().organizationName ||
+      request.input('organization') ||
+      request.qs().organization ||
+      request.input('org') ||
+      request.qs().org ||
+      request.params().organizationName ||
+      request.params().organization ||
+      request.params().org
+
+    const parsedOrgId = rawOrgId ? Number(rawOrgId) : undefined
     const memberships = await OrganizationTeamMember.query().where('user_id', user!.id)
 
     if (parsedOrgId && !Number.isNaN(parsedOrgId)) {
@@ -39,6 +51,32 @@ export default class OpportunitiesController {
         membership,
         multipleMemberships: memberships.length > 1,
         hasMembership: memberships.length > 0
+      }
+    }
+
+    // If caller provided an organization name, try to resolve it (case-insensitive)
+    if (rawOrgName && String(rawOrgName).trim() !== '') {
+      const name = String(rawOrgName).trim()
+      const org = await Organization.query()
+        .whereRaw('LOWER(name) = ?', [name.toLowerCase()])
+        .first()
+      if (org) {
+        const membership = memberships.find((m) => m.organizationId === org.id) || null
+        return {
+          organizationId: org.id,
+          membership,
+          multipleMemberships: memberships.length > 1,
+          hasMembership: memberships.length > 0
+        }
+      }
+
+      // Provided name didn't match any org — indicate invalid name so callers can return a clear error
+      return {
+        organizationId: null,
+        membership: null,
+        multipleMemberships: memberships.length > 1,
+        hasMembership: memberships.length > 0,
+        invalidOrganizationName: true
       }
     }
 
@@ -52,14 +90,11 @@ export default class OpportunitiesController {
     }
 
     if (memberships.length > 1) {
-      const preferred =
-        memberships.find((m) =>
-          ['admin', 'coordinator'].includes(this.normalizeTeamRole(m.role))
-        ) || memberships[0]
-
+      // Do NOT automatically pick an organization when multiple memberships exist.
+      // Require the caller to explicitly provide `organizationName` to disambiguate.
       return {
-        organizationId: preferred.organizationId,
-        membership: preferred,
+        organizationId: null,
+        membership: null,
         multipleMemberships: true,
         hasMembership: true
       }
@@ -154,19 +189,29 @@ export default class OpportunitiesController {
   public async myOrganizationOpportunities({ auth, request, response }: HttpContextContract) {
     const user = auth.user!
 
-    const { organizationId, membership, multipleMemberships, hasMembership } =
-      await this.resolveOrganizationForUser(user, request)
+    const {
+      organizationId,
+      membership,
+      multipleMemberships,
+      hasMembership,
+      invalidOrganizationName
+    } = await this.resolveOrganizationForUser(user, request)
 
     if (!organizationId) {
+      if (invalidOrganizationName) {
+        return response.badRequest({
+          message: 'Provided organizationName not found or not associated with your account.'
+        })
+      }
       if (multipleMemberships) {
         return response.badRequest({
-          message: 'Multiple organizations found. Provide organizationId.'
+          message: 'Multiple organizations found. Provide organizationName.'
         })
       }
       if (!hasMembership && !user.isAdmin) {
         return response.notFound({ message: 'User is not part of any organization' })
       }
-      return response.badRequest({ message: 'organizationId is required' })
+      return response.badRequest({ message: 'organizationName is required' })
     }
 
     if (!user.isAdmin && (!membership || membership.organizationId !== organizationId)) {
@@ -286,19 +331,29 @@ export default class OpportunitiesController {
   public async storeForMyOrganization({ auth, request, response }: HttpContextContract) {
     const user = auth.user!
 
-    const { organizationId, membership, multipleMemberships, hasMembership } =
-      await this.resolveOrganizationForUser(user, request)
+    const {
+      organizationId,
+      membership,
+      multipleMemberships,
+      hasMembership,
+      invalidOrganizationName
+    } = await this.resolveOrganizationForUser(user, request)
 
     if (!organizationId) {
+      if (invalidOrganizationName) {
+        return response.badRequest({
+          message: 'Provided organizationName not found or not associated with your account.'
+        })
+      }
       if (multipleMemberships) {
         return response.badRequest({
-          message: 'Multiple organizations found. Provide organizationId.'
+          message: 'Multiple organizations found. Provide organizationName.'
         })
       }
       if (!hasMembership && !user.isAdmin) {
         return response.notFound({ message: 'User is not part of any organization' })
       }
-      return response.badRequest({ message: 'organizationId is required' })
+      return response.badRequest({ message: 'organizationName is required' })
     }
 
     if (!user.isAdmin && (!membership || membership.organizationId !== organizationId)) {
