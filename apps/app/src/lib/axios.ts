@@ -13,6 +13,24 @@ const authRequestInterceptor = (config: AxiosRequestConfig) => {
     if (token) config.headers.Authorization = `Bearer ${token}`;
     config.headers.Accept = 'application/json';
   }
+
+  // Auto-inject selected organization into organization-scoped endpoints when available.
+  try {
+    const url = String(config.url || '');
+    if (url.startsWith('/organization') || url.includes('/organization/')) {
+      const raw = localStorage.getItem('selectedOrganization') || localStorage.getItem('selectedOrganizationName');
+      if (raw) {
+        try {
+          const parsed = JSON.parse(raw);
+          const orgName = parsed?.name || raw;
+          config.params = { ...(config.params || {}), organizationName: config.params?.organizationName || orgName };
+        } catch (e) {
+          // legacy string stored as name-only
+          config.params = { ...(config.params || {}), organizationName: config.params?.organizationName || raw };
+        }
+      }
+    }
+  } catch (e) {}
   return config;
 };
 
