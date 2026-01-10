@@ -20,6 +20,7 @@ import {
   List
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import ThemeToggle from '@/components/molecules/theme-toggle';
 
 export default function OrganizationLayout() {
   const { user, authenticated, selectedOrganizationName, openOrganizationSelector } = useApp();
@@ -133,6 +134,7 @@ export default function OrganizationLayout() {
                   <p className="text-sm text-gray-500 mt-1">Manage your organization&apos;s activities</p>
                 </div>
                 <div className="flex items-center gap-3">
+                  <ThemeToggle />
                   <Button variant="ghost" size="icon" className="relative">
                     <Bell className="h-5 w-5 text-gray-600" />
                     <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full"></span>
