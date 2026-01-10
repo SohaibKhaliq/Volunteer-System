@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
@@ -27,6 +27,22 @@ export default function RouteGuard({ children, allowedRoles, fallback, redirectT
     retry: false
   });
 
+  const userData = user?.data ?? user;
+  const userRole = userData ? getUserRole(userData) : null;
+
+  // Use effect to handle navigation - avoids state updates during render
+  useEffect(() => {
+    // No user data - redirect
+    if (!isLoading && !userData) {
+      navigate(redirectTo, { replace: true });
+    }
+
+    // Check role - redirect if not allowed
+    if (!isLoading && userData && userRole && !allowedRoles.includes(userRole)) {
+      navigate(redirectTo, { replace: true });
+    }
+  }, [userData, userRole, isLoading, allowedRoles, navigate, redirectTo]);
+
   // Loading state
   if (isLoading) {
     return (
@@ -38,18 +54,8 @@ export default function RouteGuard({ children, allowedRoles, fallback, redirectT
     );
   }
 
-  const userData = user?.data ?? user;
-
-  // No user data - redirect
-  if (!userData) {
-    navigate(redirectTo, { replace: true });
-    return null;
-  }
-
-  // Check role
-  const userRole = getUserRole(userData);
-  if (!allowedRoles.includes(userRole)) {
-    navigate(redirectTo, { replace: true });
+  // Don't render children if user is not authorized
+  if (!userData || !userRole || !allowedRoles.includes(userRole)) {
     return null;
   }
 
