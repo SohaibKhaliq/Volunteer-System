@@ -37,7 +37,7 @@ export default function OrganizationVolunteers() {
     queryKey: ['organizationProfile'],
     queryFn: () => api.getOrganizationProfile()
   });
-  
+
   const orgId = orgProfile?.id || (orgProfile as any)?.data?.id;
 
   // Fetch Members using new API
@@ -91,15 +91,15 @@ export default function OrganizationVolunteers() {
   const [rejectConfirmOpen, setRejectConfirmOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [rejectTarget, setRejectTarget] = useState<any>(null);
-  
+
   const [actionMember, setActionMember] = useState<any>(null);
   const [notesDialogOpen, setNotesDialogOpen] = useState(false);
   const [notes, setNotes] = useState('');
-  
+
   const handleApprove = (member: any) => {
     updateStatusMutation.mutate({ memberId: member.user_id, status: 'active' });
   };
-  
+
   const handleReject = () => {
     if (rejectTarget) {
       updateStatusMutation.mutate({ memberId: rejectTarget.user_id, status: 'rejected', notes: rejectReason });
@@ -107,20 +107,21 @@ export default function OrganizationVolunteers() {
   };
 
   const handleUpdateNotes = () => {
-     if (actionMember) {
-        updateStatusMutation.mutate({ memberId: actionMember.user_id, status: actionMember.status, notes });
-        setNotesDialogOpen(false);
-     }
+    if (actionMember) {
+      updateStatusMutation.mutate({ memberId: actionMember.user_id, status: actionMember.status, notes });
+      setNotesDialogOpen(false);
+    }
   };
 
   const getStatusBadge = (status: string) => {
-     switch(status) {
-        case 'active': return <Badge className="bg-green-100 text-green-800 hover:bg-green-200 border-none">Active</Badge>;
-        case 'pending': return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-none">Pending</Badge>;
-        case 'rejected': return <Badge className="bg-red-100 text-red-800 hover:bg-red-200 border-none">Rejected</Badge>;
-        case 'suspended': return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-200 border-none">Suspended</Badge>;
-        default: return <Badge variant="secondary">{status}</Badge>;
-     }
+    const s = status?.toLowerCase();
+    switch (s) {
+      case 'active': return <Badge className="bg-green-100 text-green-800 hover:bg-green-200 border-none">Active</Badge>;
+      case 'pending': return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-none">Pending</Badge>;
+      case 'rejected': return <Badge className="bg-red-100 text-red-800 hover:bg-red-200 border-none">Rejected</Badge>;
+      case 'suspended': return <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-200 border-none">Suspended</Badge>;
+      default: return <Badge variant="secondary">{status}</Badge>;
+    }
   }
 
   if (isLoading || !orgId) {
@@ -139,18 +140,18 @@ export default function OrganizationVolunteers() {
           <p className="text-muted-foreground">Manage your volunteer database and requests.</p>
         </div>
         <div className="flex gap-2">
-           {/* Add manually logic could go here if needed */}
+          {/* Add manually logic could go here if needed */}
         </div>
       </div>
 
       <div className="flex items-center gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input 
-             placeholder="Search volunteers..." 
-             className="pl-8" 
-             value={search}
-             onChange={(e) => setSearch(e.target.value)}
+          <Input
+            placeholder="Search volunteers..."
+            className="pl-8"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
           />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -208,61 +209,66 @@ export default function OrganizationVolunteers() {
                       {getStatusBadge(member.status)}
                     </TableCell>
                     <TableCell>
-                       {member.joined_at ? new Date(member.joined_at).toLocaleDateString() : '-'}
+                      {member.joined_at ? new Date(member.joined_at).toLocaleDateString() : '-'}
                     </TableCell>
                     <TableCell>{member.hours || 0} hrs</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        {member.status === 'pending' && (
-                           <>
-                             {member.notes && (
-                                <Button variant="ghost" size="icon" onClick={() => setViewingRequest(member)} title="View Request Note">
-                                   <FileText className="h-4 w-4 text-blue-500" />
-                                </Button>
-                             )}
-                             <Button variant="ghost" size="icon" onClick={() => handleApprove(member)} title="Approve">
-                                <Plus className="h-4 w-4 text-green-600" />
-                             </Button>
-                             <Button variant="ghost" size="icon" onClick={() => {
-                                setRejectTarget(member);
-                                setRejectReason('');
-                                setRejectConfirmOpen(true);
-                             }} title="Reject">
-                                <XCircle className="h-4 w-4 text-red-600" />
-                             </Button>
-                           </>
-                        )}
-                        
-                        <DropdownMenu>
-                           <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
-                                 <MoreHorizontal className="h-4 w-4" />
+                        {member.status?.toLowerCase() === 'pending' && (
+                          <>
+                            {member.notes && (
+                              <Button variant="ghost" size="icon" onClick={() => setViewingRequest(member)} title="View Request Note">
+                                <FileText className="h-4 w-4 text-blue-500" />
                               </Button>
-                           </DropdownMenuTrigger>
-                           <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => {
-                                 setActionMember(member);
-                                 setNotes(member.notes || '');
-                                 setNotesDialogOpen(true);
-                              }}>
-                                 Edit Notes
+                            )}
+                            <Button variant="ghost" size="icon" onClick={() => handleApprove(member)} title="Approve">
+                              <Plus className="h-4 w-4 text-green-600" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => {
+                              setRejectTarget(member);
+                              setRejectReason('');
+                              setRejectConfirmOpen(true);
+                            }} title="Reject">
+                              <XCircle className="h-4 w-4 text-red-600" />
+                            </Button>
+                          </>
+                        )}
+
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {member.status?.toLowerCase() === 'pending' && (
+                              <DropdownMenuItem className="text-green-600" onClick={() => handleApprove(member)}>
+                                Approve / Verify
                               </DropdownMenuItem>
-                              
-                              {member.status === 'active' && (
-                                 <DropdownMenuItem onClick={() => updateStatusMutation.mutate({ memberId: member.user_id, status: 'suspended'})}>
-                                    Suspend
-                                 </DropdownMenuItem>
-                              )}
-                              {member.status === 'suspended' && (
-                                 <DropdownMenuItem onClick={() => updateStatusMutation.mutate({ memberId: member.user_id, status: 'active'})}>
-                                    Reactivate
-                                 </DropdownMenuItem>
-                              )}
-                              
-                              <DropdownMenuItem className="text-red-600" onClick={() => removeMutation.mutate(member.user_id)}>
-                                 Remove
+                            )}
+                            <DropdownMenuItem onClick={() => {
+                              setActionMember(member);
+                              setNotes(member.notes || '');
+                              setNotesDialogOpen(true);
+                            }}>
+                              Edit Notes
+                            </DropdownMenuItem>
+
+                            {member.status?.toLowerCase() === 'active' && (
+                              <DropdownMenuItem onClick={() => updateStatusMutation.mutate({ memberId: member.user_id, status: 'suspended' })}>
+                                Suspend
                               </DropdownMenuItem>
-                           </DropdownMenuContent>
+                            )}
+                            {member.status?.toLowerCase() === 'suspended' && (
+                              <DropdownMenuItem onClick={() => updateStatusMutation.mutate({ memberId: member.user_id, status: 'active' })}>
+                                Reactivate
+                              </DropdownMenuItem>
+                            )}
+
+                            <DropdownMenuItem className="text-red-600" onClick={() => removeMutation.mutate(member.user_id)}>
+                              Remove
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
                     </TableCell>
@@ -284,28 +290,28 @@ export default function OrganizationVolunteers() {
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-             <div className="bg-slate-50 p-4 rounded-md border text-sm italic">
-                "{viewingRequest?.notes || 'No message provided.'}"
-             </div>
+            <div className="bg-slate-50 p-4 rounded-md border text-sm italic">
+              "{viewingRequest?.notes || 'No message provided.'}"
+            </div>
           </div>
           <DialogFooter className="gap-2">
-             <Button 
-                variant="destructive" 
-                onClick={() => {
-                   setRejectTarget(viewingRequest);
-                   setRejectReason('');
-                   setRejectConfirmOpen(true);
-                   setViewingRequest(null);
-                }}
-             >
-               Reject
-             </Button>
-             <Button 
-                className="bg-green-600 hover:bg-green-700" 
-                onClick={() => handleApprove(viewingRequest)}
-             >
-               Approve
-             </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                setRejectTarget(viewingRequest);
+                setRejectReason('');
+                setRejectConfirmOpen(true);
+                setViewingRequest(null);
+              }}
+            >
+              Reject
+            </Button>
+            <Button
+              className="bg-green-600 hover:bg-green-700"
+              onClick={() => handleApprove(viewingRequest)}
+            >
+              Approve
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -316,13 +322,13 @@ export default function OrganizationVolunteers() {
           <DialogHeader>
             <DialogTitle>Reject Request</DialogTitle>
             <DialogDescription>
-               Reason for rejection (optional)
+              Reason for rejection (optional)
             </DialogDescription>
           </DialogHeader>
-          <Textarea 
-             value={rejectReason}
-             onChange={(e) => setRejectReason(e.target.value)}
-             placeholder="Reason..."
+          <Textarea
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            placeholder="Reason..."
           />
           <DialogFooter>
             <Button variant="outline" onClick={() => setRejectConfirmOpen(false)}>Cancel</Button>
@@ -330,18 +336,18 @@ export default function OrganizationVolunteers() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
+
       {/* Edit Notes Dialog */}
       <Dialog open={notesDialogOpen} onOpenChange={setNotesDialogOpen}>
-         <DialogContent>
-            <DialogHeader>
-               <DialogTitle>Edit Internal Notes</DialogTitle>
-            </DialogHeader>
-            <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Internal notes..." />
-            <DialogFooter>
-               <Button onClick={handleUpdateNotes}>Save</Button>
-            </DialogFooter>
-         </DialogContent>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Internal Notes</DialogTitle>
+          </DialogHeader>
+          <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Internal notes..." />
+          <DialogFooter>
+            <Button onClick={handleUpdateNotes}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
       </Dialog>
     </div>
   );
