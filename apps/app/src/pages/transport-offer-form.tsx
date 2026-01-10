@@ -1,5 +1,9 @@
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/atoms/form';
 import { toast } from '@/components/atoms/use-toast';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Map, FileText, User } from 'lucide-react';
 import FileInput from '@/components/molecules/file-input';
 import Navbar from '@/components/molecules/navbar';
 import NumberInput from '@/components/molecules/numper-input';
@@ -77,9 +81,9 @@ const TransportOfferForm = () => {
     mutationFn: (formData: FormData) => api.createCarpooling(formData),
     onSuccess: (data: FixType) => {
       toast({
-        title: 'Transport Offer Created',
-        description: 'Your offer has been successfully created.',
-        variant: 'success'
+        title: t('Transport Offer Created'),
+        description: t('Your offer has been successfully created.'),
+        className: 'rounded-2xl border-primary/20 shadow-2xl'
       });
       timeout.current = setTimeout(() => {
         return navigate('/detail/' + DetailTypes.RideRequest + '/' + data.id);
@@ -87,9 +91,10 @@ const TransportOfferForm = () => {
     },
     onError: () => {
       toast({
-        title: 'Error',
-        description: 'Something went wrong',
-        variant: 'destructive'
+        title: t('Error'),
+        description: t('Something went wrong'),
+        variant: 'destructive',
+        className: 'rounded-2xl shadow-2xl'
       });
     }
   });
@@ -127,148 +132,236 @@ const TransportOfferForm = () => {
   }, []);
 
   return (
-    <div className="container mx-auto max-w-2xl py-12 px-4">
-      <div className="mb-8 text-center space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">{t('Offer Transport')}</h1>
-        <p className="text-muted-foreground">
-          {t('Fill in the details below to offer a ride.')}
-        </p>
+    <div className="min-h-screen bg-background pb-20">
+      {/* Hero Header */}
+      <div className="relative overflow-hidden bg-primary pt-24 pb-48">
+        <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:30px_30px]" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/95 to-primary/90" />
+        <div className="container relative px-4 mx-auto text-center">
+          <Badge className="bg-white/10 text-white border-white/20 hover:bg-white/20 mb-6 backdrop-blur-sm px-4 py-1.5 rounded-full">
+            {t('Help the Community')}
+          </Badge>
+          <h1 className="text-4xl md:text-6xl font-black tracking-tight text-white mb-6">
+            {t('Offer Transport')}
+          </h1>
+          <p className="text-primary-foreground/80 text-lg md:text-xl max-w-2xl mx-auto font-medium">
+            {t('Have extra space in your vehicle? Offer a ride and help someone in your community.')}
+          </p>
+        </div>
       </div>
 
-      <div className="bg-card p-6 rounded-lg border shadow-sm">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" encType="multipart/form-data">
-            <FormField
-              control={form.control}
-              name="transport"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <TransportInput {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+      <div className="container px-4 mx-auto -mt-32 relative z-10">
+        <div className="max-w-3xl mx-auto">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8" encType="multipart/form-data">
+              {/* Route & Journey */}
+              <Card className="border-border/50 shadow-2xl shadow-primary/5 rounded-[2.5rem] bg-card overflow-hidden">
+                <CardHeader className="p-8 md:p-12 pb-0">
+                  <div className="flex items-center gap-4 mb-2">
+                    <div className="p-3 rounded-2xl bg-primary/10 text-primary">
+                      <Map className="h-6 w-6" />
+                    </div>
+                    <CardTitle className="text-2xl font-black">{t('Route & Journey')}</CardTitle>
+                  </div>
+                  <CardDescription className="text-lg font-medium pl-14">
+                    {t('Specify your starting point and destination.')}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-8 md:p-12 space-y-10">
+                  <FormField
+                    control={form.control}
+                    name="transport"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <TransportInput {...field} />
+                        </FormControl>
+                        <FormMessage className="font-bold" />
+                      </FormItem>
+                    )}
+                  />
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                control={form.control}
-                name="date"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <TextInput label={t('Travel Date')} placeholder={t('Travel Date')} type="datetime-local" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="capacity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <NumberInput label={t('How many seats?')} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <FormField
-              control={form.control}
-              name="storage"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <TextInput
-                      label={t('How much storage space do you have?')}
-                      placeholder={t('A 300L trunk for example')}
-                      optional
-                      {...field}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <FormField
+                      control={form.control}
+                      name="date"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <TextInput
+                              label={t('Departure Date & Time')}
+                              placeholder={t('Select Date & Time')}
+                              type="datetime-local"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage className="font-bold" />
+                        </FormItem>
+                      )}
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <TextAreaInput label={t('Description')} placeholder={t('Type your message here')} {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                    <FormField
+                      control={form.control}
+                      name="capacity"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <NumberInput label={t('Available Seats')} {...field} />
+                          </FormControl>
+                          <FormMessage className="font-bold" />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <TextInput label={t('Name')} placeholder={t('Full Name')} {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  <FormField
+                    control={form.control}
+                    name="storage"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <TextInput
+                            label={t('Available Storage Space')}
+                            placeholder={t('e.g. A 300L trunk available')}
+                            optional
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage className="font-bold" />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
 
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <TextInput label={t('Phone Number')} placeholder={t('Phone Number')} type="tel" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+              {/* Description & Media */}
+              <Card className="border-border/50 shadow-2xl shadow-primary/5 rounded-[2.5rem] bg-card overflow-hidden">
+                <CardHeader className="p-8 md:p-12 pb-0">
+                  <div className="flex items-center gap-4 mb-2">
+                    <div className="p-3 rounded-2xl bg-primary/10 text-primary">
+                      <FileText className="h-6 w-6" />
+                    </div>
+                    <CardTitle className="text-2xl font-black">{t('Offer Details')}</CardTitle>
+                  </div>
+                  <CardDescription className="text-lg font-medium pl-14">
+                    {t('Provide more information about your trip or how you can help.')}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-8 md:p-12 space-y-10">
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <TextAreaInput
+                            label={t('Trip Description')}
+                            placeholder={t('Describe your journey and any other relevant details...')}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage className="font-bold" />
+                      </FormItem>
+                    )}
+                  />
 
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <TextInput label={t('Email')} type="email" placeholder={t('Email')} optional {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  <FormField
+                    control={form.control}
+                    name="files"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <FileInput label={t('Upload Photos (Optional)')} {...field} optional />
+                        </FormControl>
+                        <FormMessage className="font-bold" />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
 
-            <FormField
-              control={form.control}
-              name="files"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <FileInput label={t('Upload pictures')} {...field} optional />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              {/* Contact Information */}
+              <Card className="border-border/50 shadow-2xl shadow-primary/5 rounded-[2.5rem] bg-card overflow-hidden">
+                <CardHeader className="p-8 md:p-12 pb-0">
+                  <div className="flex items-center gap-4 mb-2">
+                    <div className="p-3 rounded-2xl bg-primary/10 text-primary">
+                      <User className="h-6 w-6" />
+                    </div>
+                    <CardTitle className="text-2xl font-black">{t('Contact Information')}</CardTitle>
+                  </div>
+                  <CardDescription className="text-lg font-medium pl-14">
+                    {t('How can passengers reach you to coordinate?')}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-8 md:p-12 space-y-10">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <TextInput label={t('Full Name')} placeholder={t('Enter your full name')} {...field} />
+                        </FormControl>
+                        <FormMessage className="font-bold" />
+                      </FormItem>
+                    )}
+                  />
 
-            <div className="pt-4">
-              <Navbar asSubmit disabled={!isDirty || !isValid} loading={isSubmitting || isLoading} />
-            </div>
-          </form>
-        </Form>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <FormField
+                      control={form.control}
+                      name="phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <TextInput label={t('Phone Number')} placeholder={t('e.g. +123...')} type="tel" {...field} />
+                          </FormControl>
+                          <FormMessage className="font-bold" />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <TextInput label={t('Email Address')} type="email" placeholder={t('example@email.com')} optional {...field} />
+                          </FormControl>
+                          <FormMessage className="font-bold" />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="flex flex-col gap-4 pt-4">
+                <Button
+                  type="submit"
+                  disabled={!isDirty || !isValid || isSubmitting || isLoading}
+                  className="w-full h-16 rounded-2xl text-xl font-black shadow-2xl shadow-primary/20 hover:shadow-primary/30 hover:translate-y-[-2px] transition-all disabled:opacity-50 disabled:translate-y-0"
+                >
+                  {(isSubmitting || isLoading) ? (
+                    <div className="flex items-center gap-3">
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      {t('Creating Offer...')}
+                    </div>
+                  ) : t('Create Transport Offer')}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => navigate(-1)}
+                  className="w-full h-12 rounded-xl font-bold text-muted-foreground hover:text-foreground"
+                >
+                  {t('Cancel and Go Back')}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </div>
       </div>
     </div>
   );
