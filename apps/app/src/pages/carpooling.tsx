@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Calendar as CalendarIcon, MapPin, Car, Search, Filter, ArrowRight } from 'lucide-react';
+import { Calendar as CalendarIcon, MapPin, Car, Search, Filter } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
@@ -199,15 +199,17 @@ const Carpooling = () => {
                         <div className="space-y-4">
                           <div className="relative inline-block">
                             <Avatar className="h-16 w-16 ring-4 ring-background shadow-lg">
-                              <AvatarImage src={ride.driver.image} />
-                              <AvatarFallback className="bg-primary text-white text-xl font-bold">{ride.driver.name[0]}</AvatarFallback>
+                              <AvatarImage src={ride.driver?.image} />
+                              <AvatarFallback className="bg-primary text-white text-xl font-bold">
+                                {ride.driver?.name?.[0] || '?'}
+                              </AvatarFallback>
                             </Avatar>
                             <div className="absolute -bottom-1 -right-1 bg-white dark:bg-slate-900 rounded-full px-2 py-0.5 text-[10px] font-black shadow-sm border border-border/50">
-                              ★ {ride.driver.rating}
+                              ★ {ride.driver?.rating || 'N/A'}
                             </div>
                           </div>
                           <div>
-                            <p className="font-black text-lg text-foreground">{ride.driver.name}</p>
+                            <p className="font-black text-lg text-foreground">{ride.driver?.name || t('Unknown Driver')}</p>
                             <div className="flex items-center justify-center gap-1.5 text-muted-foreground mt-1">
                               <Car className="h-3.5 w-3.5" />
                               <span className="text-sm font-bold uppercase tracking-wider">{ride.seats} {t('seats left')}</span>
