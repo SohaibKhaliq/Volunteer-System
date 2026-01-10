@@ -7,6 +7,7 @@ import { useLocation, useNavigate, Link, useSearchParams } from 'react-router-do
 import { Shield, AlertTriangle, ArrowRight, FileCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTheme } from './theme-provider';
 import MaintenanceLock from '@/components/organisms/MaintenanceLock';
 import OrganizationSelectorModal from '@/components/organisms/OrganizationSelectorModal';
 import useSystemRoles from '@/hooks/useSystemRoles';
@@ -75,6 +76,7 @@ export default function AppProvider({ children }: AppProviderProps) {
   const [showBackButton, setShowBackButton] = useState(location.pathname !== '/');
 
   const { token, setToken, setUser } = useStore();
+  const { theme, setTheme } = useTheme();
 
   const queryClient = useQueryClient();
 
@@ -283,6 +285,15 @@ export default function AppProvider({ children }: AppProviderProps) {
       document.title = `${platformName} - Let's help each other`;
     }
   }, [settings]);
+
+  // 4. Sync User Theme Preference
+  useEffect(() => {
+    // me contains user preferences in me.preferences
+    const userTheme = me?.preferences?.theme;
+    if (userTheme && userTheme !== theme) {
+      setTheme(userTheme);
+    }
+  }, [me, theme, setTheme]);
 
   // Show organization selector when user belongs to multiple orgs and is in org panel route
   useEffect(() => {
