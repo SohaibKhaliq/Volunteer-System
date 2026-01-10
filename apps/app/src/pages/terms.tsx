@@ -13,7 +13,7 @@ const Terms = () => {
           <p className="text-muted-foreground font-medium">{t('Effective date')} — November 2025</p>
         </div>
 
-        <div className="bg-card border border-border/50 rounded-3xl p-8 md:p-12 shadow-2xl shadow-primary/5 space-y-10">
+        <div className="bg-card border border-border/50 rounded-[2.5rem] p-8 md:p-12 shadow-2xl shadow-primary/5 space-y-10">
 
           <section>
             <h2 className="text-2xl font-bold mb-4 text-foreground flex items-center gap-2">
