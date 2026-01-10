@@ -282,10 +282,12 @@ const routes: RouteObject[] = [
       </ScrollWrapper>
     ),
     errorElement: <ErrorBoundary />,
-    children: Object.values(DetailTypes).map((type) => ({
-      path: `${type}/:id`,
-      element: <Detail />
-    }))
+    children: [
+      {
+        path: ':type/:id',
+        element: <Detail />
+      }
+    ]
   },
   {
     path: '*',
