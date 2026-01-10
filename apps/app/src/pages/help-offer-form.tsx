@@ -1,5 +1,9 @@
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/atoms/form';
 import { useToast } from '@/components/atoms/use-toast';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { MapPin, FileText, User } from 'lucide-react';
 import AddressInput from '@/components/molecules/address-input';
 import AssistanceTypeInput from '@/components/molecules/assistance-type-input';
 import FileInput from '@/components/molecules/file-input';
@@ -140,7 +144,7 @@ const OfferHelpForm = () => {
                 <CardHeader className="p-8 md:p-12 pb-0">
                   <div className="flex items-center gap-4 mb-2">
                     <div className="p-3 rounded-2xl bg-primary/10 text-primary">
-                      <AssistanceTypeInput.Icon className="h-6 w-6" />
+                      <MapPin className="h-6 w-6" />
                     </div>
                     <CardTitle className="text-2xl font-black">{t('Assistance & Reach')}</CardTitle>
                   </div>
@@ -224,7 +228,7 @@ const OfferHelpForm = () => {
                 <CardHeader className="p-8 md:p-12 pb-0">
                   <div className="flex items-center gap-4 mb-2">
                     <div className="p-3 rounded-2xl bg-primary/10 text-primary">
-                      <TextAreaInput.Icon className="h-6 w-6" />
+                      <FileText className="h-6 w-6" />
                     </div>
                     <CardTitle className="text-2xl font-black">{t('Resources & Details')}</CardTitle>
                   </div>
@@ -271,7 +275,7 @@ const OfferHelpForm = () => {
                 <CardHeader className="p-8 md:p-12 pb-0">
                   <div className="flex items-center gap-4 mb-2">
                     <div className="p-3 rounded-2xl bg-primary/10 text-primary">
-                      <TextInput.Icon className="h-6 w-6" />
+                      <User className="h-6 w-6" />
                     </div>
                     <CardTitle className="text-2xl font-black">{t('Personal Information')}</CardTitle>
                   </div>
