@@ -11,6 +11,7 @@ import Home from '@/pages/home';
 import Login from '@/pages/login';
 import Register from '@/pages/register';
 import Map from '@/pages/map';
+import Logout from '@/pages/logout';
 import Organizations from '@/pages/organizations';
 import OrganizationRegister from '@/pages/organization-register';
 import TransportOfferForm from '@/pages/transport-offer-form';
@@ -229,6 +230,7 @@ const routes: RouteObject[] = [
     children: [
       { index: true, element: <Home /> },
       { path: 'login', element: <Login /> },
+      { path: 'logout', element: <Logout /> },
       { path: 'register', element: <Register /> },
       { path: 'map', element: <Map /> },
       { path: 'organizations', element: <Organizations /> },
