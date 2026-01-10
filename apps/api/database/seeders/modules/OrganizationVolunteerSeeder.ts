@@ -3,16 +3,29 @@ import Database from '@ioc:Adonis/Lucid/Database'
 
 export default class OrganizationVolunteerSeeder extends BaseSeeder {
   public async run() {
-    const RECORD_COUNT = 150
+    const RECORD_COUNT = 500 // Increased from 150
 
     const now = new Date()
     const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
 
-    const usersResult = await Database.rawQuery('SELECT id FROM users ORDER BY id ASC LIMIT 50')
-    const userIds = usersResult[0].map((row: any) => row.id)
+    // Get all users and organizations (not just 50)
+    const usersResult = await Database.rawQuery(
+      'SELECT id, email FROM users ORDER BY id ASC LIMIT 300'
+    )
+    const users = usersResult[0] as Array<{ id: number; email: string }>
+    const userIds = users.map((u) => u.id)
 
-    const orgsResult = await Database.rawQuery('SELECT id FROM organizations ORDER BY id ASC LIMIT 50')
+    const orgsResult = await Database.rawQuery(
+      'SELECT id FROM organizations ORDER BY id ASC LIMIT 150'
+    )
     const orgIds = orgsResult[0].map((row: any) => row.id)
+
+    // Find key test organization
+    const testOrgResult = await Database.rawQuery(
+      'SELECT id FROM organizations WHERE slug = ? LIMIT 1',
+      ['test-organization']
+    )
+    const testOrgId = testOrgResult[0]?.[0]?.id
 
     if (userIds.length === 0 || orgIds.length === 0) {
       console.log('OrganizationVolunteerSeeder: missing users or organizations, skipping')
@@ -39,13 +52,52 @@ export default class OrganizationVolunteerSeeder extends BaseSeeder {
       'Manual Labor,Carpentry,Gardening',
       'Animal Care,Wildlife Handling',
       'Data Entry,Administration,Research',
-      'Translation,Multicultural Communication'
+      'Translation,Multicultural Communication',
+      'Accounting,Finance,Budgeting',
+      'Legal Services,Compliance,Auditing',
+      'Healthcare,Counseling,Mental Health Support',
+      'Childcare,Education,Tutoring',
+      'Environmental Conservation,Sustainability'
     ]
 
     const rows: any[] = []
     const createdPairs = new Set<string>()
 
-    let count = 0
+    // Assign key users to test organization first
+    const keyUserEmails = ['admin@gmail.com', 'organization@gmail.com', 'volunteer@gmail.com']
+    for (const email of keyUserEmails) {
+      const user = users.find((u) => u.email === email)
+      if (user && testOrgId) {
+        const pairKey = `${testOrgId}-${user.id}`
+        if (!createdPairs.has(pairKey)) {
+          createdPairs.add(pairKey)
+          const joinedDate = new Date()
+          joinedDate.setDate(joinedDate.getDate() - 30)
+
+          rows.push({
+            organization_id: testOrgId,
+            user_id: user.id,
+            status: 'Active',
+            role:
+              email === 'admin@gmail.com'
+                ? 'volunteer-manager'
+                : email === 'organization@gmail.com'
+                  ? 'coordinator'
+                  : 'volunteer',
+            hours: Math.floor(Math.random() * 200) + 50,
+            rating: 5,
+            skills: skillSets[0],
+            notes: 'Core test user with full participation',
+            joined_at: joinedDate.toISOString().slice(0, 19).replace('T', ' '),
+            created_at: timestamp,
+            updated_at: timestamp
+          })
+        }
+      }
+    }
+
+    // Create random organization-volunteer assignments
+    let count = 3
     while (count < RECORD_COUNT) {
       const userId = userIds[Math.floor(Math.random() * userIds.length)]
       const orgId = orgIds[Math.floor(Math.random() * orgIds.length)]
@@ -69,7 +121,7 @@ export default class OrganizationVolunteerSeeder extends BaseSeeder {
         hours: totalHours,
         rating: parseFloat(rating),
         skills: skillSets[Math.floor(Math.random() * skillSets.length)],
-        notes: 'Dedicated volunteer with consistent attendance',
+        notes: 'Dedicated volunteer with consistent attendance and strong commitment',
         joined_at: joinedDate.toISOString().slice(0, 19).replace('T', ' '),
         created_at: timestamp,
         updated_at: timestamp
@@ -107,7 +159,9 @@ export default class OrganizationVolunteerSeeder extends BaseSeeder {
     try {
       await trx.rawQuery(sql, bindings)
       await trx.commit()
-      console.log(`OrganizationVolunteerSeeder: upserted ${rows.length} organization-volunteer relationships`)
+      console.log(
+        `OrganizationVolunteerSeeder: upserted ${rows.length} organization-volunteer relationships`
+      )
     } catch (error) {
       await trx.rollback()
       console.error('OrganizationVolunteerSeeder failed', error)
