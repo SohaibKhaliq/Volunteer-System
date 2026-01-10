@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Search, Filter, HeartHandshake, MapPin, Clock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { DetailTypes } from '@/lib/types';
 
 // Fetch help requests from API
 const useHelpRequests = () =>
@@ -72,7 +73,10 @@ const Help = () => {
                     {(req.severity || 'Normal').charAt(0).toUpperCase() + (req.severity || 'normal').slice(1)} Priority
                   </Badge>
                   <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center bg-muted/50 px-2 py-1 rounded-md">
-                    <Clock className="h-3 w-3 mr-1 text-primary/70" /> {new Date(req.createdAt).toLocaleDateString()}
+                    <Clock className="h-3 w-3 mr-1 text-primary/70" />
+                    {req.createdAt && !isNaN(new Date(req.createdAt).getTime())
+                      ? new Date(req.createdAt).toLocaleDateString()
+                      : t('Recent')}
                   </span>
                 </div>
                 <CardTitle className="text-xl font-bold tracking-tight text-foreground group-hover:text-primary transition-colors">
@@ -93,9 +97,11 @@ const Help = () => {
                     <span className="truncate">{req.address || t('No location provided')}</span>
                   </div>
                 </div>
-                <Button className="w-full h-11 rounded-xl shadow-lg shadow-primary/5 group-hover:shadow-primary/20 transition-all font-bold" variant="outline">
-                  {t('View Details')}
-                </Button>
+                <Link to={`/detail/${DetailTypes.Request}/${req.id}`} className="w-full">
+                  <Button className="w-full h-11 rounded-xl shadow-lg shadow-primary/5 group-hover:shadow-primary/20 transition-all font-bold" variant="outline">
+                    {t('View Details')}
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
           ))}
