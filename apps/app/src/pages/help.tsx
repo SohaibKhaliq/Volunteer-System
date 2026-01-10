@@ -44,7 +44,7 @@ const Help = () => {
         </div>
 
         {/* Search & Filter */}
-        <div className="bg-card/50 backdrop-blur-sm p-3 rounded-2xl shadow-sm border border-border/50 mb-12 flex flex-col md:flex-row gap-3">
+        <div className="bg-card/50 backdrop-blur-sm p-3 rounded-[2rem] shadow-sm border border-border/50 mb-12 flex flex-col md:flex-row gap-3">
           <div className="relative flex-1 group">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
             <Input
@@ -62,7 +62,7 @@ const Help = () => {
         {/* Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {(requests || []).map((req: any) => (
-            <Card key={req.id} className="group hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 overflow-hidden border-border/50 border-l-4 border-l-primary rounded-2xl bg-card">
+            <Card key={req.id} className="group hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 overflow-hidden border-border/50 border-l-4 border-l-primary rounded-[2.5rem] bg-card">
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start mb-2">
                   <Badge
