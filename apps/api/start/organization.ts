@@ -244,7 +244,9 @@ Route.group(() => {
   Route.get('/:slug', 'PublicOrganizationController.show')
   Route.get('/:slug/opportunities', 'PublicOrganizationController.opportunities')
   Route.get('/:slug/opportunities/:opportunityId', 'PublicOrganizationController.opportunity')
-}).prefix('/public/organizations')
+})
+  .prefix('/public/organizations')
+  .middleware('throttle:60,15m')
 
 // Public opportunity endpoints (for volunteers to apply)
 Route.get('/opportunities/:id', 'OpportunitiesController.show')
