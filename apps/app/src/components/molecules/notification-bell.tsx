@@ -13,6 +13,7 @@ import { useStore } from '@/lib/store';
 import api from '@/lib/api';
 import { toast } from '@/components/atoms/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { NotificationFormatter } from '@/lib/notification-formatter';
 
 export default function NotificationBell() {
   const queryClient = useQueryClient();
@@ -54,22 +55,22 @@ export default function NotificationBell() {
       if (newIds.length > 0) {
         // show a summarized toast for new notifications
         const newNotes = itemsArr.filter((n: any) => newIds.includes(n.id));
-        newNotes.slice(0, 3).forEach((n: any) => {
-          let message = '';
-          try {
-            const p = n.payload ? (typeof n.payload === 'string' ? JSON.parse(n.payload) : n.payload) : {};
-            if (n.type === 'achievement_awarded') {
-              message = `You earned ${p.title || p.key || 'an achievement'}`;
-            } else if (n.type === 'assignment_cancelled') {
-              message = `A signup was cancelled` + (p.assignmentId ? ` (#${p.assignmentId})` : '');
-            } else {
-              message = n.type;
-            }
-          } catch (e) {
-            message = String(n.payload || n.type);
-          }
-          toast({ title: 'Notification', description: message });
-        });
+        // ONLY show 1 toast for the latest notification to prevent stacking
+        const latestInfo = newNotes[0];
+        if (latestInfo) {
+          const type = latestInfo.type || 'Notification';
+          const p = latestInfo.payload ? (typeof latestInfo.payload === 'string' ? JSON.parse(latestInfo.payload) : latestInfo.payload) : {};
+
+          const title = NotificationFormatter.formatType(type);
+          const description = NotificationFormatter.getSummary(type, p) || 'You have a new notification';
+
+          toast({
+            title: title,
+            description: description,
+          }, {
+            id: 'latest-notification' // Enforce singleton
+          });
+        }
       }
     }
 
@@ -89,27 +90,28 @@ export default function NotificationBell() {
         `${window.location.protocol}//${window.location.hostname}:${(import.meta.env.VITE_SOCKET_PORT as string) || '4001'}`;
       // Dynamically import socket.io-client so tests can mock it
       // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { io } = require('socket.io-client');
-      socket = io(SOCKET_URL, { auth: { token }, transports: ['websocket'], reconnection: true });
+      import('socket.io-client').then(({ io }) => {
+        socket = io(SOCKET_URL, { auth: { token }, transports: ['websocket'], reconnection: true });
 
-      socket.on('connect', () => {
-        // console.debug('Socket connected');
-      });
+        socket.on('connect', () => {
+          // console.debug('Socket connected');
+        });
 
-      socket.on('notification', (data: any) => {
-        try {
-          queryClient.setQueryData(['notifications'], (old: any) => {
-            const arr = Array.isArray(old) ? old : (old?.data ?? []);
-            const updated = [data].concat(arr || []);
-            return updated.slice(0, 100);
-          });
-        } catch (e) {
-          // ignore
-        }
-      });
+        socket.on('notification', (data: any) => {
+          try {
+            queryClient.setQueryData(['notifications'], (old: any) => {
+              const arr = Array.isArray(old) ? old : (old?.data ?? []);
+              const updated = [data].concat(arr || []);
+              return updated.slice(0, 100);
+            });
+          } catch (e) {
+            // ignore
+          }
+        });
 
-      socket.on('disconnect', () => {
-        // fallback to polling handled by react-query
+        socket.on('disconnect', () => {
+          // fallback to polling handled by react-query
+        });
       });
     } catch (e) {
       // dynamic import failed (e.g. tests), allow polling fallback
@@ -118,7 +120,7 @@ export default function NotificationBell() {
     return () => {
       try {
         socket?.close();
-      } catch (e) {}
+      } catch (e) { }
     };
   }, [token]);
 
@@ -148,18 +150,15 @@ export default function NotificationBell() {
         ) : (
           <div className="flex flex-col max-h-64 overflow-auto">
             {itemsArr.slice(0, 20).map((n: any) => {
-              let message = '';
+              let title = '';
+              let description = '';
               try {
                 const p = n.payload ? (typeof n.payload === 'string' ? JSON.parse(n.payload) : n.payload) : {};
-                if (n.type === 'achievement_awarded') {
-                  message = `Earned: ${p.title || p.key}`;
-                } else if (n.type === 'assignment_cancelled') {
-                  message = `Signup cancelled` + (p.assignmentId ? ` (#${p.assignmentId})` : '');
-                } else {
-                  message = n.type;
-                }
+                title = NotificationFormatter.formatType(n.type);
+                description = NotificationFormatter.getSummary(n.type, p) || p.message || p.description || n.type;
               } catch (e) {
-                message = String(n.payload || n.type);
+                title = n.type;
+                description = String(n.payload || '');
               }
 
               return (
@@ -175,18 +174,11 @@ export default function NotificationBell() {
                 >
                   <div className="flex-1 text-sm">
                     <div className="font-medium">
-                      {(() => {
-                        try {
-                          const p = typeof n.payload === 'string' ? JSON.parse(n.payload) : n.payload || {};
-                          return p.title ?? n.type.replace(/_/g, ' ');
-                        } catch (e) {
-                          return n.type.replace(/_/g, ' ');
-                        }
-                      })()}
+                      {title}
                     </div>
-                    <div className="text-xs text-muted-foreground">{message}</div>
+                    <div className="text-xs text-muted-foreground line-clamp-2">{description}</div>
                     <div className="text-xs text-muted-foreground mt-1">
-                      {new Date(n.createdAt || n.created_at).toLocaleString()}
+                      {new Date(n.createdAt || n.created_at).toLocaleDateString()}
                     </div>
                   </div>
                   {n.read ? (
