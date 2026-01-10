@@ -1,5 +1,5 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
-import Database from '@ioc:Adonis/Lucid/Database'
+import Skill from 'App/Models/Skill'
 
 export default class SkillsController {
   public async search({ request, response }: HttpContextContract) {
@@ -8,17 +8,25 @@ export default class SkillsController {
       return response.ok([])
     }
 
-    // Search the `skills` table by name (case-insensitive)
     try {
-      const rows = await Database.from('skills')
-        .where('name', 'like', `%${q}%`)
+      // Find matching skills
+      const skills = await Skill.query()
+        .whereRaw('LOWER(name) LIKE ?', [`%${q.toLowerCase()}%`])
         .orderBy('name', 'asc')
         .limit(20)
         .select('id', 'name')
 
-      return response.ok(rows.map((r) => ({ id: r.id, name: r.name })))
+      if (skills.length > 0) {
+        return response.ok(skills.map((s) => ({ id: s.id, name: s.name })))
+      }
+
+      // If no skill matches, create it (idempotent on name)
+      const existing = await Skill.query().whereRaw('LOWER(name) = ?', [q.toLowerCase()]).first()
+
+      const created = existing ?? (await Skill.create({ name: q }))
+
+      return response.ok([{ id: created.id, name: created.name }])
     } catch (err) {
-      // Fallback: return empty
       // eslint-disable-next-line no-console
       console.warn('Skills search failed', err)
       return response.internalServerError({ message: 'Skills search failed' })
