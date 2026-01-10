@@ -31,11 +31,15 @@ export default function MyAttendance() {
   const { data: assignments, isLoading } = useQuery({
     queryKey: ['my-attendance'],
     queryFn: async () => {
-      // Assuming GET /attendance returns assignments
       const res = await axios.get('/volunteer/attendance');
-      // If the API structure is different, we might need to adjust.
-      // Existing api.ts says getVolunteerAttendance calls /volunteer/attendance
-      return res as ShiftAssignment[];
+      // Backend returns paginated response: { data: [], meta: {}, totalHours: number }
+      if (res && (res as any).data && Array.isArray((res as any).data)) {
+        return (res as any).data as ShiftAssignment[];
+      }
+      // Fallback if it is an array
+      if (Array.isArray(res)) return res as ShiftAssignment[];
+
+      return [] as ShiftAssignment[];
     }
   });
 
@@ -91,8 +95,8 @@ export default function MyAttendance() {
                 <CardHeader className="pb-2">
                   <div className="flex justify-between items-start">
                     <div>
-                      <CardTitle className="text-lg">{assignment.shift.title}</CardTitle>
-                      <div className="text-sm text-muted-foreground mt-1">{assignment.shift.event?.title}</div>
+                      <CardTitle className="text-lg">{assignment.shift?.title || 'Unknown Shift'}</CardTitle>
+                      <div className="text-sm text-muted-foreground mt-1">{assignment.shift?.event?.title}</div>
                     </div>
                     <Badge variant={assignment.checkedInAt ? 'default' : 'outline'}>
                       {assignment.checkedInAt ? 'In Progress' : 'Scheduled'}
@@ -103,14 +107,14 @@ export default function MyAttendance() {
                   <div className="space-y-2 text-sm mb-4">
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
-                      {format(new Date(assignment.shift.startAt), 'EEEE, MMM d, yyyy')}
+                      {assignment.shift?.startAt ? format(new Date(assignment.shift.startAt), 'EEEE, MMM d, yyyy') : 'Date TBA'}
                     </div>
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-muted-foreground" />
-                      {format(new Date(assignment.shift.startAt), 'h:mm a')} -{' '}
-                      {format(new Date(assignment.shift.endAt), 'h:mm a')}
+                      {assignment.shift?.startAt ? format(new Date(assignment.shift.startAt), 'h:mm a') : '--:--'} -{' '}
+                      {assignment.shift?.endAt ? format(new Date(assignment.shift.endAt), 'h:mm a') : '--:--'}
                     </div>
-                    {assignment.shift.event?.location && (
+                    {assignment.shift?.event?.location && (
                       <div className="flex items-center gap-2">
                         <MapPin className="h-4 w-4 text-muted-foreground" />
                         {assignment.shift.event.location}
@@ -122,8 +126,8 @@ export default function MyAttendance() {
                     {!assignment.checkedInAt ? (
                       <Button
                         className="w-full"
-                        onClick={() => checkInMutation.mutate(assignment.shift.id)}
-                        disabled={checkInMutation.isLoading}
+                        onClick={() => assignment.shift?.id && checkInMutation.mutate(assignment.shift.id)}
+                        disabled={checkInMutation.isLoading || !assignment.shift?.id}
                       >
                         <CheckCircle className="mr-2 h-4 w-4" />
                         Check In
@@ -132,8 +136,8 @@ export default function MyAttendance() {
                       <Button
                         className="w-full"
                         variant="secondary"
-                        onClick={() => checkOutMutation.mutate(assignment.shift.id)}
-                        disabled={checkOutMutation.isLoading}
+                        onClick={() => assignment.shift?.id && checkOutMutation.mutate(assignment.shift.id)}
+                        disabled={checkOutMutation.isLoading || !assignment.shift?.id}
                       >
                         <LogOut className="mr-2 h-4 w-4" />
                         Check Out
@@ -162,10 +166,10 @@ export default function MyAttendance() {
             {history.map((assignment) => (
               <div key={assignment.id} className="grid grid-cols-5 gap-4 p-4 border-b last:border-0 items-center">
                 <div className="col-span-2">
-                  <div className="font-medium">{assignment.shift.title}</div>
-                  <div className="text-xs text-muted-foreground">{assignment.shift.event?.title}</div>
+                  <div className="font-medium">{assignment.shift?.title || 'Unknown'}</div>
+                  <div className="text-xs text-muted-foreground">{assignment.shift?.event?.title}</div>
                 </div>
-                <div className="text-sm">{format(new Date(assignment.shift.startAt), 'MMM d, yyyy')}</div>
+                <div className="text-sm">{assignment.shift?.startAt ? format(new Date(assignment.shift.startAt), 'MMM d, yyyy') : '-'}</div>
                 <div className="text-sm">{assignment.hours ? `${assignment.hours} hrs` : '-'}</div>
                 <div>
                   <Badge variant="secondary">Completed</Badge>
