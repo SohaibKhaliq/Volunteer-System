@@ -20,196 +20,182 @@ const Home = () => {
   );
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen bg-background">
       {/* Hero Section */}
-      <section className="relative h-[600px] flex items-center justify-center bg-slate-900 text-white overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-slate-900/90 to-slate-900/40 z-10" />
+      <section className="relative min-h-[700px] flex items-center justify-center bg-primary text-white overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/90 to-primary/80 z-10" />
+        <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:40px_40px] z-10" />
         <img
           src="https://images.unsplash.com/photo-1593113598332-cd288d649433?q=80&w=2070&auto=format&fit=crop"
           alt="Volunteers in action"
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-50"
         />
         <div className="container relative z-20 px-4 text-center md:text-left">
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight max-w-3xl">
-            {t('Make a Difference in Your Community Today')}
-          </h1>
-          <p className="text-lg md:text-xl text-slate-200 mb-8 max-w-2xl">
-            {t(
-              'Join thousands of volunteers connecting with organizations to create meaningful change. Find opportunities that match your skills and passion.'
-            )}
-          </p>
-          <div className="flex flex-col md:flex-row gap-4">
-            <Link to="/map">
-              <Button size="lg" className="w-full md:w-auto text-lg px-8 py-6">
-                {t('Find Opportunities')} <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </Link>
-            <Link to="/organizations">
-              <Button
-                size="lg"
-                variant="outline"
-                className="w-full md:w-auto text-lg px-8 py-6 bg-white/10 hover:bg-white/20 border-white/20 text-white"
-              >
-                {t('For Organizations')}
-              </Button>
-            </Link>
+          <div className="max-w-4xl">
+            <h1 className="text-5xl md:text-7xl font-black mb-8 leading-[1.1] tracking-tight">
+              {t('Make a Difference in Your Community Today')}
+            </h1>
+            <p className="text-xl md:text-2xl text-primary-foreground/90 mb-10 max-w-2xl leading-relaxed font-medium">
+              {t(
+                'Join thousands of volunteers connecting with organizations to create meaningful change. Find opportunities that match your skills and passion.'
+              )}
+            </p>
+            <div className="flex flex-col sm:flex-row gap-5">
+              <Link to="/map">
+                <Button size="lg" className="w-full sm:w-auto h-16 text-xl px-10 rounded-2xl shadow-2xl shadow-black/20 font-bold bg-white text-primary hover:bg-white/90">
+                  {t('Find Opportunities')} <ArrowRight className="ml-2 h-6 w-6" />
+                </Button>
+              </Link>
+              <Link to="/organizations">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  className="w-full sm:w-auto h-16 text-xl px-10 rounded-2xl border-2 border-white/30 bg-white/10 hover:bg-white/20 text-white font-bold backdrop-blur-md"
+                >
+                  {t('For Organizations')}
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Stats Section */}
-      <section className="py-16 bg-white border-b">
+      <section className="py-20 bg-background relative z-30">
         <div className="container px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-            <div className="p-6">
-              <div className="text-4xl font-bold text-primary mb-2">
-                {isLoadingStats ? '...' : stats?.activeVolunteers?.toLocaleString() || '5,000+'}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              { label: t('Active Volunteers'), value: stats?.activeVolunteers, fallback: '5,000+', icon: Users, color: 'text-blue-500' },
+              { label: t('Hours Contributed'), value: stats?.hoursContributed, fallback: '12,000+', icon: Heart, color: 'text-rose-500' },
+              { label: t('Partner Organizations'), value: stats?.partnerOrganizations, fallback: '150+', icon: MapPin, color: 'text-emerald-500' }
+            ].map((stat, i) => (
+              <div key={i} className="bg-card p-10 rounded-3xl border border-border/50 shadow-sm hover:shadow-xl transition-all duration-500 text-center group">
+                <div className={`w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform ${stat.color}`}>
+                  <stat.icon className="h-8 w-8" />
+                </div>
+                <div className="text-5xl font-black text-foreground mb-3 tracking-tight">
+                  {isLoadingStats ? '...' : (stat.value?.toLocaleString() || stat.fallback)}
+                </div>
+                <div className="text-muted-foreground font-bold uppercase tracking-widest text-sm">{stat.label}</div>
               </div>
-              <div className="text-muted-foreground">{t('Active Volunteers')}</div>
-            </div>
-            <div className="p-6 border-l-0 md:border-l border-r-0 md:border-r">
-              <div className="text-4xl font-bold text-primary mb-2">
-                {isLoadingStats ? '...' : stats?.hoursContributed?.toLocaleString() || '12,000+'}
-              </div>
-              <div className="text-muted-foreground">{t('Hours Contributed')}</div>
-            </div>
-            <div className="p-6">
-              <div className="text-4xl font-bold text-primary mb-2">
-                {isLoadingStats ? '...' : stats?.partnerOrganizations?.toLocaleString() || '150+'}
-              </div>
-              <div className="text-muted-foreground">{t('Partner Organizations')}</div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* How It Works */}
-      <section className="py-20 bg-slate-50">
+      <section className="py-24 bg-muted/30">
         <div className="container px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-4">{t('How It Works')}</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
+          <div className="text-center mb-20">
+            <h2 className="text-4xl md:text-5xl font-black mb-6 tracking-tight text-foreground">{t('How It Works')}</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto text-lg font-medium">
               {t('Getting started is easy. Follow these simple steps to begin your volunteering journey.')}
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-white p-8 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mb-6">
-                <Users className="h-6 w-6" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+            {[
+              { i: 1, title: t('Create an Account'), desc: t('Sign up in seconds. Complete your profile to highlight your skills and interests.'), icon: Users, color: 'bg-blue-500/10 text-blue-500' },
+              { i: 2, title: t('Find Opportunities'), desc: t('Browse local events and tasks. Filter by cause, location, and schedule to find the perfect match.'), icon: MapPin, color: 'bg-orange-500/10 text-orange-500' },
+              { i: 3, title: t('Make an Impact'), desc: t('Join the event, track your hours, and see the difference you make in your community.'), icon: Heart, color: 'bg-rose-500/10 text-rose-500' }
+            ].map((step) => (
+              <div key={step.i} className="bg-card p-10 rounded-[2.5rem] shadow-sm hover:shadow-2xl transition-all duration-500 border border-border/30 group">
+                <div className={`w-16 h-16 ${step.color} rounded-2xl flex items-center justify-center mb-8 group-hover:rotate-12 transition-transform`}>
+                  <step.icon className="h-8 w-8" />
+                </div>
+                <h3 className="text-2xl font-black mb-4 text-foreground">{step.i}. {step.title}</h3>
+                <p className="text-muted-foreground leading-relaxed font-medium">
+                  {step.desc}
+                </p>
               </div>
-              <h3 className="text-xl font-semibold mb-3">{t('1. Create an Account')}</h3>
-              <p className="text-muted-foreground">
-                {t('Sign up in seconds. Complete your profile to highlight your skills and interests.')}
-              </p>
-            </div>
-            <div className="bg-white p-8 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center text-green-600 mb-6">
-                <MapPin className="h-6 w-6" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">{t('2. Find Opportunities')}</h3>
-              <p className="text-muted-foreground">
-                {t('Browse local events and tasks. Filter by cause, location, and schedule to find the perfect match.')}
-              </p>
-            </div>
-            <div className="bg-white p-8 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-              <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 mb-6">
-                <Heart className="h-6 w-6" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">{t('3. Make an Impact')}</h3>
-              <p className="text-muted-foreground">
-                {t('Join the event, track your hours, and see the difference you make in your community.')}
-              </p>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Featured Opportunities (Placeholder for dynamic content) */}
-      <section className="py-20 bg-white">
+      {/* Featured Opportunities */}
+      <section className="py-24 bg-background">
         <div className="container px-4">
-          <div className="flex justify-between items-end mb-12">
-            <div>
-              <h2 className="text-3xl font-bold mb-4">{t('Featured Opportunities')}</h2>
-              <p className="text-muted-foreground">{t('Discover urgent needs and popular events near you.')}</p>
+          <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
+            <div className="space-y-2">
+              <h2 className="text-4xl md:text-5xl font-black tracking-tight text-foreground">{t('Featured Opportunities')}</h2>
+              <p className="text-muted-foreground text-lg font-medium">{t('Discover urgent needs and popular events near you.')}</p>
             </div>
             <Link to="/map">
-              <Button variant="ghost" className="hidden md:flex">
-                {t('View All')} <ArrowRight className="ml-2 h-4 w-4" />
+              <Button variant="outline" className="h-12 rounded-xl px-6 font-bold border-border/50 hover:bg-muted transition-colors">
+                {t('View All Opportunities')} <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {isLoading
-              ? // Loading skeletons
-                [1, 2, 3].map((i) => (
-                  <div key={i} className="border rounded-lg overflow-hidden h-[400px] bg-slate-100 animate-pulse" />
-                ))
+              ? [1, 2, 3].map((i) => (
+                <div key={i} className="bg-card rounded-3xl overflow-hidden h-[450px] border border-border/50 animate-pulse" />
+              ))
               : featuredEvents?.slice(0, 3).map((event: any) => (
-                  <div
-                    key={event.id}
-                    className="group border rounded-lg overflow-hidden hover:shadow-lg transition-all"
-                  >
-                    <div className="h-48 bg-slate-200 relative">
-                      <img
-                        src={
-                          event.image ||
-                          `https://images.unsplash.com/photo-${event.id % 2 === 0 ? '1559027615-cd4628902d4a' : '1593113598332-cd288d649433'}?q=80&w=800&auto=format&fit=crop`
-                        }
-                        alt={event.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                      {event.isUrgent && (
-                        <div className="absolute top-4 right-4 bg-white px-3 py-1 rounded-full text-xs font-medium shadow-sm">
-                          Urgent
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-6">
-                      <div className="text-sm text-primary font-medium mb-2">{event.type || 'Community Service'}</div>
-                      <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors">
-                        {event.title}
-                      </h3>
-                      <p className="text-muted-foreground text-sm mb-4 line-clamp-2">{event.description}</p>
-                      <div className="flex items-center gap-4 text-sm text-slate-500 mb-6">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4" />
-                          <span>{new Date(event.startAt || event.date).toLocaleDateString()}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <MapPin className="h-4 w-4" />
-                          <span>{event.location || 'TBD'}</span>
-                        </div>
+                <div
+                  key={event.id}
+                  className="group bg-card rounded-3xl overflow-hidden border border-border/50 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500"
+                >
+                  <div className="h-56 overflow-hidden relative">
+                    <img
+                      src={
+                        event.image ||
+                        `https://images.unsplash.com/photo-${event.id % 2 === 0 ? '1559027615-cd4628902d4a' : '1593113598332-cd288d649433'}?q=80&w=800&auto=format&fit=crop`
+                      }
+                      alt={event.title}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                    />
+                    <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/60 to-transparent" />
+                    {event.isUrgent && (
+                      <div className="absolute top-4 right-4 bg-destructive text-destructive-foreground px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider shadow-lg">
+                        {t('Urgent')}
                       </div>
-                      <Link to={`/events/${event.id}`}>
-                        <Button className="w-full">{t('View Details')}</Button>
-                      </Link>
-                    </div>
+                    )}
                   </div>
-                ))}
-          </div>
-
-          <div className="mt-8 text-center md:hidden">
-            <Link to="/map">
-              <Button variant="outline" className="w-full">
-                {t('View All Opportunities')}
-              </Button>
-            </Link>
+                  <div className="p-8">
+                    <div className="text-xs font-black uppercase tracking-widest text-primary mb-3">{event.type || 'Community Service'}</div>
+                    <h3 className="text-2xl font-black mb-3 text-foreground line-clamp-1 group-hover:text-primary transition-colors">
+                      {event.title}
+                    </h3>
+                    <p className="text-muted-foreground font-medium text-sm mb-8 line-clamp-2 leading-relaxed">
+                      {event.description}
+                    </p>
+                    <div className="flex items-center justify-between mt-auto">
+                      <div className="flex -space-x-2">
+                        <div className="h-8 w-8 rounded-full border-2 border-card bg-muted flex items-center justify-center text-[10px] font-bold">+12</div>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs font-bold text-muted-foreground">
+                        <span className="flex items-center gap-1.5 bg-muted/50 px-2.5 py-1.5 rounded-lg border border-border/50">
+                          <Calendar className="h-3.5 w-3.5 text-primary/70" />
+                          {new Date(event.startAt || event.date).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                    <Link to={`/events/${event.id}`} className="block mt-8">
+                      <Button className="w-full h-12 rounded-xl font-bold transition-all shadow-lg shadow-primary/5 group-hover:shadow-primary/20">
+                        {t('View Details')}
+                      </Button>
+                    </Link>
+                  </div>
+                </div>
+              ))}
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 bg-primary text-white">
-        <div className="container px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">{t('Ready to Start Your Journey?')}</h2>
-          <p className="text-lg text-primary-foreground/90 mb-8 max-w-2xl mx-auto">
+      <section className="py-24 bg-primary text-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:30px_30px]" />
+        <div className="container px-4 text-center relative z-10">
+          <h2 className="text-4xl md:text-6xl font-black mb-8 tracking-tight">{t('Ready to Start Your Journey?')}</h2>
+          <p className="text-xl text-primary-foreground/90 mb-12 max-w-2xl mx-auto leading-relaxed font-medium">
             {t('Whether you want to volunteer or need help organizing volunteers, Local Aid is the platform for you.')}
           </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
+          <div className="flex flex-col sm:flex-row justify-center gap-6">
             <Link to="/register">
-              <Button size="lg" variant="secondary" className="w-full sm:w-auto text-lg px-8">
+              <Button size="lg" variant="secondary" className="w-full sm:w-auto h-16 text-xl px-10 rounded-2xl font-bold shadow-2xl shadow-black/20">
                 {t('Join as Volunteer')}
               </Button>
             </Link>
@@ -217,7 +203,7 @@ const Home = () => {
               <Button
                 size="lg"
                 variant="outline"
-                className="w-full sm:w-auto text-lg px-8 bg-transparent border-white text-white hover:bg-white hover:text-primary"
+                className="w-full sm:w-auto h-16 text-xl px-10 rounded-2xl border-2 border-white/30 bg-white/10 hover:bg-white/20 text-white font-bold backdrop-blur-md"
               >
                 {t('Register Organization')}
               </Button>
@@ -227,78 +213,69 @@ const Home = () => {
       </section>
 
       {/* Partners Section */}
-      <section className="py-16 bg-slate-50">
+      <section className="py-24 bg-muted/20">
         <div className="container px-4 mx-auto text-center">
-          <h2 className="text-2xl font-bold mb-6">{t('Our Partners')}</h2>
-          <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
+          <h2 className="text-3xl font-black mb-4 tracking-tight text-foreground">{t('Our Partners')}</h2>
+          <p className="text-muted-foreground mb-12 max-w-2xl mx-auto text-lg font-medium">
             {t('We work with organisations large and small to deliver local impact')}
           </p>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 items-center max-w-4xl mx-auto">
-            <div className="p-4 bg-white rounded-lg shadow-sm flex items-center justify-center h-24">
-              {' '}
-              <img src="/partners/partner-1.svg" alt="Partner 1" className="h-12" />
-            </div>
-            <div className="p-4 bg-white rounded-lg shadow-sm flex items-center justify-center h-24">
-              {' '}
-              <img src="/partners/partner-2.svg" alt="Partner 2" className="h-12" />
-            </div>
-            <div className="p-4 bg-white rounded-lg shadow-sm flex items-center justify-center h-24">
-              {' '}
-              <img src="/partners/partner-3.svg" alt="Partner 3" className="h-12" />
-            </div>
-            <div className="p-4 bg-white rounded-lg shadow-sm flex items-center justify-center h-24">
-              {' '}
-              <img src="/partners/partner-4.svg" alt="Partner 4" className="h-12" />
-            </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 items-center max-w-5xl mx-auto">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="group p-8 bg-card rounded-[2rem] shadow-sm border border-border/50 flex items-center justify-center h-40 hover:shadow-xl transition-all duration-500">
+                <img src={`/partners/partner-${i}.svg`} alt={`Partner ${i}`} className="h-16 opacity-60 group-hover:opacity-100 transition-opacity" />
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Testimonials Section */}
-      <section className="py-16 bg-white border-t">
+      <section className="py-24 bg-background border-t border-border/50">
         <div className="container px-4 mx-auto text-center">
-          <h2 className="text-2xl font-bold mb-6">{t('Stories from our community')}</h2>
-          <p className="text-muted-foreground mb-8 max-w-2xl mx-auto">
+          <h2 className="text-3xl font-black mb-4 tracking-tight text-foreground">{t('Stories from our community')}</h2>
+          <p className="text-muted-foreground mb-16 max-w-2xl mx-auto text-lg font-medium">
             {t('Real stories from volunteers and organisations who were able to make a difference')}
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            <div className="bg-slate-50 p-6 rounded-lg shadow-sm text-left">
-              <div className="text-primary font-semibold mb-2">
-                {t('“I found the perfect opportunity nearby and contributed 100 hours!”')}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+            {[
+              { text: t('“I found the perfect opportunity nearby and contributed 100 hours!”'), author: 'Sofia', role: 'Volunteer' },
+              { text: t('“Our organisation doubled its volunteer base through the platform.”'), author: 'Ahmed', role: 'Organization Lead' },
+              { text: t('“A simple and intuitive way to organize events and track hours.”'), author: 'Priya', role: 'Event Coordinator' }
+            ].map((tst, i) => (
+              <div key={i} className="bg-card p-10 rounded-[2.5rem] shadow-sm border border-border/50 text-left hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 group">
+                <div className="text-xl font-black text-foreground mb-8 leading-relaxed group-hover:text-primary transition-colors">
+                  {tst.text}
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-2xl bg-muted overflow-hidden flex items-center justify-center font-black text-primary text-xl">
+                    {tst.author[0]}
+                  </div>
+                  <div>
+                    <div className="font-black text-foreground">— {tst.author}</div>
+                    <div className="text-sm text-muted-foreground font-medium">{tst.role}</div>
+                  </div>
+                </div>
               </div>
-              <div className="text-sm text-muted-foreground mt-3">— Sofia, Volunteer</div>
-            </div>
-            <div className="bg-slate-50 p-6 rounded-lg shadow-sm text-left">
-              <div className="text-primary font-semibold mb-2">
-                {t('“Our organisation doubled its volunteer base through the platform.”')}
-              </div>
-              <div className="text-sm text-muted-foreground mt-3">— Ahmed, Organization Lead</div>
-            </div>
-            <div className="bg-slate-50 p-6 rounded-lg shadow-sm text-left">
-              <div className="text-primary font-semibold mb-2">
-                {t('“A simple and intuitive way to organize events and track hours.”')}
-              </div>
-              <div className="text-sm text-muted-foreground mt-3">— Priya, Event Coordinator</div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Quick FAQ / Resources */}
-      <section className="py-12 bg-slate-100">
+      <section className="py-16 bg-muted/40 border-t border-border/50">
         <div className="container px-4 mx-auto text-center max-w-3xl">
-          <h3 className="text-xl font-semibold mb-4">{t('Questions?')}</h3>
-          <p className="text-muted-foreground mb-6">
+          <h3 className="text-2xl font-black mb-4 text-foreground tracking-tight">{t('Questions?')}</h3>
+          <p className="text-muted-foreground mb-10 text-lg font-medium">
             {t('Check our Help Center or contact us if you need assistance getting started.')}
           </p>
           <div className="flex gap-4 justify-center">
             <Link to="/help">
-              <Button variant="outline">{t('Help Center')}</Button>
+              <Button variant="outline" className="h-12 rounded-xl px-8 font-bold border-border/50 bg-card hover:bg-muted">{t('Help Center')}</Button>
             </Link>
             <Link to="/contact">
-              <Button>{t('Contact')}</Button>
+              <Button className="h-12 rounded-xl px-8 font-bold shadow-lg shadow-primary/10">{t('Contact')}</Button>
             </Link>
           </div>
         </div>
