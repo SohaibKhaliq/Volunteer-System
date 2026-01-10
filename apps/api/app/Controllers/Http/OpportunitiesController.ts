@@ -215,9 +215,11 @@ export default class OpportunitiesController {
     }
 
     if (!user.isAdmin && (!membership || membership.organizationId !== organizationId)) {
-      return response.forbidden({
-        message: 'You do not have permission to view these opportunities'
-      })
+        if (!(await user.can('view_opportunities'))) {
+            return response.forbidden({
+                message: 'You do not have permission to view these opportunities'
+            })
+        }
     }
 
     const qs = request.qs()
