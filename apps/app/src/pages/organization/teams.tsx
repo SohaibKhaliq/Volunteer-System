@@ -325,14 +325,20 @@ export default function OrganizationTeams() {
                   <SelectContent>
                     <SelectItem value="">No lead assigned</SelectItem>
                     {(Array.isArray(teamMembers) ? teamMembers : [])
-                      .filter((member: TeamMember) => member.userId !== undefined && member.userId !== null)
-                      .map((member: TeamMember) => (
-                        <SelectItem key={member.userId} value={member.userId.toString()}>
-                          {member.user?.firstName || member.user?.lastName
-                            ? `${member.user.firstName || ''} ${member.user.lastName || ''}`.trim()
-                            : member.user?.email || `User #${member.userId}`}
-                        </SelectItem>
-                      ))}
+                      .filter((member: any) => (member.userId ?? member.user_id) !== undefined)
+                      .map((member: any) => {
+                        const mid = member.userId ?? member.user_id;
+                        const u = member.user || {};
+                        const displayName = u.firstName || u.first_name || u.lastName || u.last_name
+                          ? `${u.firstName || u.first_name || ''} ${u.lastName || u.last_name || ''}`.trim()
+                          : u.email || member.name || member.email || `User #${mid}`;
+
+                        return (
+                          <SelectItem key={mid} value={mid.toString()}>
+                            {displayName}
+                          </SelectItem>
+                        );
+                      })}
                   </SelectContent>
                 </Select>
               </div>
