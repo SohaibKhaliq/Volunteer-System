@@ -53,7 +53,7 @@ import VolunteerCompliance from '@/pages/volunteer/compliance';
 
 export default function Profile() {
   const { t } = useTranslation();
-  const { setUser, setToken } = useStore();
+  const { logout } = useStore();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -82,8 +82,8 @@ export default function Profile() {
     lastName: '',
     email: '',
     phone: '',
-    address: '',
     bio: '',
+    address: '',
     skills: [] as string[],
     interests: [] as string[],
     availability: '',
@@ -91,22 +91,18 @@ export default function Profile() {
 
   const [prefsFormData, setPrefsFormData] = useState<any>({});
 
-  // Sync Form Data
+  // Populate form when data loads
   useEffect(() => {
     if (profileData) {
       setFormData({
         firstName: profileData.firstName || '',
         lastName: profileData.lastName || '',
         email: profileData.email || '',
-        phone: profileData.phone || '',
-        address: profileData.profileMetadata?.address || '',
+        phone: profileData.phone || '', // Ensure empty string, not undefined
         bio: profileData.profileMetadata?.bio || '',
-        skills: Array.isArray(profileData.profileMetadata?.skills)
-          ? profileData.profileMetadata.skills
-          : [],
-        interests: Array.isArray(profileData.profileMetadata?.interests)
-          ? profileData.profileMetadata.interests
-          : [],
+        address: profileData.profileMetadata?.address || '',
+        skills: profileData.profileMetadata?.skills || [],
+        interests: profileData.profileMetadata?.interests || [],
         availability: profileData.profileMetadata?.availability || '',
       });
     }
@@ -216,8 +212,7 @@ export default function Profile() {
   };
 
   const handleLogout = () => {
-    setToken(null);
-    setUser(null);
+    logout();
     navigate('/login');
   };
 
