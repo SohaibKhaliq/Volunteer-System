@@ -48,7 +48,12 @@ export default class extends BaseSchema {
 
     this.schema.createTable('compliance_documents', (table) => {
       table.increments('id')
-      table.integer('organization_id').unsigned().references('id').inTable('organizations').onDelete('CASCADE')
+      table
+        .integer('organization_id')
+        .unsigned()
+        .references('id')
+        .inTable('organizations')
+        .onDelete('CASCADE')
       table.string('title').notNullable()
       table.text('description').nullable()
       table.string('document_type').notNullable()
@@ -63,7 +68,12 @@ export default class extends BaseSchema {
 
     this.schema.createTable('compliance_requirements', (table) => {
       table.increments('id')
-      table.integer('organization_id').unsigned().references('id').inTable('organizations').onDelete('CASCADE')
+      table
+        .integer('organization_id')
+        .unsigned()
+        .references('id')
+        .inTable('organizations')
+        .onDelete('CASCADE')
       table.string('name').notNullable()
       table.text('description').nullable()
       table.string('requirement_type').notNullable()
@@ -76,10 +86,20 @@ export default class extends BaseSchema {
   }
 
   public async down() {
-    this.schema.dropTable('compliance_requirements')
-    this.schema.dropTable('compliance_documents')
-    this.schema.dropTable('background_checks')
-    this.schema.dropTable('course_enrollments')
-    this.schema.dropTable('courses')
+    if (await this.schema.hasTable('compliance_requirements')) {
+      this.schema.dropTable('compliance_requirements')
+    }
+    if (await this.schema.hasTable('compliance_documents')) {
+      this.schema.dropTable('compliance_documents')
+    }
+    if (await this.schema.hasTable('background_checks')) {
+      this.schema.dropTable('background_checks')
+    }
+    if (await this.schema.hasTable('course_enrollments')) {
+      this.schema.dropTable('course_enrollments')
+    }
+    if (await this.schema.hasTable('courses')) {
+      this.schema.dropTable('courses')
+    }
   }
 }
