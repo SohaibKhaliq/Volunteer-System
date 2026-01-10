@@ -5,11 +5,9 @@ import { ArrowRight, Heart, Users, Calendar, MapPin } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 
-import { useApp } from '@/providers/app-provider';
 
 const Home = () => {
   const { t } = useTranslation();
-  const { authenticated } = useApp();
   const { data: featuredEvents, isLoading } = useQuery(
     ['featured-events'],
     () => api.listEvents() as unknown as Promise<any[]>
@@ -69,7 +67,7 @@ const Home = () => {
               { label: t('Hours Contributed'), value: stats?.hoursContributed, fallback: '12,000+', icon: Heart, color: 'text-rose-500' },
               { label: t('Partner Organizations'), value: stats?.partnerOrganizations, fallback: '150+', icon: MapPin, color: 'text-emerald-500' }
             ].map((stat, i) => (
-              <div key={i} className="bg-card p-10 rounded-3xl border border-border/50 shadow-sm hover:shadow-xl transition-all duration-500 text-center group">
+              <div key={i} className="bg-card p-10 rounded-[2.5rem] border border-border/50 shadow-sm hover:shadow-xl transition-all duration-500 text-center group">
                 <div className={`w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform ${stat.color}`}>
                   <stat.icon className="h-8 w-8" />
                 </div>
@@ -131,12 +129,12 @@ const Home = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {isLoading
               ? [1, 2, 3].map((i) => (
-                <div key={i} className="bg-card rounded-3xl overflow-hidden h-[450px] border border-border/50 animate-pulse" />
+                <div key={i} className="bg-card rounded-[2.5rem] overflow-hidden h-[450px] border border-border/50 animate-pulse" />
               ))
               : featuredEvents?.slice(0, 3).map((event: any) => (
                 <div
                   key={event.id}
-                  className="group bg-card rounded-3xl overflow-hidden border border-border/50 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500"
+                  className="group bg-card rounded-[2.5rem] overflow-hidden border border-border/50 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500"
                 >
                   <div className="h-56 overflow-hidden relative">
                     <img
