@@ -78,8 +78,11 @@ export default class MembershipController {
       .where('user_id', user.id)
       .first()
 
-    if (!teamMember) {
-      return response.forbidden({ message: 'You do not have permission to view members' })
+    if (!user.isAdmin && !teamMember) {
+        const canView = (await user.can('view_users')) || (await user.can('view_teams'))
+        if (!canView) {
+            return response.forbidden({ message: 'You do not have permission to view members' })
+        }
     }
 
     let query = OrganizationVolunteer.query()
@@ -118,8 +121,10 @@ export default class MembershipController {
       .where('user_id', user.id)
       .first()
 
-    if (!teamMember || !['owner', 'admin', 'manager'].includes(teamMember.role)) {
-      return response.forbidden({ message: 'You do not have permission to manage members' })
+    if (!user.isAdmin && (!teamMember || !['owner', 'admin', 'manager'].includes(teamMember.role))) {
+        if (!(await user.can('manage_org_members'))) {
+            return response.forbidden({ message: 'You do not have permission to manage members' })
+        }
     }
 
     const membership = await OrganizationVolunteer.query()
@@ -159,8 +164,10 @@ export default class MembershipController {
       .where('user_id', user.id)
       .first()
 
-    if (!teamMember || !['owner', 'admin'].includes(teamMember.role)) {
-      return response.forbidden({ message: 'You do not have permission to remove members' })
+    if (!user.isAdmin && (!teamMember || !['owner', 'admin'].includes(teamMember.role))) {
+        if (!(await user.can('manage_org_members'))) {
+             return response.forbidden({ message: 'You do not have permission to remove members' })
+        }
     }
 
     const membership = await OrganizationVolunteer.query()
