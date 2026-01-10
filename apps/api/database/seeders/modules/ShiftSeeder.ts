@@ -3,14 +3,16 @@ import Database from '@ioc:Adonis/Lucid/Database'
 
 export default class ShiftSeeder extends BaseSeeder {
   public async run() {
-    const RECORD_COUNT = 50
+    const RECORD_COUNT = 150 // Increased from 50
     const now = new Date()
     const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
 
-    const orgsResult = await Database.rawQuery('SELECT id FROM organizations ORDER BY id ASC LIMIT 50')
+    const orgsResult = await Database.rawQuery(
+      'SELECT id FROM organizations ORDER BY id ASC LIMIT 150'
+    )
     const orgIds = orgsResult[0].map((row: any) => row.id)
 
-    const eventsResult = await Database.rawQuery('SELECT id FROM events ORDER BY id ASC LIMIT 50')
+    const eventsResult = await Database.rawQuery('SELECT id FROM events ORDER BY id ASC LIMIT 150')
     const eventIds = eventsResult[0].map((row: any) => row.id)
 
     if (orgIds.length === 0) {
@@ -67,10 +69,26 @@ export default class ShiftSeeder extends BaseSeeder {
     }
 
     const placeholders = rows.map(() => '(?,?,?,?,?,?,?,?,?,?,?,?,?)').join(',')
-    const sql = 'INSERT INTO shifts (title,description,event_id,organization_id,start_at,end_at,capacity,is_recurring,recurrence_rule,template_name,locked,created_at,updated_at) VALUES ' + placeholders +
+    const sql =
+      'INSERT INTO shifts (title,description,event_id,organization_id,start_at,end_at,capacity,is_recurring,recurrence_rule,template_name,locked,created_at,updated_at) VALUES ' +
+      placeholders +
       ' ON DUPLICATE KEY UPDATE description=VALUES(description),capacity=VALUES(capacity),template_name=VALUES(template_name),updated_at=VALUES(updated_at)'
 
-    const bindings = rows.flatMap((row) => [row.title, row.description, row.event_id, row.organization_id, row.start_at, row.end_at, row.capacity, row.is_recurring, row.recurrence_rule, row.template_name, row.locked, row.created_at, row.updated_at])
+    const bindings = rows.flatMap((row) => [
+      row.title,
+      row.description,
+      row.event_id,
+      row.organization_id,
+      row.start_at,
+      row.end_at,
+      row.capacity,
+      row.is_recurring,
+      row.recurrence_rule,
+      row.template_name,
+      row.locked,
+      row.created_at,
+      row.updated_at
+    ])
 
     const trx = await Database.transaction()
     try {
