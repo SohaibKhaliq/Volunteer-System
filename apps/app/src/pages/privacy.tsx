@@ -13,7 +13,7 @@ const Privacy = () => {
           <p className="text-muted-foreground font-medium">{t('Last updated')} — November 2025</p>
         </div>
 
-        <div className="bg-card border border-border/50 rounded-3xl p-8 md:p-12 shadow-2xl shadow-primary/5 space-y-10">
+        <div className="bg-card border border-border/50 rounded-[2.5rem] p-8 md:p-12 shadow-2xl shadow-primary/5 space-y-10">
           <p className="text-lg font-medium text-foreground/80 leading-relaxed">
             {t('We take your privacy seriously. This policy explains what personal data we collect and how we use it.')}
           </p>
