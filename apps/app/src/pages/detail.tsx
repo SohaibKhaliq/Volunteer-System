@@ -11,7 +11,6 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { axios } from '@/lib/axios';
-import api from '@/lib/api';
 // no local state required here
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { useToast } from '@/components/atoms/use-toast';
@@ -143,82 +142,86 @@ const Detail = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-12">
+    <div className="min-h-screen bg-background text-foreground pb-20">
       {/* Hero Image */}
-      <div className="relative h-[400px] w-full bg-slate-900">
+      <div className="relative h-[450px] w-full bg-slate-900 group">
         <img
           src={
             event.image || 'https://images.unsplash.com/photo-1559027615-cd4628902d4a?q=80&w=2074&auto=format&fit=crop'
           }
           alt={event.title}
-          className="w-full h-full object-cover opacity-60"
+          className="w-full h-full object-cover opacity-60 group-hover:scale-105 transition-transform duration-1000"
         />
-        <div className="absolute top-6 left-6">
-          <Button variant="secondary" size="sm" className="gap-2" onClick={() => navigate(-1)}>
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent z-10" />
+        <div className="absolute top-8 left-8 z-20">
+          <Button variant="outline" className="gap-2 rounded-xl bg-white/10 backdrop-blur-md border-white/20 text-white hover:bg-white/20 font-bold" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-4 w-4" /> {t('Back')}
           </Button>
         </div>
       </div>
 
-      <div className="container px-4 -mt-20 relative z-10">
+      <div className="container px-4 -mt-32 relative z-20">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
-            <Card className="border-none shadow-lg">
-              <CardHeader className="pb-4">
-                <div className="flex flex-wrap gap-2 mb-4">
+          <div className="lg:col-span-2 space-y-10">
+            <Card className="border-border/50 shadow-2xl shadow-primary/5 rounded-[2.5rem] bg-card overflow-hidden">
+              <CardHeader className="p-10 pb-4">
+                <div className="flex flex-wrap gap-2 mb-6">
                   {event.tags?.map((tag: string) => (
-                    <Badge key={tag} variant="secondary">
+                    <Badge key={tag} className="bg-primary/10 text-primary border-none font-bold px-3 py-1 rounded-lg text-[10px] uppercase tracking-wider">
                       {tag}
                     </Badge>
                   ))}
                 </div>
-                <h1 className="text-3xl font-bold text-slate-900">{event.title}</h1>
-                <div className="flex items-center gap-2 text-muted-foreground mt-2">
-                  <span className="font-medium text-primary">{event.organization?.name}</span>
-                  <span>•</span>
-                  <span>{t('Posted recently')}</span>
+                <h1 className="text-4xl md:text-5xl font-black text-foreground tracking-tight leading-tight">{event.title}</h1>
+                <div className="flex items-center gap-3 text-muted-foreground mt-4 font-bold">
+                  <span className="text-primary hover:underline cursor-pointer transition-all" onClick={() => navigate(`/organizations/${event.organization?.id}`)}>{event.organization?.name}</span>
+                  <span className="opacity-30">•</span>
+                  <span className="text-sm font-medium">{t('Posted recently')}</span>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-8">
+              <CardContent className="p-10 space-y-10">
                 <div>
-                  <h3 className="text-xl font-semibold mb-3">{t('About this Opportunity')}</h3>
-                  <p className="text-slate-600 leading-relaxed">{event.description}</p>
+                  <h3 className="text-2xl font-black mb-4 text-foreground tracking-tight">{t('About this Opportunity')}</h3>
+                  <p className="text-muted-foreground leading-relaxed font-medium text-lg">{event.description}</p>
                 </div>
 
-                <Separator />
+                <Separator className="bg-border/50" />
 
                 {event.requirements && event.requirements.length > 0 && (
                   <>
-                    <div>
-                      <h3 className="text-xl font-semibold mb-3">{t('Requirements')}</h3>
-                      <ul className="space-y-2">
+                    <div className="bg-muted/30 p-8 rounded-3xl border border-border/50">
+                      <h3 className="text-2xl font-black mb-6 text-foreground tracking-tight">{t('Requirements')}</h3>
+                      <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {event.requirements.map((req: string, index: number) => (
-                          <li key={index} className="flex items-start gap-3 text-slate-600">
-                            <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
+                          <li key={index} className="flex items-center gap-4 text-muted-foreground font-bold text-sm bg-card p-4 rounded-xl border border-border/20">
+                            <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />
                             <span>{req}</span>
                           </li>
                         ))}
                       </ul>
                     </div>
-                    <Separator />
+                    <Separator className="bg-border/50" />
                   </>
                 )}
 
                 <div>
-                  <h3 className="text-xl font-semibold mb-3">{t('Location')}</h3>
-                  <p className="text-slate-600 mb-4 flex items-center gap-2">
-                    <MapPin className="h-4 w-4" /> {event.location}
-                  </p>
+                  <h3 className="text-2xl font-black mb-6 text-foreground tracking-tight">{t('Location')}</h3>
+                  <div className="flex items-center gap-3 mb-8 bg-muted/50 p-4 rounded-2xl border border-border/50 w-fit">
+                    <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
+                      <MapPin className="h-5 w-5" />
+                    </div>
+                    <p className="text-foreground font-bold">{event.location}</p>
+                  </div>
                   {event.coordinates && (
-                    <div className="h-[300px] w-full rounded-lg overflow-hidden border">
+                    <div className="h-[400px] w-full rounded-[2rem] overflow-hidden border border-border/50 shadow-inner">
                       <MapContainer center={event.coordinates as [number, number]} zoom={15} className="w-full h-full">
                         <TileLayer
                           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                         />
                         <Marker position={event.coordinates as [number, number]}>
-                          <Popup>{event.location}</Popup>
+                          <Popup><div className="font-bold p-2">{event.location}</div></Popup>
                         </Marker>
                       </MapContainer>
                     </div>
@@ -228,38 +231,37 @@ const Detail = () => {
             </Card>
 
             {/* Resources assigned to this event */}
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle>Assigned Resources</CardTitle>
+            <Card className="rounded-[2.5rem] bg-card border-border/50 shadow-xl overflow-hidden mt-10">
+              <CardHeader className="px-10 py-8 bg-muted/30 border-b border-border/50">
+                <CardTitle className="text-2xl font-black tracking-tight">{t('Assigned Resources')}</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="mb-4 flex justify-between">
-                  <div />
-                </div>
+              <CardContent className="p-0">
                 <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Resource</TableHead>
-                      <TableHead>Quantity</TableHead>
-                      <TableHead>Assigned At</TableHead>
-                      <TableHead>Status</TableHead>
+                  <TableHeader className="bg-muted/50">
+                    <TableRow className="border-border/50 hover:bg-transparent">
+                      <TableHead className="px-10 py-5 font-black uppercase tracking-widest text-[10px] text-muted-foreground">{t('Resource')}</TableHead>
+                      <TableHead className="py-5 font-black uppercase tracking-widest text-[10px] text-muted-foreground">{t('Quantity')}</TableHead>
+                      <TableHead className="py-5 font-black uppercase tracking-widest text-[10px] text-muted-foreground">{t('Assigned At')}</TableHead>
+                      <TableHead className="px-10 py-5 font-black uppercase tracking-widest text-[10px] text-muted-foreground text-right">{t('Status')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {!eventAssignments || (Array.isArray(eventAssignments) && eventAssignments.length === 0) ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center py-6 text-muted-foreground">
-                          No resources assigned
+                        <TableCell colSpan={4} className="text-center py-16 text-muted-foreground font-bold">
+                          {t('No resources assigned')}
                         </TableCell>
                       </TableRow>
                     ) : (
                       (Array.isArray(eventAssignments) ? eventAssignments : (eventAssignments?.data ?? [])).map(
                         (a: any) => (
-                          <TableRow key={a.id}>
-                            <TableCell>{a.resource?.name ?? a.resourceName ?? 'Resource'}</TableCell>
-                            <TableCell>{a.quantity ?? 1}</TableCell>
-                            <TableCell>{a.assignedAt ? new Date(a.assignedAt).toLocaleString() : '-'}</TableCell>
-                            <TableCell>{a.status}</TableCell>
+                          <TableRow key={a.id} className="border-border/30 hover:bg-muted/30 transition-colors">
+                            <TableCell className="px-10 py-6 font-bold text-foreground">{a.resource?.name ?? a.resourceName ?? 'Resource'}</TableCell>
+                            <TableCell className="py-6 font-bold">{a.quantity ?? 1}</TableCell>
+                            <TableCell className="py-6 font-medium text-muted-foreground">{a.assignedAt ? new Date(a.assignedAt).toLocaleString() : '-'}</TableCell>
+                            <TableCell className="px-10 py-6 text-right">
+                              <Badge className="bg-primary/10 text-primary border-none font-bold rounded-lg text-xs">{a.status}</Badge>
+                            </TableCell>
                           </TableRow>
                         )
                       )
@@ -270,40 +272,43 @@ const Detail = () => {
             </Card>
 
             {/* Shifts & Tasks for this event */}
-            <Card className="mt-6">
-              <CardHeader>
-                <CardTitle>Shifts & Tasks</CardTitle>
+            <Card className="rounded-[2.5rem] bg-card border-border/50 shadow-xl overflow-hidden mt-10">
+              <CardHeader className="px-10 py-8 bg-muted/30 border-b border-border/50 flex flex-row items-center justify-between">
+                <CardTitle className="text-2xl font-black tracking-tight">{t('Shifts & Tasks')}</CardTitle>
+                <Button variant="ghost" className="font-bold text-primary hover:bg-primary/5 rounded-xl" onClick={() => (window.location.href = `/admin/shifts?eventId=${id}`)}>
+                  {t('Manage Shifts')}
+                </Button>
               </CardHeader>
-              <CardContent>
-                <div className="mb-4 flex justify-between">
-                  <div />
-                  <Button onClick={() => (window.location.href = `/admin/shifts?eventId=${id}`)}>Manage Shifts</Button>
-                </div>
+              <CardContent className="p-0">
                 <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Shift</TableHead>
-                      <TableHead>Time</TableHead>
-                      <TableHead>Capacity</TableHead>
-                      <TableHead>Assigned</TableHead>
+                  <TableHeader className="bg-muted/50">
+                    <TableRow className="border-border/50 hover:bg-transparent">
+                      <TableHead className="px-10 py-5 font-black uppercase tracking-widest text-[10px] text-muted-foreground">{t('Shift Title')}</TableHead>
+                      <TableHead className="py-5 font-black uppercase tracking-widest text-[10px] text-muted-foreground">{t('Time Slot')}</TableHead>
+                      <TableHead className="py-5 font-black uppercase tracking-widest text-[10px] text-muted-foreground">{t('Capacity')}</TableHead>
+                      <TableHead className="px-10 py-5 font-black uppercase tracking-widest text-[10px] text-muted-foreground text-right">{t('Filled')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {!eventShifts || (Array.isArray(eventShifts) && eventShifts.length === 0) ? (
                       <TableRow>
-                        <TableCell colSpan={4} className="text-center py-6 text-muted-foreground">
-                          No shifts scheduled
+                        <TableCell colSpan={4} className="text-center py-16 text-muted-foreground font-bold">
+                          {t('No shifts scheduled')}
                         </TableCell>
                       </TableRow>
                     ) : (
                       (Array.isArray(eventShifts) ? eventShifts : (eventShifts?.data ?? [])).map((s: any) => (
-                        <TableRow key={s.id}>
-                          <TableCell>{s.title}</TableCell>
-                          <TableCell>
+                        <TableRow key={s.id} className="border-border/30 hover:bg-muted/30 transition-colors">
+                          <TableCell className="px-10 py-6 font-bold text-foreground">{s.title}</TableCell>
+                          <TableCell className="py-6 font-medium text-muted-foreground">
                             {s.start_at ?? s.startAt ?? ''} — {s.end_at ?? s.endAt ?? ''}
                           </TableCell>
-                          <TableCell>{s.capacity ?? 0}</TableCell>
-                          <TableCell>{s.assignments_count ?? s.assigned_count ?? 0}</TableCell>
+                          <TableCell className="py-6 font-bold">{s.capacity ?? 0}</TableCell>
+                          <TableCell className="px-10 py-6 text-right">
+                            <div className="flex items-center justify-end gap-3 font-black text-primary">
+                              {s.assignments_count ?? s.assigned_count ?? 0} / {s.capacity ?? 0}
+                            </div>
+                          </TableCell>
                         </TableRow>
                       ))
                     )}
@@ -314,65 +319,71 @@ const Detail = () => {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
+          <div className="space-y-8">
             {/* Action Card */}
-            <Card className="border-none shadow-lg sticky top-24">
-              <CardHeader>
-                <CardTitle>{t('Date & Time')}</CardTitle>
+            <Card className="border-border/50 shadow-2xl shadow-primary/10 rounded-3xl bg-card lg:sticky lg:top-24 overflow-hidden">
+              <CardHeader className="bg-muted/30 border-b border-border/50">
+                <CardTitle className="text-xl font-black tracking-tight">{t('Date & Time')}</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <Calendar className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+              <CardContent className="space-y-8 p-8">
+                <div className="space-y-6">
+                  <div className="flex items-start gap-4 group">
+                    <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                      <Calendar className="h-6 w-6" />
+                    </div>
                     <div>
-                      <div className="font-medium">{formatDate(event.startAt)}</div>
-                      <div className="text-sm text-muted-foreground">{t('Add to Calendar')}</div>
+                      <div className="font-black text-foreground">{formatDate(event.startAt)}</div>
+                      <div className="text-sm font-bold text-muted-foreground uppercase tracking-widest text-[10px] mt-1">{t('Event Date')}</div>
                     </div>
                   </div>
-                  <div className="flex items-start gap-3">
-                    <Clock className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-4 group">
+                    <div className="w-12 h-12 rounded-2xl bg-orange-500/10 flex items-center justify-center text-orange-600 group-hover:scale-110 transition-transform">
+                      <Clock className="h-6 w-6" />
+                    </div>
                     <div>
-                      <div className="font-medium">
+                      <div className="font-black text-foreground">
                         {formatTime(event.startAt)} - {formatTime(event.endAt)}
                       </div>
-                      <div className="text-sm text-muted-foreground">{t('Duration')}</div>
+                      <div className="text-sm font-bold text-muted-foreground uppercase tracking-widest text-[10px] mt-1">{t('Duration')}</div>
                     </div>
                   </div>
                 </div>
 
-                <Separator />
+                <div className="h-px bg-border/50" />
 
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm mb-1">
-                    <span>
-                      {event.spots?.filled || 0} {t('volunteers signed up')}
-                    </span>
-                    <span className="text-muted-foreground">
-                      {event.capacity || 0} {t('spots total')}
-                    </span>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-end">
+                    <div className="space-y-1">
+                      <div className="text-2xl font-black text-primary">{event.spots?.filled || 0}</div>
+                      <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{t('Volunteers Joined')}</div>
+                    </div>
+                    <div className="text-right space-y-1">
+                      <div className="text-2xl font-black text-foreground">{event.capacity || 0}</div>
+                      <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{t('Total Spots')}</div>
+                    </div>
                   </div>
-                  <div className="w-full bg-slate-100 rounded-full h-2">
+                  <div className="w-full bg-muted rounded-full h-3 p-1">
                     <div
-                      className="bg-primary h-2 rounded-full transition-all"
+                      className="bg-gradient-to-r from-primary to-primary/80 h-full rounded-full transition-all duration-1000"
                       style={{ width: `${((event.spots?.filled || 0) / (event.capacity || 1)) * 100}%` }}
                     />
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-3 pt-2">
+                <div className="flex flex-col gap-4 pt-4">
                   <Button
                     size="lg"
-                    className="w-full font-semibold text-lg h-12"
+                    className="w-full font-black text-lg h-16 rounded-2xl shadow-2xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
                     onClick={handleJoinEvent}
                     disabled={joinMutation.isPending}
                   >
                     {joinMutation.isPending ? t('Joining...') : t('Join Now')}
                   </Button>
-                  <div className="flex gap-2">
-                    <Button variant="outline" className="flex-1">
+                  <div className="flex gap-4">
+                    <Button variant="outline" className="flex-1 h-12 rounded-xl border-border/50 font-bold hover:bg-muted">
                       <Share2 className="h-4 w-4 mr-2" /> {t('Share')}
                     </Button>
-                    <Button variant="outline" className="flex-1">
+                    <Button variant="outline" className="flex-1 h-12 rounded-xl border-border/50 font-bold hover:bg-muted">
                       <Flag className="h-4 w-4 mr-2" /> {t('Report')}
                     </Button>
                   </div>
@@ -382,39 +393,45 @@ const Detail = () => {
 
             {/* Organizer Card */}
             {event.organization && (
-              <Card className="border-none shadow-md">
-                <CardHeader>
-                  <CardTitle className="text-lg">{t('Organizer')}</CardTitle>
+              <Card className="border-border/50 shadow-xl rounded-3xl bg-card overflow-hidden">
+                <CardHeader className="bg-muted/30 border-b border-border/50">
+                  <CardTitle className="text-lg font-black tracking-tight">{t('Organizer')}</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-4 mb-4">
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage src={event.organization.logo} />
-                      <AvatarFallback>{event.organization.name?.charAt(0)}</AvatarFallback>
+                <CardContent className="p-8">
+                  <div className="flex items-center gap-4 mb-6 group cursor-pointer" onClick={() => navigate(`/organizations/${event.organization.id}`)}>
+                    <Avatar className="h-14 w-14 rounded-2xl border-2 border-primary/20 p-1 bg-background">
+                      <AvatarImage src={event.organization.logo} className="rounded-xl object-contain" />
+                      <AvatarFallback className="rounded-xl bg-primary/5 text-primary font-black">{event.organization.name?.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div>
-                      <div className="font-semibold">{event.organization.name}</div>
-                      <div className="text-sm text-muted-foreground">{t('Organization')}</div>
+                      <div className="font-black text-foreground group-hover:text-primary transition-colors">{event.organization.name}</div>
+                      <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{t('Verified Organization')}</div>
                     </div>
                   </div>
-                  <div className="space-y-2 text-sm">
+                  <div className="space-y-4">
                     {event.organization.email && (
-                      <div className="flex items-center gap-2 text-slate-600">
-                        <Mail className="h-4 w-4" /> {event.organization.email}
-                      </div>
+                      <a href={`mailto:${event.organization.email}`} className="flex items-center gap-3 text-sm font-bold text-muted-foreground hover:text-primary transition-colors">
+                        <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                          <Mail className="h-4 w-4" />
+                        </div>
+                        {event.organization.email}
+                      </a>
                     )}
                     {event.organization.phone && (
-                      <div className="flex items-center gap-2 text-slate-600">
-                        <Phone className="h-4 w-4" /> {event.organization.phone}
-                      </div>
+                      <a href={`tel:${event.organization.phone}`} className="flex items-center gap-3 text-sm font-bold text-muted-foreground hover:text-primary transition-colors">
+                        <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                          <Phone className="h-4 w-4" />
+                        </div>
+                        {event.organization.phone}
+                      </a>
                     )}
                   </div>
                   <Button
                     variant="link"
-                    className="px-0 mt-2 text-primary"
+                    className="px-0 mt-6 text-primary font-black uppercase tracking-widest text-[10px] hover:no-underline hover:opacity-70"
                     onClick={() => navigate(`/organizations/${event.organization.id}`)}
                   >
-                    {t('View Organization Profile')}
+                    {t('View Profile')} <ArrowRight className="ml-2 h-3 w-3" />
                   </Button>
                 </CardContent>
               </Card>
