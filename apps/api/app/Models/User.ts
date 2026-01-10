@@ -59,6 +59,17 @@ export default class User extends BaseModel {
   public rememberMeToken?: string
 
   @computed()
+  public get profileImageUrl(): string {
+    const meta = this.profileMetadata || {}
+    // If we have a stored URL (e.g. /uploads/...)
+    if (meta.avatar_url) {
+      return meta.avatar_url
+    }
+    // Fallback based on name
+    return `https://ui-avatars.com/api/?name=${this.firstName}+${this.lastName}&background=random`
+  }
+
+  @computed()
   public get skills(): string[] {
     const meta = this.profileMetadata || {}
     const raw = meta.skills || meta.skill_tags || []
