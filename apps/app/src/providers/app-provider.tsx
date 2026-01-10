@@ -74,21 +74,27 @@ export default function AppProvider({ children }: AppProviderProps) {
   const navigate = useNavigate();
   const [showBackButton, setShowBackButton] = useState(location.pathname !== '/');
 
-  const { token, setToken } = useStore();
+  const { token, setToken, setUser } = useStore();
 
   const queryClient = useQueryClient();
 
-  const { data: me, isLoading: isLoadingMe } = useQuery({
+  const { data: meResponse, isLoading: isLoadingMe } = useQuery({
     queryKey: ['me'],
     queryFn: () => api.getCurrentUser(),
     enabled: !!token, // only run when token exists
     retry: false,
-    onSuccess: () => {
+    onSuccess: (data: any) => {
+      // The /me endpoint returns { user: { ... } }
+      const userData = data?.user || data;
+      if (userData) {
+        setUser(userData);
+      }
+
       // Refresh notification list after retrieving /me — this ensures
       // any achievements auto-awarded by the backend show up in the UI quickly.
       try {
         queryClient.invalidateQueries(['notifications']);
-      } catch (e) {}
+      } catch (e) { }
     },
     onError: (error: any) => {
       const status = error?.response?.status;
@@ -143,6 +149,8 @@ export default function AppProvider({ children }: AppProviderProps) {
       }
     }
   });
+
+  const me = meResponse?.user || meResponse;
 
   const { data: settings } = useQuery({
     queryKey: ['system-settings'],
@@ -314,17 +322,17 @@ export default function AppProvider({ children }: AppProviderProps) {
         onSelect={(org) => {
           try {
             localStorage.setItem('selectedOrganization', JSON.stringify(org));
-          } catch (e) {}
+          } catch (e) { }
           setSelectedOrganization(org);
           setShowOrgSelector(false);
           // Show a small confirmation toast
           try {
             toast({ title: 'Organization selected', description: `Using ${org.name} for organization panel` });
-          } catch (e) {}
+          } catch (e) { }
           // Refresh queries so organization panel picks up selected org
           try {
             queryClient.invalidateQueries();
-          } catch (e) {}
+          } catch (e) { }
         }}
       />
       {isMaintenanceLocked ? (
