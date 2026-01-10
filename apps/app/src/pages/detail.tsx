@@ -15,6 +15,7 @@ import { axios } from '@/lib/axios';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { useToast } from '@/components/atoms/use-toast';
 import { useStore } from '@/lib/store';
+import { DetailTypes } from '@/lib/types';
 
 // Fix for default marker icon
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -31,37 +32,43 @@ L.Marker.prototype.options.icon = DefaultIcon;
 
 const Detail = () => {
   const { t } = useTranslation();
-  const { id } = useParams();
+  const { id, type } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { token } = useStore((state) => ({ token: state.token }));
 
   const { data: event, isLoading } = useQuery({
-    queryKey: ['event', id],
+    queryKey: ['detail', type, id],
     queryFn: async () => {
-      const res = await axios.get(`/events/${id}`);
+      let url = `/events/${id}`; // default
+      if (type === DetailTypes.Request) {
+        url = `/help-requests/${id}`;
+      } else if (type === DetailTypes.Offer) {
+        url = `/offers/${id}`;
+      }
+      const res = await axios.get(url);
       return res as any;
     },
     enabled: !!id
   });
 
-  // Assigned resources for this event
+  // Assigned resources for this event (Only for Events)
   const { data: eventAssignments } = useQuery({
     queryKey: ['event-assignments', id],
     queryFn: async () => {
-      if (!id) return [] as any;
+      if (!id || type !== DetailTypes.Event) return [] as any;
       const res = await axios.get(`/assignments?event_id=${id}`);
       return res as any;
     },
-    enabled: !!id
+    enabled: !!id && type === DetailTypes.Event
   });
 
-  // Shifts for this event
+  // Shifts for this event (Only for Events)
   const { data: eventShifts } = useQuery({
     queryKey: ['event-shifts', id],
-    queryFn: () => (id ? api.listShifts({ event_id: Number(id) }) : Promise.resolve([])),
-    enabled: !!id
+    queryFn: () => (id && type === DetailTypes.Event ? api.listShifts({ event_id: Number(id) }) : Promise.resolve([])),
+    enabled: !!id && type === DetailTypes.Event
   });
 
   const joinMutation = useMutation({
@@ -326,121 +333,134 @@ const Detail = () => {
                 <CardTitle className="text-xl font-black tracking-tight">{t('Date & Time')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-8 p-8">
-                <div className="space-y-6">
+                {type === DetailTypes.Request || type === DetailTypes.Offer ? (
                   <div className="flex items-start gap-4 group">
                     <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                      <Calendar className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <div className="font-black text-foreground">{formatDate(event.startAt)}</div>
-                      <div className="text-sm font-bold text-muted-foreground uppercase tracking-widest text-[10px] mt-1">{t('Event Date')}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-4 group">
-                    <div className="w-12 h-12 rounded-2xl bg-orange-500/10 flex items-center justify-center text-orange-600 group-hover:scale-110 transition-transform">
                       <Clock className="h-6 w-6" />
                     </div>
                     <div>
-                      <div className="font-black text-foreground">
-                        {formatTime(event.startAt)} - {formatTime(event.endAt)}
+                      <div className="font-black text-foreground">{formatDate(event.createdAt)}</div>
+                      <div className="text-sm font-bold text-muted-foreground uppercase tracking-widest text-[10px] mt-1">{t('Posted On')}</div>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-start gap-4 group">
+                      <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                        <Calendar className="h-6 w-6" />
                       </div>
-                      <div className="text-sm font-bold text-muted-foreground uppercase tracking-widest text-[10px] mt-1">{t('Duration')}</div>
+                      <div>
+                        <div className="font-black text-foreground">{formatDate(event.startAt)}</div>
+                        <div className="text-sm font-bold text-muted-foreground uppercase tracking-widest text-[10px] mt-1">{t('Event Date')}</div>
+                      </div>
                     </div>
+                    <div className="flex items-start gap-4 group">
+                      <div className="w-12 h-12 rounded-2xl bg-orange-500/10 flex items-center justify-center text-orange-600 group-hover:scale-110 transition-transform">
+                        <Clock className="h-6 w-6" />
+                      </div>
+                      <div>
+                        <div className="font-black text-foreground">
+                          {formatTime(event.startAt)} - {formatTime(event.endAt)}
+                        </div>
+                        <div className="text-sm font-bold text-muted-foreground uppercase tracking-widest text-[10px] mt-1">{t('Duration')}</div>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div className="h-px bg-border/50" />
+
+              <div className="space-y-4">
+                <div className="flex justify-between items-end">
+                  <div className="space-y-1">
+                    <div className="text-2xl font-black text-primary">{event.spots?.filled || 0}</div>
+                    <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{t('Volunteers Joined')}</div>
+                  </div>
+                  <div className="text-right space-y-1">
+                    <div className="text-2xl font-black text-foreground">{event.capacity || 0}</div>
+                    <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{t('Total Spots')}</div>
                   </div>
                 </div>
-
-                <div className="h-px bg-border/50" />
-
-                <div className="space-y-4">
-                  <div className="flex justify-between items-end">
-                    <div className="space-y-1">
-                      <div className="text-2xl font-black text-primary">{event.spots?.filled || 0}</div>
-                      <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{t('Volunteers Joined')}</div>
-                    </div>
-                    <div className="text-right space-y-1">
-                      <div className="text-2xl font-black text-foreground">{event.capacity || 0}</div>
-                      <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{t('Total Spots')}</div>
-                    </div>
-                  </div>
-                  <div className="w-full bg-muted rounded-full h-3 p-1">
-                    <div
-                      className="bg-gradient-to-r from-primary to-primary/80 h-full rounded-full transition-all duration-1000"
-                      style={{ width: `${((event.spots?.filled || 0) / (event.capacity || 1)) * 100}%` }}
-                    />
-                  </div>
+                <div className="w-full bg-muted rounded-full h-3 p-1">
+                  <div
+                    className="bg-gradient-to-r from-primary to-primary/80 h-full rounded-full transition-all duration-1000"
+                    style={{ width: `${((event.spots?.filled || 0) / (event.capacity || 1)) * 100}%` }}
+                  />
                 </div>
+              </div>
 
-                <div className="flex flex-col gap-4 pt-4">
-                  <Button
-                    size="lg"
-                    className="w-full font-black text-lg h-16 rounded-2xl shadow-2xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                    onClick={handleJoinEvent}
-                    disabled={joinMutation.isPending}
-                  >
-                    {joinMutation.isPending ? t('Joining...') : t('Join Now')}
+              <div className="flex flex-col gap-4 pt-4">
+                <Button
+                  size="lg"
+                  className="w-full font-black text-lg h-16 rounded-2xl shadow-2xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  onClick={handleJoinEvent}
+                  disabled={joinMutation.isPending}
+                >
+                  {joinMutation.isPending ? t('Joining...') : t('Join Now')}
+                </Button>
+                <div className="flex gap-4">
+                  <Button variant="outline" className="flex-1 h-12 rounded-xl border-border/50 font-bold hover:bg-muted">
+                    <Share2 className="h-4 w-4 mr-2" /> {t('Share')}
                   </Button>
-                  <div className="flex gap-4">
-                    <Button variant="outline" className="flex-1 h-12 rounded-xl border-border/50 font-bold hover:bg-muted">
-                      <Share2 className="h-4 w-4 mr-2" /> {t('Share')}
-                    </Button>
-                    <Button variant="outline" className="flex-1 h-12 rounded-xl border-border/50 font-bold hover:bg-muted">
-                      <Flag className="h-4 w-4 mr-2" /> {t('Report')}
-                    </Button>
+                  <Button variant="outline" className="flex-1 h-12 rounded-xl border-border/50 font-bold hover:bg-muted">
+                    <Flag className="h-4 w-4 mr-2" /> {t('Report')}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Organizer Card */}
+          {event.organization && (
+            <Card className="border-border/50 shadow-xl rounded-3xl bg-card overflow-hidden">
+              <CardHeader className="bg-muted/30 border-b border-border/50">
+                <CardTitle className="text-lg font-black tracking-tight">{t('Organizer')}</CardTitle>
+              </CardHeader>
+              <CardContent className="p-8">
+                <div className="flex items-center gap-4 mb-6 group cursor-pointer" onClick={() => navigate(`/organizations/${event.organization.id}`)}>
+                  <Avatar className="h-14 w-14 rounded-2xl border-2 border-primary/20 p-1 bg-background">
+                    <AvatarImage src={event.organization.logo} className="rounded-xl object-contain" />
+                    <AvatarFallback className="rounded-xl bg-primary/5 text-primary font-black">{event.organization.name?.charAt(0)}</AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <div className="font-black text-foreground group-hover:text-primary transition-colors">{event.organization.name}</div>
+                    <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{t('Verified Organization')}</div>
                   </div>
                 </div>
+                <div className="space-y-4">
+                  {event.organization.email && (
+                    <a href={`mailto:${event.organization.email}`} className="flex items-center gap-3 text-sm font-bold text-muted-foreground hover:text-primary transition-colors">
+                      <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                        <Mail className="h-4 w-4" />
+                      </div>
+                      {event.organization.email}
+                    </a>
+                  )}
+                  {event.organization.phone && (
+                    <a href={`tel:${event.organization.phone}`} className="flex items-center gap-3 text-sm font-bold text-muted-foreground hover:text-primary transition-colors">
+                      <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                        <Phone className="h-4 w-4" />
+                      </div>
+                      {event.organization.phone}
+                    </a>
+                  )}
+                </div>
+                <Button
+                  variant="link"
+                  className="px-0 mt-6 text-primary font-black uppercase tracking-widest text-[10px] hover:no-underline hover:opacity-70"
+                  onClick={() => navigate(`/organizations/${event.organization.id}`)}
+                >
+                  {t('View Profile')} <ArrowRight className="ml-2 h-3 w-3" />
+                </Button>
               </CardContent>
             </Card>
-
-            {/* Organizer Card */}
-            {event.organization && (
-              <Card className="border-border/50 shadow-xl rounded-3xl bg-card overflow-hidden">
-                <CardHeader className="bg-muted/30 border-b border-border/50">
-                  <CardTitle className="text-lg font-black tracking-tight">{t('Organizer')}</CardTitle>
-                </CardHeader>
-                <CardContent className="p-8">
-                  <div className="flex items-center gap-4 mb-6 group cursor-pointer" onClick={() => navigate(`/organizations/${event.organization.id}`)}>
-                    <Avatar className="h-14 w-14 rounded-2xl border-2 border-primary/20 p-1 bg-background">
-                      <AvatarImage src={event.organization.logo} className="rounded-xl object-contain" />
-                      <AvatarFallback className="rounded-xl bg-primary/5 text-primary font-black">{event.organization.name?.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="font-black text-foreground group-hover:text-primary transition-colors">{event.organization.name}</div>
-                      <div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{t('Verified Organization')}</div>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    {event.organization.email && (
-                      <a href={`mailto:${event.organization.email}`} className="flex items-center gap-3 text-sm font-bold text-muted-foreground hover:text-primary transition-colors">
-                        <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
-                          <Mail className="h-4 w-4" />
-                        </div>
-                        {event.organization.email}
-                      </a>
-                    )}
-                    {event.organization.phone && (
-                      <a href={`tel:${event.organization.phone}`} className="flex items-center gap-3 text-sm font-bold text-muted-foreground hover:text-primary transition-colors">
-                        <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
-                          <Phone className="h-4 w-4" />
-                        </div>
-                        {event.organization.phone}
-                      </a>
-                    )}
-                  </div>
-                  <Button
-                    variant="link"
-                    className="px-0 mt-6 text-primary font-black uppercase tracking-widest text-[10px] hover:no-underline hover:opacity-70"
-                    onClick={() => navigate(`/organizations/${event.organization.id}`)}
-                  >
-                    {t('View Profile')} <ArrowRight className="ml-2 h-3 w-3" />
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
-          </div>
+          )}
         </div>
       </div>
-      {/* Assign dialog removed from this page — not defined here */}
     </div>
+      {/* Assign dialog removed from this page — not defined here */ }
+    </div >
   );
 };
 
