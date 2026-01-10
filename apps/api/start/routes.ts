@@ -26,8 +26,6 @@ Route.get('/', async () => {
   return { hello: 'world' }
 })
 
-Route.post('/contact', 'ContactController.store')
-
 Route.get('/health', async ({ response }) => {
   const report = await HealthCheck.getReport()
   return report.healthy ? response.ok(report) : response.badRequest(report)
@@ -205,11 +203,43 @@ Route.resource('background-checks', 'BackgroundChecksController')
 Route.post('/ai/match', 'AiController.match') // returns suggested volunteers for a task
 Route.post('/ai/forecast', 'AiController.forecast') // returns demand forecast for a date range
 
+// =====================================================================
+// Authentication & User Lifecycle Routes
+// =====================================================================
+
+// Public Authentication Routes
 Route.post('/register', 'AuthController.register')
 Route.post('/login', 'AuthController.login')
-Route.post('/logout', 'AuthController.logout').middleware('auth:api')
 
-Route.get('/me', 'UsersController.me').middleware(['auth'])
+// Contact Form (Public)
+Route.post('/contact', 'ContactController.store')
+
+// Protected Authentication Routes
+Route.group(() => {
+  Route.post('/logout', 'AuthController.logout')
+  Route.get('/me', 'AuthController.me')
+  Route.post('/refresh', 'AuthController.refresh')
+}).middleware('auth:api')
+
+// User Preferences Routes
+Route.group(() => {
+  Route.get('/preferences', 'UserPreferencesController.show')
+  Route.put('/preferences', 'UserPreferencesController.update')
+  Route.post('/preferences/reset', 'UserPreferencesController.reset')
+  Route.patch('/preferences/:category', 'UserPreferencesController.updateCategory')
+}).middleware('auth:api')
+
+// Contact Management Routes (Admin only)
+Route.group(() => {
+  Route.get('/contact', 'ContactController.index')
+  Route.get('/contact/:id', 'ContactController.show')
+  Route.patch('/contact/:id', 'ContactController.update')
+  Route.delete('/contact/:id', 'ContactController.destroy')
+}).middleware(['auth', 'admin'])
+
+// =====================================================================
+// End Authentication & User Lifecycle Routes
+// =====================================================================
 
 // Resource management extra endpoints (must be before resource definition)
 Route.get('/resources/dashboard', 'ResourcesController.dashboard').middleware(['auth'])
@@ -241,7 +271,7 @@ Route.group(() => {
   Route.get('/:id/status', 'ImportController.getStatus')
   Route.get('/templates/volunteers', 'ImportController.volunteersTemplate')
   Route.get('/templates/opportunities', 'ImportController.opportunitiesTemplate')
-  
+
   // Generic Import Routes
   Route.get('/template', 'ImportsController.getTemplate')
   Route.post('/process', 'ImportsController.processImport')
@@ -259,7 +289,7 @@ Route.group(() => {
   Route.post('/queue', 'ExportController.queueExport')
   Route.get('/:id/status', 'ExportController.getExportStatus')
   Route.get('/:id/download', 'ExportController.downloadExport')
-  
+
   // Generic Export Route
   Route.get('/download', 'ExportsController.download')
 })
