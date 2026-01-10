@@ -384,89 +384,100 @@ export default function Profile() {
   return (
     <div className="min-h-screen bg-background pb-12">
       {/* Header / Banner */}
-      <div className="relative bg-gradient-to-b from-primary/10 via-background to-background pt-16 pb-32 px-4 overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-full opacity-30 pointer-events-none">
-          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px]" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-blue-500/20 rounded-full blur-[100px]" />
-        </div>
-        <div className="container mx-auto max-w-5xl relative z-10">
-          <div className="flex flex-col md:flex-row items-center md:items-end gap-8">
+      <div className="relative overflow-hidden bg-primary pt-24 pb-48">
+        <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:30px_30px]" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/95 to-primary/90" />
+
+        {/* Decorative Blurs */}
+        <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-96 h-96 bg-white/10 blur-[100px] rounded-full pointer-events-none" />
+        <div className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/2 w-96 h-96 bg-black/10 blur-[100px] rounded-full pointer-events-none" />
+
+        <div className="container relative px-4 mx-auto">
+          <div className="flex flex-col md:flex-row items-center md:items-end gap-10">
             <div className="relative group">
-              <Avatar className="h-40 w-40 border-4 border-card shadow-2xl transition-transform group-hover:scale-[1.02]">
-                <AvatarImage src={`${userData.profileImageUrl}?v=${avatarVersion}`} />
-                <AvatarFallback className="bg-primary/10 text-primary text-5xl font-bold">
+              <div className="absolute -inset-1.5 bg-gradient-to-tr from-white/20 to-white/0 rounded-[3rem] blur opacity-40 group-hover:opacity-75 transition duration-500" />
+              <Avatar className="h-44 w-44 border-4 border-white/10 shadow-2xl relative transition-transform group-hover:scale-[1.02] rounded-[2.8rem]">
+                <AvatarImage src={`${userData.profileImageUrl}?v=${avatarVersion}`} className="object-cover" />
+                <AvatarFallback className="bg-white/10 text-white text-5xl font-extrabold backdrop-blur-md">
                   {userData.firstName?.[0]}
                   {userData.lastName?.[0]}
                 </AvatarFallback>
               </Avatar>
               {profileCompletion < 100 && (
-                <div className="absolute -top-2 -right-2 bg-amber-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg border-2 border-background animate-pulse">
+                <div className="absolute -top-3 -right-3 bg-amber-500 text-white text-sm font-black px-4 py-1.5 rounded-2xl shadow-2xl border-2 border-primary/20 backdrop-blur-sm animate-bounce-subtle">
                   {profileCompletion}%
                 </div>
               )}
             </div>
-            <div className="text-center md:text-left flex-1 space-y-2">
-              <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-2 flex flex-col md:flex-row items-center gap-3">
-                <span>{userData.firstName || userData.first_name} {userData.lastName || userData.last_name}</span>
-                {userData.isBackgroundChecked && (
-                  <Badge variant="default" className="bg-emerald-500 text-white border-none px-2 py-0 h-6 flex items-center gap-1 shadow-lg shadow-emerald-500/20">
-                    <CheckCircle2 className="h-3 w-3" /> Verified
-                  </Badge>
-                )}
-              </h1>
-              <p className="text-muted-foreground flex items-center gap-2 justify-center md:justify-start text-lg">
-                <Shield className="h-5 w-5 text-primary" />
-                <span className="font-medium">Volunteer Member</span>
-              </p>
-              <div className="flex gap-2 mt-3 justify-center md:justify-start">
+
+            <div className="text-center md:text-left flex-1 space-y-4">
+              <div className="space-y-1">
+                <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
+                  <h1 className="text-4xl md:text-6xl font-black tracking-tight text-white">
+                    {userData.firstName || userData.first_name} {userData.lastName || userData.last_name}
+                  </h1>
+                  {userData.isBackgroundChecked && (
+                    <Badge className="bg-emerald-500/20 text-emerald-100 border-emerald-500/30 backdrop-blur-sm px-4 py-1.5 rounded-full flex items-center gap-2 shadow-lg shadow-emerald-500/10 h-9">
+                      <CheckCircle2 className="h-4 w-4" />
+                      <span className="font-bold">{t('Verified')}</span>
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-primary-foreground/70 flex items-center gap-2 justify-center md:justify-start text-xl font-medium">
+                  <Shield className="h-6 w-6" />
+                  <span>{t('Volunteer Member')}</span>
+                </p>
+              </div>
+
+              <div className="flex flex-wrap gap-3 mt-4 justify-center md:justify-start">
                 {(() => {
-                  // compute badges dynamically from available user data
                   const computed: string[] = [];
                   const hoursCount = Number(userData.hours || userData.totalHours || 0);
                   const impact = Number(userData.impactScore || 0);
                   const joinedAt = userData.createdAt || userData.created_at || userData.joinedAt || null;
-                  if (impact >= 800) computed.push('Top Contributor');
-                  if (hoursCount >= 50) computed.push('50 Hours Club');
+                  if (impact >= 800) computed.push(t('Top Contributor'));
+                  if (hoursCount >= 50) computed.push(t('50 Hours Club'));
                   if (joinedAt) {
                     try {
                       const d = new Date(joinedAt);
                       if (!isNaN(d.getTime()) && d.getFullYear() <= new Date().getFullYear() - 2) {
-                        computed.push('Early Adopter');
+                        computed.push(t('Early Adopter'));
                       }
                     } catch (e) { }
-                  } else {
-                    computed.push('Member');
                   }
-
-                  // ensure at least one badge
-                  if (computed.length === 0) computed.push('Member');
+                  if (computed.length === 0) computed.push(t('Member'));
 
                   return computed.map((b: any) => (
-                    <Badge key={b} variant="secondary" className="px-3 py-1">
-                      <Award className="h-3 w-3 mr-1 text-yellow-500" /> {b}
+                    <Badge key={b} variant="secondary" className="bg-white/10 hover:bg-white/20 text-white border-white/10 backdrop-blur-sm px-4 py-1.5 rounded-xl font-bold flex items-center gap-2 transition-all">
+                      <Award className="h-4 w-4 text-amber-400 fill-amber-400/20" /> {b}
                     </Badge>
                   ));
                 })()}
               </div>
 
               {/* Profile completion indicator */}
-              <div className="mt-6 w-full md:w-3/4">
-                <div className="flex items-center gap-4">
-                  <div className="flex-1 h-3 bg-muted/50 rounded-full overflow-hidden backdrop-blur-sm border border-border/50" aria-hidden>
+              <div className="mt-8 w-full md:w-3/4 bg-white/5 backdrop-blur-sm p-4 rounded-3xl border border-white/10">
+                <div className="flex items-center gap-4 mb-3">
+                  <div className="flex-1 h-3 bg-white/10 rounded-full overflow-hidden" aria-hidden>
                     <div
-                      className="h-full bg-gradient-to-r from-primary via-primary shadow-[0_0_20px_rgba(var(--primary),0.3)] transition-all duration-1000 ease-out"
+                      className="h-full bg-gradient-to-r from-white via-white/80 to-white/60 shadow-[0_0_20px_rgba(255,255,255,0.3)] transition-all duration-1000 ease-out"
                       style={{ width: `${profileCompletion}%` }}
                     />
                   </div>
-                  <div className="text-sm font-bold text-foreground">{profileCompletion}% Complete</div>
+                  <div className="text-base font-black text-white">{profileCompletion}%</div>
                 </div>
                 {profileCompletion < 100 && (
-                  <div className="mt-2 flex items-center gap-3">
-                    <div className="text-xs text-white/80 flex-1">
-                      Complete your profile to unlock more opportunities and improve matching accuracy.
-                    </div>
-                    <Button size="sm" variant="secondary" onClick={() => setActiveTab('settings')}>
-                      Complete profile
+                  <div className="flex flex-col sm:flex-row items-center gap-4">
+                    <p className="text-white/60 text-sm font-medium flex-1 text-center sm:text-left">
+                      {t('Complete your profile to unlock more opportunities and improve matching accuracy.')}
+                    </p>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => setActiveTab('settings')}
+                      className="rounded-xl font-bold bg-white text-primary hover:bg-white/90 shadow-xl"
+                    >
+                      {t('Complete Profile')}
                     </Button>
                   </div>
                 )}
@@ -476,35 +487,33 @@ export default function Profile() {
         </div>
       </div>
 
-      <div className="container mx-auto max-w-5xl px-4 -mt-12">
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-          <TabsList className="bg-white shadow-sm p-1 h-12 w-full md:w-auto grid grid-cols-3 md:flex">
-            <TabsTrigger value="overview" className="flex gap-2">
-              <Award className="h-4 w-4" /> <span className="hidden md:inline">Overview</span>
-            </TabsTrigger>
-            <TabsTrigger value="applications" className="flex gap-2">
-              <List className="h-4 w-4" /> <span className="hidden md:inline">Applications</span>
-            </TabsTrigger>
-            <TabsTrigger value="organizations" className="flex gap-2">
-              <Building2 className="h-4 w-4" /> <span className="hidden md:inline">Organizations</span>
-            </TabsTrigger>
-            <TabsTrigger value="compliance" className="flex gap-2">
-              <Shield className="h-4 w-4" /> <span className="hidden md:inline">Compliance</span>
-            </TabsTrigger>
-
-            <TabsTrigger value="schedule" className="flex gap-2">
-              <Calendar className="h-4 w-4" /> <span className="hidden md:inline">My Schedule</span>
-            </TabsTrigger>
-            <TabsTrigger value="history" className="flex gap-2">
-              <History className="h-4 w-4" /> <span className="hidden md:inline">History</span>
-            </TabsTrigger>
-            <TabsTrigger value="resources" className="flex gap-2">
-              <Award className="h-4 w-4" /> <span className="hidden md:inline">Resources</span>
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex gap-2">
-              <Settings className="h-4 w-4" /> <span className="hidden md:inline">Settings</span>
-            </TabsTrigger>
-          </TabsList>
+      <div className="container mx-auto px-4 -mt-32 relative z-20">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-8">
+          <Card className="p-2 border-border/50 shadow-2xl shadow-primary/5 rounded-[2rem] bg-card/80 backdrop-blur-md overflow-x-auto">
+            <TabsList className="bg-transparent h-14 w-full justify-start gap-2 p-0">
+              <TabsTrigger value="overview" className="flex gap-2 h-11 px-6 rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-white font-bold transition-all">
+                <Award className="h-4 w-4" /> <span>{t('Overview')}</span>
+              </TabsTrigger>
+              <TabsTrigger value="applications" className="flex gap-2 h-11 px-6 rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-white font-bold transition-all">
+                <List className="h-4 w-4" /> <span>{t('Applications')}</span>
+              </TabsTrigger>
+              <TabsTrigger value="organizations" className="flex gap-2 h-11 px-6 rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-white font-bold transition-all">
+                <Building2 className="h-4 w-4" /> <span>{t('Organizations')}</span>
+              </TabsTrigger>
+              <TabsTrigger value="compliance" className="flex gap-2 h-11 px-6 rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-white font-bold transition-all">
+                <Shield className="h-4 w-4" /> <span>{t('Compliance')}</span>
+              </TabsTrigger>
+              <TabsTrigger value="schedule" className="flex gap-2 h-11 px-6 rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-white font-bold transition-all">
+                <Calendar className="h-4 w-4" /> <span>{t('Schedule')}</span>
+              </TabsTrigger>
+              <TabsTrigger value="history" className="flex gap-2 h-11 px-6 rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-white font-bold transition-all">
+                <History className="h-4 w-4" /> <span>{t('History')}</span>
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="flex gap-2 h-11 px-6 rounded-2xl data-[state=active]:bg-primary data-[state=active]:text-white font-bold transition-all">
+                <Settings className="h-4 w-4" /> <span>{t('Settings')}</span>
+              </TabsTrigger>
+            </TabsList>
+          </Card>
 
           <TabsContent value="overview" className="space-y-6">
             <VolunteerDashboard />
@@ -524,63 +533,70 @@ export default function Profile() {
 
           {/* SCHEDULE SECTION */}
           <TabsContent value="schedule">
-            <Card>
-              <CardHeader>
-                <CardTitle>My Schedule</CardTitle>
-                <CardDescription>Manage your upcoming volunteer shifts</CardDescription>
+            <Card className="border-border/50 shadow-2xl shadow-primary/5 rounded-[2.5rem] bg-card overflow-hidden">
+              <CardHeader className="p-8 md:p-12 pb-0">
+                <div className="flex items-center gap-4 mb-2">
+                  <div className="p-3 rounded-2xl bg-primary/10 text-primary">
+                    <Calendar className="h-6 w-6" />
+                  </div>
+                  <CardTitle className="text-3xl font-black">{t('My Schedule')}</CardTitle>
+                </div>
+                <CardDescription className="text-lg font-medium pl-14">
+                  {t('Manage your upcoming volunteer shifts')}
+                </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
+              <CardContent className="p-8 md:p-12">
+                <div className="space-y-6">
                   {upcomingShifts.length > 0 ? (
                     <>
                       {paginatedShifts.map((shift: any) => (
                         <div
                           key={shift.id}
-                          className="flex flex-col md:flex-row md:items-center justify-between p-6 border rounded-lg gap-4"
+                          className="flex flex-col md:flex-row md:items-center justify-between p-8 border border-border/50 rounded-[2.5rem] gap-6 hover:bg-muted/30 transition-colors group"
                         >
-                          <div className="flex gap-4">
-                            <div className="flex flex-col items-center justify-center w-16 h-16 bg-slate-100 rounded-lg shrink-0">
-                              <span className="text-xs font-bold uppercase text-slate-500">
+                          <div className="flex gap-6">
+                            <div className="flex flex-col items-center justify-center w-20 h-20 bg-primary/10 rounded-[1.5rem] shrink-0 border border-primary/20 group-hover:scale-110 transition-transform">
+                              <span className="text-xs font-black uppercase text-primary/60">
                                 {shift.date.split(' ')[0]}
                               </span>
-                              <span className="text-xl font-bold">{shift.date.split(' ')[1]}</span>
+                              <span className="text-2xl font-black text-primary">{shift.date.split(' ')[1]}</span>
                             </div>
-                            <div>
-                              <h3 className="font-semibold text-lg">{shift.title}</h3>
-                              <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground mt-1">
-                                <span className="flex items-center gap-1">
-                                  <Clock className="h-3 w-3" /> {shift.time}
+                            <div className="space-y-2">
+                              <h3 className="font-black text-2xl tracking-tight">{shift.title}</h3>
+                              <div className="flex flex-wrap gap-x-6 gap-y-2 text-base text-muted-foreground font-medium">
+                                <span className="flex items-center gap-2">
+                                  <Clock className="h-4 w-4 text-primary" /> {shift.time}
                                 </span>
-                                <span className="flex items-center gap-1">
-                                  <MapPin className="h-3 w-3" /> {shift.location}
+                                <span className="flex items-center gap-2">
+                                  <MapPin className="h-4 w-4 text-primary" /> {shift.location}
                                 </span>
-                                <span className="flex items-center gap-1">
-                                  <User className="h-3 w-3" /> {shift.role}
+                                <span className="flex items-center gap-2">
+                                  <User className="h-4 w-4 text-primary" /> {shift.role}
                                 </span>
                               </div>
                             </div>
                           </div>
-                          <div className="flex gap-2 w-full md:w-auto">
+                          <div className="flex gap-3 w-full md:w-auto">
                             <Button
                               variant="outline"
-                              className="flex-1 md:flex-none"
+                              className="flex-1 md:flex-none h-12 rounded-xl font-bold border-border/50 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/20 transition-all"
                               onClick={() => {
                                 const confirmed = window.confirm(
-                                  'Cancel this signup? This will mark your assignment as cancelled.'
+                                  t('Cancel this signup? This will mark your assignment as cancelled.')
                                 );
                                 if (confirmed) cancelMutation.mutate(shift.id);
                               }}
                               disabled={cancelMutation.isLoading}
                             >
-                              {cancelMutation.isLoading ? 'Cancelling...' : 'Cancel'}
+                              {cancelMutation.isLoading ? t('Cancelling...') : t('Cancel')}
                             </Button>
                             <Button
-                              className="flex-1 md:flex-none"
+                              className="flex-1 md:flex-none h-12 rounded-xl font-bold shadow-lg shadow-primary/10"
                               onClick={() =>
                                 navigate(shift.eventId ? `/detail/event/${shift.eventId}` : `/events/${shift.id}`)
                               }
                             >
-                              Details
+                              {t('Details')}
                             </Button>
                           </div>
                         </div>
@@ -588,34 +604,37 @@ export default function Profile() {
 
                       {/* Pagination Controls */}
                       {totalPages > 1 && (
-                        <div className="flex justify-center items-center gap-4 pt-4 border-t mt-4">
+                        <div className="flex justify-center items-center gap-6 pt-8 border-t border-border/50">
                           <Button
                             variant="outline"
-                            size="sm"
+                            size="lg"
+                            className="rounded-xl h-12 px-6"
                             onClick={() => setSchedulePage((p) => Math.max(1, p - 1))}
                             disabled={schedulePage === 1}
                           >
-                            <ChevronLeft className="h-4 w-4 mr-1" /> Previous
+                            <ChevronLeft className="h-5 w-5 mr-2" /> {t('Previous')}
                           </Button>
-                          <span className="text-sm text-muted-foreground">
-                            Page {schedulePage} of {totalPages}
+                          <span className="text-lg font-bold text-muted-foreground">
+                            {t('Page')} {schedulePage} {t('of')} {totalPages}
                           </span>
                           <Button
                             variant="outline"
-                            size="sm"
+                            size="lg"
+                            className="rounded-xl h-12 px-6"
                             onClick={() => setSchedulePage((p) => Math.min(totalPages, p + 1))}
                             disabled={schedulePage === totalPages}
                           >
-                            Next <ChevronRight className="h-4 w-4 ml-1" />
+                            {t('Next')} <ChevronRight className="h-5 w-5 ml-2" />
                           </Button>
                         </div>
                       )}
                     </>
                   ) : (
-                    <div className="text-center py-12 text-muted-foreground">
-                      No upcoming shifts.{' '}
-                      <Button variant="link" onClick={() => navigate('/map')}>
-                        Find opportunities
+                    <div className="text-center py-20 bg-muted/20 rounded-[2.5rem] border-2 border-dashed border-border/50">
+                      <Calendar className="h-20 w-20 text-muted-foreground/20 mx-auto mb-6" />
+                      <p className="text-xl font-bold text-muted-foreground mb-8">{t('No upcoming shifts.')}</p>
+                      <Button size="lg" className="rounded-2xl font-black h-14 px-8 shadow-xl shadow-primary/20" onClick={() => navigate('/map')}>
+                        {t('Find Opportunities')}
                       </Button>
                     </div>
                   )}
@@ -626,40 +645,55 @@ export default function Profile() {
 
           {/* HISTORY SECTION */}
           <TabsContent value="history">
-            <Card>
-              <CardHeader>
-                <CardTitle>Volunteer History</CardTitle>
-                <CardDescription>Your past contributions and verified hours</CardDescription>
+            <Card className="border-border/50 shadow-2xl shadow-primary/5 rounded-[2.5rem] bg-card overflow-hidden">
+              <CardHeader className="p-8 md:p-12 pb-0">
+                <div className="flex items-center gap-4 mb-2">
+                  <div className="p-3 rounded-2xl bg-primary/10 text-primary">
+                    <History className="h-6 w-6" />
+                  </div>
+                  <CardTitle className="text-3xl font-black">{t('Volunteer History')}</CardTitle>
+                </div>
+                <CardDescription className="text-lg font-medium pl-14">
+                  {t('Your past contributions and verified hours')}
+                </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="rounded-md border">
-                  <table className="w-full text-sm text-left">
-                    <thead className="bg-slate-50 text-slate-500 font-medium border-b">
+              <CardContent className="p-8 md:p-12">
+                <div className="rounded-3xl border border-border/50 overflow-hidden bg-background/50 backdrop-blur-sm">
+                  <table className="w-full text-left">
+                    <thead className="bg-primary/5 text-primary border-b border-border/50">
                       <tr>
-                        <th className="p-4">Activity</th>
-                        <th className="p-4">Date</th>
-                        <th className="p-4">Hours</th>
-                        <th className="p-4">Status</th>
-                        <th className="p-4 text-right">Action</th>
+                        <th className="p-6 font-black uppercase tracking-widest text-xs">{t('Activity')}</th>
+                        <th className="p-6 font-black uppercase tracking-widest text-xs">{t('Date')}</th>
+                        <th className="p-6 font-black uppercase tracking-widest text-xs">{t('Hours')}</th>
+                        <th className="p-6 font-black uppercase tracking-widest text-xs">{t('Status')}</th>
+                        <th className="p-6 font-black uppercase tracking-widest text-xs text-right">{t('Action')}</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y">
+                    <tbody className="divide-y divide-border/50 font-medium">
                       {history.map((item: any) => (
-                        <tr key={item.id}>
-                          <td className="p-4 font-medium">{item.title}</td>
-                          <td className="p-4 text-slate-500">{item.date}</td>
-                          <td className="p-4">{item.hours}h</td>
-                          <td className="p-4">
-                            <Badge
-                              variant={item.status === 'Verified' ? 'default' : 'secondary'}
-                              className={item.status === 'Verified' ? 'bg-green-500 hover:bg-green-600' : ''}
-                            >
-                              {item.status}
+                        <tr key={item.id} className="hover:bg-muted/30 transition-colors">
+                          <td className="p-6">
+                            <span className="font-bold text-lg text-foreground">{item.title}</span>
+                          </td>
+                          <td className="p-6 text-muted-foreground">{item.date}</td>
+                          <td className="p-6">
+                            <Badge variant="outline" className="border-primary/20 bg-primary/5 text-primary font-black px-3 py-1 rounded-lg">
+                              {item.hours}h
                             </Badge>
                           </td>
-                          <td className="p-4 text-right">
-                            <Button variant="ghost" size="sm">
-                              Certificate
+                          <td className="p-6">
+                            <Badge
+                              className={cn(
+                                "font-black px-3 py-1 rounded-lg border-none shadow-lg shadow-black/5",
+                                item.status === 'Verified' ? 'bg-emerald-500 text-white' : 'bg-muted text-muted-foreground'
+                              )}
+                            >
+                              {t(item.status)}
+                            </Badge>
+                          </td>
+                          <td className="p-6 text-right">
+                            <Button variant="ghost" size="sm" className="font-bold text-primary hover:bg-primary/10 rounded-xl">
+                              {t('Certificate')}
                             </Button>
                           </td>
                         </tr>
@@ -673,30 +707,43 @@ export default function Profile() {
 
           {/* RESOURCES SECTION */}
           <TabsContent value="resources">
-            <Card>
-              <CardHeader>
-                <CardTitle>My Resource Assignments</CardTitle>
-                <CardDescription>Items currently assigned to you</CardDescription>
+            <Card className="border-border/50 shadow-2xl shadow-primary/5 rounded-[2.5rem] bg-card overflow-hidden">
+              <CardHeader className="p-8 md:p-12 pb-0">
+                <div className="flex items-center gap-4 mb-2">
+                  <div className="p-3 rounded-2xl bg-primary/10 text-primary">
+                    <Award className="h-6 w-6" />
+                  </div>
+                  <CardTitle className="text-3xl font-black">{t('My Resource Assignments')}</CardTitle>
+                </div>
+                <CardDescription className="text-lg font-medium pl-14">
+                  {t('Items currently assigned to you for various tasks.')}
+                </CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
+              <CardContent className="p-8 md:p-12">
+                <div className="space-y-6">
                   {(assignments ?? []).filter((a: any) => a.resourceId || a.resource).length === 0 ? (
-                    <div className="text-center text-muted-foreground py-8">No resource assignments</div>
+                    <div className="text-center py-20 bg-muted/20 rounded-[2.5rem] border-2 border-dashed border-border/50">
+                      <p className="text-xl font-bold text-muted-foreground">{t('No resource assignments')}</p>
+                    </div>
                   ) : (
-                    <div className="space-y-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       {(assignments ?? [])
                         .filter((a: any) => a.resourceId || a.resource)
                         .map((a: any) => (
-                          <div key={a.id} className="p-4 border rounded flex items-center justify-between">
-                            <div>
-                              <div className="font-medium">{a.resource?.name ?? a.resourceName ?? 'Resource'}</div>
-                              <div className="text-sm text-muted-foreground">
-                                Assigned: {a.assignedAt ? new Date(a.assignedAt).toLocaleString() : '-'}
+                          <div key={a.id} className="p-6 border border-border/50 rounded-3xl bg-background/50 backdrop-blur-sm flex items-center justify-between group hover:shadow-xl transition-all">
+                            <div className="space-y-1">
+                              <div className="font-black text-xl text-foreground">{a.resource?.name ?? a.resourceName ?? t('Resource')}</div>
+                              <div className="text-sm text-muted-foreground font-medium">
+                                {t('Assigned')}: {a.assignedAt ? new Date(a.assignedAt).toLocaleDateString() : '-'}
                               </div>
                             </div>
-                            <div className="text-right">
-                              <div className="text-sm">Qty: {a.quantity ?? 1}</div>
-                              <div className="text-sm text-muted-foreground">Status: {a.status}</div>
+                            <div className="text-right space-y-2">
+                              <div className="text-lg font-black text-primary bg-primary/10 px-3 py-1 rounded-xl">
+                                {t('Qty')}: {a.quantity ?? 1}
+                              </div>
+                              <Badge variant="secondary" className="font-bold px-3 py-1 rounded-lg">
+                                {t(a.status || 'Active')}
+                              </Badge>
                             </div>
                           </div>
                         ))}
@@ -709,45 +756,44 @@ export default function Profile() {
 
           {/* SETTINGS SECTION */}
           <TabsContent value="settings">
-            <Card>
-              <CardHeader>
-                <CardTitle>Profile Settings</CardTitle>
-                <CardDescription>Update your personal information</CardDescription>
+            <Card className="border-border/50 shadow-2xl shadow-primary/5 rounded-[2.5rem] bg-card overflow-hidden">
+              <CardHeader className="p-8 md:p-12 pb-0">
+                <div className="flex items-center gap-4 mb-2">
+                  <div className="p-3 rounded-2xl bg-primary/10 text-primary">
+                    <Settings className="h-6 w-6" />
+                  </div>
+                  <CardTitle className="text-3xl font-black">{t('Profile Settings')}</CardTitle>
+                </div>
+                <CardDescription className="text-lg font-medium pl-14">
+                  {t('Update your personal information and application preferences')}
+                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="p-8 md:p-12 space-y-10">
                 {/* Incomplete Profile Warning */}
                 {profileCompletion < 100 && (
-                  <Alert variant="warning" className="mb-6 border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900/50">
-                    <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full gap-3">
-                      <div>
-                        <AlertTitle className="text-amber-800 dark:text-amber-300">Incomplete profile</AlertTitle>
-                        <AlertDescription className="text-amber-700 dark:text-amber-400/80">
-                          <p className="mb-2">Your profile is {profileCompletion}% complete. Finish the following fields to reach 100%:</p>
+                  <Alert className="mb-10 border-amber-200/50 bg-amber-50/50 dark:bg-amber-950/10 backdrop-blur-sm rounded-3xl p-6 ring-1 ring-amber-500/20">
+                    <AlertCircle className="h-6 w-6 text-amber-600 dark:text-amber-400 mt-1" />
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full gap-6 pl-2">
+                      <div className="space-y-2">
+                        <AlertTitle className="text-xl font-black text-amber-900 dark:text-amber-300">{t('Incomplete Profile')}</AlertTitle>
+                        <AlertDescription className="text-amber-800/80 dark:text-amber-400/80 text-base font-medium">
+                          <p className="mb-4">{t('Your profile is {{percentage}}% complete. Finishing these fields improves matching:', { percentage: profileCompletion })}</p>
                           <div className="flex flex-wrap gap-2">
                             {missingFields.map(field => (
-                              <Badge key={field} variant="secondary" className="bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-300 border-none transition-colors">
-                                + {field}
+                              <Badge key={field} className="bg-amber-200/50 text-amber-800 border-none px-3 py-1 rounded-lg font-bold">
+                                + {t(field)}
                               </Badge>
                             ))}
                           </div>
                         </AlertDescription>
                       </div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-40 h-2 bg-amber-200 dark:bg-amber-900/30 rounded-full overflow-hidden">
+                      <div className="flex items-center gap-6 shrink-0">
+                        <div className="w-48 h-3 bg-amber-200/50 rounded-full overflow-hidden">
                           <div
-                            className="h-full bg-amber-500 dark:bg-amber-600 transition-all duration-500 ease-out"
+                            className="h-full bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.5)] transition-all duration-500 ease-out"
                             style={{ width: `${profileCompletion}%` }}
                           ></div>
                         </div>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="bg-white hover:bg-amber-50 border-amber-300 text-amber-700 dark:bg-amber-900/20 dark:hover:bg-amber-900/40 dark:border-amber-800 dark:text-amber-300 transition-colors"
-                          onClick={() => setActiveTab('settings')}
-                        >
-                          Complete now
-                        </Button>
                       </div>
                     </div>
                   </Alert>
@@ -844,7 +890,7 @@ export default function Profile() {
                           id="firstName"
                           value={formData.firstName}
                           onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                          className="bg-card/50 focus:bg-card transition-colors border-border/50"
+                          className="h-14 bg-card/50 focus:bg-card transition-colors border-border/50 rounded-xl"
                         />
                       </div>
                       <div className="space-y-2">
@@ -853,7 +899,7 @@ export default function Profile() {
                           id="lastName"
                           value={formData.lastName}
                           onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                          className="bg-card/50 focus:bg-card transition-colors border-border/50"
+                          className="h-14 bg-card/50 focus:bg-card transition-colors border-border/50 rounded-xl"
                         />
                       </div>
                       <div className="space-y-2">
@@ -1236,20 +1282,20 @@ export default function Profile() {
                   </div>
                 </div>
               </CardContent>
-              <CardFooter className="bg-destructive/10 dark:bg-destructive/5 border-t border-destructive/20 p-8 flex flex-col md:flex-row justify-between items-center mt-8 rounded-b-3xl gap-4">
-                <div className="text-center md:text-left">
-                  <h4 className="text-destructive font-bold text-lg">Danger Zone</h4>
-                  <p className="text-sm text-destructive/70 max-w-sm">
-                    Manage your account security and session. Sign out of your account on this device.
+              <CardFooter className="bg-destructive/5 border-t border-destructive/10 p-12 flex flex-col md:flex-row justify-between items-center mt-12 rounded-b-[2.5rem] gap-8">
+                <div className="text-center md:text-left space-y-2">
+                  <h4 className="text-destructive font-black text-2xl tracking-tight">{t('Danger Zone')}</h4>
+                  <p className="text-muted-foreground font-medium max-w-md">
+                    {t('Manage your account security and session. Sign out of your account on this device.')}
                   </p>
                 </div>
-                <div className="flex gap-3 w-full md:w-auto">
+                <div className="flex gap-4 w-full md:w-auto">
                   <Button
                     variant="outline"
-                    className="border-destructive/20 text-destructive hover:bg-destructive/10 rounded-xl flex-1 md:flex-none"
+                    className="h-14 px-8 border-destructive/20 text-destructive hover:bg-destructive/10 hover:border-destructive/30 rounded-2xl flex-1 md:flex-none font-black text-lg transition-all"
                     onClick={handleLogout}
                   >
-                    <LogOut className="h-4 w-4 mr-2" /> Sign Out
+                    <LogOut className="h-5 w-5 mr-3" /> {t('Sign Out')}
                   </Button>
                 </div>
               </CardFooter>
