@@ -308,6 +308,11 @@ const api = {
   updateNotificationPreferences: async (preferences: any[]) => axios.put('/notification-preferences', { preferences }),
   resetNotificationPreferences: async () => axios.post('/notification-preferences/reset'),
 
+  /* User Preferences */
+  getPreferences: async () => axios.get('/preferences'),
+  updatePreferences: async (data: any) => axios.put('/preferences', data),
+  resetPreferences: async () => axios.post('/preferences/reset'),
+
   /* Broadcasts (Admin) */
   listBroadcasts: async (params?: any) => axios.get('/admin/broadcasts', { params }),
   createBroadcast: async (data: any) => axios.post('/admin/broadcasts', data),
