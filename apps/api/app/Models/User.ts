@@ -133,6 +133,18 @@ export default class User extends BaseModel {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   public updatedAt: DateTime
 
+  public async can(permission: string): Promise<boolean> {
+    if (this.isAdmin) return true
+    
+    // Load roles and their permissions
+    const roles = await this.related('roles').query().preload('permissions' as any)
+    
+    return roles.some((role: any) => {
+      if (!role.permissions) return false
+      return role.permissions.some((p: any) => p.name === permission)
+    })
+  }
+
   @beforeSave()
   public static async hashPassword(user: User) {
     if (user.$dirty.password) {
