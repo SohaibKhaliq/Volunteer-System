@@ -6,10 +6,9 @@ import { useNavigate } from 'react-router-dom';
 import { useStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Search, MapPin, Users, ArrowRight, Building2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router-dom';
 
@@ -144,102 +143,101 @@ const Organizations = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {isLoading
             ? [1, 2, 3, 4, 5, 6].map((i) => (
-            ? [1, 2, 3, 4, 5, 6].map((i) => (
               <div key={i} className="h-[500px] bg-card rounded-[2.5rem] animate-pulse border border-border/50 shadow-sm" />
             ))
-                : filteredOrgs.map((org: any) => (
-                  <Card key={org.id} className="group hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 overflow-hidden border-border/50 rounded-[2.5rem] bg-card flex flex-col">
-                    <div className="h-56 bg-muted relative overflow-hidden">
-                      <img
-                        src={
-                          org.image ||
-                          `https://images.unsplash.com/photo-${org.id % 2 === 0 ? '1542601906990-b4d3fb778b09' : '1469571486292-0ba58a3f068b'}?q=80&w=800&auto=format&fit=crop`
-                        }
-                        alt={org.name}
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      <Badge className="absolute top-5 right-5 bg-white/95 text-foreground backdrop-blur-md border-none shadow-lg px-4 py-1.5 text-xs font-black uppercase tracking-wider rounded-xl">
-                        {org.category || 'General'}
-                      </Badge>
+            : filteredOrgs.map((org: any) => (
+              <Card key={org.id} className="group hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 overflow-hidden border-border/50 rounded-[2.5rem] bg-card flex flex-col">
+                <div className="h-56 bg-muted relative overflow-hidden">
+                  <img
+                    src={
+                      org.image ||
+                      `https://images.unsplash.com/photo-${org.id % 2 === 0 ? '1542601906990-b4d3fb778b09' : '1469571486292-0ba58a3f068b'}?q=80&w=800&auto=format&fit=crop`
+                    }
+                    alt={org.name}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <Badge className="absolute top-5 right-5 bg-white/95 text-foreground backdrop-blur-md border-none shadow-lg px-4 py-1.5 text-xs font-black uppercase tracking-wider rounded-xl">
+                    {org.category || 'General'}
+                  </Badge>
+                </div>
+                <CardContent className="space-y-6 pt-6 flex-1">
+                  <div className="flex flex-col gap-2">
+                    <CardTitle className="text-2xl font-black tracking-tight group-hover:text-primary transition-colors">
+                      {org.name}
+                    </CardTitle>
+                    <p className="text-muted-foreground line-clamp-2 leading-relaxed font-medium">
+                      {org.description || 'Dedicated to supporting our community through collaborative efforts.'}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-4 text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-lg">
+                      <MapPin className="h-3.5 w-3.5 text-primary" /> {org.city || org.location || 'Remote'}
                     </div>
-                    <CardContent className="space-y-6 pt-6 flex-1">
-                      <div className="flex flex-col gap-2">
-                        <CardTitle className="text-2xl font-black tracking-tight group-hover:text-primary transition-colors">
-                          {org.name}
-                        </CardTitle>
-                        <p className="text-muted-foreground line-clamp-2 leading-relaxed font-medium">
-                          {org.description || 'Dedicated to supporting our community through collaborative efforts.'}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-4 text-xs font-bold text-muted-foreground uppercase tracking-widest">
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-lg">
-                          <MapPin className="h-3.5 w-3.5 text-primary" /> {org.city || org.location || 'Remote'}
-                        </div>
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-lg">
-                          <Users className="h-3.5 w-3.5 text-primary" /> {org.members_count || 0} members
-                        </div>
-                      </div>
-                    </CardContent>
-                    <CardFooter className="border-t border-border/50 bg-muted/10 p-6 flex gap-3">
-                      <Link to={`/organizations/${org.id}`} className="flex-1">
-                        <Button variant="ghost" className="w-full h-12 justify-between group rounded-xl bg-white hover:bg-primary hover:text-white border border-border/50 shadow-sm transition-all font-bold px-4">
-                          {t('View Profile')}
-                          <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                        </Button>
-                      </Link>
-                      <div className="w-40">
-                        {(() => {
-                          const membership = membershipMap[org.id];
-                          const status = membership ? membership.status : 'not_member';
-                          if (status === 'active') {
-                            const isLeaving = loadingByOrg[org.id] === 'leaving';
-                            return (
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                className="w-full h-12 rounded-xl shadow-lg shadow-destructive/10 font-bold"
-                                onClick={() => leaveMutation.mutate(org.id)}
-                                disabled={isLeaving}
-                              >
-                                {isLeaving ? 'Leaving...' : t('Leave')}
-                              </Button>
-                            );
-                          }
-                          if (status === 'pending') {
-                            const isJoining = loadingByOrg[org.id] === 'joining';
-                            return (
-                              <Button size="sm" className="w-full h-12 rounded-xl bg-muted text-muted-foreground font-bold" disabled>
-                                {isJoining ? 'Requesting...' : t('Requested')}
-                              </Button>
-                            );
-                          }
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-lg">
+                      <Users className="h-3.5 w-3.5 text-primary" /> {org.members_count || 0} members
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter className="border-t border-border/50 bg-muted/10 p-6 flex gap-3">
+                  <Link to={`/organizations/${org.id}`} className="flex-1">
+                    <Button variant="ghost" className="w-full h-12 justify-between group rounded-xl bg-white hover:bg-primary hover:text-white border border-border/50 shadow-sm transition-all font-bold px-4">
+                      {t('View Profile')}
+                      <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                  </Link>
+                  <div className="w-40">
+                    {(() => {
+                      const membership = membershipMap[org.id];
+                      const status = membership ? membership.status : 'not_member';
+                      if (status === 'active') {
+                        const isLeaving = loadingByOrg[org.id] === 'leaving';
+                        return (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="w-full h-12 rounded-xl shadow-lg shadow-destructive/10 font-bold"
+                            onClick={() => leaveMutation.mutate(org.id)}
+                            disabled={isLeaving}
+                          >
+                            {isLeaving ? 'Leaving...' : t('Leave')}
+                          </Button>
+                        );
+                      }
+                      if (status === 'pending') {
+                        const isJoining = loadingByOrg[org.id] === 'joining';
+                        return (
+                          <Button size="sm" className="w-full h-12 rounded-xl bg-muted text-muted-foreground font-bold" disabled>
+                            {isJoining ? 'Requesting...' : t('Requested')}
+                          </Button>
+                        );
+                      }
 
-                          // not a member
-                          return (
-                            <Button
-                              size="sm"
-                              className="w-full h-12 rounded-xl shadow-lg shadow-primary/10 font-bold"
-                              onClick={() => {
-                                if (!token) {
-                                  const returnTo = encodeURIComponent(
-                                    window.location.pathname + window.location.search + window.location.hash
-                                  );
-                                  navigate(`/login?returnTo=${returnTo}`);
-                                  return;
-                                }
-                                joinMutation.mutate(org.id);
-                              }}
-                              disabled={loadingByOrg[org.id] === 'joining'}
-                            >
-                              {loadingByOrg[org.id] === 'joining' ? '...' : t('Join')}
-                            </Button>
-                          );
-                        })()}
-                      </div>
-                    </CardFooter>
-                  </Card>
-                ))}
+                      // not a member
+                      return (
+                        <Button
+                          size="sm"
+                          className="w-full h-12 rounded-xl shadow-lg shadow-primary/10 font-bold"
+                          onClick={() => {
+                            if (!token) {
+                              const returnTo = encodeURIComponent(
+                                window.location.pathname + window.location.search + window.location.hash
+                              );
+                              navigate(`/login?returnTo=${returnTo}`);
+                              return;
+                            }
+                            joinMutation.mutate(org.id);
+                          }}
+                          disabled={loadingByOrg[org.id] === 'joining'}
+                        >
+                          {loadingByOrg[org.id] === 'joining' ? '...' : t('Join')}
+                        </Button>
+                      );
+                    })()}
+                  </div>
+                </CardFooter>
+              </Card>
+            ))}
         </div>
       </div>
     </div>
