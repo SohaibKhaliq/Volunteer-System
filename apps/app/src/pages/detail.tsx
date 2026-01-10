@@ -51,8 +51,16 @@ export default function Detail() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
   const [applyNotes, setApplyNotes] = useState('');
+
+  const handleBack = () => {
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      // Default fallback
+      navigate('/volunteer/opportunities');
+    }
+  };
 
   // Fetch Opportunity Detail
   const { data: opportunity, isLoading, error } = useQuery(
@@ -158,8 +166,8 @@ export default function Detail() {
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
 
-        <div className="absolute top-4 left-4">
-          <Button variant="secondary" size="sm" className="rounded-full shadow-lg backdrop-blur-md bg-background/50 hover:bg-background/80" onClick={() => navigate(-1)}>
+        <div className="absolute top-4 left-4 z-20">
+          <Button variant="secondary" size="sm" className="rounded-full shadow-lg backdrop-blur-md bg-background/50 hover:bg-background/80" onClick={handleBack}>
             <ArrowLeft className="mr-2 h-4 w-4" /> {t('Back')}
           </Button>
         </div>
