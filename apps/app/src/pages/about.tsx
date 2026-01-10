@@ -86,7 +86,7 @@ const About = () => {
                 { icon: Shield, title: 'Trust', desc: 'Creating a safe and reliable environment.', color: 'text-amber-500', bg: 'bg-amber-500/10' },
                 { icon: Globe, title: 'Impact', desc: 'Focusing on tangible, positive change.', color: 'text-emerald-500', bg: 'bg-emerald-500/10' }
               ].map((item, i) => (
-                <div key={i} className="bg-card p-10 rounded-3xl shadow-sm hover:shadow-2xl transition-all duration-500 text-center border border-border/50 group">
+                <div key={i} className="bg-card p-10 rounded-[2.5rem] shadow-sm hover:shadow-2xl transition-all duration-500 text-center border border-border/50 group">
                   <div className={`w-16 h-16 ${item.bg} ${item.color} rounded-2xl flex items-center justify-center mx-auto mb-8 group-hover:scale-110 group-hover:rotate-6 transition-transform`}>
                     <item.icon className="h-8 w-8" />
                   </div>
