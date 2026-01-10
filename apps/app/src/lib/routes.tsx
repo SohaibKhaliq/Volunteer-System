@@ -119,7 +119,6 @@ const ScrollWrapper = ({ children }: any) => (
 const AdminScrollWrapper = ({ children }: any) => (
   <div style={{ height: '100vh', overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>{children}</div>
 );
-import { DetailTypes } from '@/lib/types';
 
 const routes: RouteObject[] = [
   {
