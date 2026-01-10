@@ -49,7 +49,11 @@ import { cn } from '@/lib/utils';
 import VolunteerDashboard from '@/pages/volunteer/dashboard';
 import VolunteerApplicationsPage from '@/pages/volunteer/applications';
 import VolunteerOrganizationsPage from '@/pages/volunteer/organizations';
+import VolunteerDashboard from '@/pages/volunteer/dashboard';
+import VolunteerApplicationsPage from '@/pages/volunteer/applications';
+import VolunteerOrganizationsPage from '@/pages/volunteer/organizations';
 import VolunteerCompliance from '@/pages/volunteer/compliance';
+import VolunteerAttendance from '@/pages/volunteer/attendance';
 
 export default function Profile() {
   const { t } = useTranslation();
@@ -232,8 +236,7 @@ export default function Profile() {
       { id: 'overview', label: t('Overview'), icon: LayoutDashboard },
       { id: 'applications', label: t('Applications'), icon: ListChecks },
       { id: 'organizations', label: t('My Organizations'), icon: Building2 },
-      { id: 'schedule', label: t('My Schedule'), icon: CalendarClock },
-      { id: 'history', label: t('History'), icon: History },
+      { id: 'attendance', label: t('Attendance'), icon: CheckCircle2 },
       { id: 'resources', label: t('Resources'), icon: Box },
       { id: 'compliance', label: t('Compliance'), icon: Shield },
       { id: 'settings', label: t('Settings'), icon: Settings },
@@ -399,38 +402,16 @@ export default function Profile() {
               </div>
             )}
 
-            {/* --- SCHEDULE --- */}
-            {activeTab === 'schedule' && (
+            {/* --- ATTENDANCE --- */}
+            {activeTab === 'attendance' && (
               <div className="animate-in fade-in duration-300">
                 <Card className="border-border/50 shadow-sm rounded-3xl overflow-hidden bg-card/50">
                   <CardHeader className="p-8 pb-4">
-                    <CardTitle className="text-2xl font-bold">{t('My Schedule')}</CardTitle>
-                    <CardDescription>{t('Manage your upcoming shifts and events.')}</CardDescription>
+                    <CardTitle className="text-2xl font-bold">{t('Attendance & Schedule')}</CardTitle>
+                    <CardDescription>{t('Manage your shifts and view attendance history.')}</CardDescription>
                   </CardHeader>
-                  <CardContent className="p-8 pt-0">
-                    <div className="py-12 flex flex-col items-center justify-center text-center text-muted-foreground">
-                      <Calendar className="h-12 w-12 mb-4 opacity-20" />
-                      <p className="font-medium">{t('No upcoming shifts found.')}</p>
-                      <Button variant="link" onClick={() => navigate('/map')}>{t('Find Opportunities')}</Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-
-            {/* --- HISTORY --- */}
-            {activeTab === 'history' && (
-              <div className="animate-in fade-in duration-300">
-                <Card className="border-border/50 shadow-sm rounded-3xl overflow-hidden bg-card/50">
-                  <CardHeader className="p-8 pb-4">
-                    <CardTitle className="text-2xl font-bold">{t('Volunteer History')}</CardTitle>
-                    <CardDescription>{t('View your past contributions.')}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-8 pt-0">
-                    <div className="py-12 flex flex-col items-center justify-center text-center text-muted-foreground">
-                      <History className="h-12 w-12 mb-4 opacity-20" />
-                      <p className="font-medium">{t('No history available yet.')}</p>
-                    </div>
+                  <CardContent className="p-8">
+                    <VolunteerAttendance />
                   </CardContent>
                 </Card>
               </div>
