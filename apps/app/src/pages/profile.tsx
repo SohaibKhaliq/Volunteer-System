@@ -30,7 +30,10 @@ import {
   CheckCircle2,
   History,
   Camera,
-  AlertCircle
+  AlertCircle,
+  Bell,
+  MessageSquare,
+  CalendarClock
 } from 'lucide-react';
 
 // Import Volunteer Pages
@@ -699,22 +702,16 @@ export default function Profile() {
               <CardContent className="space-y-6">
                 {/* Incomplete Profile Warning */}
                 {profileCompletion < 100 && (
-                  <Alert className="mb-4" variant={profileCompletion < 50 ? 'destructive' : 'default'}>
-                    <AlertCircle className="h-4 w-4" />
+                  <Alert variant="warning" className="mb-6 border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900/50">
+                    <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full gap-3">
                       <div>
-                        <AlertTitle>Incomplete profile</AlertTitle>
-                        <AlertDescription>
-                          <p className="mb-2">
-                            Your profile is {profileCompletion}% complete. Finish the following fields to reach 100%:
-                          </p>
+                        <AlertTitle className="text-amber-800 dark:text-amber-300">Incomplete profile</AlertTitle>
+                        <AlertDescription className="text-amber-700 dark:text-amber-400/80">
+                          <p className="mb-2">Your profile is {profileCompletion}% complete. Finish the following fields to reach 100%:</p>
                           <div className="flex flex-wrap gap-2">
-                            {missingFields.map((field) => (
-                              <Badge
-                                key={field}
-                                variant="outline"
-                                className="bg-white/50 border-red-200 text-red-700 font-normal"
-                              >
+                            {missingFields.map(field => (
+                              <Badge key={field} variant="secondary" className="bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/40 dark:text-amber-300 border-none transition-colors">
                                 + {field}
                               </Badge>
                             ))}
@@ -722,13 +719,18 @@ export default function Profile() {
                         </AlertDescription>
                       </div>
                       <div className="flex items-center gap-3">
-                        <div className="w-40">
-                          <Progress
-                            value={profileCompletion}
-                            aria-label={`Profile completion ${profileCompletion} percent`}
-                          />
+                        <div className="w-40 h-2 bg-amber-200 dark:bg-amber-900/30 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-amber-500 dark:bg-amber-600 transition-all duration-500 ease-out"
+                            style={{ width: `${profileCompletion}%` }}
+                          ></div>
                         </div>
-                        <Button size="sm" onClick={() => setActiveTab('settings')}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="bg-white hover:bg-amber-50 border-amber-300 text-amber-700 dark:bg-amber-900/20 dark:hover:bg-amber-900/40 dark:border-amber-800 dark:text-amber-300 transition-colors"
+                          onClick={() => setActiveTab('settings')}
+                        >
                           Complete now
                         </Button>
                       </div>
