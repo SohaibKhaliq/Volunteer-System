@@ -76,8 +76,12 @@ Comprehensive API for managing volunteers, organizations, opportunities, shifts,
           description: 'Authentication and authorization endpoints'
         },
         {
-          name: 'Users',
-          description: 'User management endpoints'
+          name: 'User Preferences',
+          description: 'User preferences and settings management'
+        },
+        {
+          name: 'Contact Form',
+          description: 'Public contact form submissions'
         },
         {
           name: 'Organizations',
