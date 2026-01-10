@@ -21,6 +21,46 @@ export default class AuthController {
    * 6. Create default preferences
    * 7. Generate access token
    * 8. Return user + token
+   *
+   * @route POST /register
+   * @tags Authentication
+   * @requestBody {
+   *   "required": true,
+   *   "content": {
+   *     "application/json": {
+   *       "schema": {
+   *         "type": "object",
+   *         "required": ["email", "password", "firstName", "lastName"],
+   *         "properties": {
+   *           "email": {"type": "string", "format": "email", "example": "john@example.com"},
+   *           "password": {"type": "string", "minLength": 8, "example": "SecurePass123", "description": "Min 8 chars, must include uppercase, lowercase, and digit"},
+   *           "firstName": {"type": "string", "example": "John"},
+   *           "lastName": {"type": "string", "example": "Doe"},
+   *           "role": {"type": "string", "enum": ["volunteer", "organization"], "example": "volunteer"},
+   *           "phone": {"type": "string"},
+   *           "address": {"type": "string"},
+   *           "description": {"type": "string"}
+   *         }
+   *       }
+   *     }
+   *   }
+   * }
+   * @response 201 {
+   *   "token": {
+   *     "type": "bearer",
+   *     "token": "eyJhbGc...",
+   *     "expires_at": "2024-01-01T00:00:00.000Z"
+   *   },
+   *   "user": {
+   *     "id": 1,
+   *     "email": "john@example.com",
+   *     "firstName": "John",
+   *     "lastName": "Doe"
+   *   },
+   *   "message": "Registration successful"
+   * }
+   * @response 400 {"error": {"message": "Validation failed", "details": {}}}
+   * @response 409 {"error": {"message": "Email already registered", "field": "email"}}
    */
   public async register({ request, response, auth }: HttpContextContract) {
     try {
@@ -165,6 +205,31 @@ export default class AuthController {
    * 4. Save token to DB (handled by auth.attempt)
    * 5. Update last active timestamp
    * 6. Return token + user
+   *
+   * @route POST /login
+   * @tags Authentication
+   * @requestBody {
+   *   "required": true,
+   *   "content": {
+   *     "application/json": {
+   *       "schema": {
+   *         "type": "object",
+   *         "required": ["email", "password"],
+   *         "properties": {
+   *           "email": {"type": "string", "format": "email", "example": "john@example.com"},
+   *           "password": {"type": "string", "example": "SecurePass123"}
+   *         }
+   *       }
+   *     }
+   *   }
+   * }
+   * @response 200 {
+   *   "token": {"type": "bearer", "token": "eyJhbGc...", "expires_at": "2024-01-01T00:00:00.000Z"},
+   *   "user": {"id": 1, "email": "john@example.com", "firstName": "John", "lastName": "Doe", "roles": ["volunteer"]},
+   *   "message": "Login successful"
+   * }
+   * @response 401 {"error": {"message": "Invalid credentials"}}
+   * @response 403 {"error": {"message": "Account has been disabled"}}
    */
   public async login({ request, response, auth }: HttpContextContract) {
     const { email, password } = request.only(['email', 'password'])
@@ -255,6 +320,12 @@ export default class AuthController {
    * 1. Revoke token in DB
    * 2. Clear session/cache
    * 3. Return success
+   *
+   * @route POST /logout
+   * @tags Authentication
+   * @security bearerAuth: []
+   * @response 200 {"message": "Logout successful"}
+   * @response 401 {"error": {"message": "Not authenticated"}}
    */
   public async logout({ request, response, auth }: HttpContextContract) {
     try {
@@ -288,6 +359,23 @@ export default class AuthController {
 
   /**
    * Get current authenticated user
+   *
+   * @route GET /me
+   * @tags Authentication
+   * @security bearerAuth: []
+   * @response 200 {
+   *   "user": {
+   *     "id": 1,
+   *     "email": "john@example.com",
+   *     "firstName": "John",
+   *     "lastName": "Doe",
+   *     "isAdmin": false,
+   *     "volunteerStatus": "active",
+   *     "roles": [{"id": 1, "name": "volunteer", "description": "Default volunteer role"}],
+   *     "preferences": {"language": "en", "timezone": "Australia/Sydney", "theme": "light"}
+   *   }
+   * }
+   * @response 401 {"error": {"message": "Not authenticated"}}
    */
   public async me({ response, auth }: HttpContextContract) {
     try {
@@ -337,6 +425,12 @@ export default class AuthController {
 
   /**
    * Refresh token
+   *
+   * @route POST /refresh
+   * @tags Authentication
+   * @security bearerAuth: []
+   * @response 200 {"token": {"type": "bearer", "token": "new_jwt_token...", "expires_at": "2024-01-01T00:00:00.000Z"}, "message": "Token refreshed successfully"}
+   * @response 401 {"error": {"message": "Unable to refresh token"}}
    */
   public async refresh({ response, auth }: HttpContextContract) {
     try {
