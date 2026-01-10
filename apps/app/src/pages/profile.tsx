@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
@@ -49,6 +50,7 @@ import { AssignmentStatus } from '@/lib/constants/assignmentStatus';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function Profile() {
+  const { t } = useTranslation();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   // use profile endpoint to get user data with org statuses
@@ -123,14 +125,14 @@ export default function Profile() {
       await updateMutation.mutateAsync({
         firstName: formData.firstName,
         lastName: formData.lastName,
-        phone: formData.phone,
+        phone: formData.phone || undefined, // Send undefined if empty to skip validation
         profileMetadata: {
           ...userData.profileMetadata,
-          bio: formData.bio,
-          address: formData.address,
+          bio: formData.bio || undefined,
+          address: formData.address || undefined,
           skills: formData.skills,
           interests: formData.interests,
-          availability: formData.availability
+          availability: formData.availability || undefined
         }
       });
 
@@ -142,6 +144,35 @@ export default function Profile() {
     } catch (error) {
       // Errors are handled by individual mutation onError handlers
       console.error('Unified save error:', error);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // optimistic UI update could go here, but for now wait for server
+    const data = new FormData();
+    data.append('avatar', file);
+
+    try {
+      await api.updateVolunteerAvatar(data);
+      // Invalidate queries
+      queryClient.invalidateQueries(['volunteer-profile']);
+      queryClient.invalidateQueries(['me']);
+      // Force avatar refresh by updating version
+      setAvatarVersion(Date.now());
+      toast({
+        title: t('Avatar updated'),
+        description: t('Your profile picture has been updated successfully.')
+      });
+    } catch (error) {
+      console.error('Avatar upload error:', error);
+      toast({
+        title: t('Upload failed'),
+        description: t('Could not upload profile picture. Please try again.'),
+        variant: 'destructive'
+      });
     }
   };
 
@@ -402,7 +433,22 @@ export default function Profile() {
                   {userData.firstName?.[0]}
                   {userData.lastName?.[0]}
                 </AvatarFallback>
+                {/* Overlay for upload */}
+                <div
+                  className="absolute inset-0 bg-black/40 rounded-[2.8rem] opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center cursor-pointer backdrop-blur-[2px]"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Camera className="text-white h-10 w-10 drop-shadow-lg" />
+                  <span className="sr-only">{t('Change Avatar')}</span>
+                </div>
               </Avatar>
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept="image/png, image/jpeg, image/jpg, image/webp"
+                onChange={handleImageUpload}
+              />
               {profileCompletion < 100 && (
                 <div className="absolute -top-3 -right-3 bg-amber-500 text-white text-sm font-black px-4 py-1.5 rounded-2xl shadow-2xl border-2 border-primary/20 backdrop-blur-sm animate-bounce-subtle">
                   {profileCompletion}%
@@ -1159,7 +1205,7 @@ export default function Profile() {
                         <div className="space-y-2">
                           <Label className="text-sm font-semibold px-1">Preferred Time of Day</Label>
                           <Select
-                            value={prefsFormData.preferredTime}
+                            value={prefsFormData.preferredTime || 'flexible'}
                             onValueChange={(value) => handlePrefChange('preferredTime', value)}
                           >
                             <SelectTrigger className="bg-card/50 border-border/50 rounded-xl">
@@ -1179,7 +1225,7 @@ export default function Profile() {
                             type="number"
                             min={1}
                             max={168}
-                            value={prefsFormData.maxHoursPerWeek}
+                            value={prefsFormData.maxHoursPerWeek || ''}
                             onChange={(e) => handlePrefChange('maxHoursPerWeek', parseInt(e.target.value) || 0)}
                             className="bg-card/50 border-border/50 rounded-xl"
                           />
