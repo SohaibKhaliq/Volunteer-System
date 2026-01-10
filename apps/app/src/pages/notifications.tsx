@@ -7,6 +7,8 @@ import SkeletonCard from '@/components/atoms/skeleton-card';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useStore } from '@/lib/store';
 import api from '@/lib/api';
+import { NotificationFormatter } from '@/lib/notification-formatter';
+import { Badge } from '@/components/ui/badge';
 
 export default function NotificationsPage() {
   const queryClient = useQueryClient();
@@ -85,23 +87,34 @@ export default function NotificationsPage() {
   useEffect(() => {
     if (!token) return;
     try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      const { io } = require('socket.io-client');
-      const SOCKET_URL =
-        (import.meta.env.VITE_SOCKET_URL as string) ||
-        `${window.location.protocol}//${window.location.hostname}:${(import.meta.env.VITE_SOCKET_PORT as string) || '4001'}`;
-      const socket = io(SOCKET_URL, { auth: { token } });
-      socket.on('notification', (data: any) => {
-        queryClient.setQueryData(['notifications'], (old: any) => {
-          const arr = Array.isArray(old) ? old : (old?.data ?? []);
-          return [data].concat(arr || []).slice(0, 200);
+      const socketRef = { current: null as any };
+
+      import('socket.io-client').then(({ io }) => {
+        const SOCKET_URL =
+          (import.meta.env.VITE_SOCKET_URL as string) ||
+          `${window.location.protocol}//${window.location.hostname}:${(import.meta.env.VITE_SOCKET_PORT as string) || '4001'}`;
+
+        // Check if unmounted
+        if (!token) return;
+
+        const socket = io(SOCKET_URL, { auth: { token } });
+        socketRef.current = socket;
+
+        socket.on('notification', (data: any) => {
+          queryClient.setQueryData(['notifications'], (old: any) => {
+            const arr = Array.isArray(old) ? old : (old?.data ?? []);
+            return [data].concat(arr || []).slice(0, 200);
+          });
         });
       });
 
-      return () => socket.close();
+      return () => {
+        if (socketRef.current) socketRef.current.close();
+      };
     } catch (e) {
       // ignore in test env
     }
+
   }, [token]);
 
   return (
@@ -155,25 +168,37 @@ export default function NotificationsPage() {
                     <TableCell>
                       <input type="checkbox" checked={selected.includes(n.id)} onChange={() => toggleSelect(n.id)} />
                     </TableCell>
-                    <TableCell>{new Date(n.createdAt || n.created_at).toLocaleString()}</TableCell>
-                    <TableCell>{n.type}</TableCell>
+                    <TableCell className="w-[180px]">
+                      <span title={new Date(n.createdAt || n.created_at).toLocaleString()}>
+                        {new Date(n.createdAt || n.created_at).toLocaleDateString()} <span className="text-muted-foreground text-xs">{new Date(n.createdAt || n.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="font-normal">
+                        {NotificationFormatter.formatType(n.type)}
+                      </Badge>
+                    </TableCell>
                     <TableCell>
                       {(() => {
                         try {
                           const p = typeof n.payload === 'string' ? JSON.parse(n.payload) : n.payload || {};
+                          const summary = NotificationFormatter.getSummary(n.type, p);
+
                           return (
                             <div className="flex items-start gap-3">
-                              {p.image && <img src={p.image} className="h-12 w-12 rounded-md object-cover" alt="" />}
+                              {p.image && <img src={p.image} className="h-10 w-10 rounded-md object-cover" alt="" />}
                               <div>
-                                <div className="font-medium">{p.title ?? n.type}</div>
-                                <div className="text-xs text-muted-foreground">
-                                  {p.message ??
-                                    p.description ??
-                                    (typeof n.payload === 'string' ? n.payload : JSON.stringify(n.payload))}
+                                <div className="font-medium text-sm">
+                                  {summary || p.title || NotificationFormatter.formatType(n.type)}
                                 </div>
+                                {(p.message || p.description) && (summary !== p.message && summary !== p.description) && (
+                                  <div className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+                                    {p.message ?? p.description}
+                                  </div>
+                                )}
                                 {p.url && (
                                   <div className="mt-1">
-                                    <a href={p.url} target="_blank" rel="noreferrer" className="text-primary text-sm">
+                                    <a href={p.url} target="_blank" rel="noreferrer" className="text-primary text-xs hover:underline">
                                       {p.cta ?? 'Open'}
                                     </a>
                                   </div>
@@ -182,7 +207,7 @@ export default function NotificationsPage() {
                             </div>
                           );
                         } catch (e) {
-                          return String(n.payload);
+                          return <span className="text-sm text-muted-foreground">{String(n.payload || '')}</span>;
                         }
                       })()}
                     </TableCell>
