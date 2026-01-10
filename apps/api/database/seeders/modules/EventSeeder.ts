@@ -14,7 +14,7 @@ type SeedEvent = {
 
 export default class EventSeeder extends BaseSeeder {
   public async run() {
-    const RECORD_COUNT = 50
+    const RECORD_COUNT = 150 // Increased from 50
 
     const baseEvents: SeedEvent[] = [
       {
@@ -522,7 +522,9 @@ export default class EventSeeder extends BaseSeeder {
     const now = new Date()
     const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
 
-    const orgResult = await Database.rawQuery('SELECT id FROM organizations ORDER BY id ASC LIMIT 50')
+    const orgResult = await Database.rawQuery(
+      'SELECT id FROM organizations ORDER BY id ASC LIMIT 50'
+    )
     const organizationIds = orgResult[0].map((row: any) => row.id)
 
     if (organizationIds.length === 0) {
