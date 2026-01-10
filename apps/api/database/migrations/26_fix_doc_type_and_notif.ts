@@ -1,4 +1,3 @@
-
 import BaseSchema from '@ioc:Adonis/Lucid/Schema'
 
 export default class extends BaseSchema {
@@ -25,11 +24,14 @@ export default class extends BaseSchema {
 
   public async down() {
     // Revert changes
-    this.schema.alterTable('compliance_documents', (table) => {
-      table.string('document_type').nullable()
-    })
+    if (!(await this.schema.hasColumn('compliance_documents', 'document_type'))) {
+      this.schema.alterTable('compliance_documents', (table) => {
+        table.string('document_type').nullable()
+      })
+    }
+    // Use LONGTEXT and keep nullable to avoid truncation/constraint errors during rollback
     this.schema.alterTable('notifications', (table) => {
-      table.string('title').notNullable().alter()
+      table.longText('title').nullable().alter()
     })
   }
 }
