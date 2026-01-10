@@ -13,14 +13,48 @@ export default function useSystemRoles() {
   });
 
   const rolesList = (data && (data.data ?? data)) || [];
+  // Allow privileged permission names to be configured from the server settings.
+  // Server may expose a setting `privileged_permissions` containing either a JSON
+  // array (e.g. ["manage_permissions","manage_user_roles"]) or a comma-separated
+  // string. If not present, no explicit privileged permission names are assumed
+  // and privileged roles will be derived only from role definitions or the
+  // `isAdmin` flag.
+  const { data: settingsData } = useQuery({
+    queryKey: ['system-settings'],
+    queryFn: () => api.getSettings(),
+    enabled: !!token,
+    retry: false
+  });
 
-  const privilegedPermissions = new Set([
-    'manage_permissions',
-    'manage_user_roles',
-    'manage_org_members',
-    'manage_org_settings',
-    'manage_compliance_docs'
-  ]);
+  const settingsList = (settingsData && (settingsData.data ?? settingsData)) || [];
+  const rawPrivileged = settingsList?.find((s: any) => s.key === 'privileged_permissions')?.value;
+
+  let privilegedPermissions = new Set<string>();
+  try {
+    if (rawPrivileged) {
+      if (typeof rawPrivileged === 'string') {
+        const trimmed = rawPrivileged.trim();
+        if (trimmed.startsWith('[')) {
+          // JSON array
+          const parsed = JSON.parse(trimmed);
+          if (Array.isArray(parsed)) privilegedPermissions = new Set(parsed.map((p: any) => String(p).toLowerCase()));
+        } else {
+          // comma-separated
+          const parts = trimmed
+            .split(',')
+            .map((p) => p.trim())
+            .filter(Boolean);
+          if (parts.length) privilegedPermissions = new Set(parts.map((p) => String(p).toLowerCase()));
+        }
+      } else if (Array.isArray(rawPrivileged)) {
+        privilegedPermissions = new Set(rawPrivileged.map((p: any) => String(p).toLowerCase()));
+      }
+    }
+  } catch (e) {
+    // If parsing settings fails, leave privilegedPermissions empty so we
+    // only rely on explicit role slugs or the user's admin flag.
+    privilegedPermissions = new Set();
+  }
 
   const privilegedRoleSlugs = new Set<string>();
   for (const r of rolesList) {
