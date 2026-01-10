@@ -14,6 +14,34 @@ export default class ContactController {
    * 2. Store submission
    * 3. Optionally notify admin
    * 4. Return success
+   *
+   * @route POST /contact
+   * @tags Contact Form
+   * @requestBody {
+   *   "required": true,
+   *   "content": {
+   *     "application/json": {
+   *       "schema": {
+   *         "type": "object",
+   *         "required": ["firstName", "email", "message"],
+   *         "properties": {
+   *           "firstName": {"type": "string", "example": "Jane"},
+   *           "lastName": {"type": "string", "example": "Smith"},
+   *           "email": {"type": "string", "format": "email", "example": "jane@example.com"},
+   *           "phone": {"type": "string", "example": "+1234567890"},
+   *           "subject": {"type": "string", "example": "Volunteer Inquiry"},
+   *           "message": {"type": "string", "minLength": 10, "example": "I would like to volunteer..."}
+   *         }
+   *       }
+   *     }
+   *   }
+   * }
+   * @response 201 {
+   *   "message": "Message sent successfully. We will get back to you soon.",
+   *   "submissionId": 1
+   * }
+   * @response 400 {"error": {"message": "Validation failed", "details": {}}}
+   * @response 500 {"error": {"message": "Failed to save message"}}
    */
   public async store({ request, response }: HttpContextContract) {
     const contactSchema = schema.create({
@@ -98,7 +126,20 @@ export default class ContactController {
 
   /**
    * Get all contact submissions (Admin only)
-   * GET /contact
+   *
+   * @route GET /contact
+   * @tags Contact Form
+   * @security bearerAuth: []
+   * @queryParam page {number} - Page number (default: 1)
+   * @queryParam limit {number} - Items per page (default: 10)
+   * @queryParam status {string} - Filter by status: unread, read, replied, resolved, archived
+   * @queryParam search {string} - Search by email, name, or subject
+   * @response 200 {
+   *   "data": [{"id": 1, "firstName": "Jane", "email": "jane@example.com", "subject": "Inquiry", "status": "unread"}],
+   *   "meta": {"current_page": 1, "per_page": 10, "total": 5}
+   * }
+   * @response 401 {"error": {"message": "Not authenticated"}}
+   * @response 403 {"error": {"message": "Insufficient permissions"}}
    */
   public async index({ request, response, auth }: HttpContextContract) {
     try {
@@ -138,7 +179,14 @@ export default class ContactController {
 
   /**
    * Get a single contact submission (Admin only)
-   * GET /contact/:id
+   *
+   * @route GET /contact/:id
+   * @tags Contact Form
+   * @security bearerAuth: []
+   * @param id {number} - Submission ID
+   * @response 200 {"submission": {"id": 1, "firstName": "Jane", "email": "jane@example.com", "message": "...", "status": "unread"}}
+   * @response 401 {"error": {"message": "Not authenticated"}}
+   * @response 404 {"error": {"message": "Submission not found"}}
    */
   public async show({ response, params }: HttpContextContract) {
     try {
@@ -162,7 +210,28 @@ export default class ContactController {
 
   /**
    * Update contact submission status (Admin only)
-   * PATCH /contact/:id
+   *
+   * @route PATCH /contact/:id
+   * @tags Contact Form
+   * @security bearerAuth: []
+   * @param id {number} - Submission ID
+   * @requestBody {
+   *   "required": true,
+   *   "content": {
+   *     "application/json": {
+   *       "schema": {
+   *         "type": "object",
+   *         "required": ["status"],
+   *         "properties": {
+   *           "status": {"type": "string", "enum": ["unread", "read", "replied", "resolved", "archived"]}
+   *         }
+   *       }
+   *     }
+   *   }
+   * }
+   * @response 200 {"submission": {}, "message": "Status updated successfully"}
+   * @response 401 {"error": {"message": "Not authenticated"}}
+   * @response 404 {"error": {"message": "Submission not found"}}
    */
   public async update({ request, response, params, auth }: HttpContextContract) {
     try {
@@ -214,7 +283,14 @@ export default class ContactController {
 
   /**
    * Delete a contact submission (Admin only)
-   * DELETE /contact/:id
+   *
+   * @route DELETE /contact/:id
+   * @tags Contact Form
+   * @security bearerAuth: []
+   * @param id {number} - Submission ID
+   * @response 200 {"message": "Submission deleted successfully"}
+   * @response 401 {"error": {"message": "Not authenticated"}}
+   * @response 404 {"error": {"message": "Submission not found"}}
    */
   public async destroy({ response, params, auth }: HttpContextContract) {
     try {
