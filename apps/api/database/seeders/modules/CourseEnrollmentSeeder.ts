@@ -3,15 +3,17 @@ import Database from '@ioc:Adonis/Lucid/Database'
 
 export default class CourseEnrollmentSeeder extends BaseSeeder {
   public async run() {
-    const RECORD_COUNT = 100
+    const RECORD_COUNT = 300 // Increased from 100
 
     const now = new Date()
     const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
 
-    const usersResult = await Database.rawQuery('SELECT id FROM users ORDER BY id ASC LIMIT 50')
+    const usersResult = await Database.rawQuery('SELECT id FROM users ORDER BY id ASC LIMIT 300')
     const userIds = usersResult[0].map((row: any) => row.id)
 
-    const coursesResult = await Database.rawQuery('SELECT id FROM courses ORDER BY id ASC LIMIT 50')
+    const coursesResult = await Database.rawQuery(
+      'SELECT id FROM courses ORDER BY id ASC LIMIT 150'
+    )
     const courseIds = coursesResult[0].map((row: any) => row.id)
 
     if (userIds.length === 0 || courseIds.length === 0) {
@@ -49,14 +51,19 @@ export default class CourseEnrollmentSeeder extends BaseSeeder {
       enrolledDate.setDate(enrolledDate.getDate() - Math.floor(Math.random() * 30))
 
       const status = getWeightedStatus()
-      const completedDate = status === 'completed' ? new Date(enrolledDate.getTime() + Math.random() * 14 * 24 * 60 * 60 * 1000) : null
+      const completedDate =
+        status === 'completed'
+          ? new Date(enrolledDate.getTime() + Math.random() * 14 * 24 * 60 * 60 * 1000)
+          : null
 
       rows.push({
         course_id: courseId,
         user_id: userId,
         status: status,
         enrolled_at: enrolledDate.toISOString().slice(0, 19).replace('T', ' '),
-        completed_at: completedDate ? completedDate.toISOString().slice(0, 19).replace('T', ' ') : null,
+        completed_at: completedDate
+          ? completedDate.toISOString().slice(0, 19).replace('T', ' ')
+          : null,
         created_at: timestamp,
         updated_at: timestamp
       })
