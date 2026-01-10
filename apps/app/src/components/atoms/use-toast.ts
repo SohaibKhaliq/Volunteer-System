@@ -18,13 +18,13 @@ function baseToast(message: string | MessageObject, opts?: ToastOptions) {
     const content = `${title ? title + ': ' : ''}${description ?? ''}`.trim();
 
     if (variant === 'success') {
-      sonnerToast.success(content || 'Success');
+      sonnerToast.success(content || 'Success', opts);
     } else if (variant === 'destructive' || variant === 'error') {
-      sonnerToast.error(content || 'Error');
+      sonnerToast.error(content || 'Error', opts);
     } else if (variant === 'warning') {
-      sonnerToast(content || '');
+      sonnerToast.warning(content || '', opts);
     } else {
-      sonnerToast(content || '');
+      sonnerToast(content || '', opts);
     }
 
     return {
