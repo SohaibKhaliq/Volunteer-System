@@ -62,12 +62,12 @@ const VolunteerOrganizationsPage = () => {
   const { data: browseData, isLoading: loadingBrowse } = useQuery({
     queryKey: ['browse-organizations', page, debouncedSearch, cityFilter, typeFilter],
     queryFn: async () => {
-       const params: any = { page, perPage: 12 };
-       if (debouncedSearch) params.search = debouncedSearch;
-       if (cityFilter) params.city = cityFilter;
-       if (typeFilter) params.type = typeFilter;
-       const res: any = await api.browseOrganizations(params);
-       return res;
+      const params: any = { page, perPage: 12 };
+      if (debouncedSearch) params.search = debouncedSearch;
+      if (cityFilter) params.city = cityFilter;
+      if (typeFilter) params.type = typeFilter;
+      const res: any = await api.browseOrganizations(params);
+      return res;
     },
     // Only fetch when on discover tab
     enabled: activeTab === 'discover',
@@ -103,14 +103,14 @@ const VolunteerOrganizationsPage = () => {
     onMutate: (id: number) => {
       setLoadingByOrg((s) => ({ ...s, [id]: true }));
     },
-    onSettled: (data, err, id: number) => {
+    onSettled: (_data, _err, id: number) => {
       setLoadingByOrg((s) => ({ ...s, [id]: false }));
       queryClient.invalidateQueries({ queryKey: ['my-organizations'] });
     },
     onSuccess: () => {
       toast.success(t('Left organization'));
     },
-    onError: (error: any) => {
+    onError: () => {
       toast.error(t('Failed to leave organization'));
     }
   });
@@ -163,20 +163,31 @@ const VolunteerOrganizationsPage = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900">{t('My Organizations')}</h1>
-        <p className="text-slate-600">{t('Manage your organization memberships and discover new ones.')}</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-card/30 p-8 rounded-[2.5rem] border border-border/50 backdrop-blur-sm shadow-2xl shadow-primary/5">
+        <div className="space-y-1">
+          <h1 className="text-4xl font-black tracking-tight text-foreground">{t('My Organizations')}</h1>
+          <p className="text-lg text-muted-foreground font-medium">{t('Manage your organization memberships and discover new ones.')}</p>
+        </div>
+        <Link to="/map" className="shrink-0">
+          <Button size="lg" className="rounded-2xl h-14 px-8 font-black shadow-xl shadow-primary/20 group">
+            {t('Explore on Map')} <MapPin className="ml-2 h-5 w-5" />
+          </Button>
+        </Link>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="my-orgs">
-            {t('My Organizations')} ({myOrgs.length})
-          </TabsTrigger>
-          <TabsTrigger value="discover">
-            {t('Discover')} ({availableOrgs.length})
-          </TabsTrigger>
-        </TabsList>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+        <Card className="p-2 border-border/50 shadow-2xl shadow-primary/5 rounded-[2rem] bg-card/80 backdrop-blur-md overflow-x-auto">
+          <TabsList className="bg-transparent h-12 w-full justify-start gap-2 p-0">
+            {[
+              { value: 'my-orgs', label: `${t('My Organizations')} (${myOrgs.length})` },
+              { value: 'discover', label: `${t('Discover')} (${availableOrgs.length})` }
+            ].map(tab => (
+              <TabsTrigger key={tab.value} value={tab.value} className="h-10 px-6 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white font-bold transition-all">
+                {tab.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Card>
 
         {/* My Organizations Tab */}
         <TabsContent value="my-orgs" className="mt-6">
@@ -193,59 +204,69 @@ const VolunteerOrganizationsPage = () => {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {myOrgs.map((org: any) => (
-                <Card key={org.id} className="overflow-hidden">
-                  <div className="h-24 bg-gradient-to-r from-blue-500 to-indigo-600 relative">
+                <Card key={org.id} className="group border-border/50 rounded-[2.5rem] hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 overflow-hidden bg-card">
+                  <div className="h-32 bg-gradient-to-br from-primary/80 to-indigo-600/80 relative">
+                    <div className="absolute inset-0 bg-grid-white/[0.1] bg-[size:15px_15px]" />
                     {org.logo_url && (
-                      <img
-                        src={org.logo_url}
-                        alt={org.name}
-                        className="absolute bottom-0 left-4 w-16 h-16 rounded-lg border-4 border-white shadow-md transform translate-y-1/2 bg-white object-cover"
-                      />
+                      <div className="absolute -bottom-8 left-8 p-1 bg-background rounded-2xl shadow-xl">
+                        <img
+                          src={org.logo_url}
+                          alt={org.name}
+                          className="w-16 h-16 rounded-xl bg-white object-cover"
+                        />
+                      </div>
                     )}
                     {!org.logo_url && (
-                      <div className="absolute bottom-0 left-4 w-16 h-16 rounded-lg border-4 border-white shadow-md transform translate-y-1/2 bg-white flex items-center justify-center">
-                        <Building2 className="h-8 w-8 text-gray-400" />
+                      <div className="absolute -bottom-8 left-8 w-18 h-18 p-1 bg-background rounded-2xl shadow-xl">
+                        <div className="w-16 h-16 rounded-xl bg-muted flex items-center justify-center">
+                          <Building2 className="h-8 w-8 text-muted-foreground/50" />
+                        </div>
                       </div>
                     )}
                   </div>
 
-                  <CardContent className="pt-12 pb-4">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-semibold text-lg">{org.name}</h3>
-                      {getStatusBadge(org.status)}
+                  <CardContent className="p-8 pt-12 space-y-6">
+                    <div>
+                      <div className="flex justify-between items-start gap-2 mb-2">
+                        <h3 className="font-black text-2xl tracking-tight leading-none truncate">{org.name}</h3>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {getStatusBadge(org.status)}
+                        {getRoleBadge(org.role)}
+                      </div>
                     </div>
 
-                    <div className="flex gap-2 mb-4">{getRoleBadge(org.role)}</div>
+                    <div className="space-y-3">
+                      {org.joined_at && (
+                        <div className="flex items-center gap-2 text-sm font-bold text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-xl w-fit">
+                          <Calendar className="h-4 w-4 text-primary" />
+                          <span>
+                            {t('Joined')} {new Date(org.joined_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                      )}
+                    </div>
 
-                    {org.joined_at && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                        <Calendar className="h-4 w-4" />
-                        <span>
-                          {t('Joined')} {new Date(org.joined_at).toLocaleDateString()}
-                        </span>
-                      </div>
-                    )}
-
-                    <div className="flex gap-2">
+                    <div className="flex gap-3 pt-2">
                       <Link to={`/organizations/${org.slug || org.id}`} className="flex-1">
-                        <Button variant="outline" className="w-full">
-                          {t('View')} <ArrowRight className="h-4 w-4 ml-2" />
+                        <Button className="w-full h-12 rounded-xl font-black shadow-lg shadow-primary/5 flex items-center justify-center gap-2 group">
+                          {t('View')} <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                         </Button>
                       </Link>
                       {org.role === 'volunteer' && (
                         <Button
-                          variant="ghost"
+                          variant="outline"
                           size="icon"
-                          className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                          className="h-12 w-12 rounded-xl border-destructive/20 text-destructive hover:bg-destructive/5 hover:border-destructive/30 shrink-0"
                           onClick={() => handleLeave(org.id, org.name)}
                           disabled={!!loadingByOrg[org.id]}
                         >
                           {loadingByOrg[org.id] ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <Loader2 className="h-5 w-5 animate-spin" />
                           ) : (
-                            <LogOut className="h-4 w-4" />
+                            <LogOut className="h-5 w-5" />
                           )}
                         </Button>
                       )}
@@ -259,32 +280,38 @@ const VolunteerOrganizationsPage = () => {
 
         {/* Discover Tab */}
         <TabsContent value="discover" className="mt-6">
-          <div className="flex gap-4 mb-6">
-             <div className="relative flex-1">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder={t('Search organizations...')}
-                  className="pl-8"
-                  value={search}
-                  onChange={(e) => {
-                     setSearch(e.target.value);
-                     // Simple manual debounce since useDebounce hook isn't imported
-                     setTimeout(() => setDebouncedSearch(e.target.value), 500); 
-                  }}
-                />
-             </div>
-             <Input 
-                placeholder={t('Filter by City')} 
-                className="w-48"
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 bg-muted/20 p-6 rounded-[2rem] border border-border/50">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                placeholder={t('Search organizations...')}
+                className="pl-12 h-14 rounded-2xl bg-background border-border/50 font-medium"
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  // Simple manual debounce since useDebounce hook isn't imported
+                  setTimeout(() => setDebouncedSearch(e.target.value), 500);
+                }}
+              />
+            </div>
+            <div className="relative">
+              <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                placeholder={t('Filter by City')}
+                className="pl-12 h-14 rounded-2xl bg-background border-border/50 font-medium"
                 value={cityFilter}
                 onChange={(e) => setCityFilter(e.target.value)}
-             />
-             <Input 
-                placeholder={t('Filter by Type')} 
-                className="w-48" 
+              />
+            </div>
+            <div className="relative">
+              <Filter className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Input
+                placeholder={t('Filter by Type')}
+                className="pl-12 h-14 rounded-2xl bg-background border-border/50 font-medium"
                 value={typeFilter}
                 onChange={(e) => setTypeFilter(e.target.value)}
-             />
+              />
+            </div>
           </div>
 
           {loadingBrowse ? (
@@ -300,91 +327,96 @@ const VolunteerOrganizationsPage = () => {
             </Card>
           ) : (
             <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
-              {availableOrgs.map((org: any) => (
-                <Card key={org.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                  <div className="h-24 bg-gradient-to-r from-green-500 to-teal-600 relative">
-                    {org.logo_url && (
-                      <img
-                        src={org.logo_url}
-                        alt={org.name}
-                        className="absolute bottom-0 left-4 w-16 h-16 rounded-lg border-4 border-white shadow-md transform translate-y-1/2 bg-white object-cover"
-                      />
-                    )}
-                    {!org.logo_url && (
-                      <div className="absolute bottom-0 left-4 w-16 h-16 rounded-lg border-4 border-white shadow-md transform translate-y-1/2 bg-white flex items-center justify-center">
-                        <Building2 className="h-8 w-8 text-gray-400" />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-10">
+                {availableOrgs.map((org: any) => (
+                  <Card key={org.id} className="group border-border/50 rounded-[2.5rem] hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 overflow-hidden bg-card">
+                    <div className="h-32 bg-gradient-to-br from-emerald-500/80 to-teal-600/80 relative">
+                      <div className="absolute inset-0 bg-grid-white/[0.1] bg-[size:15px_15px]" />
+                      {org.logo_url && (
+                        <div className="absolute -bottom-8 left-8 p-1 bg-background rounded-2xl shadow-xl">
+                          <img
+                            src={org.logo_url}
+                            alt={org.name}
+                            className="w-16 h-16 rounded-xl bg-white object-cover"
+                          />
+                        </div>
+                      )}
+                      {!org.logo_url && (
+                        <div className="absolute -bottom-8 left-8 w-18 h-18 p-1 bg-background rounded-2xl shadow-xl">
+                          <div className="w-16 h-16 rounded-xl bg-muted flex items-center justify-center">
+                            <Building2 className="h-8 w-8 text-muted-foreground/50" />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <CardContent className="p-8 pt-12 space-y-6">
+                      <div>
+                        <h3 className="font-black text-2xl tracking-tight leading-none mb-3 truncate">{org.name}</h3>
+                        {org.description && (
+                          <p className="text-muted-foreground font-medium text-sm line-clamp-2 leading-relaxed">{org.description}</p>
+                        )}
                       </div>
-                    )}
-                  </div>
 
-                  <CardContent className="pt-12 pb-4">
-                    <h3 className="font-semibold text-lg mb-2">{org.name}</h3>
+                      <div className="flex flex-wrap gap-4 text-xs font-bold text-muted-foreground/80">
+                        {(org.city || org.country) && (
+                          <div className="flex items-center gap-2 bg-muted px-3 py-1.5 rounded-xl">
+                            <MapPin className="h-3.5 w-3.5 text-primary" />
+                            <span>{[org.city, org.country].filter(Boolean).join(', ')}</span>
+                          </div>
+                        )}
+                        {org.volunteerCount !== undefined && (
+                          <div className="flex items-center gap-2 bg-muted px-3 py-1.5 rounded-xl">
+                            <Users className="h-3.5 w-3.5 text-primary" />
+                            <span>
+                              {org.volunteerCount} {t('volunteers')}
+                            </span>
+                          </div>
+                        )}
+                      </div>
 
-                    {org.description && (
-                      <p className="text-sm text-muted-foreground line-clamp-2 mb-4">{org.description}</p>
-                    )}
+                      <div className="flex gap-3 pt-2">
+                        <Link to={`/organizations/${org.slug || org.id}`} className="flex-1">
+                          <Button variant="outline" className="w-full h-12 rounded-xl font-bold border border-border/50 hover:bg-muted group">
+                            {t('View')}
+                          </Button>
+                        </Link>
 
-                    <div className="space-y-2 text-sm text-muted-foreground mb-4">
-                      {(org.city || org.country) && (
-                        <div className="flex items-center gap-2">
-                          <MapPin className="h-4 w-4" />
-                          <span>{[org.city, org.country].filter(Boolean).join(', ')}</span>
-                        </div>
-                      )}
-                      {org.volunteerCount !== undefined && (
-                        <div className="flex items-center gap-2">
-                          <Users className="h-4 w-4" />
-                          <span>
-                            {org.volunteerCount} {t('volunteers')}
-                          </span>
-                        </div>
-                      )}
-                    </div>
+                        {myOrgs.some((m: any) => m.id === org.id) ? (
+                          <Button disabled className="flex-1 h-12 rounded-xl font-black bg-muted text-muted-foreground border-none">
+                            {t('Member')}
+                          </Button>
+                        ) : (
+                          <Button
+                            onClick={() => handleJoinClick(org)}
+                            className="flex-1 h-12 rounded-xl font-black shadow-lg shadow-primary/5 group-hover:shadow-primary/20"
+                          >
+                            {t('Join')}
+                          </Button>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
 
-                    <div className="flex gap-2">
-                      <Link to={`/organizations/${org.slug || org.id}`} className="flex-1">
-                        <Button variant="outline" className="w-full">
-                          {t('View')}
-                        </Button>
-                      </Link>
-                      
-                      {/* Check if user is already a member - simplified check */}
-                      {myOrgs.some((m: any) => m.id === org.id) ? (
-                         <Button disabled className="flex-1" variant="secondary">
-                           {t('Member')}
-                         </Button>
-                      ) : (
-                        <Button
-                          onClick={() => handleJoinClick(org)}
-                          className="flex-1"
-                        >
-                          {t('Join')}
-                        </Button>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            
-            {/* Simple Pagination */}
-            <div className="flex justify-center gap-2">
-               <Button 
-                 variant="outline" 
-                 disabled={page === 1}
-                 onClick={() => setPage(page - 1)}
-               >
-                 {t('Previous')}
-               </Button>
-               <Button 
-                 variant="outline" 
-                 disabled={!meta.next_page_url && availableOrgs.length < 12}
-                 onClick={() => setPage(page + 1)}
-               >
-                 {t('Next')}
-               </Button>
-            </div>
+              {/* Simple Pagination */}
+              <div className="flex justify-center gap-2">
+                <Button
+                  variant="outline"
+                  disabled={page === 1}
+                  onClick={() => setPage(page - 1)}
+                >
+                  {t('Previous')}
+                </Button>
+                <Button
+                  variant="outline"
+                  disabled={!meta.next_page_url && availableOrgs.length < 12}
+                  onClick={() => setPage(page + 1)}
+                >
+                  {t('Next')}
+                </Button>
+              </div>
             </>
           )}
         </TabsContent>
