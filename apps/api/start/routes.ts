@@ -610,11 +610,11 @@ Route.group(() => {
   Route.get('/organizations', 'VolunteerController.myOrganizations')
 
   // Membership management (Volunteer)
-  Route.post('/organizations/:id/join', 'MembershipController.join')
-  Route.delete('/organizations/:id/leave', 'MembershipController.leave')
+  Route.post('/organizations/:id/join', 'MembershipController.join').middleware(['auth']) // Protected
+  Route.delete('/organizations/:id/leave', 'MembershipController.leave').middleware(['auth']) // Protected
 
   // Achievements
-  Route.get('/achievements', 'VolunteerController.myAchievements')
+  Route.get('/achievements', 'VolunteerController.myAchievements').middleware(['auth']) // Protected
 })
   .prefix('/volunteer')
   .middleware(['auth'])
@@ -636,3 +636,17 @@ Route.group(() => {
 })
   .prefix('/calendar')
   .middleware(['auth'])
+
+// Public organization routes
+Route.group(() => {
+  Route.get('/', 'PublicOrganizationController.index') // Public access
+  Route.get('/cities', 'PublicOrganizationController.cities') // Public access
+  Route.get('/countries', 'PublicOrganizationController.countries') // Public access
+  Route.get('/types', 'PublicOrganizationController.types') // Public access
+  Route.get('/:slug', 'PublicOrganizationController.show') // Public access
+  Route.get('/:slug/opportunities', 'PublicOrganizationController.opportunities') // Public access
+  Route.get('/:slug/opportunities/:opportunityId', 'PublicOrganizationController.opportunity') // Public access
+}).prefix('/public/organizations')
+
+// Public opportunity endpoints
+Route.get('/opportunities/:id', 'OpportunitiesController.show') // Public access
