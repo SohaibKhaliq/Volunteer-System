@@ -198,11 +198,7 @@ Comprehensive API for managing volunteers, organizations, opportunities, shifts,
       ]
     },
 
-    apis: [
-      'app/**/*.ts',
-      'start/routes.ts',
-      'start/organization.ts'
-    ],
+    apis: ['app/**/*.ts', 'start/routes.ts', 'start/organization.ts'],
     basePath: '/'
   },
   mode: process.env.NODE_ENV === 'production' ? 'PRODUCTION' : 'RUNTIME',
