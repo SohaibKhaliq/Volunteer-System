@@ -24,6 +24,7 @@ import { toast } from '@/components/atoms/use-toast';
 export default function CentrelinkReporting() {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [selectedPeriod, setSelectedPeriod] = useState<number | null>(null);
 
   // Get current fortnight data
@@ -49,7 +50,7 @@ export default function CentrelinkReporting() {
   const handleExportCSV = async () => {
     try {
       const response = await api.exportSU462CSV(Number(userId), selectedPeriod || undefined);
-      
+
       // Create a download link
       const url = window.URL.createObjectURL(new Blob([response.data || response]));
       const link = document.createElement('a');
@@ -61,34 +62,39 @@ export default function CentrelinkReporting() {
       window.URL.revokeObjectURL(url);
 
       toast({
-        title: 'Export successful',
-        description: 'SU462 report has been downloaded'
+        title: t('Export successful'),
+        description: t('SU462 report has been downloaded'),
+        className: 'rounded-2xl border-primary/20 shadow-2xl'
       });
     } catch (error: any) {
       toast({
-        title: 'Export failed',
-        description: error?.response?.data?.message || 'Failed to export SU462 report',
-        variant: 'destructive'
+        title: t('Export failed'),
+        description: error?.response?.data?.message || t('Failed to export SU462 report'),
+        variant: 'destructive',
+        className: 'rounded-2xl shadow-2xl'
       });
     }
   };
 
   if (isLoadingFortnight) {
     return (
-      <div className="p-6 space-y-6">
-        <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-48 w-full" />
+      <div className="min-h-screen bg-background">
+        <div className="h-64 bg-muted animate-pulse" />
+        <div className="container px-4 mx-auto -mt-32 space-y-6">
+          <Skeleton className="h-48 w-full rounded-3xl" />
+          <Skeleton className="h-96 w-full rounded-3xl" />
+        </div>
       </div>
     );
   }
 
   if (!fortnightData) {
     return (
-      <div className="p-6">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Failed to load Centrelink fortnight data. Please try again.
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <Alert variant="destructive" className="max-w-md rounded-3xl border-destructive/20 shadow-2xl">
+          <AlertCircle className="h-5 w-5" />
+          <AlertDescription className="font-medium">
+            {t('Failed to load Centrelink fortnight data. Please try again.')}
           </AlertDescription>
         </Alert>
       </div>
@@ -98,170 +104,224 @@ export default function CentrelinkReporting() {
   const { user, fortnight, summary, hours } = fortnightData;
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" onClick={() => navigate(-1)}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold">Centrelink Reporting</h1>
-            <p className="text-muted-foreground">
-              {user.firstName} {user.lastName} ({user.email})
-            </p>
+    <div className="min-h-screen bg-background pb-20">
+      {/* Hero Header */}
+      <div className="relative overflow-hidden bg-primary pt-20 pb-40">
+        <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:30px_30px]" />
+        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/95 to-primary/90" />
+        <div className="container relative px-4 mx-auto">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="space-y-4">
+              <Button
+                variant="ghost"
+                onClick={() => navigate(-1)}
+                className="text-white/80 hover:text-white hover:bg-white/10 rounded-full px-4"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                {t('Back')}
+              </Button>
+              <div className="space-y-1">
+                <h1 className="text-4xl md:text-5xl font-black tracking-tight text-white">
+                  {t('Centrelink Reporting')}
+                </h1>
+                <p className="text-primary-foreground/70 text-lg font-medium flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                  {user.firstName} {user.lastName} • {user.email}
+                </p>
+              </div>
+            </div>
+            <Button
+              onClick={handleExportCSV}
+              disabled={!selectedPeriod && hours.length === 0}
+              className="bg-white text-primary hover:bg-white/90 rounded-2xl h-14 px-8 font-black shadow-2xl transition-all hover:scale-105 active:scale-95"
+            >
+              <Download className="h-5 w-5 mr-3" />
+              {t('Export SU462')}.csv
+            </Button>
           </div>
         </div>
-        <Button onClick={handleExportCSV} disabled={!selectedPeriod && hours.length === 0}>
-          <Download className="h-4 w-4 mr-2" />
-          Export SU462 CSV
-        </Button>
       </div>
 
-      {/* Current Fortnight Summary */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-blue-600" />
-            <CardTitle>Current Fortnight</CardTitle>
-          </div>
-          <CardDescription>{fortnight.formatted}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="container px-4 mx-auto -mt-24 space-y-8 relative z-10">
+        {/* Statistics Grid */}
+        <Card className="border-border/50 shadow-2xl shadow-primary/10 rounded-[2.5rem] bg-card overflow-hidden">
+          <CardHeader className="p-8 md:p-10 pb-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Total Hours</p>
-              <p className="text-2xl font-bold">{summary.totalHours}</p>
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-2xl bg-primary/10 text-primary">
+                  <Calendar className="h-6 w-6" />
+                </div>
+                <CardTitle className="text-2xl font-black">{t('Current Fortnight')}</CardTitle>
+              </div>
+              <CardDescription className="text-lg font-medium pl-14">
+                {fortnight.formatted}
+              </CardDescription>
             </div>
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Approved Hours</p>
-              <p className="text-2xl font-bold text-green-600">{summary.approvedHours}</p>
+          </CardHeader>
+          <CardContent className="p-8 md:p-10 pt-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8">
+              {[
+                { label: t('Total Hours'), value: summary.totalHours, color: 'text-foreground', icon: Clock },
+                { label: t('Approved'), value: summary.approvedHours, color: 'text-emerald-500', icon: CheckCircle },
+                { label: t('Pending'), value: summary.pendingHours, color: 'text-orange-500', icon: AlertCircle },
+                { label: t('Activities'), value: summary.activities, color: 'text-primary', icon: FileText }
+              ].map((stat, i) => (
+                <div key={i} className="space-y-3 p-6 rounded-3xl bg-muted/30 border border-border/50 group hover:border-primary/20 transition-all">
+                  <div className="flex items-center justify-between">
+                    <stat.icon className={cn("h-5 w-5", stat.color)} />
+                    <div className="h-1.5 w-1.5 rounded-full bg-border" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-bold uppercase tracking-wider text-muted-foreground">{stat.label}</p>
+                    <p className={cn("text-4xl font-black tracking-tight", stat.color)}>{stat.value}</p>
+                  </div>
+                </div>
+              ))}
             </div>
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Pending Hours</p>
-              <p className="text-2xl font-bold text-orange-600">{summary.pendingHours}</p>
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Activities</p>
-              <p className="text-2xl font-bold">{summary.activities}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      {/* Hours Breakdown */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-blue-600" />
-              <CardTitle>Volunteer Hours - Fortnight {fortnight.period}</CardTitle>
-            </div>
-            <Badge variant={summary.approvedHours > 0 ? 'default' : 'secondary'}>
-              {summary.approvedHours} approved hours
-            </Badge>
-          </div>
-          <CardDescription>
-            Period: {format(new Date(fortnight.start), 'dd MMM yyyy')} -{' '}
-            {format(new Date(fortnight.end), 'dd MMM yyyy')}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {hours.length === 0 ? (
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                No volunteer hours recorded for this fortnight period.
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Hours Breakdown */}
+          <Card className="lg:col-span-2 border-border/50 shadow-2xl shadow-black/5 rounded-[2.5rem] bg-card overflow-hidden">
+            <CardHeader className="p-8 border-b bg-muted/30">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <CardTitle className="text-xl font-black flex items-center gap-3">
+                    <Clock className="h-5 w-5 text-primary" />
+                    {t('Volunteer Hours')}
+                  </CardTitle>
+                  <CardDescription className="font-medium text-muted-foreground">
+                    {t('Fortnight')} {fortnight.period} • {format(new Date(fortnight.start), 'dd MMM')} - {format(new Date(fortnight.end), 'dd MMM yyyy')}
+                  </CardDescription>
+                </div>
+                <Badge variant={summary.approvedHours > 0 ? 'default' : 'secondary'} className="px-4 py-1.5 rounded-full font-bold">
+                  {summary.approvedHours} {t('approved hours')}
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0">
+              {hours.length === 0 ? (
+                <div className="p-12 text-center space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto">
+                    <Clock className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <p className="text-lg font-medium text-muted-foreground">
+                    {t('No volunteer hours recorded for this period.')}
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-none hover:bg-transparent">
+                        <TableHead className="px-8 py-5 text-sm font-bold uppercase tracking-wider text-muted-foreground">{t('Date')}</TableHead>
+                        <TableHead className="px-8 py-5 text-sm font-bold uppercase tracking-wider text-muted-foreground">{t('Duration')}</TableHead>
+                        <TableHead className="px-8 py-5 text-sm font-bold uppercase tracking-wider text-muted-foreground text-right">{t('Status')}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {hours.map((hour: any, index: number) => (
+                        <TableRow key={index} className="border-border/50 hover:bg-muted/10 transition-colors">
+                          <TableCell className="px-8 py-6 font-bold text-lg">
+                            {format(new Date(hour.date), 'dd MMM yyyy')}
+                          </TableCell>
+                          <TableCell className="px-8 py-6">
+                            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-primary/5 text-primary font-black">
+                              {hour.hours} {t('hours')}
+                            </div>
+                          </TableCell>
+                          <TableCell className="px-8 py-6 text-right">
+                            {hour.approved ? (
+                              <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 px-4 py-1 rounded-full font-bold">
+                                <CheckCircle className="h-3 w-3 mr-1.5" />
+                                {t('Approved')}
+                              </Badge>
+                            ) : (
+                              <Badge variant="secondary" className="px-4 py-1 rounded-full font-bold">
+                                <Clock className="h-3 w-3 mr-1.5" />
+                                {t('Pending')}
+                              </Badge>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* SU462 Card */}
+          <div className="space-y-6">
+            <Card className="border-border/50 shadow-2xl shadow-black/5 rounded-[2.5rem] bg-card overflow-hidden">
+              <CardHeader className="p-8 pb-4">
+                <div className="p-3 w-fit rounded-2xl bg-primary/10 text-primary mb-4">
+                  <FileText className="h-6 w-6" />
+                </div>
+                <CardTitle className="text-xl font-black">{t('SU462 - Activity Form')}</CardTitle>
+                <CardDescription className="text-md font-medium">
+                  {t('Export for Centrelink mutual obligation reporting')}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-8 pt-4 space-y-6">
+                <div className="p-5 rounded-2xl bg-muted/50 border border-border/50 space-y-4">
+                  <p className="font-black text-sm uppercase tracking-wider text-muted-foreground">{t('Includes')}:</p>
+                  <ul className="space-y-3">
+                    {[
+                      t('Verified volunteer hours'),
+                      t('Organization ABN & contact'),
+                      t('Official supervisor declaration'),
+                      t('Approved period data')
+                    ].map((item, i) => (
+                      <li key={i} className="flex items-center gap-3 text-sm font-bold text-foreground/80">
+                        <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {summary.approvedHours === 0 && (
+                  <Alert variant="destructive" className="rounded-2xl border-destructive/20 bg-destructive/5">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertDescription className="text-sm font-bold">
+                      {t('Approved hours needed to generate report')}
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                <div className="flex flex-col gap-3">
+                  <Button
+                    onClick={() => setSelectedPeriod(fortnight.period)}
+                    disabled={summary.approvedHours === 0 || isLoadingSU462}
+                    className="w-full h-12 rounded-xl font-black shadow-lg shadow-primary/20"
+                  >
+                    {t('View Details')}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleExportCSV}
+                    disabled={summary.approvedHours === 0}
+                    className="w-full h-12 rounded-xl font-black border-primary/20 hover:bg-primary/5"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    {t('Download CSV')}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Alert className="rounded-3xl border-primary/20 bg-primary/5 p-6">
+              <AlertCircle className="h-5 w-5 text-primary" />
+              <AlertDescription className="text-sm font-medium pl-2 leading-relaxed">
+                {t('Remember to report your income and volunteer hours to Centrelink by the end of your reporting period to avoid payment delays.')}
               </AlertDescription>
             </Alert>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Hours</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {hours.map((hour: any, index: number) => (
-                  <TableRow key={index}>
-                    <TableCell>{format(new Date(hour.date), 'dd MMM yyyy')}</TableCell>
-                    <TableCell className="font-medium">{hour.hours} hours</TableCell>
-                    <TableCell>
-                      {hour.approved ? (
-                        <Badge variant="default" className="gap-1">
-                          <CheckCircle className="h-3 w-3" />
-                          Approved
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary" className="gap-1">
-                          <XCircle className="h-3 w-3" />
-                          Pending
-                        </Badge>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* SU462 Form Information */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-blue-600" />
-            <CardTitle>SU462 - Approved Activity Form</CardTitle>
           </div>
-          <CardDescription>
-            Export this form for Centrelink mutual obligation reporting
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Alert>
-            <AlertDescription>
-              <p className="font-semibold mb-2">About SU462 Form:</p>
-              <ul className="list-disc list-inside space-y-1 text-sm">
-                <li>Used to verify volunteer hours for Centrelink recipients</li>
-                <li>Includes organization details (ABN, supervisor contact)</li>
-                <li>Shows approved hours for the fortnight period</li>
-                <li>Declaration: "Paid positions not being replaced by volunteers"</li>
-              </ul>
-            </AlertDescription>
-          </Alert>
-
-          {summary.approvedHours === 0 && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                No approved hours for this fortnight. You need approved hours to generate an SU462 report.
-              </AlertDescription>
-            </Alert>
-          )}
-
-          <div className="flex gap-2">
-            <Button
-              onClick={() => setSelectedPeriod(fortnight.period)}
-              disabled={summary.approvedHours === 0 || isLoadingSU462}
-            >
-              <FileText className="h-4 w-4 mr-2" />
-              View SU462 Details
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleExportCSV}
-              disabled={summary.approvedHours === 0}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Download CSV
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
