@@ -20,6 +20,13 @@ import {
   DialogHeader,
   DialogTitle
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
 
 export default function OrganizationProfile() {
   const queryClient = useQueryClient();
@@ -614,11 +621,18 @@ export default function OrganizationProfile() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="member-role">Role</Label>
-              <Input
-                id="member-role"
+              <Select
                 value={teamFormData.role}
-                onChange={(e) => setTeamFormData({ ...teamFormData, role: e.target.value })}
-              />
+                onValueChange={(val) => setTeamFormData({ ...teamFormData, role: val })}
+              >
+                <SelectTrigger id="member-role">
+                  <SelectValue placeholder="Select a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Coordinator">Coordinator</SelectItem>
+                  <SelectItem value="Member">Member</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>
