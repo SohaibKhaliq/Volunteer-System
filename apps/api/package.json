@@ -9,9 +9,9 @@
     "test": "node ace test",
     "socket": "node server-socket.js",
     "migrate": "node ace migration:run",
-    "migrate:refresh": "node ace migration:refresh",
+    "migrate:fresh": "node ace migration:refresh",
     "seed": "node ace db:seed",
-    "seed:refresh": "node ace db:seed --refresh",
+    "seed:fresh": "node ace db:seed --refresh",
     "lint": "eslint . --ext=.ts",
     "format": "prettier --write ."
   },
