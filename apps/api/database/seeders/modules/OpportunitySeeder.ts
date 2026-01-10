@@ -15,12 +15,13 @@ type SeedOpportunity = {
 
 export default class OpportunitySeeder extends BaseSeeder {
   public async run() {
-    const RECORD_COUNT = 50
+    const RECORD_COUNT = 150 // Increased from 50
 
     const baseOpportunities: SeedOpportunity[] = [
       {
         title: 'Beach Cleanup - Bondi Beach',
-        description: 'Join us for a community beach cleanup to protect our marine life and keep our beaches pristine',
+        description:
+          'Join us for a community beach cleanup to protect our marine life and keep our beaches pristine',
         location: 'Bondi Beach',
         city: 'Sydney',
         state: 'NSW',
@@ -573,7 +574,9 @@ export default class OpportunitySeeder extends BaseSeeder {
     const now = new Date()
     const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
 
-    const orgResult = await Database.rawQuery('SELECT id FROM organizations ORDER BY id ASC LIMIT 50')
+    const orgResult = await Database.rawQuery(
+      'SELECT id FROM organizations ORDER BY id ASC LIMIT 50'
+    )
     const organizationIds = orgResult[0].map((row: any) => row.id)
 
     if (organizationIds.length === 0) {
