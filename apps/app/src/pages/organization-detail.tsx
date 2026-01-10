@@ -2,7 +2,6 @@ import { useTranslation } from 'react-i18next';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { axios } from '@/lib/axios';
-import api from '@/lib/api';
 import volunteerApi from '@/lib/api/volunteerApi';
 import { Button } from '@/components/ui/button';
 import { MapPin, Globe, Mail, Phone, Calendar, Users, ArrowRight, Loader2 } from 'lucide-react';
@@ -117,114 +116,136 @@ const OrganizationDetail = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50">
+    <div className="flex flex-col min-h-screen bg-background text-foreground">
       {/* Header / Banner */}
-      <div className="bg-white border-b">
-        <div className="h-48 md:h-64 bg-slate-200 relative overflow-hidden">
-          {/* Fallback banner or actual banner if available */}
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/80 to-primary/40" />
+      <div className="bg-background relative">
+        <div className="h-64 md:h-80 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/95 to-primary/90 z-10" />
+          <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:30px_30px] z-10" />
+          <img
+            src="https://images.unsplash.com/photo-1559027615-cd4628902d4a?q=80&w=2074&auto=format&fit=crop"
+            alt="Collaboration"
+            className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-50"
+          />
         </div>
 
-        <div className="container px-4 relative -mt-16 pb-8">
-          <div className="flex flex-col md:flex-row items-start gap-6">
-            <div className="w-32 h-32 bg-white rounded-xl shadow-lg p-2 flex items-center justify-center overflow-hidden">
+        <div className="container px-4 relative -mt-32 z-20 pb-8">
+          <div className="flex flex-col md:flex-row items-end gap-8">
+            <div className="w-44 h-44 bg-card rounded-3xl shadow-2xl shadow-primary/20 p-4 flex items-center justify-center overflow-hidden border border-border/50">
               {org.logo ? (
                 <img src={org.logo} alt={org.name} className="w-full h-full object-contain" />
               ) : (
-                <Users className="w-12 h-12 text-slate-300" />
+                <Users className="w-20 h-20 text-muted-foreground/30" />
               )}
             </div>
 
-            <div className="flex-1 pt-2 md:pt-16">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                  <h1 className="text-3xl font-bold text-slate-900 mb-2">{org.name}</h1>
-                  <div className="flex flex-wrap gap-4 text-sm text-slate-600">
-                    {org.type && <Badge variant="secondary">{org.type}</Badge>}
+            <div className="flex-1 pb-4">
+              <div className="flex flex-col md:flex-row justify-between items-end gap-6">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    {org.type && <Badge className="bg-primary/20 text-primary border-none font-bold px-4 py-1 rounded-full uppercase tracking-widest text-[10px]">{org.type}</Badge>}
+                    <Badge variant="outline" className="border-primary/30 text-primary-foreground font-bold px-4 py-1 rounded-full uppercase tracking-widest text-[10px] bg-primary/10 backdrop-blur-md">{t('Organization')}</Badge>
+                  </div>
+                  <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight drop-shadow-md">{org.name}</h1>
+                  <div className="flex flex-wrap gap-6 text-sm font-bold text-primary-foreground/80">
                     {org.address && (
-                      <div className="flex items-center gap-1">
-                        <MapPin className="h-4 w-4" />
+                      <div className="flex items-center gap-2 bg-black/20 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10">
+                        <MapPin className="h-4 w-4 text-primary-foreground" />
                         {org.address}
                       </div>
                     )}
                   </div>
                 </div>
-                {membership ? (
-                  membership.status === 'active' ? (
-                    <Button size="lg" variant="outline" disabled>
-                      {t('Member')}
-                    </Button>
+                <div className="pb-2">
+                  {membership ? (
+                    membership.status === 'active' ? (
+                      <Button size="lg" className="h-14 px-10 rounded-2xl bg-white text-primary hover:bg-white/90 font-black shadow-xl" disabled>
+                        {t('Active Member')}
+                      </Button>
+                    ) : (
+                      <Button size="lg" className="h-14 px-10 rounded-2xl bg-white/20 text-white backdrop-blur-md border-2 border-white/30 font-black" disabled>
+                        {t('Pending Approval')}
+                      </Button>
+                    )
                   ) : (
-                    <Button size="lg" variant="outline" disabled>
-                      {t('Requested')}
+                    <Button
+                      size="lg"
+                      className="h-14 px-10 rounded-2xl bg-white text-primary hover:bg-white/90 font-black shadow-2xl shadow-black/20"
+                      onClick={handleJoinOrganization}
+                      disabled={joinMutation.isPending}
+                    >
+                      {joinMutation.isPending ? t('Joining...') : t('Join Organization')}
                     </Button>
-                  )
-                ) : (
-                  <Button size="lg" onClick={handleJoinOrganization} disabled={joinMutation.isPending}>
-                    {joinMutation.isPending ? t('Joining...') : t('Join Organization')}
-                  </Button>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="container px-4 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="container px-4 py-16">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="lg:col-span-2 space-y-12">
             {/* About */}
-            <section className="bg-white p-8 rounded-xl shadow-sm">
-              <h2 className="text-xl font-bold mb-4">{t('About Us')}</h2>
-              <div className="prose max-w-none text-slate-600">
+            <section className="bg-card p-10 rounded-[2.5rem] border border-border/50 shadow-sm">
+              <h2 className="text-2xl font-black mb-6 text-foreground tracking-tight">{t('About Us')}</h2>
+              <div className="prose max-w-none text-muted-foreground font-medium leading-relaxed">
                 <p>{org.description || t('No description available.')}</p>
               </div>
             </section>
 
             {/* Upcoming Events */}
-            <section>
-              <h2 className="text-xl font-bold mb-4">{t('Upcoming Opportunities')}</h2>
+            <section className="space-y-8">
+              <div className="flex items-center justify-between">
+                <h2 className="text-3xl font-black text-foreground tracking-tight">{t('Upcoming Opportunities')}</h2>
+                <Badge variant="outline" className="rounded-full px-4 py-1 border-primary/50 text-xs font-bold text-primary">{events?.length || 0} {t('Opportunities')}</Badge>
+              </div>
               {isLoadingEvents ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <div className="flex items-center justify-center py-20">
+                  <Loader2 className="h-10 w-10 animate-spin text-primary" />
                 </div>
               ) : events && events.length > 0 ? (
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {events.map((event: any) => (
                     <div
                       key={event.id}
-                      className="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition-shadow flex flex-col sm:flex-row gap-6"
+                      className="group bg-card p-6 rounded-[2rem] border border-border/50 hover:shadow-2xl transition-all duration-500 relative overflow-hidden"
                     >
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="text-lg font-semibold">{event.title}</h3>
-                          <Badge variant={event.status === 'Upcoming' ? 'default' : 'secondary'}>{event.status}</Badge>
+                      <div className="flex justify-between items-start mb-6">
+                        <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary group-hover:rotate-12 transition-transform">
+                          <Calendar className="h-6 w-6" />
                         </div>
-                        <p className="text-slate-600 text-sm mb-4 line-clamp-2">{event.description}</p>
-                        <div className="flex flex-wrap gap-4 text-sm text-slate-500">
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-4 w-4" />
-                            {event.date} • {event.time}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <MapPin className="h-4 w-4" />
-                            {event.location}
-                          </div>
+                        <Badge className="bg-emerald-500/10 text-emerald-600 border-none font-black text-[10px] rounded-lg tracking-wider uppercase">{event.status || t('Available')}</Badge>
+                      </div>
+                      <h3 className="text-xl font-black mb-3 text-foreground group-hover:text-primary transition-colors">{event.title}</h3>
+                      <p className="text-muted-foreground text-sm mb-6 line-clamp-2 font-medium leading-relaxed">{event.description}</p>
+
+                      <div className="space-y-3 mb-8">
+                        <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground/80">
+                          <Calendar className="h-3.5 w-3.5 text-primary" />
+                          {event.date} • {event.time}
+                        </div>
+                        <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground/80">
+                          <MapPin className="h-3.5 w-3.5 text-primary" />
+                          {event.location}
                         </div>
                       </div>
-                      <div className="flex items-center">
-                        <Link to={`/detail/event/${event.id}`}>
-                          <Button variant="outline">
-                            {t('View Details')} <ArrowRight className="ml-2 h-4 w-4" />
-                          </Button>
-                        </Link>
-                      </div>
+
+                      <Link to={`/detail/event/${event.id}`}>
+                        <Button variant="outline" className="w-full rounded-xl border-border/50 font-bold transition-all group-hover:bg-primary group-hover:text-white group-hover:border-primary">
+                          {t('View Details')} <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                      </Link>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="bg-white p-8 rounded-xl shadow-sm text-center text-slate-500">
+                <div className="bg-card p-12 rounded-[2.5rem] border border-border/30 text-center text-muted-foreground font-bold">
+                  <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Calendar className="h-8 w-8 opacity-20" />
+                  </div>
                   {t('No upcoming events found.')}
                 </div>
               )}
@@ -232,52 +253,71 @@ const OrganizationDetail = () => {
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
-            <div className="bg-white p-6 rounded-xl shadow-sm">
-              <h3 className="font-semibold mb-4">{t('Contact Information')}</h3>
-              <div className="space-y-4">
+          <div className="space-y-8">
+            <div className="bg-card p-8 rounded-3xl border border-border/50 shadow-sm">
+              <h3 className="text-lg font-black mb-6 tracking-tight text-foreground uppercase tracking-widest text-[10px] opacity-50">{t('Contact Information')}</h3>
+              <div className="space-y-6">
                 {org.website && (
                   <a
                     href={org.website}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-3 text-slate-600 hover:text-primary transition-colors"
+                    className="flex items-center gap-4 text-muted-foreground hover:text-primary transition-all group"
                   >
-                    <Globe className="h-5 w-5" />
-                    <span className="truncate">{org.website.replace(/^https?:\/\//, '')}</span>
+                    <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
+                      <Globe className="h-5 w-5" />
+                    </div>
+                    <span className="truncate font-bold text-sm">{org.website.replace(/^https?:\/\//, '')}</span>
                   </a>
                 )}
                 {org.email && (
                   <a
                     href={`mailto:${org.email}`}
-                    className="flex items-center gap-3 text-slate-600 hover:text-primary transition-colors"
+                    className="flex items-center gap-4 text-muted-foreground hover:text-primary transition-all group"
                   >
-                    <Mail className="h-5 w-5" />
-                    <span className="truncate">{org.email}</span>
+                    <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
+                      <Mail className="h-5 w-5" />
+                    </div>
+                    <span className="truncate font-bold text-sm">{org.email}</span>
                   </a>
                 )}
                 {org.phone && (
                   <a
                     href={`tel:${org.phone}`}
-                    className="flex items-center gap-3 text-slate-600 hover:text-primary transition-colors"
+                    className="flex items-center gap-4 text-muted-foreground hover:text-primary transition-all group"
                   >
-                    <Phone className="h-5 w-5" />
-                    <span className="truncate">{org.phone}</span>
+                    <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
+                      <Phone className="h-5 w-5" />
+                    </div>
+                    <span className="truncate font-bold text-sm">{org.phone}</span>
                   </a>
                 )}
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-xl shadow-sm">
-              <h3 className="font-semibold mb-4">{t('Impact Stats')}</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-4 bg-slate-50 rounded-lg">
-                  <div className="text-2xl font-bold text-primary">{org.volunteer_count || 0}</div>
-                  <div className="text-xs text-slate-500">{t('Volunteers')}</div>
+            <div className="bg-card p-8 rounded-3xl border border-border/50 shadow-sm relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-4 opacity-5">
+                <Users className="w-24 h-24 rotate-12" />
+              </div>
+              <h3 className="text-lg font-black mb-8 tracking-tight text-foreground uppercase tracking-widest text-[10px] opacity-50">{t('Impact Stats')}</h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-5 bg-muted/30 rounded-2xl border border-border/30">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center">
+                      <Users className="h-5 w-5" />
+                    </div>
+                    <div className="text-sm font-bold text-muted-foreground">{t('Total Volunteers')}</div>
+                  </div>
+                  <div className="text-2xl font-black text-foreground">{org.volunteer_count || 0}</div>
                 </div>
-                <div className="text-center p-4 bg-slate-50 rounded-lg">
-                  <div className="text-2xl font-bold text-primary">{org.event_count || 0}</div>
-                  <div className="text-xs text-slate-500">{t('Events')}</div>
+                <div className="flex items-center justify-between p-5 bg-muted/30 rounded-2xl border border-border/30">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+                      <Calendar className="h-5 w-5" />
+                    </div>
+                    <div className="text-sm font-bold text-muted-foreground">{t('Active Events')}</div>
+                  </div>
+                  <div className="text-2xl font-black text-foreground">{org.event_count || 0}</div>
                 </div>
               </div>
             </div>
