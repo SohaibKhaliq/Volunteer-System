@@ -383,24 +383,41 @@ export default function Profile() {
   }));
 
   return (
-    <div className="min-h-screen bg-slate-50/50 pb-12">
+    <div className="min-h-screen bg-background pb-12">
       {/* Header / Banner */}
-      <div className="bg-slate-900 text-white pt-12 pb-24 px-4">
-        <div className="container mx-auto max-w-5xl">
-          <div className="flex flex-col md:flex-row items-center md:items-end gap-6">
-            <Avatar className="h-32 w-32 border-4 border-white shadow-xl">
-              <AvatarImage src={`${userData.profileImageUrl}?v=${avatarVersion}`} />
-              <AvatarFallback className="bg-primary text-white text-4xl font-bold">
-                {userData.firstName?.[0]}
-                {userData.lastName?.[0]}
-              </AvatarFallback>
-            </Avatar>
-            <div className="text-center md:text-left flex-1">
-              <h1 className="text-3xl font-bold mb-1">
-                {userData.firstName || userData.first_name} {userData.lastName || userData.last_name}
+      <div className="relative bg-gradient-to-b from-primary/10 via-background to-background pt-16 pb-32 px-4 overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-full opacity-30 pointer-events-none">
+          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px]" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-blue-500/20 rounded-full blur-[100px]" />
+        </div>
+        <div className="container mx-auto max-w-5xl relative z-10">
+          <div className="flex flex-col md:flex-row items-center md:items-end gap-8">
+            <div className="relative group">
+              <Avatar className="h-40 w-40 border-4 border-card shadow-2xl transition-transform group-hover:scale-[1.02]">
+                <AvatarImage src={`${userData.profileImageUrl}?v=${avatarVersion}`} />
+                <AvatarFallback className="bg-primary/10 text-primary text-5xl font-bold">
+                  {userData.firstName?.[0]}
+                  {userData.lastName?.[0]}
+                </AvatarFallback>
+              </Avatar>
+              {profileCompletion < 100 && (
+                <div className="absolute -top-2 -right-2 bg-amber-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg border-2 border-background animate-pulse">
+                  {profileCompletion}%
+                </div>
+              )}
+            </div>
+            <div className="text-center md:text-left flex-1 space-y-2">
+              <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-2 flex flex-col md:flex-row items-center gap-3">
+                <span>{userData.firstName || userData.first_name} {userData.lastName || userData.last_name}</span>
+                {userData.isBackgroundChecked && (
+                  <Badge variant="success" className="bg-emerald-500 text-white border-none px-2 py-0 h-6 flex items-center gap-1">
+                    <CheckCircle2 className="h-3 w-3" /> Verified
+                  </Badge>
+                )}
               </h1>
-              <p className="text-slate-300 flex items-center gap-2 justify-center md:justify-start">
-                <Shield className="h-4 w-4" /> Verified Volunteer
+              <p className="text-muted-foreground flex items-center gap-2 justify-center md:justify-start text-lg">
+                <Shield className="h-5 w-5 text-primary" />
+                <span className="font-medium">Volunteer Member</span>
               </p>
               <div className="flex gap-2 mt-3 justify-center md:justify-start">
                 {(() => {
@@ -433,17 +450,16 @@ export default function Profile() {
                 })()}
               </div>
 
-              {/* Profile completion indicator (accessibility-friendly) */}
-              <div className="mt-3 w-full md:w-2/3">
+              {/* Profile completion indicator */}
+              <div className="mt-6 w-full md:w-3/4">
                 <div className="flex items-center gap-4">
-                  <div className="flex-1" aria-hidden>
-                    <Progress
-                      value={profileCompletion}
-                      className="bg-slate-700/50 h-2"
-                      aria-label={`Profile completion ${profileCompletion} percent`}
+                  <div className="flex-1 h-3 bg-muted/50 rounded-full overflow-hidden backdrop-blur-sm border border-border/50" aria-hidden>
+                    <div
+                      className="h-full bg-gradient-to-r from-primary via-primary shadow-[0_0_20px_rgba(var(--primary),0.3)] transition-all duration-1000 ease-out"
+                      style={{ width: `${profileCompletion}%` }}
                     />
                   </div>
-                  <div className="text-sm text-white/90 font-medium">{profileCompletion}%</div>
+                  <div className="text-sm font-bold text-foreground">{profileCompletion}% Complete</div>
                 </div>
                 {profileCompletion < 100 && (
                   <div className="mt-2 flex items-center gap-3">
