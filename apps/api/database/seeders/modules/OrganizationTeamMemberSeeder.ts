@@ -7,13 +7,13 @@ export default class OrganizationTeamMemberSeeder extends BaseSeeder {
     const now = new Date()
     const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
 
-    const teamsResult = await Database.rawQuery('SELECT id FROM teams ORDER BY id ASC LIMIT 50')
-    const teamIds = teamsResult[0].map((row: any) => row.id)
+    const teamsResult = await Database.rawQuery('SELECT id, organization_id FROM teams ORDER BY id ASC LIMIT 50')
+    const teams = teamsResult[0] as Array<{ id: number; organization_id: number }>
 
     const usersResult = await Database.rawQuery('SELECT id FROM users ORDER BY id ASC LIMIT 50')
     const userIds = usersResult[0].map((row: any) => row.id)
 
-    if (teamIds.length === 0 || userIds.length === 0) {
+    if (teams.length === 0 || userIds.length === 0) {
       console.log('OrganizationTeamMemberSeeder: missing teams or users, skipping')
       return
     }
@@ -32,9 +32,9 @@ export default class OrganizationTeamMemberSeeder extends BaseSeeder {
 
     let count = 0
     while (count < RECORD_COUNT) {
-      const teamId = teamIds[Math.floor(Math.random() * teamIds.length)]
+      const team = teams[Math.floor(Math.random() * teams.length)]
       const userId = userIds[Math.floor(Math.random() * userIds.length)]
-      const pairKey = `${teamId}-${userId}`
+      const pairKey = `${team.id}-${userId}`
 
       if (createdPairs.has(pairKey)) continue
       createdPairs.add(pairKey)
@@ -43,7 +43,8 @@ export default class OrganizationTeamMemberSeeder extends BaseSeeder {
       const role = roles[Math.floor(Math.random() * roles.length)]
 
       rows.push({
-        team_id: teamId,
+        team_id: team.id,
+        organization_id: team.organization_id,
         user_id: userId,
         role: role,
         joined_at: joinedDate.toISOString().slice(0, 19).replace('T', ' '),
@@ -60,11 +61,11 @@ export default class OrganizationTeamMemberSeeder extends BaseSeeder {
       return
     }
 
-    const placeholders = rows.map(() => '(?,?,?,?,?,?,?)').join(',')
-    const sql = 'INSERT INTO organization_team_members (team_id,user_id,role,joined_at,is_active,created_at,updated_at) VALUES ' + placeholders +
+    const placeholders = rows.map(() => '(?,?,?,?,?,?,?,?)').join(',')
+    const sql = 'INSERT INTO organization_team_members (team_id,organization_id,user_id,role,joined_at,is_active,created_at,updated_at) VALUES ' + placeholders +
       ' ON DUPLICATE KEY UPDATE role=VALUES(role),is_active=VALUES(is_active),updated_at=VALUES(updated_at)'
 
-    const bindings = rows.flatMap((row) => [row.team_id, row.user_id, row.role, row.joined_at, row.is_active, row.created_at, row.updated_at])
+    const bindings = rows.flatMap((row) => [row.team_id, row.organization_id, row.user_id, row.role, row.joined_at, row.is_active, row.created_at, row.updated_at])
 
     const trx = await Database.transaction()
     try {
