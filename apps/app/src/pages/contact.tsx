@@ -49,7 +49,7 @@ const Contact = () => {
 
       <section className="py-16 -mt-16 relative z-20">
         <div className="container px-4">
-          <div className="bg-card rounded-3xl shadow-2xl shadow-primary/5 overflow-hidden flex flex-col md:flex-row max-w-6xl mx-auto border border-border/50">
+          <div className="bg-card rounded-[2.5rem] shadow-2xl shadow-primary/5 overflow-hidden flex flex-col md:flex-row max-w-6xl mx-auto border border-border/50">
             {/* Contact Info */}
             <div className="bg-primary/5 dark:bg-primary/10 p-10 md:w-2/5 flex flex-col justify-between border-b md:border-b-0 md:border-r border-border/50">
               <div>
@@ -118,13 +118,13 @@ const Contact = () => {
                     <label htmlFor="firstName" className="text-sm font-bold text-foreground/80 px-1">
                       {t('First Name')}
                     </label>
-                    <Input id="firstName" name="firstName" required placeholder="John" className="h-12 bg-card/50 border-border/50 rounded-xl focus:bg-card transition-all" />
+                    <Input id="firstName" name="firstName" required placeholder="John" className="h-14 bg-card/50 border-border/50 rounded-xl focus:bg-card transition-all" />
                   </div>
                   <div className="space-y-2">
                     <label htmlFor="lastName" className="text-sm font-bold text-foreground/80 px-1">
                       {t('Last Name')}
                     </label>
-                    <Input id="lastName" name="lastName" required placeholder="Doe" className="h-12 bg-card/50 border-border/50 rounded-xl focus:bg-card transition-all" />
+                    <Input id="lastName" name="lastName" required placeholder="Doe" className="h-14 bg-card/50 border-border/50 rounded-xl focus:bg-card transition-all" />
                   </div>
                 </div>
 
@@ -132,14 +132,14 @@ const Contact = () => {
                   <label htmlFor="email" className="text-sm font-bold text-foreground/80 px-1">
                     {t('Email Address')}
                   </label>
-                  <Input id="email" name="email" type="email" required placeholder="john@example.com" className="h-12 bg-card/50 border-border/50 rounded-xl focus:bg-card transition-all" />
+                  <Input id="email" name="email" type="email" required placeholder="john@example.com" className="h-14 bg-card/50 border-border/50 rounded-xl focus:bg-card transition-all" />
                 </div>
 
                 <div className="space-y-2">
                   <label htmlFor="subject" className="text-sm font-bold text-foreground/80 px-1">
                     {t('Subject')}
                   </label>
-                  <Input id="subject" name="subject" required placeholder={t('How can we help?')} className="h-12 bg-card/50 border-border/50 rounded-xl focus:bg-card transition-all" />
+                  <Input id="subject" name="subject" required placeholder={t('How can we help?')} className="h-14 bg-card/50 border-border/50 rounded-xl focus:bg-card transition-all" />
                 </div>
 
                 <div className="space-y-2">
