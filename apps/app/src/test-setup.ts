@@ -84,3 +84,32 @@ vi.mock('@/hooks/useSystemRoles', () => ({
     }
   })
 }));
+
+// Provide a lightweight global mock for the app provider used by many components/tests.
+// Individual tests may override this mock with `vi.mock('@/providers/app-provider', ...)`.
+vi.mock('@/providers/app-provider', () => {
+  function AppProvider(props: any) {
+    return props.children || null;
+  }
+
+  return {
+    default: AppProvider,
+    useApp: () => ({
+      showBackButton: false,
+      authenticated: true,
+      user: { id: 1, firstName: 'Test', lastName: 'User', email: 'test@example.com', roles: [] },
+      settings: [],
+      selectedOrganizationName: null,
+      openOrganizationSelector: () => {}
+    })
+  };
+});
+
+// Mock react-i18next so components relying on useTranslation() have minimal i18n support in tests
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (k: string) => k,
+    i18n: { language: 'en-US', options: { supportedLngs: ['en'] }, changeLanguage: async () => {} }
+  }),
+  initReactI18next: {}
+}));
