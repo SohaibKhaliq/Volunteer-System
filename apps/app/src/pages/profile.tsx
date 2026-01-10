@@ -12,6 +12,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/components/atoms/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useTheme } from '@/providers/theme-provider';
+import { Separator } from '@/components/ui/separator';
+import { Checkbox } from '@/components/ui/checkbox';
+import TagInput from '@/components/molecules/tag-input';
 import {
   Award,
   Clock,
@@ -44,18 +50,98 @@ export default function Profile() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
   // use profile endpoint to get user data with org statuses
-  const { data: meResponse, isLoading } = useQuery(['me'], () => api.getVolunteerProfile());
-  const { setToken } = useStore();
+  const { data: meResponse, isLoading } = useQuery(['volunteer-profile'], () => api.getVolunteerProfile());
+  const { token, setToken, setUser, user } = useStore();
   const navigate = useNavigate();
   const location = useLocation();
-  const { token } = useStore();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { theme, setTheme } = useTheme();
   // tab state for compact navigation
   const [activeTab, setActiveTab] = useState('overview');
   // Cache buster for avatar
   const [avatarVersion, setAvatarVersion] = useState(Date.now());
   // Pagination state for schedule (must be before any early returns)
   const [schedulePage, setSchedulePage] = useState(1);
+
+  // Preference state
+  const [prefsFormData, setPrefsFormData] = useState<any>({
+    emailNotifications: true,
+    smsNotifications: false,
+    pushNotifications: true,
+    newsletterSubscription: false,
+    eventReminders: true,
+    shiftReminders: true,
+    opportunityAlerts: true,
+    profilePublic: true,
+    showEmail: false,
+    showPhone: false,
+    preferredDays: [],
+    preferredTime: 'flexible',
+    maxHoursPerWeek: 40,
+    language: 'en',
+    timezone: 'UTC',
+    theme: 'auto'
+  });
+
+  // Fetch preferences
+  const { data: prefsResponse, isLoading: isLoadingPrefs } = useQuery(['user-preferences'], () => api.getPreferences());
+
+  useEffect(() => {
+    if (prefsResponse?.preferences) {
+      setPrefsFormData(prefsResponse.preferences);
+    }
+  }, [prefsResponse]);
+
+  const preferencesMutation = useMutation({
+    mutationFn: (data: any) => api.updatePreferences(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['user-preferences']);
+      // Apply theme change immediately if it was updated
+      if (prefsFormData.theme && prefsFormData.theme !== theme) {
+        setTheme(prefsFormData.theme as any);
+      }
+      toast({ title: 'Preferences updated', description: 'Your preferences have been saved.' });
+    },
+    onError: () => {
+      toast({
+        title: 'Update failed',
+        description: 'Could not update preferences.',
+        variant: 'destructive'
+      });
+    }
+  });
+
+  const handlePrefChange = (key: string, value: any) => {
+    setPrefsFormData((prev: any) => ({ ...prev, [key]: value }));
+  };
+
+  const handleSaveAll = async () => {
+    try {
+      // 1. Update Profile Information
+      await updateMutation.mutateAsync({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phone: formData.phone,
+        profileMetadata: {
+          ...userData.profileMetadata,
+          bio: formData.bio,
+          address: formData.address,
+          skills: formData.skills,
+          interests: formData.interests,
+          availability: formData.availability
+        }
+      });
+
+      // 2. Update Preferences
+      await preferencesMutation.mutateAsync(prefsFormData);
+
+      // Note: Individual success toasts are handled by mutations,
+      // but we could add a final summary toast if desired.
+    } catch (error) {
+      // Errors are handled by individual mutation onError handlers
+      console.error('Unified save error:', error);
+    }
+  };
 
   // Initialize active tab from URL, then localStorage or navigation state
   useEffect(() => {
@@ -91,14 +177,18 @@ export default function Profile() {
     phone: '',
     bio: '',
     address: '',
-    skills: '',
-    interests: '',
+    skills: [] as string[],
+    interests: [] as string[],
     availability: ''
   });
 
   useEffect(() => {
-    const u = (meResponse as any)?.profile ?? (meResponse as any)?.data ?? (meResponse as any) ?? null;
-    if (u) {
+    const raw = (meResponse as any)?.profile ?? (meResponse as any)?.data ?? (meResponse as any) ?? null;
+    if (raw) {
+      const u = {
+        ...raw,
+        profileMetadata: raw.profileMetadata || raw.profile_metadata || {}
+      };
       setFormData({
         firstName: u.firstName || u.first_name || '',
         lastName: u.lastName || u.last_name || '',
@@ -106,14 +196,12 @@ export default function Profile() {
         phone: u.phone || '',
         bio: u.profileMetadata?.bio || u.bio || '',
         address: u.profileMetadata?.address || '',
-        skills: Array.isArray(u.profileMetadata?.skills)
-          ? u.profileMetadata.skills.join(', ')
-          : u.profileMetadata?.skills || '',
-        interests: Array.isArray(u.profileMetadata?.interests)
-          ? u.profileMetadata.interests.join(', ')
-          : u.profileMetadata?.interests || '',
+        skills: Array.isArray(u.profileMetadata?.skills) ? u.profileMetadata.skills : [],
+        interests: Array.isArray(u.profileMetadata?.interests) ? u.profileMetadata.interests : [],
         availability: u.profileMetadata?.availability || ''
       });
+      // Force re-render of completion percentage
+      console.log('Profile data updated, form synced');
     }
   }, [meResponse]);
 
@@ -122,9 +210,20 @@ export default function Profile() {
   const userId = userDataEarly?.id ?? undefined;
 
   const updateMutation = useMutation({
-    mutationFn: (data: any) => api.updateUser(userId as any, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries(['me']);
+    mutationFn: (data: any) => api.updateVolunteerProfile(data),
+    onSuccess: (updatedUser: any) => {
+      // Refresh the session user in Zustand store
+      if (updatedUser) {
+        setUser(updatedUser);
+      }
+
+      // Invalidate both keys to ensure full UI consistency
+      Promise.all([queryClient.invalidateQueries(['volunteer-profile']), queryClient.invalidateQueries(['me'])]).then(
+        () => {
+          // After the query refreshes, the form data will auto-sync via the useEffect
+          // This ensures the UI shows the fresh data
+        }
+      );
       toast({ title: 'Profile updated', description: 'Your changes have been saved successfully.' });
     },
     onError: () => {
@@ -180,8 +279,6 @@ export default function Profile() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['my-assignments', userId] })
   });
 
-
-
   if (isLoading)
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -205,17 +302,41 @@ export default function Profile() {
       </div>
     );
   }
-  const userData = (meResponse as any)?.profile ?? (meResponse as any)?.data ?? (meResponse as any) ?? {};
+
+  // Normalize userData for robust property access
+  const userData = {
+    ...meRaw,
+    // Support both camelCase and snake_case
+    firstName: meRaw.firstName || meRaw.first_name,
+    lastName: meRaw.lastName || meRaw.last_name,
+    profileMetadata: meRaw.profileMetadata || meRaw.profile_metadata || {},
+    emailVerifiedAt: meRaw.emailVerifiedAt || meRaw.email_verified_at || meRaw.emailVerified
+  };
 
   // Profile completion: required fields help volunteers understand next steps
-  const _filledChecks = [
-    userData.phone || formData.phone,
-    userData.profileMetadata?.address || formData.address,
-    (Array.isArray(userData.profileMetadata?.skills) && userData.profileMetadata.skills.length > 0) || (formData.skills && formData.skills.trim().length > 0),
-    userData.profileMetadata?.availability || formData.availability,
-    userData.emailVerifiedAt || userData.email_verified_at || userData.emailVerified
-  ].filter(Boolean).length;
-  const profileCompletion = Math.round(((_filledChecks || 0) / 5) * 100);
+  // Use ONLY userData (from server) to ensure fresh data after updates
+  const completionCriteria = [
+    { label: 'Phone Number', filled: !!userData.phone },
+    { label: 'Address', filled: !!userData.profileMetadata?.address },
+    {
+      label: 'Skills',
+      filled: Array.isArray(userData.profileMetadata?.skills) && userData.profileMetadata.skills.length > 0
+    },
+    {
+      label: 'Availability',
+      filled:
+        !!userData.profileMetadata?.availability ||
+        !!userData.profileMetadata?.preferred_time ||
+        !!userData.profileMetadata?.preferred_days
+    },
+    { label: 'Email Verification', filled: !!userData.emailVerifiedAt },
+    { label: 'Preferred Days', filled: prefsResponse?.preferences?.preferredDays?.length > 0 },
+    { label: 'Max Hours per Week', filled: prefsResponse?.preferences?.maxHoursPerWeek > 0 }
+  ];
+
+  const _filledChecks = completionCriteria.filter((c) => c.filled).length;
+  const profileCompletion = Math.round(((_filledChecks || 0) / completionCriteria.length) * 100);
+  const missingFields = completionCriteria.filter((c) => !c.filled).map((c) => c.label);
 
   // Transform assignments into the UI's expected `upcomingShifts` structure
   const upcomingShifts = (assignments ?? [])
@@ -245,10 +366,7 @@ export default function Profile() {
 
   const schedulePerPage = 5;
 
-  const paginatedShifts = upcomingShifts.slice(
-    (schedulePage - 1) * schedulePerPage,
-    schedulePage * schedulePerPage
-  );
+  const paginatedShifts = upcomingShifts.slice((schedulePage - 1) * schedulePerPage, schedulePage * schedulePerPage);
 
   const totalPages = Math.ceil(upcomingShifts.length / schedulePerPage);
 
@@ -260,8 +378,6 @@ export default function Profile() {
     hours: h.hours || 0,
     status: h.status || 'Verified'
   }));
-
-
 
   return (
     <div className="min-h-screen bg-slate-50/50 pb-12">
@@ -376,10 +492,6 @@ export default function Profile() {
             <VolunteerDashboard />
           </TabsContent>
 
-          <TabsContent value="dashboard" className="space-y-6">
-            <VolunteerDashboard />
-          </TabsContent>
-
           <TabsContent value="applications" className="space-y-6">
             <VolunteerApplicationsPage />
           </TabsContent>
@@ -391,8 +503,6 @@ export default function Profile() {
           <TabsContent value="compliance" className="space-y-6">
             <VolunteerCompliance embed={true} />
           </TabsContent>
-
-
 
           {/* SCHEDULE SECTION */}
           <TabsContent value="schedule">
@@ -464,7 +574,7 @@ export default function Profile() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => setSchedulePage(p => Math.max(1, p - 1))}
+                            onClick={() => setSchedulePage((p) => Math.max(1, p - 1))}
                             disabled={schedulePage === 1}
                           >
                             <ChevronLeft className="h-4 w-4 mr-1" /> Previous
@@ -475,7 +585,7 @@ export default function Profile() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => setSchedulePage(p => Math.min(totalPages, p + 1))}
+                            onClick={() => setSchedulePage((p) => Math.min(totalPages, p + 1))}
                             disabled={schedulePage === totalPages}
                           >
                             Next <ChevronRight className="h-4 w-4 ml-1" />
@@ -588,20 +698,35 @@ export default function Profile() {
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Incomplete Profile Warning */}
-                {(profileCompletion < 100) && (
+                {profileCompletion < 100 && (
                   <Alert className="mb-4" variant={profileCompletion < 50 ? 'destructive' : 'default'}>
                     <AlertCircle className="h-4 w-4" />
                     <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full gap-3">
                       <div>
                         <AlertTitle>Incomplete profile</AlertTitle>
                         <AlertDescription>
-                          Your profile is {profileCompletion}% complete. Finish required fields to be eligible for more
-                          opportunities and receive reminders about upcoming commitments.
+                          <p className="mb-2">
+                            Your profile is {profileCompletion}% complete. Finish the following fields to reach 100%:
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {missingFields.map((field) => (
+                              <Badge
+                                key={field}
+                                variant="outline"
+                                className="bg-white/50 border-red-200 text-red-700 font-normal"
+                              >
+                                + {field}
+                              </Badge>
+                            ))}
+                          </div>
                         </AlertDescription>
                       </div>
                       <div className="flex items-center gap-3">
                         <div className="w-40">
-                          <Progress value={profileCompletion} aria-label={`Profile completion ${profileCompletion} percent`} />
+                          <Progress
+                            value={profileCompletion}
+                            aria-label={`Profile completion ${profileCompletion} percent`}
+                          />
                         </div>
                         <Button size="sm" onClick={() => setActiveTab('settings')}>
                           Complete now
@@ -616,7 +741,9 @@ export default function Profile() {
                   <div className="flex flex-col items-center space-y-3">
                     <div className="relative">
                       <Avatar className="h-32 w-32 border-4 border-white shadow-xl">
-                        <AvatarImage src={`${userData.profileImageUrl || userData.profileMetadata?.avatar_url}?v=${avatarVersion}`} />
+                        <AvatarImage
+                          src={`${userData.profileImageUrl || userData.profileMetadata?.avatar_url}?v=${avatarVersion}`}
+                        />
                         <AvatarFallback className="bg-primary text-white text-4xl font-bold">
                           {userData.firstName?.[0]}
                           {userData.lastName?.[0]}
@@ -640,7 +767,11 @@ export default function Profile() {
                           if (!file) return;
 
                           if (file.size > 5 * 1024 * 1024) {
-                            toast({ title: 'File too large', description: 'Maximum file size is 5MB.', variant: 'destructive' as any });
+                            toast({
+                              title: 'File too large',
+                              description: 'Maximum file size is 5MB.',
+                              variant: 'destructive' as any
+                            });
                             return;
                           }
 
@@ -686,7 +817,9 @@ export default function Profile() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="email">Email <span className="text-xs text-muted-foreground">(Read-only)</span></Label>
+                        <Label htmlFor="email">
+                          Email <span className="text-xs text-muted-foreground">(Read-only)</span>
+                        </Label>
                         <Input id="email" value={formData.email} disabled className="bg-slate-50" />
                         {userData.emailVerifiedAt && (
                           <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
@@ -728,21 +861,21 @@ export default function Profile() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label htmlFor="skills">Skills (comma separated) {formData.skills ? '' : '*'}</Label>
-                        <Input
+                        <Label htmlFor="skills">Skills {formData.skills.length > 0 ? '' : '*'}</Label>
+                        <TagInput
                           id="skills"
+                          placeholder="Add a skill and press Enter"
                           value={formData.skills}
-                          onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
-                          placeholder="Teaching, First Aid, Driving..."
+                          onChange={(vals) => setFormData({ ...formData, skills: vals })}
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="interests">Interests (comma separated)</Label>
-                        <Input
+                        <Label htmlFor="interests">Interests</Label>
+                        <TagInput
                           id="interests"
+                          placeholder="Add an interest and press Enter"
                           value={formData.interests}
-                          onChange={(e) => setFormData({ ...formData, interests: e.target.value })}
-                          placeholder="Education, Environment, Health..."
+                          onChange={(vals) => setFormData({ ...formData, interests: vals })}
                         />
                       </div>
                     </div>
@@ -762,41 +895,316 @@ export default function Profile() {
                       <div className="space-y-1">
                         <Label className="text-muted-foreground">Background Check</Label>
                         <div className="flex items-center gap-2">
-                          <Shield className={userData.isBackgroundChecked ? "h-4 w-4 text-green-500" : "h-4 w-4 text-slate-400"} />
-                          <span className="text-sm">{userData.isBackgroundChecked ? 'Verified' : 'Not Verified / Pending'}</span>
+                          <Shield
+                            className={
+                              userData.isBackgroundChecked ? 'h-4 w-4 text-green-500' : 'h-4 w-4 text-slate-400'
+                            }
+                          />
+                          <span className="text-sm">
+                            {userData.isBackgroundChecked ? 'Verified' : 'Not Verified / Pending'}
+                          </span>
                         </div>
                       </div>
                       <div className="space-y-1">
                         <Label className="text-muted-foreground">Certified Volunteer</Label>
                         <div className="flex items-center gap-2">
-                          <Award className={userData.isCertified ? "h-4 w-4 text-blue-500" : "h-4 w-4 text-slate-400"} />
+                          <Award
+                            className={userData.isCertified ? 'h-4 w-4 text-blue-500' : 'h-4 w-4 text-slate-400'}
+                          />
                           <span className="text-sm">{userData.isCertified ? 'Yes' : 'No'}</span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex justify-end gap-4 pt-4">
-                      <Button
-                        onClick={() =>
-                          updateMutation.mutate({
-                            firstName: formData.firstName,
-                            lastName: formData.lastName,
-                            phone: formData.phone,
-                            profileMetadata: {
-                              ...userData.profileMetadata,
-                              bio: formData.bio,
-                              address: formData.address,
-                              skills: formData.skills.split(',').map(s => s.trim()).filter(Boolean),
-                              interests: formData.interests.split(',').map(s => s.trim()).filter(Boolean),
-                              availability: formData.availability
-                            }
-                          })
-                        }
-                        disabled={updateMutation.isLoading}
-                      >
-                        {updateMutation.isLoading ? 'Saving...' : 'Save Changes'}
-                      </Button>
+                    {/* Save Buttons Removed from here */}
+                  </div>
+                </div>
+
+                <Separator className="my-8" />
+
+                <div className="space-y-6 px-0 md:px-0">
+                  <div>
+                    <h3 className="text-lg font-medium">User Preferences</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Manage your notifications, privacy, and app settings.
+                    </p>
+                  </div>
+
+                  {/* Notification Preferences */}
+                  <div className="space-y-4 pt-4 border-t">
+                    <h4 className="font-medium text-slate-800 flex items-center gap-2">Notifications</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className="flex items-center justify-between p-3 border rounded-lg bg-white shadow-sm">
+                        <div className="space-y-0.5">
+                          <Label>Email Notifications</Label>
+                          <p className="text-xs text-muted-foreground">Receive updates via email</p>
+                        </div>
+                        <Switch
+                          checked={prefsFormData.emailNotifications}
+                          onCheckedChange={(checked) => handlePrefChange('emailNotifications', checked)}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between p-3 border rounded-lg bg-white shadow-sm">
+                        <div className="space-y-0.5">
+                          <Label>SMS Notifications</Label>
+                          <p className="text-xs text-muted-foreground">Receive updates via SMS</p>
+                        </div>
+                        <Switch
+                          checked={prefsFormData.smsNotifications}
+                          onCheckedChange={(checked) => handlePrefChange('smsNotifications', checked)}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between p-3 border rounded-lg bg-white shadow-sm">
+                        <div className="space-y-0.5">
+                          <Label>Push Notifications</Label>
+                          <p className="text-xs text-muted-foreground">Receive updates via device push</p>
+                        </div>
+                        <Switch
+                          checked={prefsFormData.pushNotifications}
+                          onCheckedChange={(checked) => handlePrefChange('pushNotifications', checked)}
+                        />
+                      </div>
                     </div>
+                  </div>
+
+                  {/* Communication Preferences */}
+                  <div className="space-y-4 pt-4 border-t">
+                    <h4 className="font-medium text-slate-800">Communication</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className="flex items-center justify-between p-3 border rounded-lg bg-white shadow-sm">
+                        <div className="space-y-0.5">
+                          <Label>Newsletter</Label>
+                          <p className="text-xs text-muted-foreground">Subscribe to our newsletter</p>
+                        </div>
+                        <Switch
+                          checked={prefsFormData.newsletterSubscription}
+                          onCheckedChange={(checked) => handlePrefChange('newsletterSubscription', checked)}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between p-3 border rounded-lg bg-white shadow-sm">
+                        <div className="space-y-0.5">
+                          <Label>Event Reminders</Label>
+                          <p className="text-xs text-muted-foreground">Reminders for events you joined</p>
+                        </div>
+                        <Switch
+                          checked={prefsFormData.eventReminders}
+                          onCheckedChange={(checked) => handlePrefChange('eventReminders', checked)}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between p-3 border rounded-lg bg-white shadow-sm">
+                        <div className="space-y-0.5">
+                          <Label>Shift Reminders</Label>
+                          <p className="text-xs text-muted-foreground">Reminders for your volunteer shifts</p>
+                        </div>
+                        <Switch
+                          checked={prefsFormData.shiftReminders}
+                          onCheckedChange={(checked) => handlePrefChange('shiftReminders', checked)}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between p-3 border rounded-lg bg-white shadow-sm">
+                        <div className="space-y-0.5">
+                          <Label>Opportunity Alerts</Label>
+                          <p className="text-xs text-muted-foreground">Alerts for new matching opportunities</p>
+                        </div>
+                        <Switch
+                          checked={prefsFormData.opportunityAlerts}
+                          onCheckedChange={(checked) => handlePrefChange('opportunityAlerts', checked)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Privacy Preferences */}
+                  <div className="space-y-4 pt-4 border-t">
+                    <h4 className="font-medium text-slate-800">Privacy</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className="flex items-center justify-between p-3 border rounded-lg bg-white shadow-sm">
+                        <div className="space-y-0.5">
+                          <Label>Public Profile</Label>
+                          <p className="text-xs text-muted-foreground">Allow others to see your profile</p>
+                        </div>
+                        <Switch
+                          checked={prefsFormData.profilePublic}
+                          onCheckedChange={(checked) => handlePrefChange('profilePublic', checked)}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between p-3 border rounded-lg bg-white shadow-sm">
+                        <div className="space-y-0.5">
+                          <Label>Show Email</Label>
+                          <p className="text-xs text-muted-foreground">Display email in public profile</p>
+                        </div>
+                        <Switch
+                          checked={prefsFormData.showEmail}
+                          onCheckedChange={(checked) => handlePrefChange('showEmail', checked)}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between p-3 border rounded-lg bg-white shadow-sm">
+                        <div className="space-y-0.5">
+                          <Label>Show Phone</Label>
+                          <p className="text-xs text-muted-foreground">Display phone in public profile</p>
+                        </div>
+                        <Switch
+                          checked={prefsFormData.showPhone}
+                          onCheckedChange={(checked) => handlePrefChange('showPhone', checked)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Availability Preferences */}
+                  <div className="space-y-4 pt-4 border-t">
+                    <h4 className="font-medium text-slate-800">Availability & Commitment</h4>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Preferred Days</Label>
+                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 p-4 border rounded-lg bg-white shadow-sm">
+                          {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => (
+                            <div key={day} className="flex items-center space-x-2">
+                              <Checkbox
+                                id={`day-${day}`}
+                                checked={(prefsFormData.preferredDays || []).includes(day.toLowerCase())}
+                                onCheckedChange={(checked) => {
+                                  const lowerDay = day.toLowerCase();
+                                  const currentDays = prefsFormData.preferredDays || [];
+                                  if (checked) {
+                                    handlePrefChange('preferredDays', [...currentDays, lowerDay]);
+                                  } else {
+                                    handlePrefChange(
+                                      'preferredDays',
+                                      currentDays.filter((d: string) => d !== lowerDay)
+                                    );
+                                  }
+                                }}
+                              />
+                              <label
+                                htmlFor={`day-${day}`}
+                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                              >
+                                {day}
+                              </label>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-2">
+                          <Label>Preferred Time of Day</Label>
+                          <Select
+                            value={prefsFormData.preferredTime}
+                            onValueChange={(value) => handlePrefChange('preferredTime', value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select Preferred Time" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="morning">Morning (8AM - 12PM)</SelectItem>
+                              <SelectItem value="afternoon">Afternoon (12PM - 5PM)</SelectItem>
+                              <SelectItem value="evening">Evening (5PM - 9PM)</SelectItem>
+                              <SelectItem value="flexible">Flexible / Any Time</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Max Hours per Week</Label>
+                          <Input
+                            type="number"
+                            min={1}
+                            max={168}
+                            value={prefsFormData.maxHoursPerWeek}
+                            onChange={(e) => handlePrefChange('maxHoursPerWeek', parseInt(e.target.value) || 0)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* App Settings */}
+                  <div className="space-y-4 pt-4 border-t">
+                    <h4 className="font-medium text-slate-800">App Settings</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      <div className="space-y-2">
+                        <Label>Language</Label>
+                        <Select
+                          value={prefsFormData.language}
+                          onValueChange={(value) => handlePrefChange('language', value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select Language" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="en">English</SelectItem>
+                            <SelectItem value="ar">Arabic</SelectItem>
+                            <SelectItem value="fr">French</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Timezone</Label>
+                        <Select
+                          value={prefsFormData.timezone}
+                          onValueChange={(value) => handlePrefChange('timezone', value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select Timezone" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="UTC">UTC</SelectItem>
+                            <SelectItem value="GMT">GMT</SelectItem>
+                            <SelectItem value="Australia/Sydney">AEST (Sydney)</SelectItem>
+                            <SelectItem value="Australia/Melbourne">AEST (Melbourne)</SelectItem>
+                            <SelectItem value="Australia/Perth">AWST (Perth)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Theme</Label>
+                        <Select value={prefsFormData.theme} onValueChange={(value) => handlePrefChange('theme', value)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select Theme" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="light">Light</SelectItem>
+                            <SelectItem value="dark">Dark</SelectItem>
+                            <SelectItem value="auto">System Default</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator className="my-8" />
+
+                  <div className="flex justify-end gap-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        // Reset logic could go here if needed
+                        queryClient.invalidateQueries(['volunteer-profile']);
+                        queryClient.invalidateQueries(['user-preferences']);
+                        toast({
+                          title: 'Changes discarded',
+                          description: 'Your settings have been reset to the last saved state.'
+                        });
+                      }}
+                      disabled={updateMutation.isLoading || preferencesMutation.isLoading}
+                    >
+                      Discard Changes
+                    </Button>
+                    <Button
+                      onClick={handleSaveAll}
+                      disabled={updateMutation.isLoading || preferencesMutation.isLoading}
+                      className="min-w-[150px]"
+                    >
+                      {updateMutation.isLoading || preferencesMutation.isLoading ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Saving...
+                        </>
+                      ) : (
+                        'Save All Changes'
+                      )}
+                    </Button>
                   </div>
                 </div>
               </CardContent>
@@ -817,6 +1225,6 @@ export default function Profile() {
           </TabsContent>
         </Tabs>
       </div>
-    </div >
+    </div>
   );
 }
