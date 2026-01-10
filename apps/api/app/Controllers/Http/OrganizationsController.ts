@@ -149,15 +149,20 @@ export default class OrganizationsController {
    */
   public async organizationResources({ auth, request, response }: HttpContextContract) {
     const user = auth.user!
-    const memberRecord = await OrganizationTeamMember.query().where('user_id', user.id).first()
-    if (!memberRecord) return response.notFound({ message: 'User is not part of any organization' })
-    const org = await Organization.find(memberRecord.organizationId)
-    if (!org) return response.notFound()
+    const { organizationId, membership } = await this.resolveOrganizationForUser(user, request)
+
+    if (!organizationId) {
+      return response.notFound({ message: 'Organization not found' })
+    }
+
+    if (!user.isAdmin && !membership) {
+      return response.forbidden({ message: 'User is not part of this organization' })
+    }
 
     const page = Number(request.qs().page || 1)
     const perPage = Number(request.qs().perPage || 20)
 
-    const query = Resource.query().where('organization_id', org.id).whereNull('deleted_at')
+    const query = Resource.query().where('organization_id', organizationId).whereNull('deleted_at')
     const pag = await query.paginate(page, perPage)
     return response.ok(pag)
   }
@@ -250,7 +255,7 @@ export default class OrganizationsController {
     // If an id param is present, only system admins may access arbitrary organizations
     if (params?.id) {
       const user = auth.user!
-      if (!user.isAdmin) {
+      if (!user.isAdmin && !(await user.can("view_organizations"))) {
         return response.forbidden({ message: 'Admin access required' })
       }
       const org = await Organization.find(params.id)
@@ -307,7 +312,9 @@ export default class OrganizationsController {
     }
 
     if (!user.isAdmin && (!membership || membership.organizationId !== organizationId)) {
-      return response.forbidden({ message: 'You do not have permission to view this organization' })
+        if (!(await user.can('view_organizations'))) {
+            return response.forbidden({ message: 'You do not have permission to view this organization' })
+        }
     }
 
     const org = await Organization.find(organizationId)
@@ -355,7 +362,7 @@ export default class OrganizationsController {
 
     if (params?.id) {
       const user = auth.user!
-      if (!user.isAdmin) {
+      if (!user.isAdmin && !(await user.can("edit_organizations"))) {
         return response.forbidden({ message: 'Admin access required' })
       }
       org = await Organization.find(params.id)
@@ -388,9 +395,11 @@ export default class OrganizationsController {
       }
 
       if (!user.isAdmin && (!membership || membership.organizationId !== organizationId)) {
-        return response.forbidden({
-          message: 'You do not have permission to update this organization'
-        })
+        if (!(await user.can('edit_organizations'))) {
+            return response.forbidden({
+            message: 'You do not have permission to update this organization'
+            })
+        }
       }
 
       org = await Organization.find(organizationId)
@@ -599,9 +608,24 @@ export default class OrganizationsController {
   /**
    * Get all volunteers for an organization
    */
-  public async getVolunteers({ params, request, response }: HttpContextContract) {
+  public async getVolunteers({ auth, params, request, response }: HttpContextContract) {
     const org = await Organization.find(params.id)
     if (!org) return response.notFound({ message: 'Organization not found' })
+
+    const user = auth.user!
+    
+    // Check if user is part of the org or has global permission
+    const isMember = await OrganizationTeamMember.query()
+      .where('organization_id', org.id)
+      .where('user_id', user.id)
+      .first()
+
+    if (!user.isAdmin && !isMember) {
+        const canView = (await user.can('view_users')) || (await user.can('view_teams'))
+        if (!canView) {
+             return response.forbidden({ message: 'You do not have permission to view volunteers' })
+        }
+    }
 
     const { status, role, search, page = 1, limit = 20 } = request.qs()
 
@@ -780,9 +804,11 @@ export default class OrganizationsController {
       .first()
 
     if (!isTeam && !isVolunteer) {
-      return response.forbidden({
-        message: 'You must be a member of this organization to view its events'
-      })
+        if (!(await user.can('view_events'))) {
+             return response.forbidden({
+                message: 'You must be a member of this organization to view its events'
+             })
+        }
     }
 
     const events = await Database.from('events')
@@ -1018,8 +1044,7 @@ export default class OrganizationsController {
       organizationId,
       membership,
       multipleMemberships,
-      hasMembership,
-      invalidOrganizationName
+      hasMembership
     } = await this.resolveOrganizationForUser(user, request)
 
     if (!organizationId) {
@@ -1035,7 +1060,9 @@ export default class OrganizationsController {
     }
 
     if (!user.isAdmin && (!membership || membership.organizationId !== organizationId)) {
-      return response.forbidden({ message: 'You do not have permission to view this dashboard' })
+        if (!(await user.can('view_analytics_dashboard'))) {
+            return response.forbidden({ message: 'You do not have permission to view this dashboard' })
+        }
     }
 
     const orgId = organizationId
@@ -1225,7 +1252,10 @@ export default class OrganizationsController {
     }
 
     if (!user.isAdmin && (!membership || membership.organizationId !== organizationId)) {
-      return response.forbidden({ message: 'You do not have permission to view this team' })
+        const canView = (await user.can('view_users')) || (await user.can('view_teams'))
+        if (!canView) {
+             return response.forbidden({ message: 'You do not have permission to view this team' })
+        }
     }
 
     const members = await OrganizationTeamMember.query()
@@ -1346,7 +1376,9 @@ export default class OrganizationsController {
 
     const actorRole = user.isAdmin ? 'admin' : this.normalizeTeamRole(membership?.role)
     const allowedRemoveRoles = ['admin', 'coordinator']
-    if (!allowedRemoveRoles.includes(actorRole)) {
+    const hasPermission = await user.can('manage_org_members')
+    
+    if (!allowedRemoveRoles.includes(actorRole) && !hasPermission) {
       return response.forbidden({ message: 'You do not have permission to remove members' })
     }
 
@@ -1356,7 +1388,7 @@ export default class OrganizationsController {
       .whereRaw('LOWER(role) = ?', ['admin'])
       .count('* as total')
       .first()
-    const adminTotal = Number(adminCount?.$extras?.total || adminCount?.total || 0)
+    const adminTotal = Number((adminCount as any)?.$extras?.total || (adminCount as any)?.total || 0)
     const isTargetAdmin = this.normalizeTeamRole(member.role) === 'admin'
     if (isTargetAdmin && adminTotal <= 1) {
       return response.conflict({ message: 'At least one admin must remain in the organization' })
@@ -1396,7 +1428,9 @@ export default class OrganizationsController {
 
     const actorRole = currentUser.isAdmin ? 'admin' : this.normalizeTeamRole(membership?.role)
     const allowedRoles = ['admin', 'coordinator']
-    if (!allowedRoles.includes(actorRole)) {
+    const hasPermission = await currentUser.can('manage_org_members')
+    
+    if (!allowedRoles.includes(actorRole) && !hasPermission) {
       return response.forbidden({ message: 'You do not have permission to update team members' })
     }
 
@@ -1416,7 +1450,7 @@ export default class OrganizationsController {
         .whereRaw('LOWER(role) = ?', ['admin'])
         .count('* as total')
         .first()
-      const adminTotal = Number(adminCount?.$extras?.total || adminCount?.total || 0)
+      const adminTotal = Number((adminCount as any)?.$extras?.total || (adminCount as any)?.total || 0)
       if (adminTotal <= 1) {
         return response.conflict({ message: 'At least one admin must remain in the organization' })
       }
@@ -1525,7 +1559,9 @@ export default class OrganizationsController {
     // Only allow admins/coordinators to update settings
     const allowedRoles = ['admin', 'coordinator']
     const actorRole = user.isAdmin ? 'admin' : this.normalizeTeamRole(membership?.role)
-    if (!allowedRoles.includes(actorRole)) {
+    const hasPermission = await user.can('manage_org_settings')
+    
+    if (!allowedRoles.includes(actorRole) && !hasPermission) {
       return response.forbidden({ message: 'You do not have permission to update settings' })
     }
 
