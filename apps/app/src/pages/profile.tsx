@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 // Render volunteer sections as stacked content instead of tabs
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +17,7 @@ import { useTheme } from '@/providers/theme-provider';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import TagInput from '@/components/molecules/tag-input';
+import { cn } from '@/lib/utils';
 import {
   Award,
   Clock,
@@ -45,7 +45,6 @@ import { Building2, List } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useStore } from '@/lib/store';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import volunteerApi from '@/lib/api/volunteerApi';
 import { AssignmentStatus } from '@/lib/constants/assignmentStatus';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -54,7 +53,7 @@ export default function Profile() {
   const queryClient = useQueryClient();
   // use profile endpoint to get user data with org statuses
   const { data: meResponse, isLoading } = useQuery(['volunteer-profile'], () => api.getVolunteerProfile());
-  const { token, setToken, setUser, user } = useStore();
+  const { token, setToken, setUser } = useStore();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -87,7 +86,7 @@ export default function Profile() {
   });
 
   // Fetch preferences
-  const { data: prefsResponse, isLoading: isLoadingPrefs } = useQuery(['user-preferences'], () => api.getPreferences());
+  const { data: prefsResponse } = useQuery(['user-preferences'], () => api.getPreferences());
 
   useEffect(() => {
     if (prefsResponse?.preferences) {
@@ -410,7 +409,7 @@ export default function Profile() {
               <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-2 flex flex-col md:flex-row items-center gap-3">
                 <span>{userData.firstName || userData.first_name} {userData.lastName || userData.last_name}</span>
                 {userData.isBackgroundChecked && (
-                  <Badge variant="success" className="bg-emerald-500 text-white border-none px-2 py-0 h-6 flex items-center gap-1">
+                  <Badge variant="default" className="bg-emerald-500 text-white border-none px-2 py-0 h-6 flex items-center gap-1 shadow-lg shadow-emerald-500/20">
                     <CheckCircle2 className="h-3 w-3" /> Verified
                   </Badge>
                 )}
@@ -754,27 +753,26 @@ export default function Profile() {
                   </Alert>
                 )}
 
-                <div className="flex flex-col md:flex-row gap-6">
+                <div className="flex flex-col md:flex-row gap-8">
                   {/* Avatar Upload Section */}
-                  <div className="flex flex-col items-center space-y-3">
-                    <div className="relative">
-                      <Avatar className="h-32 w-32 border-4 border-white shadow-xl">
+                  <div className="flex flex-col items-center space-y-4">
+                    <div className="relative group">
+                      <Avatar className="h-40 w-40 border-4 border-card shadow-2xl transition-transform group-hover:scale-[1.02]">
                         <AvatarImage
                           src={`${userData.profileImageUrl || userData.profileMetadata?.avatar_url}?v=${avatarVersion}`}
                         />
-                        <AvatarFallback className="bg-primary text-white text-4xl font-bold">
+                        <AvatarFallback className="bg-primary/10 text-primary text-5xl font-bold">
                           {userData.firstName?.[0]}
                           {userData.lastName?.[0]}
                         </AvatarFallback>
                       </Avatar>
-                      <Button
-                        size="icon"
-                        variant="secondary"
-                        className="absolute bottom-0 right-0 rounded-full shadow-md"
+                      <button
                         onClick={() => fileInputRef.current?.click()}
+                        className="absolute bottom-1 right-1 bg-primary text-white p-2.5 rounded-full shadow-lg hover:bg-primary/90 transition-all hover:scale-110 active:scale-95 z-10"
+                        title="Change Avatar"
                       >
-                        <Camera className="h-4 w-4" />
-                      </Button>
+                        <Camera className="h-5 w-5" />
+                      </button>
                       <input
                         type="file"
                         ref={fileInputRef}
@@ -812,74 +810,101 @@ export default function Profile() {
                         }}
                       />
                     </div>
-                    <p className="text-xs text-muted-foreground">Click camera icon to change</p>
+                    <div className="text-center">
+                      <h3 className="font-bold text-xl leading-tight">{userData.firstName} {userData.lastName}</h3>
+                      <p className="text-xs text-muted-foreground mt-1">{userData.email}</p>
+                    </div>
+
+                    {/* Role Card */}
+                    <div className="w-full p-4 rounded-2xl bg-gradient-to-br from-primary/5 to-transparent border border-primary/10 space-y-3">
+                      <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-muted-foreground/80">
+                        <span>Status</span>
+                        <Badge variant="default" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-none px-2 py-0 h-5">
+                          {userData.isBackgroundChecked ? 'Verified' : 'Member'}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                          <Shield className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold">Volunteer</p>
+                          <p className="text-[10px] text-muted-foreground uppercase font-medium">Role Type</p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Main Form */}
-                  <div className="flex-1 space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex-1 space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 border rounded-2xl bg-background shadow-sm">
                       <div className="space-y-2">
-                        <Label htmlFor="firstName">First name</Label>
+                        <Label htmlFor="firstName" className="text-foreground/80 font-medium">First name</Label>
                         <Input
                           id="firstName"
                           value={formData.firstName}
                           onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                          className="bg-card/50 focus:bg-card transition-colors border-border/50"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="lastName">Last name</Label>
+                        <Label htmlFor="lastName" className="text-foreground/80 font-medium">Last name</Label>
                         <Input
                           id="lastName"
                           value={formData.lastName}
                           onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                          className="bg-card/50 focus:bg-card transition-colors border-border/50"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="email">
-                          Email <span className="text-xs text-muted-foreground">(Read-only)</span>
+                        <Label htmlFor="email" className="text-foreground/80 font-medium">
+                          Email <span className="text-xs text-muted-foreground font-normal">(Read-only)</span>
                         </Label>
-                        <Input id="email" value={formData.email} disabled className="bg-slate-50" />
+                        <Input id="email" value={formData.email} disabled className="bg-muted border-border/50 opacity-80" />
                         {userData.emailVerifiedAt && (
-                          <p className="text-xs text-green-600 flex items-center gap-1 mt-1">
+                          <p className="text-[10px] text-emerald-600 dark:text-emerald-400 flex items-center gap-1 mt-1 font-medium italic">
                             <CheckCircle2 className="h-3 w-3" /> Email Verified
                           </p>
                         )}
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="phone">Phone number {formData.phone ? '' : '*'}</Label>
+                        <Label htmlFor="phone" className="text-foreground/80 font-medium">Phone number {formData.phone ? '' : '*'}</Label>
                         <Input
                           id="phone"
                           value={formData.phone}
                           onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                           placeholder="+1234567890"
+                          className="bg-card/50 focus:bg-card transition-colors border-border/50"
                         />
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="address">Address {formData.address ? '' : '*'}</Label>
+                      <Label htmlFor="address" className="text-foreground/80 font-medium px-1">Address {formData.address ? '' : '*'}</Label>
                       <Input
                         id="address"
                         value={formData.address}
                         onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                         placeholder="123 Volunteer Lane, City"
+                        className="bg-card/50 focus:bg-card transition-colors border-border/50 rounded-xl"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="bio">Bio</Label>
+                      <Label htmlFor="bio" className="text-foreground/80 font-medium px-1">Bio</Label>
                       <Textarea
                         id="bio"
                         rows={3}
                         value={formData.bio}
                         onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                         placeholder="Tell us about yourself..."
+                        className="bg-card/50 focus:bg-card transition-colors border-border/50 rounded-xl resize-none"
                       />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-2">
-                        <Label htmlFor="skills">Skills {formData.skills.length > 0 ? '' : '*'}</Label>
+                        <Label htmlFor="skills" className="text-foreground/80 font-medium px-1">Skills {formData.skills.length > 0 ? '' : '*'}</Label>
                         <TagInput
                           id="skills"
                           placeholder="Add a skill and press Enter"
@@ -888,7 +913,7 @@ export default function Profile() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="interests">Interests</Label>
+                        <Label htmlFor="interests" className="text-foreground/80 font-medium px-1">Interests</Label>
                         <TagInput
                           id="interests"
                           placeholder="Add an interest and press Enter"
@@ -899,37 +924,47 @@ export default function Profile() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="availability">General Availability</Label>
+                      <Label htmlFor="availability" className="text-foreground/80 font-medium px-1">General Availability</Label>
                       <Input
                         id="availability"
                         value={formData.availability}
                         onChange={(e) => setFormData({ ...formData, availability: e.target.value })}
                         placeholder="Weekends, Evenings, Mon-Fri 9-5..."
+                        className="bg-card/50 focus:bg-card transition-colors border-border/50 rounded-xl"
                       />
                     </div>
 
-                    {/* Read-only System Fields */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
-                      <div className="space-y-1">
-                        <Label className="text-muted-foreground">Background Check</Label>
-                        <div className="flex items-center gap-2">
-                          <Shield
-                            className={
-                              userData.isBackgroundChecked ? 'h-4 w-4 text-green-500' : 'h-4 w-4 text-slate-400'
-                            }
-                          />
-                          <span className="text-sm">
-                            {userData.isBackgroundChecked ? 'Verified' : 'Not Verified / Pending'}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-6 mt-4 border-t border-border/50">
+                      <div className="space-y-2 p-4 rounded-xl bg-card/30 border border-border/30">
+                        <Label className="text-muted-foreground font-semibold text-[10px] uppercase tracking-wider">Background Check</Label>
+                        <div className="flex items-center gap-3">
+                          <div className={cn(
+                            "h-8 w-8 rounded-lg flex items-center justify-center transition-colors",
+                            userData.isBackgroundChecked ? 'bg-emerald-500/10' : 'bg-muted'
+                          )}>
+                            <Shield className={cn(
+                              "h-4 w-4",
+                              userData.isBackgroundChecked ? 'text-emerald-500' : 'text-muted-foreground/50'
+                            )} />
+                          </div>
+                          <span className="text-sm font-semibold">
+                            {userData.isBackgroundChecked ? 'Verified' : 'Pending'}
                           </span>
                         </div>
                       </div>
-                      <div className="space-y-1">
-                        <Label className="text-muted-foreground">Certified Volunteer</Label>
-                        <div className="flex items-center gap-2">
-                          <Award
-                            className={userData.isCertified ? 'h-4 w-4 text-blue-500' : 'h-4 w-4 text-slate-400'}
-                          />
-                          <span className="text-sm">{userData.isCertified ? 'Yes' : 'No'}</span>
+                      <div className="space-y-2 p-4 rounded-xl bg-card/30 border border-border/30">
+                        <Label className="text-muted-foreground font-semibold text-[10px] uppercase tracking-wider">Certified Volunteer</Label>
+                        <div className="flex items-center gap-3">
+                          <div className={cn(
+                            "h-8 w-8 rounded-lg flex items-center justify-center transition-colors",
+                            userData.isCertified ? 'bg-blue-500/10' : 'bg-muted'
+                          )}>
+                            <Award className={cn(
+                              "h-4 w-4",
+                              userData.isCertified ? 'text-blue-500' : 'text-muted-foreground/50'
+                            )} />
+                          </div>
+                          <span className="text-sm font-semibold">{userData.isCertified ? 'Yes' : 'No'}</span>
                         </div>
                       </div>
                     </div>
@@ -949,135 +984,104 @@ export default function Profile() {
                   </div>
 
                   {/* Notification Preferences */}
-                  <div className="space-y-4 pt-4 border-t">
-                    <h4 className="font-medium text-slate-800 flex items-center gap-2">Notifications</h4>
+                  <div className="space-y-4 pt-6 mt-6 border-t border-border/50">
+                    <h4 className="font-bold text-foreground flex items-center gap-2">
+                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Bell className="h-4 w-4 text-primary" />
+                      </div>
+                      Notifications
+                    </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      <div className="flex items-center justify-between p-3 border rounded-lg bg-white shadow-sm">
-                        <div className="space-y-0.5">
-                          <Label>Email Notifications</Label>
-                          <p className="text-xs text-muted-foreground">Receive updates via email</p>
+                      {[
+                        { id: 'emailNotifications', label: 'Email', desc: 'Receive updates via email' },
+                        { id: 'smsNotifications', label: 'SMS', desc: 'Receive updates via SMS' },
+                        { id: 'pushNotifications', label: 'Push', desc: 'Receive updates via device push' }
+                      ].map(pref => (
+                        <div key={pref.id} className="flex items-center justify-between p-4 border border-border/50 rounded-2xl bg-card/50 hover:bg-card transition-colors shadow-sm">
+                          <div className="space-y-0.5">
+                            <Label className="font-semibold">{pref.label}</Label>
+                            <p className="text-[10px] text-muted-foreground">{pref.desc}</p>
+                          </div>
+                          <Switch
+                            checked={(prefsFormData as any)[pref.id]}
+                            onCheckedChange={(checked) => handlePrefChange(pref.id, checked)}
+                          />
                         </div>
-                        <Switch
-                          checked={prefsFormData.emailNotifications}
-                          onCheckedChange={(checked) => handlePrefChange('emailNotifications', checked)}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between p-3 border rounded-lg bg-white shadow-sm">
-                        <div className="space-y-0.5">
-                          <Label>SMS Notifications</Label>
-                          <p className="text-xs text-muted-foreground">Receive updates via SMS</p>
-                        </div>
-                        <Switch
-                          checked={prefsFormData.smsNotifications}
-                          onCheckedChange={(checked) => handlePrefChange('smsNotifications', checked)}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between p-3 border rounded-lg bg-white shadow-sm">
-                        <div className="space-y-0.5">
-                          <Label>Push Notifications</Label>
-                          <p className="text-xs text-muted-foreground">Receive updates via device push</p>
-                        </div>
-                        <Switch
-                          checked={prefsFormData.pushNotifications}
-                          onCheckedChange={(checked) => handlePrefChange('pushNotifications', checked)}
-                        />
-                      </div>
+                      ))}
                     </div>
                   </div>
 
                   {/* Communication Preferences */}
-                  <div className="space-y-4 pt-4 border-t">
-                    <h4 className="font-medium text-slate-800">Communication</h4>
+                  <div className="space-y-4 pt-6 mt-6 border-t border-border/50">
+                    <h4 className="font-bold text-foreground flex items-center gap-2">
+                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <MessageSquare className="h-4 w-4 text-primary" />
+                      </div>
+                      Communication
+                    </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      <div className="flex items-center justify-between p-3 border rounded-lg bg-white shadow-sm">
-                        <div className="space-y-0.5">
-                          <Label>Newsletter</Label>
-                          <p className="text-xs text-muted-foreground">Subscribe to our newsletter</p>
+                      {[
+                        { id: 'newsletterSubscription', label: 'Newsletter', desc: 'Subscribe to our newsletter' },
+                        { id: 'eventReminders', label: 'Event Reminders', desc: 'Reminders for events you joined' },
+                        { id: 'shiftReminders', label: 'Shift Reminders', desc: 'Reminders for your volunteer shifts' },
+                        { id: 'opportunityAlerts', label: 'Opportunity Alerts', desc: 'Alerts for matching opportunities' }
+                      ].map(pref => (
+                        <div key={pref.id} className="flex items-center justify-between p-4 border border-border/50 rounded-2xl bg-card/50 hover:bg-card transition-colors shadow-sm">
+                          <div className="space-y-0.5">
+                            <Label className="font-semibold">{pref.label}</Label>
+                            <p className="text-[10px] text-muted-foreground">{pref.desc}</p>
+                          </div>
+                          <Switch
+                            checked={(prefsFormData as any)[pref.id]}
+                            onCheckedChange={(checked) => handlePrefChange(pref.id, checked)}
+                          />
                         </div>
-                        <Switch
-                          checked={prefsFormData.newsletterSubscription}
-                          onCheckedChange={(checked) => handlePrefChange('newsletterSubscription', checked)}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between p-3 border rounded-lg bg-white shadow-sm">
-                        <div className="space-y-0.5">
-                          <Label>Event Reminders</Label>
-                          <p className="text-xs text-muted-foreground">Reminders for events you joined</p>
-                        </div>
-                        <Switch
-                          checked={prefsFormData.eventReminders}
-                          onCheckedChange={(checked) => handlePrefChange('eventReminders', checked)}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between p-3 border rounded-lg bg-white shadow-sm">
-                        <div className="space-y-0.5">
-                          <Label>Shift Reminders</Label>
-                          <p className="text-xs text-muted-foreground">Reminders for your volunteer shifts</p>
-                        </div>
-                        <Switch
-                          checked={prefsFormData.shiftReminders}
-                          onCheckedChange={(checked) => handlePrefChange('shiftReminders', checked)}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between p-3 border rounded-lg bg-white shadow-sm">
-                        <div className="space-y-0.5">
-                          <Label>Opportunity Alerts</Label>
-                          <p className="text-xs text-muted-foreground">Alerts for new matching opportunities</p>
-                        </div>
-                        <Switch
-                          checked={prefsFormData.opportunityAlerts}
-                          onCheckedChange={(checked) => handlePrefChange('opportunityAlerts', checked)}
-                        />
-                      </div>
+                      ))}
                     </div>
                   </div>
 
                   {/* Privacy Preferences */}
-                  <div className="space-y-4 pt-4 border-t">
-                    <h4 className="font-medium text-slate-800">Privacy</h4>
+                  <div className="space-y-4 pt-6 mt-6 border-t border-border/50">
+                    <h4 className="font-bold text-foreground flex items-center gap-2">
+                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Shield className="h-4 w-4 text-primary" />
+                      </div>
+                      Privacy
+                    </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      <div className="flex items-center justify-between p-3 border rounded-lg bg-white shadow-sm">
-                        <div className="space-y-0.5">
-                          <Label>Public Profile</Label>
-                          <p className="text-xs text-muted-foreground">Allow others to see your profile</p>
+                      {[
+                        { id: 'profilePublic', label: 'Public Profile', desc: 'Allow others to see your profile' },
+                        { id: 'showEmail', label: 'Show Email', desc: 'Display email in public profile' },
+                        { id: 'showPhone', label: 'Show Phone', desc: 'Display phone in public profile' }
+                      ].map(pref => (
+                        <div key={pref.id} className="flex items-center justify-between p-4 border border-border/50 rounded-2xl bg-card/50 hover:bg-card transition-colors shadow-sm">
+                          <div className="space-y-0.5">
+                            <Label className="font-semibold">{pref.label}</Label>
+                            <p className="text-[10px] text-muted-foreground">{pref.desc}</p>
+                          </div>
+                          <Switch
+                            checked={(prefsFormData as any)[pref.id]}
+                            onCheckedChange={(checked) => handlePrefChange(pref.id, checked)}
+                          />
                         </div>
-                        <Switch
-                          checked={prefsFormData.profilePublic}
-                          onCheckedChange={(checked) => handlePrefChange('profilePublic', checked)}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between p-3 border rounded-lg bg-white shadow-sm">
-                        <div className="space-y-0.5">
-                          <Label>Show Email</Label>
-                          <p className="text-xs text-muted-foreground">Display email in public profile</p>
-                        </div>
-                        <Switch
-                          checked={prefsFormData.showEmail}
-                          onCheckedChange={(checked) => handlePrefChange('showEmail', checked)}
-                        />
-                      </div>
-                      <div className="flex items-center justify-between p-3 border rounded-lg bg-white shadow-sm">
-                        <div className="space-y-0.5">
-                          <Label>Show Phone</Label>
-                          <p className="text-xs text-muted-foreground">Display phone in public profile</p>
-                        </div>
-                        <Switch
-                          checked={prefsFormData.showPhone}
-                          onCheckedChange={(checked) => handlePrefChange('showPhone', checked)}
-                        />
-                      </div>
+                      ))}
                     </div>
                   </div>
 
                   {/* Availability Preferences */}
-                  <div className="space-y-4 pt-4 border-t">
-                    <h4 className="font-medium text-slate-800">Availability & Commitment</h4>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label>Preferred Days</Label>
-                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 p-4 border rounded-lg bg-white shadow-sm">
+                  <div className="space-y-4 pt-6 mt-6 border-t border-border/50">
+                    <h4 className="font-bold text-foreground flex items-center gap-2">
+                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <CalendarClock className="h-4 w-4 text-primary" />
+                      </div>
+                      Availability & Commitment
+                    </h4>
+                    <div className="space-y-6">
+                      <div className="space-y-3">
+                        <Label className="text-sm font-semibold px-1">Preferred Days</Label>
+                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 p-4 border border-border/50 rounded-2xl bg-card/30">
                           {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => (
-                            <div key={day} className="flex items-center space-x-2">
+                            <div key={day} className="flex items-center space-x-2 bg-background/50 p-2 rounded-lg border border-border/30 hover:border-primary/30 transition-colors">
                               <Checkbox
                                 id={`day-${day}`}
                                 checked={(prefsFormData.preferredDays || []).includes(day.toLowerCase())}
@@ -1096,9 +1100,9 @@ export default function Profile() {
                               />
                               <label
                                 htmlFor={`day-${day}`}
-                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                className="text-xs font-medium leading-none cursor-pointer"
                               >
-                                {day}
+                                {day.substring(0, 3)}
                               </label>
                             </div>
                           ))}
@@ -1107,15 +1111,15 @@ export default function Profile() {
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-2">
-                          <Label>Preferred Time of Day</Label>
+                          <Label className="text-sm font-semibold px-1">Preferred Time of Day</Label>
                           <Select
                             value={prefsFormData.preferredTime}
                             onValueChange={(value) => handlePrefChange('preferredTime', value)}
                           >
-                            <SelectTrigger>
+                            <SelectTrigger className="bg-card/50 border-border/50 rounded-xl">
                               <SelectValue placeholder="Select Preferred Time" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="rounded-xl">
                               <SelectItem value="morning">Morning (8AM - 12PM)</SelectItem>
                               <SelectItem value="afternoon">Afternoon (12PM - 5PM)</SelectItem>
                               <SelectItem value="evening">Evening (5PM - 9PM)</SelectItem>
@@ -1124,13 +1128,14 @@ export default function Profile() {
                           </Select>
                         </div>
                         <div className="space-y-2">
-                          <Label>Max Hours per Week</Label>
+                          <Label className="text-sm font-semibold px-1">Max Hours per Week</Label>
                           <Input
                             type="number"
                             min={1}
                             max={168}
                             value={prefsFormData.maxHoursPerWeek}
                             onChange={(e) => handlePrefChange('maxHoursPerWeek', parseInt(e.target.value) || 0)}
+                            className="bg-card/50 border-border/50 rounded-xl"
                           />
                         </div>
                       </div>
@@ -1138,19 +1143,24 @@ export default function Profile() {
                   </div>
 
                   {/* App Settings */}
-                  <div className="space-y-4 pt-4 border-t">
-                    <h4 className="font-medium text-slate-800">App Settings</h4>
+                  <div className="space-y-4 pt-6 mt-6 border-t border-border/50">
+                    <h4 className="font-bold text-foreground flex items-center gap-2">
+                      <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Settings className="h-4 w-4 text-primary" />
+                      </div>
+                      App Settings
+                    </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       <div className="space-y-2">
-                        <Label>Language</Label>
+                        <Label className="text-sm font-semibold px-1">Language</Label>
                         <Select
                           value={prefsFormData.language}
                           onValueChange={(value) => handlePrefChange('language', value)}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="bg-card/50 border-border/50 rounded-xl">
                             <SelectValue placeholder="Select Language" />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="rounded-xl">
                             <SelectItem value="en">English</SelectItem>
                             <SelectItem value="ar">Arabic</SelectItem>
                             <SelectItem value="fr">French</SelectItem>
@@ -1158,15 +1168,15 @@ export default function Profile() {
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label>Timezone</Label>
+                        <Label className="text-sm font-semibold px-1">Timezone</Label>
                         <Select
                           value={prefsFormData.timezone}
                           onValueChange={(value) => handlePrefChange('timezone', value)}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="bg-card/50 border-border/50 rounded-xl">
                             <SelectValue placeholder="Select Timezone" />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="rounded-xl">
                             <SelectItem value="UTC">UTC</SelectItem>
                             <SelectItem value="GMT">GMT</SelectItem>
                             <SelectItem value="Australia/Sydney">AEST (Sydney)</SelectItem>
@@ -1176,12 +1186,12 @@ export default function Profile() {
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label>Theme</Label>
-                        <Select value={prefsFormData.theme} onValueChange={(value) => handlePrefChange('theme', value)}>
-                          <SelectTrigger>
+                        <Label className="text-sm font-semibold px-1">Theme</Label>
+                        <Select value={prefsFormData.theme || 'auto'} onValueChange={(value) => handlePrefChange('theme', value)}>
+                          <SelectTrigger className="bg-card/50 border-border/50 rounded-xl">
                             <SelectValue placeholder="Select Theme" />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="rounded-xl">
                             <SelectItem value="light">Light</SelectItem>
                             <SelectItem value="dark">Dark</SelectItem>
                             <SelectItem value="auto">System Default</SelectItem>
@@ -1193,11 +1203,11 @@ export default function Profile() {
 
                   <Separator className="my-8" />
 
-                  <div className="flex justify-end gap-4">
+                  <div className="flex justify-end gap-4 p-6 bg-muted/30 rounded-2xl border border-border/50 shadow-inner">
                     <Button
                       variant="outline"
+                      className="rounded-xl px-8"
                       onClick={() => {
-                        // Reset logic could go here if needed
                         queryClient.invalidateQueries(['volunteer-profile']);
                         queryClient.invalidateQueries(['user-preferences']);
                         toast({
@@ -1212,7 +1222,7 @@ export default function Profile() {
                     <Button
                       onClick={handleSaveAll}
                       disabled={updateMutation.isLoading || preferencesMutation.isLoading}
-                      className="min-w-[150px]"
+                      className="min-w-[150px] rounded-xl px-8 shadow-lg shadow-primary/20"
                     >
                       {updateMutation.isLoading || preferencesMutation.isLoading ? (
                         <>
@@ -1226,18 +1236,22 @@ export default function Profile() {
                   </div>
                 </div>
               </CardContent>
-              <CardFooter className="bg-red-50 border-t border-red-100 p-6 flex justify-between items-center mt-6">
-                <div>
-                  <h4 className="text-red-900 font-medium">Danger Zone</h4>
-                  <p className="text-red-700 text-sm">Sign out or delete your account</p>
+              <CardFooter className="bg-destructive/10 dark:bg-destructive/5 border-t border-destructive/20 p-8 flex flex-col md:flex-row justify-between items-center mt-8 rounded-b-3xl gap-4">
+                <div className="text-center md:text-left">
+                  <h4 className="text-destructive font-bold text-lg">Danger Zone</h4>
+                  <p className="text-sm text-destructive/70 max-w-sm">
+                    Manage your account security and session. Sign out of your account on this device.
+                  </p>
                 </div>
-                <Button
-                  variant="destructive"
-                  className="border-red-200 text-red-700 hover:bg-red-100 hover:text-red-900"
-                  onClick={handleLogout}
-                >
-                  <LogOut className="h-4 w-4 mr-2" /> Sign Out
-                </Button>
+                <div className="flex gap-3 w-full md:w-auto">
+                  <Button
+                    variant="outline"
+                    className="border-destructive/20 text-destructive hover:bg-destructive/10 rounded-xl flex-1 md:flex-none"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="h-4 w-4 mr-2" /> Sign Out
+                  </Button>
+                </div>
               </CardFooter>
             </Card>
           </TabsContent>
