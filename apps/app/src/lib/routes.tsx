@@ -252,6 +252,8 @@ const routes: RouteObject[] = [
       { path: 'organizations/:id', element: <OrganizationDetail /> },
       { path: 'volunteer/opportunities', element: <VolunteerOpportunities /> },
       { path: 'volunteer/opportunities/:id', element: <VolunteerOpportunityDetail /> },
+      { path: 'volunteer/attendance', element: <VolunteerAttendance /> },
+      { path: 'opportunities/:id', element: <Detail /> },
       { path: 'events/:id', element: <Detail /> },
       // Reactivated Orphans (Public/Shared)
       { path: 'centrelink-reporting', element: <CentrelinkReporting /> },
@@ -284,6 +286,7 @@ const routes: RouteObject[] = [
       { path: 'attendance', element: <VolunteerAttendance /> },
       // Opportunity View alias
       { path: 'opportunities/:id/view', element: <VolunteerOpportunityDetailView /> }
+    ]
   },
   // Volunteer route group removed; volunteer pages consolidated into `/profile`
   {
