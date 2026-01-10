@@ -110,7 +110,7 @@ const MapPage = () => {
     onMutate: (eventId: number) => {
       setLoadingByEvent((s) => ({ ...s, [eventId]: true }));
     },
-    onSettled: (data, err, eventId: number) => {
+    onSettled: (_data, _err, eventId: number) => {
       setLoadingByEvent((s) => ({ ...s, [eventId]: false }));
       queryClient.invalidateQueries(['map-events']);
     },
@@ -123,14 +123,14 @@ const MapPage = () => {
   });
 
   return (
-    <div className="flex flex-col h-[calc(100vh-64px)] bg-slate-50">
+    <div className="flex flex-col h-[calc(100vh-64px)] bg-background">
       {/* Filters Bar */}
-      <div className="bg-white border-b px-6 py-4 flex flex-col md:flex-row gap-4 items-center justify-between sticky top-0 z-20 shadow-sm">
+      <div className="bg-background/80 backdrop-blur-md border-b border-border/50 px-6 py-4 flex flex-col md:flex-row gap-4 items-center justify-between sticky top-0 z-20 shadow-sm">
         <div className="relative w-full md:w-96 group">
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400 group-focus-within:text-primary transition-colors" />
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
           <Input
             placeholder={t('Search opportunities...')}
-            className="pl-11 h-11 bg-slate-50 border-slate-200 focus:bg-white transition-all rounded-full"
+            className="pl-11 h-11 bg-card/50 border-border/50 focus:bg-card transition-all rounded-full"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -139,13 +139,13 @@ const MapPage = () => {
         <div className="flex gap-3 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 items-center no-scrollbar">
           {/* Type Filter */}
           <Select value={selectedType} onValueChange={setSelectedType}>
-            <SelectTrigger className="h-10 w-[160px] rounded-full border-slate-200 text-slate-600 hover:text-primary hover:border-primary/20 hover:bg-primary/5">
+            <SelectTrigger className="h-10 w-[160px] rounded-full border-border/50 bg-card/50 text-muted-foreground hover:text-primary hover:border-primary/20 hover:bg-primary/5 transition-all">
               <div className="flex items-center truncate">
                 <Filter className="mr-2 h-3.5 w-3.5 shrink-0" />
                 <SelectValue placeholder={t('All Types')} />
               </div>
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="rounded-xl">
               <SelectItem value="all">{t('All Types')}</SelectItem>
               {uniqueTypes.map((type) => (
                 <SelectItem key={type} value={type}>
@@ -162,15 +162,15 @@ const MapPage = () => {
                 variant="outline"
                 size="sm"
                 className={cn(
-                  "h-10 rounded-full border-slate-200 text-slate-600 hover:text-primary hover:border-primary/20 hover:bg-primary/5 px-4 font-normal justify-start text-left font-normal",
-                  !date && "text-muted-foreground"
+                  "h-10 rounded-full border-border/50 bg-card/50 text-muted-foreground hover:text-primary hover:border-primary/20 hover:bg-primary/5 px-4 font-normal justify-start text-left",
+                  date && "text-foreground border-primary/20 bg-primary/5"
                 )}
               >
                 <CalendarIcon className="mr-2 h-3.5 w-3.5" />
                 {date ? format(date, "PPP") : <span>{t('Any Date')}</span>}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
+            <PopoverContent className="w-auto p-0 rounded-2xl" align="start">
               <Calendar
                 mode="single"
                 selected={date}
@@ -181,12 +181,12 @@ const MapPage = () => {
           </Popover>
 
           {/* View Toggle */}
-          <div className="ml-auto md:ml-2 flex bg-slate-100 p-1 rounded-full border border-slate-200 shrink-0">
+          <div className="ml-auto md:ml-2 flex bg-muted/50 p-1 rounded-full border border-border/50 shrink-0">
             <button
               onClick={() => setViewMode('list')}
               className={cn(
                 "p-2 rounded-full transition-all",
-                viewMode === 'list' ? "bg-white shadow-sm text-primary" : "text-slate-500 hover:text-slate-700"
+                viewMode === 'list' ? "bg-background shadow-sm text-primary" : "text-muted-foreground hover:text-foreground"
               )}
               title={t('List View')}
             >
@@ -196,7 +196,7 @@ const MapPage = () => {
               onClick={() => setViewMode('split')}
               className={cn(
                 "p-2 rounded-full transition-all hidden md:block",
-                viewMode === 'split' ? "bg-white shadow-sm text-primary" : "text-slate-500 hover:text-slate-700"
+                viewMode === 'split' ? "bg-background shadow-sm text-primary" : "text-muted-foreground hover:text-foreground"
               )}
               title={t('Split View')}
             >
@@ -206,7 +206,7 @@ const MapPage = () => {
               onClick={() => setViewMode('map')}
               className={cn(
                 "p-2 rounded-full transition-all",
-                viewMode === 'map' ? "bg-white shadow-sm text-primary" : "text-slate-500 hover:text-slate-700"
+                viewMode === 'map' ? "bg-background shadow-sm text-primary" : "text-muted-foreground hover:text-foreground"
               )}
               title={t('Map View')}
             >
@@ -228,10 +228,10 @@ const MapPage = () => {
           <div className="p-6 space-y-6">
             <div className="flex justify-between items-end">
               <div>
-                <h2 className="font-bold text-2xl text-slate-900 leading-tight">{t('Available Opportunities')}</h2>
-                <p className="text-slate-500 text-sm mt-1">{t('Find the perfect way to give back')}</p>
+                <h2 className="font-black text-2xl text-foreground tracking-tight">{t('Available Opportunities')}</h2>
+                <p className="text-muted-foreground text-sm mt-1">{t('Find the perfect way to give back')}</p>
               </div>
-              <Badge variant="outline" className="h-7 px-3 rounded-full bg-white border-slate-200 font-medium text-slate-600">
+              <Badge variant="outline" className="h-7 px-3 rounded-full bg-card border-border/50 font-semibold text-muted-foreground">
                 {filteredEvents.length} {t('results')}
               </Badge>
             </div>
@@ -255,7 +255,7 @@ const MapPage = () => {
                 filteredEvents.map((event: any) => (
                   <Card
                     key={event.id}
-                    className="group overflow-hidden border-0 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 bg-white rounded-2xl"
+                    className="group overflow-hidden border border-border/50 shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 bg-card rounded-2xl"
                   >
                     <div className="flex flex-col sm:flex-row h-full">
                       <div className="w-full sm:w-40 h-48 sm:h-auto relative shrink-0 overflow-hidden">
@@ -277,38 +277,38 @@ const MapPage = () => {
                       <div className="flex-1 p-5 flex flex-col justify-between relative">
                         <div className="space-y-3">
                           <div className="flex justify-between items-start gap-2">
-                            <div className="text-xs font-semibold uppercase tracking-wider text-primary/80">
+                            <div className="text-[10px] font-bold uppercase tracking-widest text-primary/70">
                               {event.organization}
                             </div>
-                            <span className="text-xs text-slate-400 font-medium whitespace-nowrap bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
+                            <span className="text-[10px] text-muted-foreground font-semibold whitespace-nowrap bg-muted/50 px-2 py-1 rounded-md border border-border/30">
                               {event.date}
                             </span>
                           </div>
 
-                          <h3 className="font-bold text-lg leading-snug text-slate-900 group-hover:text-primary transition-colors">
+                          <h3 className="font-bold text-lg leading-snug text-foreground group-hover:text-primary transition-colors">
                             {event.title}
                           </h3>
 
                           <div className="space-y-2 mt-auto">
-                            <div className="flex items-center gap-2 text-sm text-slate-500">
-                              <MapPin className="h-4 w-4 text-slate-400 shrink-0" />
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <MapPin className="h-4 w-4 text-primary/40 shrink-0" />
                               <span className="truncate">{event.location}</span>
                             </div>
-                            <div className="flex items-center gap-2 text-sm text-slate-500">
-                              <Clock className="h-4 w-4 text-slate-400 shrink-0" />
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Clock className="h-4 w-4 text-primary/40 shrink-0" />
                               <span>{event.time}</span>
                             </div>
                           </div>
                         </div>
 
-                        <div className="mt-5 flex gap-3 pt-4 border-t border-slate-100">
+                        <div className="mt-5 flex gap-3 pt-4 border-t border-border/50">
                           <Link to={`/detail/event/${event.id}`} className="flex-1">
-                            <Button variant="outline" className="w-full rounded-xl border-slate-200 hover:bg-slate-50 hover:text-slate-900 hover:border-slate-300 transition-all font-medium">
+                            <Button variant="outline" className="w-full rounded-xl border-border/50 bg-background hover:bg-muted hover:text-foreground transition-all font-bold text-xs">
                               {t('Details')}
                             </Button>
                           </Link>
                           <Button
-                            className="flex-1 rounded-xl shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all font-medium"
+                            className="flex-1 rounded-xl shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all font-bold text-xs"
                             onClick={(e) => {
                               e.preventDefault();
                               if (!token) {
