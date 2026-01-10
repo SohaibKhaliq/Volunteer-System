@@ -14,8 +14,46 @@ type SeedUser = {
 
 export default class UserSeeder extends BaseSeeder {
   public async run() {
-    const RECORD_COUNT = 50
+    const RECORD_COUNT = 150 // Increased from 50
     console.log('UserSeeder: starting...')
+
+    // Key seed users to create first
+    const keyUsers = [
+      {
+        firstName: 'Admin',
+        lastName: 'User',
+        email: 'admin@gmail.com',
+        phone: '+61 412 345 600',
+        street: '1 Admin Street',
+        suburb: 'Sydney',
+        state: 'NSW',
+        postcode: '2000',
+        isAdmin: true
+      },
+      {
+        firstName: 'Organization',
+        lastName: 'Manager',
+        email: 'organization@gmail.com',
+        phone: '+61 412 345 601',
+        street: '2 Organization Ave',
+        suburb: 'Melbourne',
+        state: 'VIC',
+        postcode: '3000',
+        isAdmin: false
+      },
+      {
+        firstName: 'Volunteer',
+        lastName: 'User',
+        email: 'volunteer@gmail.com',
+        phone: '+61 412 345 602',
+        street: '3 Volunteer Lane',
+        suburb: 'Brisbane',
+        state: 'QLD',
+        postcode: '4000',
+        isAdmin: false
+      }
+    ]
+
     const baseUsers: SeedUser[] = [
       {
         firstName: 'Amelia',
@@ -518,7 +556,32 @@ export default class UserSeeder extends BaseSeeder {
     const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
     const passwordHash = await Hash.make('12345678')
 
-    const rows = baseUsers.slice(0, RECORD_COUNT).map((user, index) => {
+    // Create rows from key users first
+    const keyUserRows = keyUsers.map((user) => ({
+      email: user.email,
+      password: passwordHash,
+      first_name: user.firstName,
+      last_name: user.lastName,
+      phone: user.phone,
+      volunteer_status: 'active',
+      profile_metadata: JSON.stringify({
+        street: user.street,
+        suburb: user.suburb,
+        state: user.state,
+        postcode: user.postcode,
+        country: 'Australia'
+      }),
+      created_at: timestamp,
+      updated_at: timestamp,
+      role_status: 'active',
+      is_admin: user.isAdmin,
+      is_disabled: false,
+      email_verified_at: timestamp,
+      last_active_at: timestamp
+    }))
+
+    // Create rows from base users
+    const baseUserRows = baseUsers.slice(0, RECORD_COUNT - 3).map((user, index) => {
       const emailLocal = `${user.firstName.toLowerCase()}.${user.lastName.toLowerCase()}${index + 1}`
       return {
         email: `${emailLocal}@volunteers.au.org`,
@@ -543,6 +606,8 @@ export default class UserSeeder extends BaseSeeder {
         last_active_at: timestamp
       }
     })
+
+    const rows = [...keyUserRows, ...baseUserRows]
 
     if (!rows.length) {
       console.log('UserSeeder: no rows to insert')
