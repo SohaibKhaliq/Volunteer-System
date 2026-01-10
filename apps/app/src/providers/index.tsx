@@ -21,7 +21,7 @@ const Providers = ({ children }: { children: ReactNode }) => {
     <>
       <QueryClientProvider client={queryClient}>
         <I18nextProvider i18n={i18n} defaultNS={'common'}>
-          <ThemeProvider defaultTheme="light" storageKey="theme">
+          <ThemeProvider defaultTheme="system" storageKey="theme">
             <SocketProvider>
               {children}
               <Toaster position="top-right" richColors />
