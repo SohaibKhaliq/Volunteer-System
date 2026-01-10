@@ -16,7 +16,22 @@ type SeedOrganization = {
 
 export default class OrganizationSeeder extends BaseSeeder {
   public async run() {
-    const RECORD_COUNT = 50
+    const RECORD_COUNT = 100 // Increased from 50
+
+    // Key organization to create first
+    const keyOrganization = {
+      name: 'Test Organization',
+      description: 'Main test organization for system validation and development',
+      contactEmail: 'organization@gmail.com',
+      contactPhone: '+61 2 9234 5600',
+      type: 'Non-Profit',
+      website: 'https://testorganization.org.au',
+      address: '100 Test Street',
+      city: 'Sydney',
+      state: 'NSW',
+      country: 'Australia'
+    }
+
     const baseOrganizations: SeedOrganization[] = [
       {
         name: 'Sydney Community Care',
@@ -56,7 +71,8 @@ export default class OrganizationSeeder extends BaseSeeder {
       },
       {
         name: 'Perth Homeless Support',
-        description: 'Providing shelter, meals, and support services to people experiencing homelessness',
+        description:
+          'Providing shelter, meals, and support services to people experiencing homelessness',
         contactEmail: 'help@perthhomeless.org.au',
         contactPhone: '+61 8 9234 5678',
         type: 'Social Services',
@@ -627,11 +643,36 @@ export default class OrganizationSeeder extends BaseSeeder {
     const usersResult = await Database.rawQuery('SELECT id FROM users ORDER BY id ASC LIMIT 50')
     const userIds = usersResult[0].map((row: any) => row.id)
 
-    const rows = baseOrganizations.slice(0, RECORD_COUNT).map((org, index) => {
+    // Create key organization first
+    const keyOrgRow = {
+      name: keyOrganization.name,
+      slug: 'test-organization',
+      description: keyOrganization.description,
+      contact_email: keyOrganization.contactEmail,
+      contact_phone: keyOrganization.contactPhone,
+      type: keyOrganization.type,
+      website: keyOrganization.website,
+      address: keyOrganization.address,
+      city: keyOrganization.city,
+      country: keyOrganization.country,
+      timezone: 'Australia/Sydney',
+      status: 'active',
+      is_approved: true,
+      is_active: true,
+      public_profile: true,
+      auto_approve_volunteers: true,
+      owner_id: userIds.length > 0 ? userIds[0] : null,
+      logo: '/uploads/logos/test-organization.png',
+      created_at: timestamp,
+      updated_at: timestamp
+    }
+
+    // Create rows from base organizations
+    const baseOrgRows = baseOrganizations.slice(0, RECORD_COUNT - 1).map((org, index) => {
       const slug = `${org.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${(index + 1).toString().padStart(3, '0')}`
-      const ownerId = userIds.length > 0 ? userIds[index % userIds.length] : null
+      const ownerId = userIds.length > 0 ? userIds[(index + 1) % userIds.length] : null
       const logo = Math.random() > 0.5 ? `/uploads/logos/${slug}.png` : null
-      
+
       return {
         name: org.name,
         slug: slug,
@@ -655,6 +696,8 @@ export default class OrganizationSeeder extends BaseSeeder {
         updated_at: timestamp
       }
     })
+
+    const rows = [keyOrgRow, ...baseOrgRows]
 
     if (!rows.length) {
       console.log('OrganizationSeeder: no rows to insert')
