@@ -3,15 +3,17 @@ import Database from '@ioc:Adonis/Lucid/Database'
 
 export default class ApplicationSeeder extends BaseSeeder {
   public async run() {
-    const RECORD_COUNT = 100
+    const RECORD_COUNT = 250 // Increased from 100
 
     const now = new Date()
     const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
 
-    const usersResult = await Database.rawQuery('SELECT id FROM users ORDER BY id ASC LIMIT 50')
+    const usersResult = await Database.rawQuery('SELECT id FROM users ORDER BY id ASC LIMIT 300')
     const userIds = usersResult[0].map((row: any) => row.id)
 
-    const oppsResult = await Database.rawQuery('SELECT id FROM opportunities ORDER BY id ASC LIMIT 50')
+    const oppsResult = await Database.rawQuery(
+      'SELECT id FROM opportunities ORDER BY id ASC LIMIT 150'
+    )
     const oppIds = oppsResult[0].map((row: any) => row.id)
 
     if (userIds.length === 0 || oppIds.length === 0) {
@@ -49,22 +51,28 @@ export default class ApplicationSeeder extends BaseSeeder {
       appliedDate.setDate(appliedDate.getDate() - Math.floor(Math.random() * 30))
 
       const status = getWeightedStatus()
-      const respondedDate = status !== 'applied' ? new Date(appliedDate.getTime() + Math.random() * 7 * 24 * 60 * 60 * 1000) : null
+      const respondedDate =
+        status !== 'applied'
+          ? new Date(appliedDate.getTime() + Math.random() * 7 * 24 * 60 * 60 * 1000)
+          : null
 
-      const notes = status === 'accepted' 
-        ? 'Strong application with relevant experience'
-        : status === 'rejected'
-        ? 'Position filled by another candidate'
-        : status === 'withdrawn'
-        ? 'Volunteer withdrew due to scheduling conflict'
-        : null
+      const notes =
+        status === 'accepted'
+          ? 'Strong application with relevant experience'
+          : status === 'rejected'
+            ? 'Position filled by another candidate'
+            : status === 'withdrawn'
+              ? 'Volunteer withdrew due to scheduling conflict'
+              : null
 
       rows.push({
         opportunity_id: oppId,
         user_id: userId,
         status: status,
         applied_at: appliedDate.toISOString().slice(0, 19).replace('T', ' '),
-        responded_at: respondedDate ? respondedDate.toISOString().slice(0, 19).replace('T', ' ') : null,
+        responded_at: respondedDate
+          ? respondedDate.toISOString().slice(0, 19).replace('T', ' ')
+          : null,
         notes: notes,
         created_at: timestamp,
         updated_at: timestamp
