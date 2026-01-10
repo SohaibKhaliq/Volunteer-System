@@ -9,6 +9,11 @@ export default class RoleSeeder extends BaseSeeder {
       {
         name: 'Super Admin',
         slug: 'super-admin',
+        description: 'Full system access with all permissions - System administrator'
+      },
+      {
+        name: 'Admin',
+        slug: 'admin',
         description: 'Full system access with all permissions'
       },
       {
@@ -50,11 +55,6 @@ export default class RoleSeeder extends BaseSeeder {
         name: 'Auditor',
         slug: 'auditor',
         description: 'Read-only access for compliance and auditing'
-      },
-      {
-        name: 'Guest',
-        slug: 'guest',
-        description: 'Limited public access to view events and opportunities'
       }
     ]
 
