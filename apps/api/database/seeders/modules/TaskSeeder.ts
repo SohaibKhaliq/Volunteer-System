@@ -3,16 +3,25 @@ import Database from '@ioc:Adonis/Lucid/Database'
 
 export default class TaskSeeder extends BaseSeeder {
   public async run() {
-    const RECORD_COUNT = 100
+    const RECORD_COUNT = 150 // Increased from 100
 
     const taskTemplates = [
-      { title: 'Setup Event Space', description: 'Arrange tables, chairs, and equipment for the event' },
+      {
+        title: 'Setup Event Space',
+        description: 'Arrange tables, chairs, and equipment for the event'
+      },
       { title: 'Registration Desk', description: 'Check in participants and provide information' },
       { title: 'Food Service', description: 'Prepare and serve food and beverages' },
       { title: 'Cleanup Crew', description: 'Clean and restore venue after event' },
       { title: 'Photographer', description: 'Take photos and videos of the event' },
-      { title: 'Social Media Updates', description: 'Post live updates on social media during event' },
-      { title: 'Guest Speaker Coordination', description: 'Coordinate with and assist guest speakers' },
+      {
+        title: 'Social Media Updates',
+        description: 'Post live updates on social media during event'
+      },
+      {
+        title: 'Guest Speaker Coordination',
+        description: 'Coordinate with and assist guest speakers'
+      },
       { title: 'Activity Facilitation', description: 'Lead activities and workshops during event' },
       { title: 'First Aid Station', description: 'Provide first aid support if needed' },
       { title: 'Parking Assistance', description: 'Direct vehicles and assist with parking' },
