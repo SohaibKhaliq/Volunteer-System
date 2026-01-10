@@ -1,18 +1,9 @@
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import TagInput from '@/components/molecules/tag-input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { useState } from 'react';
-import volunteerApi from '@/lib/api/volunteerApi';
-import { useStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, Clock, Award, ArrowRight, Building2, CheckCircle, Users } from 'lucide-react';
@@ -109,120 +100,9 @@ const VolunteerDashboard = () => {
     }
   }, [location.hash]);
 
-  // small local Profile form component
-  function ProfileForm() {
-    const { t } = useTranslation();
-    const queryClient = useQueryClient();
-    const { user } = useStore();
-    const [isSaving, setIsSaving] = useState(false);
-    const [skills, setSkills] = useState<string[]>(
-      () => (user as any)?.skills || (user as any)?.profileMetadata?.skills || []
-    );
-
-    const handleSubmit = async (e: React.FormEvent) => {
-      e.preventDefault();
-      setIsSaving(true);
-      try {
-        const formData = new FormData(e.target as HTMLFormElement);
-        const payload: any = {
-          firstName: formData.get('firstName') || user?.firstName,
-          lastName: formData.get('lastName') || user?.lastName,
-          phone: formData.get('phone') || user?.phone,
-          bio: formData.get('bio') || undefined
-        };
-
-        // Include skills from TagInput state
-        const existingMeta = (user as any)?.profileMetadata || {};
-        payload.profileMetadata = { ...existingMeta, skills };
-
-        await volunteerApi.updateProfile(payload);
-        toast.success(t('Profile updated successfully'));
-        queryClient.invalidateQueries({ queryKey: ['me'] });
-        queryClient.invalidateQueries({ queryKey: ['volunteer-dashboard'] });
-      } catch (err: any) {
-        toast.error(err?.message || t('Failed to update profile'));
-      } finally {
-        setIsSaving(false);
-      }
-    };
-
-    const skillsMutation = useMutation({
-      mutationFn: (newSkills: string[]) => volunteerApi.updateMySkills(newSkills),
-      onSuccess: () => {
-        toast.success(t('Skills updated'));
-        queryClient.invalidateQueries({ queryKey: ['me'] });
-        queryClient.invalidateQueries({ queryKey: ['volunteer-dashboard'] });
-      },
-      onError: (err: any) => {
-        toast.error(err?.message || t('Failed to update skills'));
-      }
-    });
-
-    return (
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="firstName">{t('First Name')}</Label>
-            <Input id="firstName" name="firstName" defaultValue={(user as any)?.firstName} />
-          </div>
-          <div>
-            <Label htmlFor="lastName">{t('Last Name')}</Label>
-            <Input id="lastName" name="lastName" defaultValue={(user as any)?.lastName} />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <Label htmlFor="email">{t('Email')}</Label>
-            <Input id="email" type="email" defaultValue={(user as any)?.email} disabled />
-          </div>
-          <div>
-            <Label htmlFor="phone">{t('Phone')}</Label>
-            <Input id="phone" name="phone" defaultValue={(user as any)?.phone} />
-          </div>
-        </div>
-
-        <div>
-          <Label htmlFor="bio">{t('Bio')}</Label>
-          <Textarea id="bio" name="bio" defaultValue={(user as any)?.bio || ''} />
-        </div>
-
-        <div>
-          <Label htmlFor="skills">{t('Skills')}</Label>
-          <div className="flex items-start gap-3">
-            <div className="flex-1">
-              <TagInput
-                id="skills"
-                placeholder="Add a skill and press Enter"
-                value={skills}
-                onChange={(v) => setSkills(v)}
-              />
-            </div>
-            <div className="mt-8">
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => skillsMutation.mutate(skills)}
-                disabled={skillsMutation.isLoading}
-              >
-                {skillsMutation.isLoading ? 'Saving...' : 'Save Skills'}
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex justify-end">
-          <Button type="submit" disabled={isSaving}>
-            {isSaving ? t('Saving...') : t('Save Changes')}
-          </Button>
-        </div>
-      </form>
-    );
-  }
-
   return (
     <div className="space-y-8">
-      <div id="profile">
+      <div>
         <h1 className="text-3xl font-bold text-slate-900">{t('Welcome back, Volunteer!')}</h1>
         <p className="text-slate-600">{t('Here is an overview of your impact and upcoming activities.')}</p>
       </div>
@@ -279,27 +159,6 @@ const VolunteerDashboard = () => {
           <CardContent>
             <div className="text-2xl font-bold">{impact.level}</div>
             <p className="text-xs opacity-90">{t('Keep up the great work!')}</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Profile (consolidated) */}
-      <div>
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold">{t('My Profile')}</h2>
-          <Link to="/volunteer/settings">
-            <Button variant="ghost" size="sm">
-              {t('Edit settings')} <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </Link>
-        </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">{t('Personal Information')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ProfileForm />
           </CardContent>
         </Card>
       </div>
