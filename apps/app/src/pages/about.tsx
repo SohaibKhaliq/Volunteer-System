@@ -21,48 +21,55 @@ const About = () => {
     );
 
   return (
-    <div className="flex flex-col min-h-screen bg-slate-50">
+    <div className="flex flex-col min-h-screen bg-background">
       {/* Hero Section */}
-      <section className="bg-primary text-white py-20">
-        <div className="container px-4 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-6">{t('About Local Aid')}</h1>
-          <p className="text-xl text-primary-foreground/90 max-w-2xl mx-auto">
+      <section className="relative py-24 flex items-center justify-center bg-primary text-white overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/90 to-primary/80 z-10" />
+        <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:30px_30px] z-10" />
+        <div className="container relative z-20 px-4 text-center">
+          <h1 className="text-5xl md:text-7xl font-black mb-8 tracking-tight">
+            {t('About Local Aid')}
+          </h1>
+          <p className="text-xl md:text-2xl text-primary-foreground/90 max-w-3xl mx-auto leading-relaxed font-medium">
             {t('Empowering communities through seamless volunteer management and meaningful connections.')}
           </p>
         </div>
       </section>
 
       {/* Mission Section */}
-      <section className="py-16 bg-white">
+      <section className="py-24 bg-background">
         <div className="container px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-3xl font-bold mb-6 text-slate-900">{t('Our Mission')}</h2>
-              <p className="text-lg text-slate-600 mb-6 leading-relaxed whitespace-pre-wrap">{mission}</p>
-              {vision && (
-                <>
-                  <h3 className="text-2xl font-semibold mb-4 text-slate-900">{t('Our Vision')}</h3>
-                  <p className="text-lg text-slate-600 leading-relaxed whitespace-pre-wrap">{vision}</p>
-                </>
-              )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+            <div className="space-y-10">
+              <div className="bg-card p-10 rounded-[2.5rem] border border-border/50 shadow-sm">
+                <h2 className="text-4xl font-black mb-6 text-foreground tracking-tight">{t('Our Mission')}</h2>
+                <p className="text-lg text-muted-foreground mb-10 leading-relaxed font-medium whitespace-pre-wrap">{mission}</p>
+                {vision && (
+                  <>
+                    <h3 className="text-2xl font-black mb-4 text-foreground tracking-tight">{t('Our Vision')}</h3>
+                    <p className="text-lg text-muted-foreground leading-relaxed font-medium whitespace-pre-wrap">{vision}</p>
+                  </>
+                )}
+              </div>
             </div>
-            <div className="relative h-[400px] rounded-2xl overflow-hidden shadow-xl">
+            <div className="relative h-[500px] rounded-[3rem] overflow-hidden shadow-2xl shadow-primary/10 border border-border/30">
               <img
                 src="https://images.unsplash.com/photo-1559027615-cd4628902d4a?q=80&w=2074&auto=format&fit=crop"
                 alt="Volunteers working together"
                 className="absolute inset-0 w-full h-full object-cover"
               />
+              <div className="absolute inset-0 bg-gradient-to-t from-primary/20 to-transparent" />
             </div>
           </div>
         </div>
       </section>
 
       {/* Values Section */}
-      <section className="py-16 bg-slate-50">
+      <section className="py-24 bg-muted/30">
         <div className="container px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-4">{t('Our Core Values')}</h2>
-            <p className="text-slate-600 max-w-2xl mx-auto">
+          <div className="text-center mb-20">
+            <h2 className="text-4xl md:text-5xl font-black mb-6 tracking-tight text-foreground">{t('Our Core Values')}</h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto text-lg font-medium leading-relaxed">
               {settings?.values ? (
                 <span className="whitespace-pre-wrap">{settings.values}</span>
               ) : (
@@ -74,17 +81,17 @@ const About = () => {
           {!settings?.values && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
               {[
-                { icon: Users, title: 'Community', desc: 'Building strong connections between people.' },
-                { icon: Heart, title: 'Compassion', desc: 'Driven by a desire to help others.' },
-                { icon: Shield, title: 'Trust', desc: 'Creating a safe and reliable environment.' },
-                { icon: Globe, title: 'Impact', desc: 'Focusing on tangible, positive change.' }
+                { icon: Users, title: 'Community', desc: 'Building strong connections between people.', color: 'text-blue-500', bg: 'bg-blue-500/10' },
+                { icon: Heart, title: 'Compassion', desc: 'Driven by a desire to help others.', color: 'text-rose-500', bg: 'bg-rose-500/10' },
+                { icon: Shield, title: 'Trust', desc: 'Creating a safe and reliable environment.', color: 'text-amber-500', bg: 'bg-amber-500/10' },
+                { icon: Globe, title: 'Impact', desc: 'Focusing on tangible, positive change.', color: 'text-emerald-500', bg: 'bg-emerald-500/10' }
               ].map((item, i) => (
-                <div key={i} className="bg-white p-8 rounded-xl shadow-sm hover:shadow-md transition-all text-center">
-                  <div className="w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-6">
-                    <item.icon className="h-6 w-6" />
+                <div key={i} className="bg-card p-10 rounded-3xl shadow-sm hover:shadow-2xl transition-all duration-500 text-center border border-border/50 group">
+                  <div className={`w-16 h-16 ${item.bg} ${item.color} rounded-2xl flex items-center justify-center mx-auto mb-8 group-hover:scale-110 group-hover:rotate-6 transition-transform`}>
+                    <item.icon className="h-8 w-8" />
                   </div>
-                  <h3 className="text-xl font-semibold mb-3">{t(item.title)}</h3>
-                  <p className="text-slate-600">{t(item.desc)}</p>
+                  <h3 className="text-2xl font-black mb-4 text-foreground">{t(item.title)}</h3>
+                  <p className="text-muted-foreground font-medium leading-relaxed">{t(item.desc)}</p>
                 </div>
               ))}
             </div>
@@ -92,24 +99,27 @@ const About = () => {
         </div>
       </section>
 
-      {/* Team Section (Placeholder) */}
-      <section className="py-16 bg-white">
+      {/* Team Section */}
+      <section className="py-24 bg-background">
         <div className="container px-4 text-center">
-          <h2 className="text-3xl font-bold mb-12">{t('Meet the Team')}</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+          <h2 className="text-4xl md:text-5xl font-black mb-16 tracking-tight text-foreground">{t('Meet the Team')}</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-12 max-w-5xl mx-auto">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="group">
-                <div className="w-48 h-48 bg-slate-200 rounded-full mx-auto mb-6 overflow-hidden">
-                  <img
-                    src={`https://i.pravatar.cc/300?img=${i + 10}`}
-                    alt="Team Member"
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform"
-                  />
+              <div key={i} className="group text-center">
+                <div className="relative w-56 h-56 mx-auto mb-8">
+                  <div className="absolute inset-0 bg-primary/10 rounded-[2.5rem] rotate-6 group-hover:rotate-12 transition-transform duration-500" />
+                  <div className="absolute inset-0 bg-card rounded-[2.5rem] border border-border/50 overflow-hidden z-10">
+                    <img
+                      src={`https://i.pravatar.cc/400?img=${i + 15}`}
+                      alt="Team Member"
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                    />
+                  </div>
                 </div>
-                <h3 className="text-xl font-semibold mb-1">
+                <h3 className="text-2xl font-black mb-2 text-foreground">
                   {i === 1 ? 'Sarah Johnson' : i === 2 ? 'Michael Chen' : 'Amira Ahmed'}
                 </h3>
-                <p className="text-primary font-medium mb-2">
+                <p className="text-primary font-black uppercase tracking-widest text-xs">
                   {i === 1 ? 'Founder & CEO' : i === 2 ? 'Head of Product' : 'Community Lead'}
                 </p>
               </div>
