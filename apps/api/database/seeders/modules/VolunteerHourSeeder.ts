@@ -3,22 +3,25 @@ import Database from '@ioc:Adonis/Lucid/Database'
 
 export default class VolunteerHourSeeder extends BaseSeeder {
   public async run() {
-    const RECORD_COUNT = 200
+    const RECORD_COUNT = 500 // Increased from 200
 
     const now = new Date()
     const timestamp = now.toISOString().slice(0, 19).replace('T', ' ')
 
-    const usersResult = await Database.rawQuery('SELECT id FROM users ORDER BY id ASC LIMIT 50')
+    // Get more users and events
+    const usersResult = await Database.rawQuery('SELECT id FROM users ORDER BY id ASC LIMIT 300')
     const userIds = usersResult[0].map((row: any) => row.id)
 
-    const eventsResult = await Database.rawQuery('SELECT id FROM events ORDER BY id ASC LIMIT 50')
+    const eventsResult = await Database.rawQuery('SELECT id FROM events ORDER BY id ASC LIMIT 150')
     const eventIds = eventsResult[0].map((row: any) => row.id)
 
-    const shiftsResult = await Database.rawQuery('SELECT id FROM shifts ORDER BY id ASC LIMIT 50')
+    const shiftsResult = await Database.rawQuery('SELECT id FROM shifts ORDER BY id ASC LIMIT 150')
     const shiftIds = shiftsResult[0].map((row: any) => row.id)
 
     if (userIds.length === 0 || eventIds.length === 0) {
-      console.log(`VolunteerHourSeeder: missing dependencies. Users found: ${userIds.length}, Events found: ${eventIds.length}`)
+      console.log(
+        `VolunteerHourSeeder: missing dependencies. Users found: ${userIds.length}, Events found: ${eventIds.length}`
+      )
       return
     }
 
@@ -46,9 +49,16 @@ export default class VolunteerHourSeeder extends BaseSeeder {
 
       const hours = (Math.random() * 7 + 1).toFixed(2)
       const status = getWeightedStatus()
-      const shiftId = shiftIds.length > 0 && Math.random() > 0.5 ? shiftIds[Math.floor(Math.random() * shiftIds.length)] : null
-      const auditedBy = status === 'Approved' && Math.random() > 0.3 ? userIds[Math.floor(Math.random() * userIds.length)] : null
-      const rejectionReason = status === 'Rejected' ? 'Hours not verified by event coordinator' : null
+      const shiftId =
+        shiftIds.length > 0 && Math.random() > 0.5
+          ? shiftIds[Math.floor(Math.random() * shiftIds.length)]
+          : null
+      const auditedBy =
+        status === 'Approved' && Math.random() > 0.3
+          ? userIds[Math.floor(Math.random() * userIds.length)]
+          : null
+      const rejectionReason =
+        status === 'Rejected' ? 'Hours not verified by event coordinator' : null
 
       rows.push({
         user_id: userId,
