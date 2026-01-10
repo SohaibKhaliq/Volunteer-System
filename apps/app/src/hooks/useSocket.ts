@@ -3,11 +3,9 @@ import { io, Socket } from 'socket.io-client';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 import { useQueryClient } from '@tanstack/react-query';
+import { NotificationFormatter } from '@/lib/notification-formatter';
 
-interface SocketEvent {
-  type: string;
-  data: any;
-}
+
 
 interface UseSocketOptions {
   enabled?: boolean;
@@ -169,9 +167,6 @@ export const useSocket = (options: UseSocketOptions = {}) => {
     });
 
     // Unified notification event from server-side Notification model
-    // (the API's afterCreate hook posts JSON to /_internal/notify which the
-    // socket server emits as a single 'notification' event). Handle these
-    // payloads and map them into the specialized UI behaviours above.
     socket.on('notification', (raw: any) => {
       try {
         console.log('[Socket.IO] Received notification:', raw);
@@ -187,92 +182,83 @@ export const useSocket = (options: UseSocketOptions = {}) => {
           }
         }
 
-        const genericNotify = (title?: string, description?: string) => {
-          if (title || description) toast.info(title || 'Notification', { description: description || '' });
-          queryClient.invalidateQueries({ queryKey: ['notifications'] });
-          playNotificationSound();
+        // Use formatter for title and description
+        const title = NotificationFormatter.formatType(type);
+        const description = NotificationFormatter.getSummary(type, p);
+
+        // ALWAYS use the same ID to prevent stacking ("sird aik toast show karo")
+        const TOAST_ID = 'latest-notification';
+
+        // Helper to show the single toast
+        const showToast = (variant: 'success' | 'error' | 'info' | 'message' = 'info') => {
+            const opts = {
+                id: TOAST_ID,
+                description: description || ''
+            };
+            
+            if (variant === 'success') toast.success(title, opts);
+            else if (variant === 'error') toast.error(title, opts);
+            else if (variant === 'info') toast.info(title, opts);
+            else toast(title, opts);
         };
 
-        switch ((type || '').toLowerCase()) {
-          case 'new_application':
-          case 'new-application':
-            toast.success('New Application', {
-              description: `${p?.volunteerName || 'A volunteer'} applied for ${p?.opportunityTitle || 'an opportunity'}`
-            });
+        const typeLower = (type || '').toLowerCase();
+
+        if (typeLower.includes('new_application') || typeLower.includes('new-application')) {
+            showToast('success');
             queryClient.invalidateQueries({ queryKey: ['organization', 'applications'] });
             queryClient.invalidateQueries({ queryKey: ['admin', 'summary'] });
             playNotificationSound();
-            break;
-
-          case 'application_accepted':
-          case 'application_rejected':
-          case 'application-status-change':
-            {
-              const approved =
-                String(type).toLowerCase().includes('accept') || String(type).toLowerCase().includes('accepted');
-              if (approved) {
-                toast.success('Application Approved! 🎉', {
-                  description: `Your application for ${p?.opportunityTitle || 'the opportunity'} has been approved!`
-                });
-              } else {
-                toast.error('Application Rejected', {
-                  description: p?.notes || 'Your application was not accepted this time.'
-                });
-              }
-              queryClient.invalidateQueries({ queryKey: ['volunteer', 'applications'] });
-            }
-            break;
-
-          case 'hours_approved':
-          case 'hours-approved':
-            toast.success('Hours Approved! ✓', { description: `${p?.hours ?? 0} hours approved` });
-            queryClient.invalidateQueries({ queryKey: ['volunteer', 'hours'] });
-            queryClient.invalidateQueries({ queryKey: ['hours'] });
-            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-            break;
-
-          case 'hours_rejected':
-          case 'hours-rejected':
-            toast.error('Hours Rejected', { description: p?.reason || 'Your hours were not approved.' });
-            queryClient.invalidateQueries({ queryKey: ['volunteer', 'hours'] });
-            queryClient.invalidateQueries({ queryKey: ['hours'] });
-            break;
-
-          case 'volunteer_checked_in':
-          case 'live-checkin':
-          case 'volunteer-checked-in':
-            toast.info('New Check-in', {
-              description: `${p?.volunteerName || 'A volunteer'} checked in${p?.opportunityTitle ? ` to ${p.opportunityTitle}` : ''}`
-            });
+        } 
+        else if (typeLower.includes('accept') || typeLower.includes('approve')) {
+             showToast('success');
+             if (typeLower.includes('hours')) {
+                queryClient.invalidateQueries({ queryKey: ['volunteer', 'hours'] });
+                queryClient.invalidateQueries({ queryKey: ['hours'] });
+                confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+             } else {
+                queryClient.invalidateQueries({ queryKey: ['volunteer', 'applications'] });
+             }
+        }
+        else if (typeLower.includes('reject')) {
+             showToast('error');
+             if (typeLower.includes('hours')) {
+                queryClient.invalidateQueries({ queryKey: ['volunteer', 'hours'] });
+                queryClient.invalidateQueries({ queryKey: ['hours'] });
+             } else {
+                queryClient.invalidateQueries({ queryKey: ['volunteer', 'applications'] });
+             }
+        }
+        else if (typeLower.includes('check') && (typeLower.includes('in') || typeLower.includes('live'))) {
+            showToast('info');
             queryClient.invalidateQueries({ queryKey: ['organization', 'attendances'] });
             queryClient.invalidateQueries({ queryKey: ['admin', 'monitoring'] });
-            break;
-
-          case 'achievement_earned':
-          case 'achievement-earned':
+        }
+        else if (typeLower.includes('achievement')) {
+            showToast('success');
             confetti({
-              particleCount: 200,
-              spread: 100,
-              origin: { y: 0.5 },
-              colors: ['#FFD700', '#FFA500', '#FF6347']
-            });
-            toast.success('Achievement Unlocked! 🏆', {
-              description: p?.achievementTitle || 'You earned a new achievement!',
-              duration: 5000
+                particleCount: 200,
+                spread: 100,
+                origin: { y: 0.5 },
+                colors: ['#FFD700', '#FFA500', '#FF6347']
             });
             queryClient.invalidateQueries({ queryKey: ['volunteer', 'achievements'] });
-            break;
-
-          case 'system_announcement':
-          case 'system-announcement':
-            genericNotify('System Announcement', p?.message || raw?.message || '');
-            break;
-
-          default:
-            // fallback generic notification
-            genericNotify();
-            break;
         }
+        else if (typeLower.includes('system')) {
+             // System announcements might warrant a warning or staying longer
+             toast.warning(title || 'System Announcement', {
+                 id: TOAST_ID,
+                 description: p?.message || raw?.message || '',
+                 duration: 10000
+             });
+        }
+        else {
+            // Default handler
+            showToast('info');
+            queryClient.invalidateQueries({ queryKey: ['notifications'] });
+            playNotificationSound();
+        }
+
       } catch (err) {
         console.warn('[Socket.IO] failed to handle notification event', err);
       }
@@ -285,6 +271,7 @@ export const useSocket = (options: UseSocketOptions = {}) => {
     socket.on('live-checkin', (data: any) => {
       console.log('[Socket.IO] Live check-in:', data);
       toast.info('New Check-in', {
+        id: 'latest-notification',
         description: `${data.volunteer?.name || 'A volunteer'} checked in${data.opportunity?.title ? ` to ${data.opportunity.title}` : ''}`
       });
 
@@ -309,6 +296,7 @@ export const useSocket = (options: UseSocketOptions = {}) => {
       });
 
       toast.success('Achievement Unlocked! 🏆', {
+        id: 'latest-notification',
         description: data.achievement?.name || 'You earned a new achievement!',
         duration: 5000
       });
@@ -324,6 +312,7 @@ export const useSocket = (options: UseSocketOptions = {}) => {
     socket.on('system-announcement', (data: any) => {
       console.log('[Socket.IO] System announcement:', data);
       toast.warning('System Announcement', {
+        id: 'latest-notification',
         description: data.message || '',
         duration: 10000
       });
