@@ -1,4 +1,5 @@
 import { useState, useEffect, FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '@/lib/api';
 import { Input } from '@/components/ui/input';
 import { toast } from '@/components/atoms/use-toast';
@@ -10,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
 
 export default function Login() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { setToken, setUser } = useStore();
@@ -115,13 +117,15 @@ export default function Login() {
       <div className="flex items-center justify-center p-8 bg-background">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center lg:text-left">
-            <h1 className="text-3xl font-bold tracking-tight">Welcome back</h1>
-            <p className="text-muted-foreground mt-2">Enter your credentials to access your account</p>
+            <h1 className="text-4xl font-black tracking-tight text-foreground">{t('Welcome back')}</h1>
+            <p className="text-muted-foreground mt-3 text-lg font-medium">
+              {t('Enter your credentials to access your account')}
+            </p>
           </div>
 
           <form onSubmit={submit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="font-bold text-foreground/80 px-1">{t('Email')}</Label>
               <Input
                 id="email"
                 name="email"
@@ -130,15 +134,15 @@ export default function Login() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@example.com"
                 required
-                className="h-11"
+                className="h-12 bg-card/50 border-border/50 rounded-xl focus:bg-card transition-all"
               />
             </div>
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
-                <Link to="/forgot-password" className="text-sm font-medium text-primary hover:underline">
-                  Forgot password?
+              <div className="flex items-center justify-between px-1">
+                <Label htmlFor="password" className="font-bold text-foreground/80">{t('Password')}</Label>
+                <Link to="/forgot-password" self-center className="text-sm font-bold text-primary hover:underline underline-offset-4">
+                  {t('Forgot password?')}
                 </Link>
               </div>
               <Input
@@ -149,56 +153,62 @@ export default function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                className="h-11"
+                className="h-12 bg-card/50 border-border/50 rounded-xl focus:bg-card transition-all"
               />
             </div>
 
-            <Button type="submit" className="w-full h-11" disabled={mutation.isLoading}>
+            <Button type="submit" className="w-full h-14 rounded-2xl shadow-xl shadow-primary/20 font-bold text-lg" disabled={mutation.isLoading}>
               {mutation.isLoading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Signing in...
+                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                  {t('Signing in...')}
                 </>
               ) : (
-                'Sign In'
+                t('Sign In')
               )}
             </Button>
           </form>
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
+              <span className="w-full border-t border-border/50" />
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+            <div className="relative flex justify-center text-xs font-bold uppercase tracking-widest">
+              <span className="bg-background px-4 text-muted-foreground">{t('Or continue with')}</span>
             </div>
           </div>
 
-          <div className="text-center text-sm">
-            Don&apos;t have an account?{' '}
-            <Link to="/register" className="font-medium text-primary hover:underline">
-              Sign up for free
+          <div className="text-center text-sm font-medium">
+            {t("Don't have an account?")}{' '}
+            <Link to="/register" className="font-bold text-primary hover:underline underline-offset-4 decoration-2">
+              {t('Sign up for free')}
             </Link>
           </div>
         </div>
       </div>
 
       {/* Right Side - Image/Visual */}
-      <div className="hidden lg:block relative bg-slate-900">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-slate-900/60 mix-blend-multiply" />
+      <div className="hidden lg:block relative bg-primary overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/90 to-primary/80 mix-blend-multiply z-10" />
+        <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:30px_30px] z-10" />
         <img
           src="https://images.unsplash.com/photo-1559027615-cd4628902d4a?q=80&w=2074&auto=format&fit=crop"
           alt="Volunteers working together"
-          className="absolute inset-0 w-full h-full object-cover opacity-50"
+          className="absolute inset-0 w-full h-full object-cover opacity-60 mix-blend-overlay"
         />
-        <div className="relative h-full flex flex-col justify-end p-12 text-white">
-          <blockquote className="space-y-2">
-            <p className="text-lg font-medium leading-relaxed">
-              Volunteering is at the very core of being a human. No one has made it through life without someone
-              else&apos;s help.
-            </p>
-            <footer className="text-sm opacity-80">— Heather French Henry</footer>
-          </blockquote>
+        <div className="relative h-full flex flex-col justify-end p-16 text-white z-20">
+          <div className="max-w-xl">
+            <div className="w-16 h-1 w-primary-foreground/30 mb-8 rounded-full" />
+            <blockquote className="space-y-6">
+              <p className="text-3xl font-black leading-[1.3] tracking-tight italic">
+                {t('“Volunteering is at the very core of being a human. No one has made it through life without someone else\'s help.”')}
+              </p>
+              <footer className="flex items-center gap-4">
+                <div className="h-0.5 w-8 bg-primary-foreground/50" />
+                <span className="text-xl font-bold opacity-90">— Heather French Henry</span>
+              </footer>
+            </blockquote>
+          </div>
         </div>
       </div>
     </div>
