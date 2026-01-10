@@ -8,7 +8,33 @@ import AuditLog from 'App/Models/AuditLog'
 export default class UserPreferencesController {
   /**
    * Get user preferences
-   * GET /preferences
+   *
+   * @route GET /preferences
+   * @tags User Preferences
+   * @security bearerAuth: []
+   * @response 200 {
+   *   "preferences": {
+   *     "id": 1,
+   *     "userId": 1,
+   *     "emailNotifications": true,
+   *     "smsNotifications": false,
+   *     "pushNotifications": true,
+   *     "newsletterSubscription": true,
+   *     "eventReminders": true,
+   *     "shiftReminders": true,
+   *     "opportunityAlerts": true,
+   *     "profilePublic": false,
+   *     "showEmail": false,
+   *     "showPhone": false,
+   *     "preferredDays": ["monday", "wednesday"],
+   *     "preferredTime": "morning",
+   *     "maxHoursPerWeek": 20,
+   *     "language": "en",
+   *     "timezone": "Australia/Sydney",
+   *     "theme": "light"
+   *   }
+   * }
+   * @response 401 {"error": {"message": "Not authenticated"}}
    */
   public async show({ response, auth }: HttpContextContract) {
     try {
@@ -63,7 +89,33 @@ export default class UserPreferencesController {
 
   /**
    * Update user preferences
-   * PUT /preferences
+   *
+   * @route PUT /preferences
+   * @tags User Preferences
+   * @security bearerAuth: []
+   * @requestBody {
+   *   "required": true,
+   *   "content": {
+   *     "application/json": {
+   *       "schema": {
+   *         "type": "object",
+   *         "properties": {
+   *           "emailNotifications": {"type": "boolean"},
+   *           "smsNotifications": {"type": "boolean"},
+   *           "pushNotifications": {"type": "boolean"},
+   *           "theme": {"type": "string", "enum": ["light", "dark", "auto"]},
+   *           "language": {"type": "string"},
+   *           "timezone": {"type": "string"},
+   *           "preferredDays": {"type": "array", "items": {"type": "string"}},
+   *           "preferredTime": {"type": "string", "enum": ["morning", "afternoon", "evening", "flexible"]},
+   *           "maxHoursPerWeek": {"type": "number", "minimum": 0, "maximum": 168}
+   *         }
+   *       }
+   *     }
+   *   }
+   * }
+   * @response 200 {"preferences": {}, "message": "Preferences updated successfully"}
+   * @response 401 {"error": {"message": "Not authenticated"}}
    */
   public async update({ request, response, auth }: HttpContextContract) {
     try {
@@ -145,7 +197,12 @@ export default class UserPreferencesController {
 
   /**
    * Reset preferences to defaults
-   * POST /preferences/reset
+   *
+   * @route POST /preferences/reset
+   * @tags User Preferences
+   * @security bearerAuth: []
+   * @response 200 {"preferences": {}, "message": "Preferences reset to defaults"}
+   * @response 401 {"error": {"message": "Not authenticated"}}
    */
   public async reset({ request, response, auth }: HttpContextContract) {
     try {
@@ -182,7 +239,22 @@ export default class UserPreferencesController {
 
   /**
    * Update a specific preference category
-   * PATCH /preferences/:category
+   *
+   * @route PATCH /preferences/:category
+   * @tags User Preferences
+   * @security bearerAuth: []
+   * @param category {string} - Category: notifications, communication, privacy, availability, general
+   * @requestBody {
+   *   "required": true,
+   *   "content": {
+   *     "application/json": {
+   *       "schema": {"type": "object", "properties": {"emailNotifications": {"type": "boolean"}}}
+   *     }
+   *   }
+   * }
+   * @response 200 {"preferences": {}, "message": "{category} preferences updated successfully"}
+   * @response 400 {"error": {"message": "Invalid preference category"}}
+   * @response 401 {"error": {"message": "Not authenticated"}}
    */
   public async updateCategory({ request, response, auth, params }: HttpContextContract) {
     try {
