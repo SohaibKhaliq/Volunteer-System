@@ -1,4 +1,3 @@
-
 import BaseSchema from '@ioc:Adonis/Lucid/Schema'
 
 export default class extends BaseSchema {
@@ -10,14 +9,22 @@ export default class extends BaseSchema {
     })
 
     this.schema.alterTable('compliance_requirements', (table) => {
-      table.integer('opportunity_id').unsigned().nullable().references('id').inTable('opportunities').onDelete('CASCADE')
+      table
+        .integer('opportunity_id')
+        .unsigned()
+        .nullable()
+        .references('id')
+        .inTable('opportunities')
+        .onDelete('CASCADE')
     })
   }
 
   public async down() {
-    this.schema.alterTable('compliance_requirements', (table) => {
-      table.dropColumn('opportunity_id')
-    })
+    if (await this.schema.hasTable('compliance_requirements')) {
+      this.schema.alterTable('compliance_requirements', (table) => {
+        table.dropColumn('opportunity_id')
+      })
+    }
     this.schema.alterTable('opportunities', (table) => {
       table.dropColumn('recurrence')
     })
