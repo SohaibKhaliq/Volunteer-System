@@ -252,24 +252,38 @@ const routes: RouteObject[] = [
       { path: 'organizations/:id', element: <OrganizationDetail /> },
       { path: 'volunteer/opportunities', element: <VolunteerOpportunities /> },
       { path: 'volunteer/opportunities/:id', element: <VolunteerOpportunityDetail /> },
-      { path: 'volunteer/attendance', element: <VolunteerAttendance /> },
-      { path: 'opportunities/:id', element: <Detail /> },
       { path: 'events/:id', element: <Detail /> },
       // Reactivated Orphans (Public/Shared)
       { path: 'centrelink-reporting', element: <CentrelinkReporting /> },
       { path: 'organizations/:slug', element: <OrganizationPublicProfile /> },
       { path: 'settings/calendar', element: <SettingsCalendar /> },
-      // Reactivated Orphans (Volunteer Context - explicitly restoring /volunteer prefix)
-      { path: 'volunteer/dashboard', element: <VolunteerDashboard /> },
-      { path: 'volunteer/history', element: <VolunteerHistory /> },
-      { path: 'volunteer/achievements', element: <VolunteerAchievements /> },
-      { path: 'volunteer/applications', element: <VolunteerApplications /> },
-      { path: 'volunteer/settings', element: <VolunteerSettings /> },
-      { path: 'volunteer/organizations', element: <VolunteerOrganizations /> },
-      { path: 'volunteer/hours', element: <VolunteerHours /> },
-      { path: 'volunteer/compliance', element: <VolunteerCompliance /> },
-      { path: 'volunteer/opportunities/:id/view', element: <VolunteerOpportunityDetailView /> }
     ]
+  },
+  // Volunteer Protected Routes
+  {
+    path: 'volunteer',
+    element: (
+      <RouteGuard allowedRoles={['volunteer']} redirectTo="/login">
+        <ScrollWrapper>
+          <AppProvider>
+            <Layout />
+          </AppProvider>
+        </ScrollWrapper>
+      </RouteGuard>
+    ),
+    errorElement: <ErrorBoundary />,
+    children: [
+      { path: 'dashboard', element: <VolunteerDashboard /> },
+      { path: 'history', element: <VolunteerHistory /> },
+      { path: 'achievements', element: <VolunteerAchievements /> },
+      { path: 'applications', element: <VolunteerApplications /> },
+      { path: 'settings', element: <VolunteerSettings /> },
+      { path: 'organizations', element: <VolunteerOrganizations /> },
+      { path: 'hours', element: <VolunteerHours /> },
+      { path: 'compliance', element: <VolunteerCompliance /> },
+      { path: 'attendance', element: <VolunteerAttendance /> },
+      // Opportunity View alias
+      { path: 'opportunities/:id/view', element: <VolunteerOpportunityDetailView /> }
   },
   // Volunteer route group removed; volunteer pages consolidated into `/profile`
   {
