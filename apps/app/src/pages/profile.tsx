@@ -38,7 +38,8 @@ import {
   Menu,
   X,
   Award,
-  Users
+  Users,
+  MessageSquare
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -398,6 +399,13 @@ export default function Profile() {
             {activeTab === 'teams' && (
               <div className="animate-in fade-in duration-300">
                 <VolunteerTeams />
+              </div>
+            )}
+
+            {/* --- MESSAGES --- */}
+            {activeTab === 'messages' && (
+              <div className="animate-in fade-in duration-300">
+                <ChatPage height="h-[calc(100vh-200px)]" />
               </div>
             )}
 
