@@ -3,6 +3,7 @@ import { io, Socket } from 'socket.io-client';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 import { useQueryClient } from '@tanstack/react-query';
+import { useStore } from '@/lib/store';
 import { NotificationFormatter } from '@/lib/notification-formatter';
 
 
@@ -27,8 +28,8 @@ export const useSocket = (options: UseSocketOptions = {}) => {
   useEffect(() => {
     if (!enabled) return;
 
-    // Get auth token from localStorage
-    const token = localStorage.getItem('token');
+    // Get auth token from store
+    const { token } = useStore.getState();
     if (!token) {
       console.log('[Socket.IO] No auth token found, skipping connection');
       return;
