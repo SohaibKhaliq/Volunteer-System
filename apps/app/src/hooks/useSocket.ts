@@ -36,14 +36,16 @@ export const useSocket = (options: UseSocketOptions = {}) => {
     }
 
     // Determine Socket.IO server URL
-    const socketUrl = import.meta.env.VITE_SOCKET_URL || import.meta.env.VITE_API_URL || 'http://localhost:3333';
+    const socketUrl = import.meta.env.VITE_SOCKET_URL || 
+                      import.meta.env.VITE_API_URL?.replace(/:\d+$/, ':4001') || 
+                      'http://localhost:4001';
 
     console.log('[Socket.IO] Connecting to:', socketUrl);
 
     // Create Socket.IO connection with JWT auth
     const socket = io(socketUrl, {
       auth: { token },
-      transports: ['websocket', 'polling'],
+      transports: ['websocket'], // Prefer websocket for performance and simplicity
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionAttempts: 5
@@ -327,9 +329,29 @@ export const useSocket = (options: UseSocketOptions = {}) => {
     };
   }, [enabled, onConnect, onDisconnect, onError, queryClient]);
 
+  const joinChat = (roomId: number) => {
+    socketRef.current?.emit('join-chat', roomId);
+  };
+
+  const leaveChat = (roomId: number) => {
+    socketRef.current?.emit('leave-chat', roomId);
+  };
+
+  const sendTyping = (roomId: number) => {
+    socketRef.current?.emit('typing', roomId);
+  };
+
+  const sendStopTyping = (roomId: number) => {
+    socketRef.current?.emit('stop-typing', roomId);
+  };
+
   return {
     socket: socketRef.current,
     isConnected,
+    joinChat,
+    leaveChat,
+    sendTyping,
+    sendStopTyping
   };
 };
 
