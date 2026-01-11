@@ -81,7 +81,6 @@ import Contact from '@/pages/contact';
 import Privacy from '@/pages/privacy';
 import Terms from '@/pages/terms';
 import Cookies from '@/pages/cookies';
-import OrganizationDetail from '@/pages/organization-detail';
 // Volunteer-specific layout/pages removed: profile now rendered inside main Layout
 import FeedbackDashboard from '@/pages/feedback';
 import TakeSurvey from '@/pages/feedback/[id]/take';
@@ -99,7 +98,6 @@ import OrganizationApplications from '@/pages/organization/applications';
 import OrganizationAttendances from '@/pages/organization/attendances';
 import OrganizationComplianceRequirements from '@/pages/organization/compliance-requirements';
 import OrganizationTeams from '@/pages/organization/teams'; // Corrected from 'teams.tsx'
-import OrganizationPublicProfile from '@/pages/organizations/[slug]';
 import SettingsCalendar from '@/pages/settings/calendar';
 import VolunteerAchievements from '@/pages/volunteer/achievements';
 import VolunteerApplications from '@/pages/volunteer/applications';
@@ -110,6 +108,7 @@ import VolunteerOpportunityDetailView from '@/pages/volunteer/opportunity-detail
 import VolunteerOrganizations from '@/pages/volunteer/organizations';
 import VolunteerSettings from '@/pages/volunteer/settings';
 import VolunteerCompliance from '@/pages/volunteer/compliance';
+import OrganizationRouter from '@/components/OrganizationRouter';
 
 // Simple wrappers to ensure pages are vertically scrollable
 const ScrollWrapper = ({ children }: any) => (
@@ -249,7 +248,7 @@ const routes: RouteObject[] = [
       { path: 'feedback', element: <FeedbackDashboard /> },
       { path: 'feedback/:id/take', element: <TakeSurvey /> },
       { path: 'contact', element: <Contact /> },
-      { path: 'organizations/:id', element: <OrganizationDetail /> },
+      { path: 'contact', element: <Contact /> },
       { path: 'volunteer/opportunities', element: <VolunteerOpportunities /> },
       { path: 'volunteer/opportunities/:id', element: <VolunteerOpportunityDetail /> },
       { path: 'volunteer/attendance', element: <VolunteerAttendance /> },
@@ -257,7 +256,7 @@ const routes: RouteObject[] = [
       { path: 'events/:id', element: <Detail /> },
       // Reactivated Orphans (Public/Shared)
       { path: 'centrelink-reporting', element: <CentrelinkReporting /> },
-      { path: 'organizations/:slug', element: <OrganizationPublicProfile /> },
+      { path: 'organizations/:id', element: <OrganizationRouter /> },
       { path: 'settings/calendar', element: <SettingsCalendar /> },
     ]
   },
