@@ -39,7 +39,8 @@ import {
   X,
   Award,
   Users,
-  MessageSquare
+  MessageSquare,
+  CalendarClock
 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -47,6 +48,7 @@ import { cn } from '@/lib/utils';
 // Page Imports
 import VolunteerCertificates from '@/pages/volunteer/certificates';
 import VolunteerTeams from '@/pages/volunteer/teams';
+import VolunteerShifts from '@/pages/volunteer/shifts';
 import ChatPage from '@/pages/chat';
 import VolunteerApplicationsPage from '@/pages/volunteer/applications';
 import VolunteerOrganizationsPage from '@/pages/volunteer/organizations';
@@ -245,6 +247,7 @@ export default function Profile() {
       { id: 'applications', label: t('Applications'), icon: ListChecks },
       { id: 'organizations', label: t('My Organizations'), icon: Building2 },
       { id: 'teams', label: t('Teams'), icon: Users },
+      { id: 'shifts', label: t('Shifts'), icon: CalendarClock },
       { id: 'attendance', label: t('Attendance'), icon: CheckCircle2 },
       { id: 'resources', label: t('Resources'), icon: Box },
       { id: 'compliance', label: t('Compliance'), icon: Shield },
@@ -417,6 +420,13 @@ export default function Profile() {
                 <ChatPage
                   height="h-[calc(100vh-200px)]"
                 />
+              </div>
+            )}
+
+            {/* --- SHIFTS --- */}
+            {activeTab === 'shifts' && (
+              <div className="animate-in fade-in duration-300">
+                <VolunteerShifts />
               </div>
             )}
 
