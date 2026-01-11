@@ -1248,4 +1248,67 @@ export default class VolunteerController {
       return response.internalServerError({ error: { message: 'Failed to load organizations' } })
     }
   }
+
+  /**
+   * Get teams the volunteer belongs to
+   */
+  public async myTeams({ auth, response }: HttpContextContract) {
+    try {
+      await auth.use('api').authenticate()
+      const user = auth.user!
+
+      const assignments = await Database.from('organization_team_members')
+        .join('teams', 'teams.id', 'organization_team_members.team_id')
+        .join('organizations', 'organizations.id', 'teams.organization_id')
+        .where('organization_team_members.user_id', user.id)
+        .andWhere('organization_team_members.is_active', true)
+        .select(
+          'teams.id',
+          'teams.name',
+          'teams.description',
+          'teams.lead_user_id',
+          'organizations.name as organization_name',
+          'organizations.slug as organization_slug',
+          'organizations.logo_url as organization_logo',
+          'organization_team_members.role',
+          'organization_team_members.joined_at'
+        )
+
+      // Fetch team members count for each team
+      const teamDetails = await Promise.all(
+        assignments.map(async (team) => {
+          const membersCountResult = await Database.from('organization_team_members')
+            .where('team_id', team.id)
+            .andWhere('is_active', true)
+            .count('* as total')
+          const membersCount = Number(membersCountResult[0].total)
+
+          let lead = null
+          if (team.lead_user_id) {
+            const leadUser = await User.find(team.lead_user_id)
+            if (leadUser) {
+              lead = {
+                id: leadUser.id,
+                firstName: leadUser.firstName,
+                lastName: leadUser.lastName,
+                email: leadUser.email,
+                avatarUrl: leadUser.profileImageUrl
+              }
+            }
+          }
+
+          return {
+            ...team,
+            membersCount,
+            lead
+          }
+        })
+      )
+
+      return response.ok(teamDetails)
+    } catch (error) {
+      Logger.error('My teams error: %o', error)
+      return response.internalServerError({ error: { message: 'Failed to load teams' } })
+    }
+  }
 }
