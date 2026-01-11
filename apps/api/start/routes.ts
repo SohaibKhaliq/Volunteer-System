@@ -241,6 +241,15 @@ Route.group(() => {
 // End Authentication & User Lifecycle Routes
 // =====================================================================
 
+// Hierarchical Resource Workflow
+Route.group(() => {
+  Route.post('/resources/provision', 'ResourceAllocationController.provision')
+  Route.post('/resources/distribute', 'ResourceAllocationController.distribute')
+  Route.post('/resources/return-request', 'ResourceAllocationController.requestReturn')
+  Route.post('/resources/reconcile', 'ResourceAllocationController.reconcile')
+  Route.get('/resources/:id/history', 'ResourceAllocationController.history')
+}).middleware(['auth'])
+
 // Resource management extra endpoints (must be before resource definition)
 Route.get('/resources/dashboard', 'ResourcesController.dashboard').middleware(['auth'])
 Route.get('/resources/low-stock', 'ResourcesController.lowStock').middleware(['auth'])
@@ -295,6 +304,15 @@ Route.group(() => {
 })
   .prefix('/exports')
   .middleware(['auth'])
+
+
+// Chat Routes
+Route.group(() => {
+  Route.get('/', 'ChatController.index')
+  Route.get('/:id', 'ChatController.show')
+  Route.post('/', 'ChatController.store')
+  Route.post('/start', 'ChatController.start')
+}).prefix('/chat').middleware(['auth'])
 
 // Backup Routes
 Route.group(() => {
@@ -618,6 +636,28 @@ Route.group(() => {
 })
   .prefix('/volunteer')
   .middleware(['auth'])
+
+// ==========================================
+// CALENDAR / ICAL ROUTES
+
+// Admin: Certificate Templates
+Route.group(() => {
+  Route.resource('certificate-templates', 'CertificateTemplatesController').apiOnly()
+}).prefix('/admin').middleware(['auth', 'admin'])
+
+// Public Verification
+Route.get('/verify/:uuid', 'CertificatesController.verify')
+
+// Volunteer: Training & Certificates
+Route.group(() => {
+    Route.get('/training', 'TrainingProgressesController.index')
+    Route.get('/training/:moduleId', 'TrainingProgressesController.show')
+    Route.post('/training/:moduleId/start', 'TrainingProgressesController.start')
+    Route.post('/training/:moduleId/complete', 'TrainingProgressesController.complete')
+
+    Route.get('/certificates', 'CertificatesController.myCertificates')
+    Route.get('/certificates/:id/download', 'CertificatesController.download')
+}).prefix('/volunteer').middleware(['auth'])
 
 // ==========================================
 // CALENDAR / ICAL ROUTES
