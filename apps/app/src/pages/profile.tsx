@@ -46,6 +46,7 @@ import { cn } from '@/lib/utils';
 // Page Imports
 import VolunteerCertificates from '@/pages/volunteer/certificates';
 import VolunteerTeams from '@/pages/volunteer/teams';
+import ChatPage from '@/pages/chat';
 import VolunteerApplicationsPage from '@/pages/volunteer/applications';
 import VolunteerOrganizationsPage from '@/pages/volunteer/organizations';
 import VolunteerCompliance from '@/pages/volunteer/compliance';
@@ -230,6 +231,7 @@ export default function Profile() {
   const NavigationMenu = ({ mobile = false }) => {
     const items = [
       { id: 'certificates', label: t('Certificates'), icon: Award },
+      { id: 'messages', label: t('Messages'), icon: MessageSquare },
       { id: 'applications', label: t('Applications'), icon: ListChecks },
       { id: 'organizations', label: t('My Organizations'), icon: Building2 },
       { id: 'teams', label: t('Teams'), icon: Users },
