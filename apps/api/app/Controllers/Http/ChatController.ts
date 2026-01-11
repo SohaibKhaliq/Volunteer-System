@@ -267,12 +267,21 @@ export default class ChatController {
       const createPayload: any = {
         organizationId: effectiveOrgId,
         volunteerId: vId,
-        resourceId: rId,
-        type: tId ? 'team' : rId ? 'resource_related' : 'direct'
+        resourceId: rId
       }
 
       if (hasTeamColumn) {
         createPayload.teamId = tId
+      }
+
+      // Only set `type` if DB has that column (migration may be missing)
+      const hasTypeColumnResult = await Database.rawQuery(
+        "SHOW COLUMNS FROM chat_rooms LIKE 'type'"
+      )
+      const hasTypeColumn =
+        Array.isArray(hasTypeColumnResult[0]) && hasTypeColumnResult[0].length > 0
+      if (hasTypeColumn) {
+        createPayload.type = tId ? 'team' : rId ? 'resource_related' : 'direct'
       }
 
       room = await ChatRoom.create(createPayload)
