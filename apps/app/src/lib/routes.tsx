@@ -113,6 +113,7 @@ import VolunteerCompliance from '@/pages/volunteer/compliance';
 import OrganizationRouter from '@/components/OrganizationRouter';
 import VerifyCertificate from '@/pages/verify';
 import OrganizationCertificates from '@/pages/organization/certificates';
+import OrganizationTraining from '@/pages/organization/training';
 import VolunteerCertificates from '@/pages/volunteer/certificates';
 
 // Simple wrappers to ensure pages are vertically scrollable
@@ -213,6 +214,7 @@ const routes: RouteObject[] = [
       { path: 'reports', element: <OrganizationReports /> },
       { path: 'communications', element: <OrganizationCommunications /> },
       { path: 'certificates', element: <OrganizationCertificates /> },
+      { path: 'training', element: <OrganizationTraining /> },
       { path: 'settings', element: <OrganizationSettings /> },
       // Reactivated Orphans (Organization Context)
       { path: 'applications', element: <OrganizationApplications /> },
