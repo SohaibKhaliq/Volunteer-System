@@ -65,6 +65,7 @@ type AppProviderState = {
   user?: any;
   settings?: any[];
   selectedOrganizationName?: string | null;
+  selectedOrganization?: { id: number; name: string } | null;
   openOrganizationSelector?: () => void;
 };
 
@@ -245,6 +246,7 @@ export default function AppProvider({ children }: AppProviderProps) {
 
   // expose selected org name and a method to open selector
   value.selectedOrganizationName = selectedOrganization?.name ?? null;
+  value.selectedOrganization = selectedOrganization;
   value.openOrganizationSelector = () => setShowOrgSelector(true);
 
   useEffect(() => {
