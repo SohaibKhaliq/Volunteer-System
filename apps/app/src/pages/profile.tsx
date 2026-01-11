@@ -28,25 +28,24 @@ import {
   Loader2,
   Settings,
   Bell,
-  Calendar,
   Shield,
   LogOut,
   Camera,
   CheckCircle2,
-  CalendarClock,
-  LayoutDashboard,
   ListChecks,
   Building2,
-  History,
   Box,
   Menu,
-  X
+  X,
+  Award,
+  Users
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 // Page Imports
-import VolunteerDashboard from '@/pages/volunteer/dashboard';
+import VolunteerCertificates from '@/pages/volunteer/certificates';
+import VolunteerTeams from '@/pages/volunteer/teams';
 import VolunteerApplicationsPage from '@/pages/volunteer/applications';
 import VolunteerOrganizationsPage from '@/pages/volunteer/organizations';
 import VolunteerCompliance from '@/pages/volunteer/compliance';
@@ -60,7 +59,7 @@ export default function Profile() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // State
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('applications');
   const [avatarVersion, setAvatarVersion] = useState(Date.now());
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -230,9 +229,10 @@ export default function Profile() {
   // Render Helpers
   const NavigationMenu = ({ mobile = false }) => {
     const items = [
-      { id: 'overview', label: t('Overview'), icon: LayoutDashboard },
+      { id: 'certificates', label: t('Certificates'), icon: Award },
       { id: 'applications', label: t('Applications'), icon: ListChecks },
       { id: 'organizations', label: t('My Organizations'), icon: Building2 },
+      { id: 'teams', label: t('Teams'), icon: Users },
       { id: 'attendance', label: t('Attendance'), icon: CheckCircle2 },
       { id: 'resources', label: t('Resources'), icon: Box },
       { id: 'compliance', label: t('Compliance'), icon: Shield },
@@ -371,10 +371,10 @@ export default function Profile() {
           {/* Main Content Area */}
           <div className="lg:col-span-9 xl:col-span-9 space-y-6">
 
-            {/* --- OVERVIEW --- */}
-            {activeTab === 'overview' && (
-              <div className="space-y-6 animate-in fade-in duration-300">
-                <VolunteerDashboard />
+            {/* --- CERTIFICATES --- */}
+            {activeTab === 'certificates' && (
+              <div className="animate-in fade-in duration-300">
+                <VolunteerCertificates />
               </div>
             )}
 
@@ -389,6 +389,13 @@ export default function Profile() {
             {activeTab === 'organizations' && (
               <div className="animate-in fade-in duration-300">
                 <VolunteerOrganizationsPage />
+              </div>
+            )}
+
+            {/* --- TEAMS --- */}
+            {activeTab === 'teams' && (
+              <div className="animate-in fade-in duration-300">
+                <VolunteerTeams />
               </div>
             )}
 
