@@ -100,7 +100,10 @@ export default class ResourcesController {
       .where('id', params.id)
       .whereNull('deleted_at')
       .firstOrFail()
-    await resource.load('assignments')
+    await resource.load('assignments', (query) => {
+      query.preload('volunteer')
+      query.orderBy('created_at', 'desc')
+    })
     return resource
   }
 
