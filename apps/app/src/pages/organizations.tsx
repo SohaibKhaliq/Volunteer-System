@@ -180,11 +180,15 @@ const Organizations = () => {
                   </div>
                 </CardContent>
                 <CardFooter className="border-t border-border/50 bg-muted/10 p-6 flex gap-3">
+                  <Link to={`/organizations/${org.slug || org.id}`} className="flex-1">
+                    <Button variant="ghost" className="w-full h-12 justify-between group rounded-xl bg-white hover:bg-primary hover:text-white border border-border/50 shadow-sm transition-all font-bold px-4">
+                      {t('View Profile')}
+                      <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                     </Button>
                   </Link>
-                  <Button 
-                    variant="outline" 
-                    size="icon" 
+                  <Button
+                    variant="outline"
+                    size="icon"
                     className="h-12 w-12 rounded-xl flex-shrink-0 border-primary/20 hover:bg-primary/5 text-primary"
                     onClick={() => navigate(`/profile?tab=messages&orgId=${org.id}`)}
                   >
@@ -240,9 +244,9 @@ const Organizations = () => {
                     })()}
                   </div>
                 </CardFooter>
-      </Card>
+              </Card>
             ))}
-    </div>
+        </div>
       </div >
     </div >
   );
