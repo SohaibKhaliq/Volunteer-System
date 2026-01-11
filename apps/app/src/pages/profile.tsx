@@ -44,21 +44,29 @@ import {
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
-// Page Imports
-import VolunteerCertificates from '@/pages/volunteer/certificates';
-import VolunteerTeams from '@/pages/volunteer/teams';
-import ChatPage from '@/pages/chat';
-import VolunteerApplicationsPage from '@/pages/volunteer/applications';
-import VolunteerOrganizationsPage from '@/pages/volunteer/organizations';
-import VolunteerCompliance from '@/pages/volunteer/compliance';
 import VolunteerAttendance from '@/pages/volunteer/attendance';
+import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useQueryClient } from '@tanstack/react-query';
+import { useStore } from '@/lib/store';
+import { useRef } from 'react';
 
 export default function Profile() {
   const { t } = useTranslation();
   const { logout } = useStore();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const tabParam = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(tabParam || 'overview');
+
+  useEffect(() => {
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
 
   // State
   const [activeTab, setActiveTab] = useState('applications');
