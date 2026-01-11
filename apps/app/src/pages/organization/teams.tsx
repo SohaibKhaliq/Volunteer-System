@@ -243,6 +243,9 @@ export default function OrganizationTeams() {
                     <TableCell>{new Date(team.createdAt).toLocaleDateString()}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
+                        <Button variant="outline" size="sm" asChild>
+                          <a href={`/organization/teams/${team.id}`}>Manage</a>
+                        </Button>
                         <Button variant="ghost" size="icon" onClick={() => handleOpenEdit(team)}>
                           <Pencil className="h-4 w-4" />
                         </Button>
