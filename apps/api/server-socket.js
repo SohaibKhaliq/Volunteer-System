@@ -68,6 +68,12 @@ async function main() {
 
         // emit to user room
         if (data.userId) io.to(`user:${data.userId}`).emit('notification', data)
+        // emit to user room
+        if (data.userId) io.to(`user:${data.userId}`).emit('notification', data)
+        // emit to chat room if present
+        if (data.roomId) {
+            io.to(`chat:${data.roomId}`).emit('message', data.message || data)
+        }
         // emit to admins
         io.to('admin').emit('notification', data)
 
@@ -110,6 +116,19 @@ async function main() {
     // join user room
     socket.join(`user:${uid}`)
     if (socket.data.isAdmin) socket.join('admin')
+
+    socket.on('join-chat', (roomId) => {
+      console.log(`User ${uid} joining chat ${roomId}`)
+      socket.join(`chat:${roomId}`)
+    })
+
+    socket.on('typing', (roomId) => {
+      socket.to(`chat:${roomId}`).emit('typing', { roomId, userId: uid })
+    })
+
+    socket.on('stop-typing', (roomId) => {
+      socket.to(`chat:${roomId}`).emit('stop-typing', { roomId, userId: uid })
+    })
 
     socket.on('disconnect', () => {
       // nothing to do here
@@ -162,6 +181,10 @@ async function main() {
         }
 
         if (data.userId) io.to(`user:${data.userId}`).emit('notification', data)
+        if (data.userId) io.to(`user:${data.userId}`).emit('notification', data)
+        if (data.roomId) {
+            io.to(`chat:${data.roomId}`).emit('message', data.message || data)
+        }
         io.to('admin').emit('notification', data)
 
         res.writeHead(200, { 'Content-Type': 'application/json' })
