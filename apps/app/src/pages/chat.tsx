@@ -41,7 +41,7 @@ export default function ChatPage({ height = "h-[calc(100vh-164px)]" }: { height?
 
                 if (orgId) {
                     targetRoom = chats.find(c =>
-                        c.organizationId === Number(orgId) && c.volunteerId === user.id
+                        c.organizationId === Number(orgId) && c.volunteerId === user.user.id
                     );
                 } else if (teamId) {
                     targetRoom = chats.find(c =>
@@ -62,7 +62,7 @@ export default function ChatPage({ height = "h-[calc(100vh-164px)]" }: { height?
                         const room = await api.startChat({
                             organizationId: orgId ? Number(orgId) : undefined,
                             teamId: teamId ? Number(teamId) : undefined,
-                            volunteerId: user.id
+                            volunteerId: user.user.id
                         });
                         if (room && (room as any).data) {
                             const newRoom = (room as any).data;
