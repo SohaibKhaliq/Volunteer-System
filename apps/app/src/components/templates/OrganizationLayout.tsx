@@ -42,7 +42,6 @@ export default function OrganizationLayout() {
     { path: '/organization/applications', icon: List, label: 'Applications' },
     { path: '/organization/compliance', icon: ShieldCheck, label: 'Compliance' },
     { path: '/organization/compliance-requirements', icon: ShieldCheck, label: 'Compliance Reqs' },
-    { path: '/organization/training', icon: Award, label: 'Training' }, // Added Training nav item
     { path: '/organization/reports', icon: FileBarChart, label: 'Reports' },
     { path: '/organization/resources', icon: Package, label: 'Resources' },
     { path: '/organization/training-modules', icon: Briefcase, label: 'Training Modules' },
