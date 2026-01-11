@@ -18,6 +18,7 @@ import TransportOfferForm from '@/pages/transport-offer-form';
 import TransportRequestForm from '@/pages/transport-request-form';
 import Profile from '@/pages/profile';
 import NotificationsPage from '@/pages/notifications';
+import ChatPage from '@/pages/chat';
 import { Navigate, RouteObject } from 'react-router-dom';
 import AdminLayout from '@/components/templates/AdminLayout';
 import AppProvider from '@/providers/app-provider';
@@ -70,6 +71,7 @@ import OrganizationShifts from '@/pages/organization/shifts';
 import OrganizationAchievements from '@/pages/organization/achievements';
 import OrganizationVolunteers from '@/pages/organization/volunteers';
 import OrganizationResources from '@/pages/organization/resources';
+import OrganizationResourceDetail from '@/pages/organization/resource-detail';
 import OrganizationHoursApproval from '@/pages/organization/hours-approval';
 import OrganizationCompliance from '@/pages/organization/compliance';
 import OrganizationReports from '@/pages/organization/reports';
@@ -97,11 +99,11 @@ import OrganizationHours from '@/pages/organization/[id]/hours'; // Admin/Org co
 import OrganizationApplications from '@/pages/organization/applications';
 import OrganizationAttendances from '@/pages/organization/attendances';
 import OrganizationComplianceRequirements from '@/pages/organization/compliance-requirements';
-import OrganizationTeams from '@/pages/organization/teams'; // Corrected from 'teams.tsx'
+import OrganizationTeamDetail from '@/pages/organization/team-detail';
+import OrganizationTeams from '@/pages/organization/teams';
 import SettingsCalendar from '@/pages/settings/calendar';
 import VolunteerAchievements from '@/pages/volunteer/achievements';
 import VolunteerApplications from '@/pages/volunteer/applications';
-import VolunteerDashboard from '@/pages/volunteer/dashboard';
 import VolunteerHistory from '@/pages/volunteer/history';
 import VolunteerHours from '@/pages/volunteer/hours/index';
 import VolunteerOpportunityDetailView from '@/pages/volunteer/opportunity-detail'; // Alias to avoid conflict
@@ -109,6 +111,9 @@ import VolunteerOrganizations from '@/pages/volunteer/organizations';
 import VolunteerSettings from '@/pages/volunteer/settings';
 import VolunteerCompliance from '@/pages/volunteer/compliance';
 import OrganizationRouter from '@/components/OrganizationRouter';
+import VerifyCertificate from '@/pages/verify';
+import OrganizationCertificates from '@/pages/organization/certificates';
+import VolunteerCertificates from '@/pages/volunteer/certificates';
 
 // Simple wrappers to ensure pages are vertically scrollable
 const ScrollWrapper = ({ children }: any) => (
@@ -200,17 +205,20 @@ const routes: RouteObject[] = [
       { path: 'shifts', element: <OrganizationShifts /> },
       { path: 'opportunities/*', element: <Navigate to="/organization/events" replace /> },
       { path: 'resources', element: <OrganizationResources /> },
+      { path: 'resources/:id', element: <OrganizationResourceDetail /> },
       { path: 'achievements', element: <OrganizationAchievements /> },
       { path: 'volunteers', element: <OrganizationVolunteers /> },
       { path: 'hours-approval', element: <OrganizationHoursApproval /> },
       { path: 'compliance', element: <OrganizationCompliance /> },
       { path: 'reports', element: <OrganizationReports /> },
       { path: 'communications', element: <OrganizationCommunications /> },
+      { path: 'certificates', element: <OrganizationCertificates /> },
       { path: 'settings', element: <OrganizationSettings /> },
       // Reactivated Orphans (Organization Context)
       { path: 'applications', element: <OrganizationApplications /> },
       { path: 'attendances', element: <OrganizationAttendances /> },
       { path: 'teams', element: <OrganizationTeams /> },
+      { path: 'teams/:id', element: <OrganizationTeamDetail /> },
       { path: 'compliance-requirements', element: <OrganizationComplianceRequirements /> },
       { path: 'hours/:id', element: <OrganizationHours /> } // Verify :id necessity
     ]
@@ -244,6 +252,14 @@ const routes: RouteObject[] = [
       { path: 'transport-offer', element: <TransportOfferForm /> },
       { path: 'profile', element: <Profile /> },
       { path: 'notifications', element: <NotificationsPage /> },
+      {
+        path: 'chats',
+        element: (
+          <RouteGuard allowedRoles={['admin', 'organization_admin', 'organization_coordinator', 'volunteer']} redirectTo="/login">
+            <ChatPage />
+          </RouteGuard>
+        )
+      },
       { path: 'about', element: <About /> },
       { path: 'feedback', element: <FeedbackDashboard /> },
       { path: 'feedback/:id/take', element: <TakeSurvey /> },
@@ -254,6 +270,7 @@ const routes: RouteObject[] = [
       { path: 'volunteer/attendance', element: <VolunteerAttendance /> },
       { path: 'opportunities/:id', element: <Detail /> },
       { path: 'events/:id', element: <Detail /> },
+      { path: 'verify/:id', element: <VerifyCertificate /> },
       // Reactivated Orphans (Public/Shared)
       { path: 'centrelink-reporting', element: <CentrelinkReporting /> },
       { path: 'organizations/:id', element: <OrganizationRouter /> },
@@ -274,7 +291,7 @@ const routes: RouteObject[] = [
     ),
     errorElement: <ErrorBoundary />,
     children: [
-      { path: 'dashboard', element: <VolunteerDashboard /> },
+      { index: true, element: <Navigate to="/profile" replace /> },
       { path: 'history', element: <VolunteerHistory /> },
       { path: 'achievements', element: <VolunteerAchievements /> },
       { path: 'applications', element: <VolunteerApplications /> },
@@ -282,6 +299,7 @@ const routes: RouteObject[] = [
       { path: 'organizations', element: <VolunteerOrganizations /> },
       { path: 'hours', element: <VolunteerHours /> },
       { path: 'compliance', element: <VolunteerCompliance /> },
+      { path: 'certificates', element: <VolunteerCertificates /> },
       { path: 'attendance', element: <VolunteerAttendance /> },
       // Opportunity View alias
       { path: 'opportunities/:id/view', element: <VolunteerOpportunityDetailView /> }
