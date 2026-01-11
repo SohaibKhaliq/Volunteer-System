@@ -17,7 +17,8 @@ const authRequestInterceptor = (config: AxiosRequestConfig) => {
   // Auto-inject selected organization into organization-scoped endpoints when available.
   try {
     const url = String(config.url || '');
-    if (url.startsWith('/organization') || url.includes('/organization/')) {
+    // Auto-inject organization context, but EXCLUDE public routes to prevent 403s
+    if ((url.startsWith('/organization') || url.includes('/organization/')) && !url.includes('/public/')) {
       const raw = localStorage.getItem('selectedOrganization') || localStorage.getItem('selectedOrganizationName');
       if (raw) {
         try {
