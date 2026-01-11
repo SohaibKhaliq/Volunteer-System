@@ -542,8 +542,13 @@ const api = {
   getShift: async (id: number) => axios.get(`/shifts/${id}`),
   getShiftSuggestions: async (id: number, limit = 10) => axios.get(`/shifts/${id}/suggestions`, { params: { limit } }),
   createShift: async (data: any) => axios.post('/shifts', data),
+  createRecurringShift: async (data: any) => axios.post('/shifts/recurring', data),
   updateShift: async (id: number, data: any) => axios.put(`/shifts/${id}`, data),
   deleteShift: async (id: number) => axios.delete(`/shifts/${id}`),
+  checkShiftConflicts: async (shiftId: number, userId: number) => 
+    axios.post(`/shifts/${shiftId}/check-conflicts`, { userId }),
+  assignVolunteerToShift: async (shiftId: number, userId: number, ignoreConflicts = false) =>
+    axios.post(`/shifts/${shiftId}/assign`, { userId, ignoreConflicts }),
   listShiftAssignments: async (params?: any) => axios.get('/shift-assignments', { params }),
   assignToShift: async (data: any) => axios.post('/shift-assignments', data),
   bulkAssignToShift: async (data: any) => axios.post('/shift-assignments/bulk', data),
