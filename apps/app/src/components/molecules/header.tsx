@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+import { MessageSquare } from 'lucide-react';
 import { useApp } from '@/providers/app-provider';
 import useSystemRoles from '@/hooks/useSystemRoles';
 import { useTheme } from '@/providers/theme-provider';
@@ -260,6 +261,11 @@ const Header = () => {
                 </Link>
               )}
 
+              <Link to={isOrganization ? '/organization/communications' : '/chats'}>
+                <Button variant="ghost" size="icon" className="relative">
+                  <MessageSquare className="h-5 w-5 text-gray-600" />
+                </Button>
+              </Link>
               <NotificationBell />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -276,6 +282,17 @@ const Header = () => {
                   </DropdownMenuItem>
                   {isVolunteer && (
                     <>
+                      <div className="h-px bg-border my-1" />
+                      <DropdownMenuItem onClick={() => navigate('/volunteer/dashboard')} className="cursor-pointer">
+                        Dashboard
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate('/volunteer/training')} className="cursor-pointer">
+                        My Training
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate('/volunteer/certificates')} className="cursor-pointer">
+                        My Certificates
+                      </DropdownMenuItem>
+                      <div className="h-px bg-border my-1" />
                       <DropdownMenuItem onClick={() => navigate('/help-request')} className="cursor-pointer">
                         Request Help
                       </DropdownMenuItem>
