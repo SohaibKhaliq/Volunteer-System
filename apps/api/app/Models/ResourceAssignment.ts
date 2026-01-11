@@ -1,8 +1,15 @@
 import { BaseModel, column, BelongsTo, belongsTo } from '@ioc:Adonis/Lucid/Orm'
 import { DateTime } from 'luxon'
 import Resource from './Resource'
+import User from './User'
+import Team from './Team'
 
 export default class ResourceAssignment extends BaseModel {
+  public static STATUS_ASSIGNED = 'ASSIGNED'
+  public static STATUS_IN_USE = 'IN_USE'
+  public static STATUS_PENDING_RETURN = 'PENDING_RETURN'
+  public static STATUS_RETURNED = 'RETURNED'
+
   @column({ isPrimary: true })
   public id: number
 
@@ -18,6 +25,16 @@ export default class ResourceAssignment extends BaseModel {
   @column()
   public relatedId?: number
 
+  @belongsTo(() => User, {
+    foreignKey: 'relatedId'
+  })
+  public volunteer: BelongsTo<typeof User>
+
+  @belongsTo(() => Team, {
+    foreignKey: 'relatedId'
+  })
+  public team: BelongsTo<typeof Team>
+
   @column.dateTime()
   public assignedAt: DateTime
 
@@ -32,6 +49,9 @@ export default class ResourceAssignment extends BaseModel {
 
   @column()
   public status: string
+
+  @column()
+  public condition?: string
 
   @column()
   public notes?: string
