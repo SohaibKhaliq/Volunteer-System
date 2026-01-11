@@ -6,6 +6,19 @@ import TeamCertificationRequirement from 'App/Models/TeamCertificationRequiremen
 export default class TeamMembersController {
   
   /**
+   * List all members of a team
+   */
+  public async index({ params, response }: HttpContextContract) {
+    const team = await Team.findOrFail(params.id)
+    
+    const members = await OrganizationTeamMember.query()
+      .where('team_id', team.id)
+      .preload('user')
+    
+    return response.ok(members)
+  }
+
+  /**
    * Add a member to a team
    */
   public async store({ params, request, response }: HttpContextContract) {
