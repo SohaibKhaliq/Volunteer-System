@@ -12,7 +12,34 @@
 */
 
 const http = require('http')
+const fs = require('fs')
+const path = require('path')
+const crypto = require('crypto')
 const { Server } = require('socket.io')
+
+// Manually load .env file for standalone script execution
+function loadEnv() {
+  try {
+    const envPath = path.join(__dirname, '.env')
+    if (fs.existsSync(envPath)) {
+      const content = fs.readFileSync(envPath, 'utf8')
+      content.split(/\r?\n/).forEach((line) => {
+        const parts = line.match(/^([^=]+)=(.*)$/)
+        if (parts) {
+          const key = parts[1].trim()
+          let val = parts[2].trim()
+          if (val.startsWith('"') && val.endsWith('"')) val = val.substring(1, val.length - 1)
+          if (val.startsWith("'") && val.endsWith("'")) val = val.substring(1, val.length - 1)
+          process.env[key] = val
+        }
+      })
+      console.log('[Socket.IO] Loaded environment from .env')
+    }
+  } catch (e) {
+    console.warn('[Socket.IO] Failed to load .env file:', e.message)
+  }
+}
+loadEnv()
 let express = null
 try {
   // express is optional for the socket server; fallback to builtin http parser
@@ -37,12 +64,20 @@ const io = new Server(server, {
 })
 
 async function initDb() {
+  const host = process.env.DB_HOST || process.env.MYSQL_HOST || '127.0.0.1'
+  const port = Number(process.env.DB_PORT || process.env.MYSQL_PORT || 3306)
+  const user = process.env.DB_USER || process.env.MYSQL_USER || 'root'
+  const password = process.env.DB_PASSWORD || process.env.MYSQL_PASSWORD || ''
+  const database = process.env.DB_DATABASE || process.env.MYSQL_DB_NAME || 'adonis'
+
+  console.log(`[Socket.IO] Connecting to DB: ${host}:${port}/${database} as ${user}`)
+
   const conn = await mysql.createPool({
-    host: process.env.DB_HOST || '127.0.0.1',
-    port: Number(process.env.DB_PORT || 3306),
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_DATABASE || 'adonis'
+    host,
+    port,
+    user,
+    password,
+    database
   })
   return conn
 }
@@ -91,11 +126,54 @@ async function main() {
   io.use(async (socket, next) => {
     try {
       const token = socket.handshake.auth?.token || socket.handshake.query?.token
-      if (!token) return next(new Error('Missing token'))
+      if (!token || typeof token !== 'string') {
+          console.warn('[Socket.IO] Missing or invalid token')
+          return next(new Error('Missing token'))
+      }
 
-      const [rows] = await db.execute('SELECT user_id FROM api_tokens WHERE token = ?', [token])
-      if (!rows || rows.length === 0) return next(new Error('Invalid token'))
-      const userId = rows[0].user_id
+      console.log(`[Socket.IO] Auth attempt: token len=${token.length}, starts with=${token.substring(0, 8)}...`)
+
+      let userId = null
+
+      // Case 1: AdonisJS 5 OAT format "ID.SECRET" (where ID is often base64 encoded)
+      if (token.includes('.')) {
+          const parts = token.split('.')
+          if (parts.length === 2) {
+              const [idPart, secret] = parts
+              // Adonis prefixes with 'oat_' sometimes, or uses raw base64 ID
+              const idBase64 = idPart.startsWith('oat_') ? idPart.substring(4) : idPart
+              
+              try {
+                  const id = Buffer.from(idBase64, 'base64').toString('utf-8')
+                  const hashedSecret = crypto.createHash('sha256').update(secret).digest('hex')
+                  
+                  console.log(`[Socket.IO] Trying ID.SECRET format: id=${id}, hashedSecret=${hashedSecret.substring(0, 8)}...`)
+                  const [rows] = await db.execute('SELECT user_id FROM api_tokens WHERE id = ? AND token = ?', [id, hashedSecret])
+                  if (rows && rows.length > 0) {
+                      userId = rows[0].user_id
+                  }
+              } catch (e) {
+                  console.warn('[Socket.IO] Failed to parse ID from token', e.message)
+              }
+          }
+      }
+
+      // Case 2: Simple hash (legacy or custom)
+      if (!userId) {
+          const hashedToken = crypto.createHash('sha256').update(token).digest('hex')
+          console.log(`[Socket.IO] Trying simple hash: ${hashedToken.substring(0, 8)}...`)
+          const [rows] = await db.execute('SELECT user_id FROM api_tokens WHERE token = ?', [hashedToken])
+          if (rows && rows.length > 0) {
+              userId = rows[0].user_id
+          }
+      }
+
+      if (!userId) {
+          console.warn('[Socket.IO] Invalid token. No match found in api_tokens.')
+          return next(new Error('Invalid token'))
+      }
+
+      console.log(`[Socket.IO] Auth success for user ${userId}`)
       socket.data.userId = userId
 
       // find whether user is admin
