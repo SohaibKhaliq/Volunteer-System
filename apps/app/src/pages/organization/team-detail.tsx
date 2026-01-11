@@ -297,7 +297,7 @@ export default function OrganizationTeamDetail() {
                             <Select value={selectedResource} onValueChange={setSelectedResource}>
                                 <SelectTrigger><SelectValue placeholder="Select resource..." /></SelectTrigger>
                                 <SelectContent>
-                                    {orgResources?.map((res: any) => (
+                                    {(Array.isArray(orgResources) ? orgResources : (orgResources as any)?.data || []).map((res: any) => (
                                         <SelectItem key={res.id} value={res.id.toString()}>
                                             {res.name} (Available: {res.quantityAvailable})
                                         </SelectItem>
