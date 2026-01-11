@@ -10,6 +10,7 @@ export default class PublicOrganizationController {
    */
   public async show({ params, response }: HttpContextContract) {
     const { slug } = params
+    console.log('PublicOrganizationController.show hit with slug:', slug)
 
     const org = await Organization.query()
       .where('slug', slug)
