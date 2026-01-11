@@ -18,8 +18,6 @@ import {
   Package, // Restored
   Award,
   List, // Restored
-  Shield, // New
-  Layers, // New
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ThemeToggle from '@/components/molecules/theme-toggle';
