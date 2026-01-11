@@ -5,7 +5,6 @@ import Message from 'App/Models/Message'
 import Organization from 'App/Models/Organization'
 import { DateTime } from 'luxon'
 import http from 'http'
-import Database from '@ioc:Adonis/Lucid/Database'
 
 export default class ChatController {
   /**
@@ -231,12 +230,6 @@ export default class ChatController {
     // Since vId defaults to authUser.id, it will always be present if authenticated
 
     // Reuse logic or simplify: Just find or create the room
-    // Determine if the DB schema has a `team_id` column
-    const hasTeamColumnResult = await Database.rawQuery(
-      "SHOW COLUMNS FROM chat_rooms LIKE 'team_id'"
-    )
-    const hasTeamColumn = Array.isArray(hasTeamColumnResult[0]) && hasTeamColumnResult[0].length > 0
-
     // Find existing
     const roomQuery = ChatRoom.query()
       .where('organization_id', effectiveOrgId)
@@ -248,15 +241,12 @@ export default class ChatController {
       roomQuery.whereNull('resource_id')
     }
 
-    if (hasTeamColumn) {
-      if (tId) {
-        roomQuery.where('team_id', tId)
-      } else {
-        roomQuery.whereNull('team_id')
-      }
+    if (tId) {
+      roomQuery.where('team_id', tId)
+    } else {
+      roomQuery.whereNull('team_id')
     }
 
-    // Attempt to find; if DB doesn't have team_id this won't throw now because we only add team clause when supported
     let room = await roomQuery.first()
 
     if (room) {
@@ -264,27 +254,13 @@ export default class ChatController {
     } else {
       // Create new
       console.log('Creating new room...')
-      const createPayload: any = {
+      room = await ChatRoom.create({
         organizationId: effectiveOrgId,
         volunteerId: vId,
-        resourceId: rId
-      }
-
-      if (hasTeamColumn) {
-        createPayload.teamId = tId
-      }
-
-      // Only set `type` if DB has that column (migration may be missing)
-      const hasTypeColumnResult = await Database.rawQuery(
-        "SHOW COLUMNS FROM chat_rooms LIKE 'type'"
-      )
-      const hasTypeColumn =
-        Array.isArray(hasTypeColumnResult[0]) && hasTypeColumnResult[0].length > 0
-      if (hasTypeColumn) {
-        createPayload.type = tId ? 'team' : rId ? 'resource_related' : 'direct'
-      }
-
-      room = await ChatRoom.create(createPayload)
+        resourceId: rId,
+        teamId: tId,
+        type: tId ? 'team' : rId ? 'resource_related' : 'direct'
+      })
       console.log('Created room ID:', room.id)
     }
 
