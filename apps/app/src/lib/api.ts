@@ -7,7 +7,7 @@ const api = {
   /* User endpoints */
   /* User endpoints */
   login: async (credentials: any): Promise<LoginDTO | null> => {
-    return axios.post('/login', credentials);
+    return axios.post('/login', credentials, { _suppressError: true });
   },
   register: async (data: any): Promise<LoginDTO | null> => {
     return axios.post('/register', data);
