@@ -23,6 +23,20 @@ Route.group(() => {
   Route.put('/teams/:id', 'TeamsController.update').middleware(['auth'])
   Route.delete('/teams/:id', 'TeamsController.destroy').middleware(['auth'])
 
+  // Team Members
+  Route.get('/teams/:id/members', 'TeamMembersController.index').middleware(['auth'])
+  Route.post('/teams/:id/members', 'TeamMembersController.store').middleware(['auth'])
+  Route.delete('/teams/:id/members/:userId', 'TeamMembersController.destroy').middleware(['auth'])
+
+  // Team Resources
+  Route.get('/teams/:id/resources', 'TeamResourcesController.index').middleware(['auth'])
+  Route.post('/teams/:id/resources', 'TeamResourcesController.store').middleware(['auth'])
+
+  // Team Requirements
+  Route.get('/teams/:id/requirements', 'TeamRequirementsController.index').middleware(['auth'])
+  Route.post('/teams/:id/requirements', 'TeamRequirementsController.store').middleware(['auth'])
+  Route.delete('/teams/:id/requirements/:requirementId', 'TeamRequirementsController.destroy').middleware(['auth'])
+
   // Events (Scoped to Org)
   Route.get('/events', 'EventsController.index').middleware(['auth'])
   Route.post('/events', 'EventsController.store').middleware(['auth'])
