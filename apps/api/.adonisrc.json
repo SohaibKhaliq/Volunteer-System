@@ -16,6 +16,7 @@
   },
   "preloads": [
     "./start/routes",
+    "./start/organization",
     "./start/kernel",
     "./start/bouncer",
     "./start/limiter"
