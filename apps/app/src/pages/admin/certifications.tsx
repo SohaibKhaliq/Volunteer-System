@@ -5,7 +5,8 @@ import StarterKit from '@tiptap/starter-kit';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Award, Edit, Trash2, Plus, Download } from 'lucide-react';
+import { Award, Edit, Trash2, Plus, Download, Shield, CheckCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
@@ -275,13 +276,13 @@ export default function AdminCertifications() {
   const renderCertificationTable = () => (
     <Table>
       <TableHeader>
-        <TableRow>
-          <TableHead>Volunteer</TableHead>
-          <TableHead>Type</TableHead>
-          <TableHead>Issued</TableHead>
-          <TableHead>Expires</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Actions</TableHead>
+        <TableRow className="bg-muted/50 hover:bg-muted/50">
+          <TableHead className="font-bold">Volunteer</TableHead>
+          <TableHead className="font-bold">Type</TableHead>
+          <TableHead className="font-bold">Issued</TableHead>
+          <TableHead className="font-bold">Expires</TableHead>
+          <TableHead className="font-bold">Status</TableHead>
+          <TableHead className="font-bold text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -311,15 +312,17 @@ export default function AdminCertifications() {
                 {cert.expires_at ? new Date(cert.expires_at).toLocaleDateString() : cert.expires || '-'}
               </TableCell>
               <TableCell>
-                <Badge
-                  variant={
-                    cert.status === 'Valid' ? 'default' : cert.status === 'Expiring' ? 'secondary' : 'destructive'
-                  }
-                >
+                <div className={cn(
+                  "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border",
+                  cert.status === 'Valid' ? "bg-green-100 text-green-800 border-green-200" :
+                    cert.status === 'Expiring' ? "bg-yellow-100 text-yellow-800 border-yellow-200" :
+                      "bg-red-100 text-red-800 border-red-200"
+                )}>
+                  {cert.status === 'Valid' && <CheckCircle className="w-3 h-3 mr-1" />}
                   {cert.status || 'Unknown'}
-                </Badge>
+                </div>
               </TableCell>
-              <TableCell>
+              <TableCell className="text-right">
                 <div className="flex items-center gap-2">
                   {/* Verification Actions */}
                   {cert.status !== 'Valid' && (
@@ -432,14 +435,16 @@ export default function AdminCertifications() {
       {activeTab === 'courses' && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Award className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-3 text-xl">
+              <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                <Award className="h-5 w-5" />
+              </div>
               Training Courses
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between mb-6">
-              <div className="text-sm text-muted-foreground">Manage training courses offered to volunteers.</div>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-8 bg-muted/30 p-4 rounded-xl border border-dashed">
+              <div className="text-sm text-muted-foreground font-medium">Manage training courses offered to volunteers.</div>
               <Button
                 onClick={() => {
                   setCourseEditing({ assign_all: false });
@@ -529,12 +534,14 @@ export default function AdminCertifications() {
       {activeTab === 'certifications' && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Award className="h-5 w-5" />
+            <CardTitle className="flex items-center gap-3 text-xl">
+              <div className="p-2 bg-emerald-500/10 rounded-lg text-emerald-600">
+                <Shield className="h-5 w-5" />
+              </div>
               Volunteer Certifications
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
               <Input
                 placeholder="Search by volunteer name..."
