@@ -78,10 +78,10 @@ export default function OrganizationCompliance() {
           if (lastUploadedTimeoutRef.current) window.clearTimeout(lastUploadedTimeoutRef.current);
           lastUploadedTimeoutRef.current = window.setTimeout(() => setLastUploadedId(null), 6000);
         }
-      } catch (e) {}
+      } catch (e) { }
       try {
         queryClient.invalidateQueries({ queryKey: ['organizationDocuments'] });
-      } catch (e) {}
+      } catch (e) { }
       setIsUploadOpen(false);
       setSelectedFile(null);
       setEditingDoc(null);
@@ -112,7 +112,8 @@ export default function OrganizationCompliance() {
   const [docFormData, setDocFormData] = useState({
     name: '',
     type: '',
-    expiry: ''
+    expiry: '',
+    status: 'Pending'
   });
 
   // Fetch available compliance types (system + org requirements)
@@ -133,7 +134,7 @@ export default function OrganizationCompliance() {
 
   const handleOpenUpload = () => {
     setEditingDoc(null);
-    setDocFormData({ name: '', type: 'License', expiry: '' });
+    setDocFormData({ name: '', type: 'License', expiry: '', status: 'Pending' });
     setIsUploadOpen(true);
   };
 
@@ -142,7 +143,8 @@ export default function OrganizationCompliance() {
     setDocFormData({
       name: doc.name,
       type: doc.type,
-      expiry: doc.expiry
+      expiry: doc.expiry,
+      status: doc.status || 'Pending'
     });
     setIsUploadOpen(true);
   };
@@ -153,7 +155,7 @@ export default function OrganizationCompliance() {
       form.append('name', docFormData.name || '');
       form.append('type', docFormData.type || '');
       if (docFormData.expiry) form.append('expiry', docFormData.expiry);
-      form.append('status', 'Pending');
+      form.append('status', docFormData.status || 'Pending');
       form.append('uploadedAt', new Date().toISOString().split('T')[0]);
       if (selectedFile) form.append('file', selectedFile);
       // append selected organization id if available
@@ -167,12 +169,12 @@ export default function OrganizationCompliance() {
             // legacy string - no id available
           }
         }
-      } catch (e) {}
+      } catch (e) { }
       saveDocMutation.mutate(form);
     } catch (e) {
       saveDocMutation.mutate({
         ...docFormData,
-        status: 'Pending',
+        status: docFormData.status || 'Pending',
         uploadedAt: new Date().toISOString().split('T')[0]
       });
     }
@@ -196,10 +198,10 @@ export default function OrganizationCompliance() {
   // Normalize stats which may be returned as { data: {...} } or directly as object
   const displayStats = (stats as any)?.data ??
     stats ?? {
-      compliantVolunteers: 0,
-      pendingDocuments: 0,
-      expiringSoon: 0
-    };
+    compliantVolunteers: 0,
+    pendingDocuments: 0,
+    expiringSoon: 0
+  };
 
   // Map common backend field names to the UI-friendly shape
   const mapDoc = (doc: any) => ({
@@ -300,6 +302,26 @@ export default function OrganizationCompliance() {
                     />
                   </div>
                 </div>
+
+                {editingDoc && (
+                  <div className="space-y-2">
+                    <Label htmlFor="doc-status">Status</Label>
+                    <Select
+                      value={docFormData.status}
+                      onValueChange={(v) => setDocFormData({ ...docFormData, status: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Pending">Pending</SelectItem>
+                        <SelectItem value="Valid">Valid (Approved)</SelectItem>
+                        <SelectItem value="Rejected">Rejected</SelectItem>
+                        <SelectItem value="Expired">Expired</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor="file">File</Label>
                   <Input
@@ -429,6 +451,6 @@ export default function OrganizationCompliance() {
           </Table>
         </CardContent>
       </Card>
-    </div>
+    </div >
   );
 }
