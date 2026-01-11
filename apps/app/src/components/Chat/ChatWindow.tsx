@@ -1,8 +1,7 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { io, Socket } from 'socket.io-client';
 import api from '../../lib/api';
-import storage from '../../lib/storage';
+import { useSocket } from '../../hooks/useSocket';
 import { ChatRoom, Message } from '../../types/chat';
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
@@ -16,9 +15,15 @@ interface ChatWindowProps {
     onClose?: () => void;
 }
 
-export function ChatWindow({ roomId, currentUserId, onClose }: ChatWindowProps) {
-    const [socket, setSocket] = useState<Socket | null>(null);
-    const [isConnected, setIsConnected] = useState(false);
+export function ChatWindow({ roomId, currentUserId }: Omit<ChatWindowProps, 'onClose'>) {
+    const {
+        socket,
+        isConnected,
+        joinChat,
+        leaveChat,
+        sendTyping,
+        sendStopTyping
+    } = useSocket();
     const [typingUsers, setTypingUsers] = useState<number[]>([]);
     const queryClient = useQueryClient();
 
@@ -31,71 +36,55 @@ export function ChatWindow({ roomId, currentUserId, onClose }: ChatWindowProps) 
         }
     );
 
-    // Socket connection
+    // Socket room management and event listeners
     useEffect(() => {
-        const token = storage.getToken();
-        if (!token) return;
+        if (!socket) return;
 
-        const newSocket = io('http://localhost:4001', {
-            auth: { token },
-            transports: ['websocket'], // force websocket
-        });
-
-        newSocket.on('connect', () => {
-            setIsConnected(true);
-            console.log('Chat connected');
-            newSocket.emit('join-chat', roomId);
-        });
-
-        newSocket.on('disconnect', () => {
-            setIsConnected(false);
-        });
+        joinChat(roomId);
 
         // Listen for new messages
-        newSocket.on('message', (message: Message) => {
-            // Optimistically update or invalidate query
+        const handleMessage = (message: Message) => {
+            // Avoid adding message if it's already in the list
             queryClient.setQueryData<ChatRoom>(['chat', roomId], (old) => {
                 if (!old) return old;
-                // avoid duplicates
                 if (old.messages.some(m => m.id === message.id)) return old;
                 return {
                     ...old,
                     messages: [...old.messages, message],
                 };
             });
-        });
+        };
 
-        newSocket.on('typing', ({ roomId: typingRoomId, userId }) => {
+        const handleTyping = ({ roomId: typingRoomId, userId }: { roomId: number, userId: number }) => {
             if (typingRoomId === roomId && userId !== currentUserId) {
-                setTypingUsers(prev => [...prev, userId]);
+                setTypingUsers(prev => Array.from(new Set([...prev, userId])));
             }
-        });
+        };
 
-        newSocket.on('stop-typing', ({ roomId: typingRoomId, userId }) => {
+        const handleStopTyping = ({ roomId: typingRoomId, userId }: { roomId: number, userId: number }) => {
             if (typingRoomId === roomId) {
                 setTypingUsers(prev => prev.filter(id => id !== userId));
             }
-        });
+        };
 
-        setSocket(newSocket);
+        socket.on('message', handleMessage);
+        socket.on('typing', handleTyping);
+        socket.on('stop-typing', handleStopTyping);
 
         return () => {
-            newSocket.disconnect();
+            socket.off('message', handleMessage);
+            socket.off('typing', handleTyping);
+            socket.off('stop-typing', handleStopTyping);
+            leaveChat(roomId);
         };
-    }, [roomId, currentUserId, queryClient]);
+    }, [roomId, socket, currentUserId, queryClient]);
 
     // Send message mutation
     const sendMessageMutation = useMutation(
         (content: string) => api.sendMessage({ roomId, content, type: 'text' }),
         {
-            onSuccess: (newMessage) => {
-                // Socket will broadcast, but we can also update locally for immediate feedback 
-                // if socket isn't purely authoritative broadcast-back (which it is here via internal notify)
-                // Actually our controller notifies socket, which emits to us. 
-                // So we might get double message if we update here AND listen to socket.
-                // But usually socket is faster or same time.
-                // We'll rely on socket event or invalidate.
-                // queryClient.invalidateQueries(['chat', roomId]); // reliable fallback
+            onSuccess: () => {
+                // Rely on socket event or invalidate
             },
             onError: () => {
                 toast.error('Failed to send message');
@@ -105,23 +94,23 @@ export function ChatWindow({ roomId, currentUserId, onClose }: ChatWindowProps) 
 
     const handleSend = (content: string) => {
         sendMessageMutation.mutate(content);
-        socket?.emit('stop-typing', roomId);
+        sendStopTyping(roomId);
     };
 
     const [isTyping, setIsTyping] = useState(false);
-    const typingTimeoutRef = useRef<NodeJS.Timeout>();
+    const typingTimeoutRef = useRef<any>();
 
     const handleTyping = () => {
         if (!isTyping) {
             setIsTyping(true);
-            socket?.emit('typing', roomId);
+            sendTyping(roomId);
         }
 
         if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
 
         typingTimeoutRef.current = setTimeout(() => {
             setIsTyping(false);
-            socket?.emit('stop-typing', roomId);
+            sendStopTyping(roomId);
         }, 2000);
     };
 
