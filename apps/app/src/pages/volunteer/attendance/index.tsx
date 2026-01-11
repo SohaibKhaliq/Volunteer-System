@@ -46,7 +46,7 @@ export default function MyAttendance() {
   const checkInMutation = useMutation({
     mutationFn: async (shiftId: number) => {
       // Using api.post directly to our new endpoint
-      return axios.post('/attendance/checkin', { shiftId });
+      return axios.post('/volunteer/attendance/checkin', { shiftId });
     },
     onSuccess: () => {
       toast.success('Checked in successfully');
@@ -59,7 +59,7 @@ export default function MyAttendance() {
 
   const checkOutMutation = useMutation({
     mutationFn: async (shiftId: number) => {
-      return axios.post('/attendance/checkout', { shiftId });
+      return axios.post('/volunteer/attendance/checkout', { shiftId });
     },
     onSuccess: () => {
       toast.success('Checked out successfully');
@@ -96,7 +96,7 @@ export default function MyAttendance() {
                   <div className="flex justify-between items-start">
                     <div>
                       <CardTitle className="text-lg">{assignment.shift?.title || 'Unknown Shift'}</CardTitle>
-                      <div className="text-sm text-muted-foreground mt-1">{assignment.shift?.event?.title}</div>
+                      <div className="text-sm text-muted-foreground mt-1">{assignment.shift?.event?.title || assignment.shift?.templateName}</div>
                     </div>
                     <Badge variant={assignment.checkedInAt ? 'default' : 'outline'}>
                       {assignment.checkedInAt ? 'In Progress' : 'Scheduled'}
@@ -111,8 +111,8 @@ export default function MyAttendance() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-muted-foreground" />
-                      {assignment.shift?.startAt ? format(new Date(assignment.shift.startAt), 'h:mm a') : '--:--'} -{' '}
-                      {assignment.shift?.endAt ? format(new Date(assignment.shift.endAt), 'h:mm a') : '--:--'}
+                      {assignment.shift?.startAt ? format(new Date(assignment.shift.startAt.toString()), 'h:mm a') : '--:--'} -{' '}
+                      {assignment.shift?.endAt ? format(new Date(assignment.shift.endAt.toString()), 'h:mm a') : '--:--'}
                     </div>
                     {assignment.shift?.event?.location && (
                       <div className="flex items-center gap-2">
@@ -167,9 +167,9 @@ export default function MyAttendance() {
               <div key={assignment.id} className="grid grid-cols-5 gap-4 p-4 border-b last:border-0 items-center">
                 <div className="col-span-2">
                   <div className="font-medium">{assignment.shift?.title || 'Unknown'}</div>
-                  <div className="text-xs text-muted-foreground">{assignment.shift?.event?.title}</div>
+                  <div className="text-xs text-muted-foreground">{assignment.shift?.event?.title || assignment.shift?.templateName}</div>
                 </div>
-                <div className="text-sm">{assignment.shift?.startAt ? format(new Date(assignment.shift.startAt), 'MMM d, yyyy') : '-'}</div>
+                <div className="text-sm">{assignment.shift?.startAt ? format(new Date(assignment.shift.startAt.toString()), 'MMM d, yyyy') : '-'}</div>
                 <div className="text-sm">{assignment.hours ? `${assignment.hours} hrs` : '-'}</div>
                 <div>
                   <Badge variant="secondary">Completed</Badge>
