@@ -180,7 +180,7 @@ const Organizations = () => {
                   </div>
                 </CardContent>
                 <CardFooter className="border-t border-border/50 bg-muted/10 p-6 flex gap-3">
-                  <Link to={`/organizations/${org.id}`} className="flex-1">
+                  <Link to={`/organizations/${org.slug || org.id}`} className="flex-1">
                     <Button variant="ghost" className="w-full h-12 justify-between group rounded-xl bg-white hover:bg-primary hover:text-white border border-border/50 shadow-sm transition-all font-bold px-4">
                       {t('View Profile')}
                       <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
