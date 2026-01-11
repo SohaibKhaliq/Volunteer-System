@@ -2,22 +2,33 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/components/atoms/use-toast';
-import { Upload, FileText, CheckCircle, Clock, AlertCircle, XCircle, Download, File } from 'lucide-react';
+import { Upload, FileText, CheckCircle, Clock, AlertCircle, XCircle, Download, File, Wallet, ChevronRight, MoreHorizontal, Share2, Award, QrCode } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
+import { Progress } from '@/components/ui/progress';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+
+// Mock Training Data (until backend endpoint is ready)
+const MOCK_TRAINING_MODULES = [
+    { id: 1, title: 'Volunteer Basics', progress: 100, status: 'completed' },
+    { id: 2, title: 'Child Safety Level 1', progress: 65, status: 'in_progress' },
+    { id: 3, title: 'Emergency Response', progress: 0, status: 'not_started' },
+];
 
 export default function VolunteerCompliance({ embed = false }: { embed?: boolean }) {
     const queryClient = useQueryClient();
     const [isUploadOpen, setIsUploadOpen] = useState(false);
+    const [qrOpen, setQrOpen] = useState<number | null>(null);
+
+    const { t } = useTranslation();
 
     // Fetch my documents
     const { data: documentsRaw } = useQuery({
@@ -49,7 +60,8 @@ export default function VolunteerCompliance({ embed = false }: { embed?: boolean
         onSuccess: () => {
             queryClient.invalidateQueries(['my-compliance']);
             setIsUploadOpen(false);
-            toast({ title: 'Document uploaded successfully', variant: 'success' });
+            setFormData({ docType: '', wwccNumber: '', wwccState: '', expiryDate: '', file: null });
+            toast({ title: 'Added to Wallet', description: 'Document uploaded successfully', variant: 'success' });
         },
         onError: (err: any) => {
             toast({ title: 'Upload failed', description: err.response?.data?.error || 'Something went wrong', variant: 'destructive' });
@@ -98,221 +110,247 @@ export default function VolunteerCompliance({ embed = false }: { embed?: boolean
         uploadMutation.mutate(payload);
     };
 
-    const getStatusBadge = (status: string) => {
-        const s = status.toLowerCase();
-        if (s === 'approved' || s === 'valid') return <Badge className="bg-green-500 hover:bg-green-600"><CheckCircle className="w-3 h-3 mr-1" /> Approved</Badge>;
-        if (s === 'rejected' || s === 'invalid') return <Badge className="bg-red-500 hover:bg-red-600"><XCircle className="w-3 h-3 mr-1" /> Rejected</Badge>;
-        if (s === 'expired') return <Badge className="bg-orange-500 hover:bg-orange-600"><AlertCircle className="w-3 h-3 mr-1" /> Expired</Badge>;
-        return <Badge className="bg-yellow-500 hover:bg-yellow-600"><Clock className="w-3 h-3 mr-1" /> Pending</Badge>;
-    };
-
-    const { t } = useTranslation();
-
     return (
-        <div className={cn("space-y-8", embed ? "" : "container mx-auto p-6 max-w-5xl")}>
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-card/30 p-8 rounded-[2.5rem] border border-border/50 backdrop-blur-sm shadow-2xl shadow-primary/5">
-                {!embed && (
-                    <div className="space-y-1">
-                        <h1 className="text-4xl font-black tracking-tight text-foreground">{t('My Compliance')}</h1>
-                        <p className="text-lg text-muted-foreground font-medium">{t('Manage your certifications and legal documents required for volunteering.')}</p>
+        <div className={cn("space-y-6", embed ? "" : "container mx-auto p-4 md:p-8 max-w-5xl")}>
+
+            {/* Header Section */}
+            {!embed && (
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                    <div>
+                        <h1 className="text-3xl font-black tracking-tight flex items-center gap-2">
+                            <Wallet className="h-8 w-8 text-primary" />
+                            {t('My Wallet')}
+                        </h1>
+                        <p className="text-muted-foreground font-medium mt-1">
+                            {t('Access your digital certifications and training records.')}
+                        </p>
                     </div>
-                )}
-                {embed && <div className="hidden" />}
-                <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
-                    <DialogTrigger asChild>
-                        <Button size="lg" className="rounded-2xl h-14 px-8 font-black shadow-xl shadow-primary/20 bg-primary group transition-all">
-                            <Upload className="mr-3 h-5 w-5 transition-transform group-hover:-translate-y-1" />
-                            {t('Upload Document')}
-                        </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-[500px] border-none rounded-[2.5rem] p-0 overflow-hidden shadow-2xl shadow-black/20">
-                        <DialogHeader className="p-8 pb-0">
-                            <DialogTitle className="text-3xl font-black tracking-tight">{t('Upload Document')}</DialogTitle>
-                            <DialogDescription className="text-lg font-medium text-muted-foreground">
-                                {t('Add a new compliance document for verification.')}
-                            </DialogDescription>
-                        </DialogHeader>
-                        <form onSubmit={handleSubmit} className="space-y-6 p-8">
-                            <div className="space-y-2">
-                                <Label className="text-sm font-black uppercase tracking-widest text-muted-foreground ml-1">{t('Document Type')}</Label>
-                                <Select onValueChange={(v) => setFormData({ ...formData, docType: v })}>
-                                    <SelectTrigger className="h-14 rounded-2xl border-border/50 bg-background/50 font-medium">
-                                        <SelectValue placeholder={t('Select type')} />
-                                    </SelectTrigger>
-                                    <SelectContent className="rounded-2xl border-border/50 shadow-xl overflow-hidden">
-                                        <SelectItem value="" disabled>{t('Select a Document Type')}</SelectItem>
-                                        {/* System Types Group */}
-                                        <div className="px-4 py-3 text-xs font-black uppercase tracking-widest text-primary/60 bg-primary/5">{t('Standard Documents')}</div>
-                                        {systemTypes.map((t: any) => (
-                                            <SelectItem key={t.value} value={t.value} className="py-3 px-4 font-medium transition-colors cursor-pointer">{t.label}</SelectItem>
-                                        ))}
+                    <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
+                        <DialogTrigger asChild>
+                            <Button size="lg" className="rounded-full shadow-lg shadow-primary/20 font-bold">
+                                <Upload className="mr-2 h-4 w-4" />
+                                {t('Add Document')}
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[500px]">
+                            <DialogHeader>
+                                <DialogTitle>{t('Add to Wallet')}</DialogTitle>
+                                <DialogDescription>{t('Upload a new certification or legal document.')}</DialogDescription>
+                            </DialogHeader>
+                            <form onSubmit={handleSubmit} className="space-y-4 py-4">
+                                <div className="space-y-2">
+                                    <Label>Document Type</Label>
+                                    <Select onValueChange={(v) => setFormData({ ...formData, docType: v })}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder={t('Select type')} />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="" disabled>{t('Select a Document Type')}</SelectItem>
+                                            <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">Standard Documents</div>
+                                            {systemTypes.map((t: any) => (
+                                                <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                                            ))}
+                                            {orgTypes.length > 0 && (
+                                                <>
+                                                    <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50 mt-1">Organization Requirements</div>
+                                                    {orgTypes.map((t: any) => (
+                                                        <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                                                    ))}
+                                                </>
+                                            )}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
 
-                                        {/* Organization Types Group */}
-                                        {orgTypes.length > 0 && (
-                                            <>
-                                                <div className="px-4 py-3 text-xs font-black uppercase tracking-widest text-primary/60 bg-primary/5 mt-2">{t('Organization Requirements')}</div>
-                                                {orgTypes.map((t: any) => (
-                                                    <SelectItem key={t.value} value={t.value} className="py-3 px-4 font-medium transition-colors cursor-pointer">{t.label}</SelectItem>
-                                                ))}
-                                            </>
-                                        )}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            {formData.docType === 'wwcc' && (
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <Label>WWCC Number</Label>
-                                        <Input
-                                            placeholder="e.g. WWC1234567"
-                                            value={formData.wwccNumber}
-                                            onChange={e => setFormData({ ...formData, wwccNumber: e.target.value })}
-                                        />
+                                {formData.docType === 'wwcc' && (
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label>WWCC Number</Label>
+                                            <Input placeholder="e.g. WWC1234567" value={formData.wwccNumber} onChange={e => setFormData({ ...formData, wwccNumber: e.target.value })} />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>State</Label>
+                                            <Select onValueChange={(v) => setFormData({ ...formData, wwccState: v })}>
+                                                <SelectTrigger><SelectValue placeholder="State" /></SelectTrigger>
+                                                <SelectContent>
+                                                    {['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'].map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label>State</Label>
-                                        <Select onValueChange={(v) => setFormData({ ...formData, wwccState: v })}>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="State" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="NSW">NSW</SelectItem>
-                                                <SelectItem value="VIC">VIC</SelectItem>
-                                                <SelectItem value="QLD">QLD</SelectItem>
-                                                <SelectItem value="WA">WA</SelectItem>
-                                                <SelectItem value="SA">SA</SelectItem>
-                                                <SelectItem value="TAS">TAS</SelectItem>
-                                                <SelectItem value="ACT">ACT</SelectItem>
-                                                <SelectItem value="NT">NT</SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                )}
+
+                                <div className="space-y-2">
+                                    <Label>Expiry Date</Label>
+                                    <Input type="date" onChange={e => setFormData({ ...formData, expiryDate: e.target.value })} />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label>Document File</Label>
+                                    <Input type="file" onChange={e => setFormData({ ...formData, file: e.target.files?.[0] || null })} />
+                                </div>
+
+                                <DialogFooter>
+                                    <Button type="submit" disabled={uploadMutation.isLoading}>
+                                        {uploadMutation.isLoading ? t('Uploading...') : t('Add to Wallet')}
+                                    </Button>
+                                </DialogFooter>
+                            </form>
+                        </DialogContent>
+                    </Dialog>
+                </div>
+            )}
+
+            {/* Wallet "Cards" Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* Training Progress Card (Static for now) */}
+                <div className="col-span-full mb-4">
+                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                        <Award className="h-5 w-5 text-indigo-600" />
+                        Ongoing Training
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {MOCK_TRAINING_MODULES.map(module => (
+                            <Card key={module.id} className="border-l-4 border-l-indigo-500 hover:shadow-md transition-shadow">
+                                <CardContent className="p-4">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <div className="font-bold text-sm">{module.title}</div>
+                                        <Badge variant={module.status === 'completed' ? 'default' : 'secondary'} className="text-[10px] uppercase">
+                                            {module.status.replace('_', ' ')}
+                                        </Badge>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <div className="flex justify-between text-xs text-muted-foreground">
+                                            <span>Progress</span>
+                                            <span>{module.progress}%</span>
+                                        </div>
+                                        <Progress value={module.progress} className="h-2" indicatorClassName={module.status === 'completed' ? 'bg-green-500' : 'bg-indigo-500'} />
+                                    </div>
+                                    <div className="mt-4 flex justify-end">
+                                        <Button variant="ghost" size="sm" className="text-xs h-7 gap-1">
+                                            {module.status === 'completed' ? 'Review' : 'Continue'} <ChevronRight className="h-3 w-3" />
+                                        </Button>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="col-span-full">
+                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-emerald-600" />
+                        Certifications & Documents
+                    </h3>
+                </div>
+
+                {documents.map((doc: any) => {
+                    const isValid = doc.status?.toLowerCase() === 'valid' || doc.status?.toLowerCase() === 'approved';
+                    const isExpired = doc.status?.toLowerCase() === 'expired';
+
+                    return (
+                        <div key={doc.id} className="relative group perspective-1000">
+                            {/* Card UI */}
+                            <div className={cn(
+                                "relative overflow-hidden rounded-xl border bg-card text-card-foreground shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1",
+                                isValid ? "border-l-4 border-l-green-500" :
+                                    isExpired ? "border-l-4 border-l-red-500" :
+                                        "border-l-4 border-l-amber-500"
+                            )}>
+                                {/* Background Pattern */}
+                                <div className="absolute top-0 right-0 p-4 opacity-5">
+                                    <Award className="h-24 w-24" />
+                                </div>
+
+                                <div className="p-6">
+                                    <div className="flex justify-between items-start mb-4">
+                                        <div className="p-2 rounded-lg bg-muted text-primary">
+                                            <FileText className="w-6 h-6" />
+                                        </div>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2">
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onClick={() => window.open(doc.metadata?.file || `/api/compliance/${doc.id}/file`, '_blank')}>
+                                                    <Download className="mr-2 h-4 w-4" /> Download
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => setQrOpen(doc.id)}>
+                                                    <QrCode className="mr-2 h-4 w-4" /> View QR Code
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => window.open(`/verify/${doc.id}`, '_blank')}>
+                                                    <Share2 className="mr-2 h-4 w-4" /> Public Link
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </div>
+
+                                    <div className="mb-4">
+                                        <h3 className="font-bold text-lg leading-tight mb-1">{getTypeLabel(doc.docType) || doc.docType || doc.doc_type}</h3>
+                                        <p className="text-xs text-muted-foreground">ID: {doc.id} • Uploaded {format(new Date(doc.uploadedAt || doc.created_at), 'MMM d, yyyy')}</p>
+                                    </div>
+
+                                    <div className="flex items-center justify-between mt-4 pt-4 border-t border-dashed">
+                                        <div className="text-sm">
+                                            <div className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">Status</div>
+                                            <div className={cn(
+                                                "font-bold flex items-center gap-1.5",
+                                                isValid ? "text-green-600" : isExpired ? "text-red-600" : "text-amber-600"
+                                            )}>
+                                                {isValid ? <CheckCircle className="h-3.5 w-3.5" /> :
+                                                    isExpired ? <AlertCircle className="h-3.5 w-3.5" /> :
+                                                        <Clock className="h-3.5 w-3.5" />}
+                                                {doc.status}
+                                            </div>
+                                        </div>
+
+                                        {doc.expiresAt && (
+                                            <div className="text-sm text-right">
+                                                <div className="text-[10px] uppercase text-muted-foreground font-bold tracking-wider">Expires</div>
+                                                <div className="font-mono">{format(new Date(doc.expiresAt), 'MM/yy')}</div>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
-                            )}
-
-                            <div className="space-y-2">
-                                <Label>Expiry Date (if applicable)</Label>
-                                <Input
-                                    type="date"
-                                    onChange={e => setFormData({ ...formData, expiryDate: e.target.value })}
-                                />
                             </div>
 
-                            <div className="space-y-2">
-                                <Label>Document File</Label>
-                                <Input
-                                    type="file"
-                                    onChange={e => setFormData({ ...formData, file: e.target.files?.[0] || null })}
-                                />
-                            </div>
-
-                            <DialogFooter className="p-8 pt-0 mt-4">
-                                <Button type="submit" disabled={uploadMutation.isLoading} className="w-full h-14 rounded-2xl font-black text-lg shadow-xl shadow-primary/20 active:scale-95 transition-all">
-                                    {uploadMutation.isLoading ? t('Uploading...') : t('Submit for Verification')}
-                                </Button>
-                            </DialogFooter>
-                        </form>
-                    </DialogContent>
-                </Dialog>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {[
-                    { label: t('Documents Submitted'), value: documents.length, color: 'text-primary', bg: 'bg-primary/10', icon: FileText },
-                    { label: t('Pending Approval'), value: documents.filter((d: any) => d.status === 'pending').length, color: 'text-amber-500', bg: 'bg-amber-500/10', icon: Clock },
-                    { label: t('Action Required'), value: documents.filter((d: any) => d.status === 'rejected' || d.status === 'expired').length, color: 'text-rose-500', bg: 'bg-rose-500/10', icon: AlertCircle }
-                ].map((stat, i) => (
-                    <Card key={i} className="group hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 border-border/50 rounded-[2.5rem] bg-card overflow-hidden">
-                        <CardContent className="p-8 space-y-4">
-                            <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110", stat.bg, stat.color)}>
-                                <stat.icon className="h-6 w-6" />
-                            </div>
-                            <div>
-                                <div className={cn("text-3xl font-black tracking-tight", stat.color)}>{stat.value}</div>
-                                <div className="text-sm font-bold text-muted-foreground/80 uppercase tracking-widest">{stat.label}</div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                ))}
-            </div>
-
-            <Card className="border-border/50 shadow-2xl shadow-primary/5 rounded-[2.5rem] bg-card overflow-hidden">
-                {!embed && (
-                    <CardHeader className="p-8 md:p-12 pb-0">
-                        <div className="flex items-center gap-4 mb-2">
-                            <div className="p-3 rounded-2xl bg-primary/10 text-primary">
-                                <FileText className="h-6 w-6" />
-                            </div>
-                            <CardTitle className="text-3xl font-black tracking-tight">{t('Your Documents')}</CardTitle>
+                            {/* QR Dialog for this card */}
+                            <Dialog open={qrOpen === doc.id} onOpenChange={(open) => !open && setQrOpen(null)}>
+                                <DialogContent className="sm:max-w-xs flex flex-col items-center justify-center p-8 text-center">
+                                    <div className="w-48 h-48 bg-white p-2 rounded-lg shadow-inner border mb-4 flex items-center justify-center">
+                                        {/* Placeholder for QR Code - in real app use a QR library */}
+                                        <div className="space-y-2">
+                                            <QrCode className="h-24 w-24 text-primary mx-auto opacity-20" />
+                                            <p className="text-[10px] text-muted-foreground font-mono">SCAN TO VERIFY</p>
+                                        </div>
+                                    </div>
+                                    <h3 className="font-bold text-lg mb-1">{getTypeLabel(doc.docType)}</h3>
+                                    <p className="text-xs text-muted-foreground break-all">
+                                        {window.location.origin}/verify/{doc.id}
+                                    </p>
+                                    <Button variant="outline" size="sm" className="mt-4 w-full" onClick={() => window.open(`/verify/${doc.id}`, '_blank')}>
+                                        Open Verification Page
+                                    </Button>
+                                </DialogContent>
+                            </Dialog>
                         </div>
-                        <CardDescription className="text-lg font-medium pl-14">
-                            {t('Certifications and identity documents')}
-                        </CardDescription>
-                    </CardHeader>
+                    );
+                })}
+
+                {/* Empty State */}
+                {documents.length === 0 && (
+                    <div className="col-span-full py-12 text-center border-2 border-dashed rounded-xl bg-muted/10">
+                        <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Wallet className="h-8 w-8 text-muted-foreground" />
+                        </div>
+                        <h3 className="text-lg font-bold">Your Wallet is Empty</h3>
+                        <p className="text-muted-foreground mb-6 max-w-sm mx-auto">Upload your certifications and documents to keep them organized and accessible.</p>
+                        <Button onClick={() => setIsUploadOpen(true)}>Add First Document</Button>
+                    </div>
                 )}
-                <CardContent className={cn("p-0", embed ? "pt-0" : "p-8 md:p-12")}>
-                    {documents.length === 0 ? (
-                        <div className="text-center py-24 bg-muted/20 rounded-[2.5rem] border-2 border-dashed border-border/50 m-8">
-                            <FileText className="mx-auto h-16 w-16 text-muted-foreground/30 mb-6" />
-                            <h3 className="text-2xl font-black text-foreground mb-2">{t('No documents yet')}</h3>
-                            <p className="text-muted-foreground font-medium text-lg mb-8">{t('Upload your certifications to start volunteering.')}</p>
-                            <Button size="lg" className="rounded-2xl h-14 px-8 font-black shadow-xl shadow-primary/20" onClick={() => setIsUploadOpen(true)}>
-                                {t('Upload First Document')}
-                            </Button>
-                        </div>
-                    ) : (
-                        <div className="rounded-[2rem] border border-border/50 overflow-hidden bg-background/50 backdrop-blur-sm">
-                            <Table>
-                                <TableHeader className="bg-primary/5 text-primary">
-                                    <TableRow className="border-border/50 hover:bg-transparent">
-                                        <TableHead className="px-8 py-6 font-black uppercase tracking-widest text-xs">{t('Document Type')}</TableHead>
-                                        <TableHead className="px-8 py-6 font-black uppercase tracking-widest text-xs">{t('Uploaded On')}</TableHead>
-                                        <TableHead className="px-8 py-6 font-black uppercase tracking-widest text-xs">{t('Expiry')}</TableHead>
-                                        <TableHead className="px-8 py-6 font-black uppercase tracking-widest text-xs">{t('Status')}</TableHead>
-                                        <TableHead className="px-8 py-6 font-black uppercase tracking-widest text-xs text-right">{t('Actions')}</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {documents.map((doc: any) => (
-                                        <TableRow key={doc.id} className="border-border/50 hover:bg-muted/20 transition-colors group">
-                                            <TableCell className="px-8 py-6">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="p-2 rounded-lg bg-muted text-primary group-hover:bg-primary group-hover:text-white transition-all">
-                                                        <File className="w-5 h-5" />
-                                                    </div>
-                                                    <span className="font-black text-lg tracking-tight truncate max-w-[200px]">
-                                                        {getTypeLabel(doc.docType) || doc.docType || doc.doc_type}
-                                                    </span>
-                                                </div>
-                                                {doc.notes && doc.status === 'rejected' && (
-                                                    <div className="text-xs font-black text-destructive uppercase tracking-widest mt-2 ml-10">Reason: {doc.notes}</div>
-                                                )}
-                                            </TableCell>
-                                            <TableCell className="px-8 py-6 font-bold text-muted-foreground">
-                                                {doc.uploadedAt || doc.created_at ? format(new Date(doc.uploadedAt || doc.created_at), 'MMM d, yyyy') : '-'}
-                                            </TableCell>
-                                            <TableCell className="px-8 py-6 font-bold text-muted-foreground">
-                                                {doc.expiresAt || doc.expires_at ? format(new Date(doc.expiresAt || doc.expires_at), 'MMM d, yyyy') : 'N/A'}
-                                            </TableCell>
-                                            <TableCell className="px-8 py-6">
-                                                {getStatusBadge(doc.status)}
-                                            </TableCell>
-                                            <TableCell className="px-8 py-6 text-right">
-                                                <Button variant="ghost" className="h-10 px-4 rounded-xl font-bold bg-muted hover:bg-primary hover:text-white group/btn" asChild>
-                                                    <a href={`/api/compliance/${doc.id}/file`} target="_blank" rel="noopener noreferrer">
-                                                        <Download className="w-5 h-5 group-hover/btn:scale-110 transition-transform" />
-                                                    </a>
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
+            </div>
         </div>
     );
 }
