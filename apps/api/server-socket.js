@@ -131,49 +131,35 @@ async function main() {
           return next(new Error('Missing token'))
       }
 
-      console.log(`[Socket.IO] Auth attempt: token len=${token.length}, starts with=${token.substring(0, 8)}...`)
-
       let userId = null
 
-      // Case 1: AdonisJS 5 OAT format "ID.SECRET" (where ID is often base64 encoded)
+      // Case 1: AdonisJS 5 OAT format "ID.SECRET"
       if (token.includes('.')) {
           const parts = token.split('.')
           if (parts.length === 2) {
               const [idPart, secret] = parts
-              // Adonis prefixes with 'oat_' sometimes, or uses raw base64 ID
               const idBase64 = idPart.startsWith('oat_') ? idPart.substring(4) : idPart
-              
               try {
                   const id = Buffer.from(idBase64, 'base64').toString('utf-8')
                   const hashedSecret = crypto.createHash('sha256').update(secret).digest('hex')
-                  
-                  console.log(`[Socket.IO] Trying ID.SECRET format: id=${id}, hashedSecret=${hashedSecret.substring(0, 8)}...`)
                   const [rows] = await db.execute('SELECT user_id FROM api_tokens WHERE id = ? AND token = ?', [id, hashedSecret])
-                  if (rows && rows.length > 0) {
-                      userId = rows[0].user_id
-                  }
-              } catch (e) {
-                  console.warn('[Socket.IO] Failed to parse ID from token', e.message)
-              }
+                  if (rows && rows.length > 0) userId = rows[0].user_id
+              } catch (e) {}
           }
       }
 
-      // Case 2: Simple hash (legacy or custom)
+      // Case 2: Simple hash
       if (!userId) {
           const hashedToken = crypto.createHash('sha256').update(token).digest('hex')
-          console.log(`[Socket.IO] Trying simple hash: ${hashedToken.substring(0, 8)}...`)
           const [rows] = await db.execute('SELECT user_id FROM api_tokens WHERE token = ?', [hashedToken])
-          if (rows && rows.length > 0) {
-              userId = rows[0].user_id
-          }
+          if (rows && rows.length > 0) userId = rows[0].user_id
       }
 
       if (!userId) {
-          console.warn('[Socket.IO] Invalid token. No match found in api_tokens.')
+          console.warn('[Socket.IO] Invalid token')
           return next(new Error('Invalid token'))
       }
 
-      console.log(`[Socket.IO] Auth success for user ${userId}`)
       socket.data.userId = userId
 
       // find whether user is admin
