@@ -13,7 +13,7 @@ import UserAchievement from 'App/Models/UserAchievement'
 import Achievement from 'App/Models/Achievement'
 import AchievementProgress from 'App/Models/AchievementProgress'
 import ShiftAssignment from 'App/Models/ShiftAssignment'
-import Team from 'App/Models/Team'
+// import Team from 'App/Models/Team' // Not used directly in myTeams query currently
 
 /**
  * VolunteerController - Volunteer Panel endpoints
@@ -1283,7 +1283,7 @@ export default class VolunteerController {
             .count('* as total')
           const membersCount = Number(membersCountResult[0].total)
 
-          let lead = null
+          let lead: any = null
           if (team.lead_user_id) {
             const leadUser = await User.find(team.lead_user_id)
             if (leadUser) {
