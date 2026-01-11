@@ -1,0 +1,185 @@
+import React, { useEffect, useState, useRef } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { io, Socket } from 'socket.io-client';
+import api from '../../lib/api';
+import storage from '../../lib/storage';
+import { ChatRoom, Message } from '../../types/chat';
+import { MessageList } from './MessageList';
+import { ChatInput } from './ChatInput';
+import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
+
+interface ChatWindowProps {
+    roomId: number;
+    currentUserId: number;
+    onClose?: () => void;
+}
+
+export function ChatWindow({ roomId, currentUserId, onClose }: ChatWindowProps) {
+    const [socket, setSocket] = useState<Socket | null>(null);
+    const [isConnected, setIsConnected] = useState(false);
+    const [typingUsers, setTypingUsers] = useState<number[]>([]);
+    const queryClient = useQueryClient();
+
+    // Fetch initial chat data
+    const { data: chatRoom, isLoading } = useQuery<ChatRoom>(
+        ['chat', roomId],
+        () => api.getChat(roomId),
+        {
+            refetchOnWindowFocus: false,
+        }
+    );
+
+    // Socket connection
+    useEffect(() => {
+        const token = storage.getToken();
+        if (!token) return;
+
+        const newSocket = io('http://localhost:4001', {
+            auth: { token },
+            transports: ['websocket'], // force websocket
+        });
+
+        newSocket.on('connect', () => {
+            setIsConnected(true);
+            console.log('Chat connected');
+            newSocket.emit('join-chat', roomId);
+        });
+
+        newSocket.on('disconnect', () => {
+            setIsConnected(false);
+        });
+
+        // Listen for new messages
+        newSocket.on('message', (message: Message) => {
+            // Optimistically update or invalidate query
+            queryClient.setQueryData<ChatRoom>(['chat', roomId], (old) => {
+                if (!old) return old;
+                // avoid duplicates
+                if (old.messages.some(m => m.id === message.id)) return old;
+                return {
+                    ...old,
+                    messages: [...old.messages, message],
+                };
+            });
+        });
+
+        newSocket.on('typing', ({ roomId: typingRoomId, userId }) => {
+            if (typingRoomId === roomId && userId !== currentUserId) {
+                setTypingUsers(prev => [...prev, userId]);
+            }
+        });
+
+        newSocket.on('stop-typing', ({ roomId: typingRoomId, userId }) => {
+            if (typingRoomId === roomId) {
+                setTypingUsers(prev => prev.filter(id => id !== userId));
+            }
+        });
+
+        setSocket(newSocket);
+
+        return () => {
+            newSocket.disconnect();
+        };
+    }, [roomId, currentUserId, queryClient]);
+
+    // Send message mutation
+    const sendMessageMutation = useMutation(
+        (content: string) => api.sendMessage({ roomId, content, type: 'text' }),
+        {
+            onSuccess: (newMessage) => {
+                // Socket will broadcast, but we can also update locally for immediate feedback 
+                // if socket isn't purely authoritative broadcast-back (which it is here via internal notify)
+                // Actually our controller notifies socket, which emits to us. 
+                // So we might get double message if we update here AND listen to socket.
+                // But usually socket is faster or same time.
+                // We'll rely on socket event or invalidate.
+                // queryClient.invalidateQueries(['chat', roomId]); // reliable fallback
+            },
+            onError: () => {
+                toast.error('Failed to send message');
+            }
+        }
+    );
+
+    const handleSend = (content: string) => {
+        sendMessageMutation.mutate(content);
+        socket?.emit('stop-typing', roomId);
+    };
+
+    const [isTyping, setIsTyping] = useState(false);
+    const typingTimeoutRef = useRef<NodeJS.Timeout>();
+
+    const handleTyping = () => {
+        if (!isTyping) {
+            setIsTyping(true);
+            socket?.emit('typing', roomId);
+        }
+
+        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+
+        typingTimeoutRef.current = setTimeout(() => {
+            setIsTyping(false);
+            socket?.emit('stop-typing', roomId);
+        }, 2000);
+    };
+
+    if (isLoading) {
+        return <div className="flex h-full items-center justify-center"><Loader2 className="animate-spin" /></div>;
+    }
+
+    if (!chatRoom) {
+        return <div className="flex h-full items-center justify-center">Chat not found</div>;
+    }
+
+    return (
+        <div className="flex flex-col h-full bg-background border rounded-lg overflow-hidden shadow-sm">
+            {/* Header */}
+            <div className="p-3 border-b flex items-center justify-between bg-card">
+                <div className="font-semibold flex items-center gap-2">
+                    {/* Safe Display Name Logic */}
+                    {(() => {
+                        if (chatRoom.team) {
+                            return <span>{chatRoom.team.name}</span>;
+                        }
+                        if (currentUserId === chatRoom.volunteerId) {
+                            return <span>{chatRoom.organization?.name || 'Organization'}</span>;
+                        }
+                        const first = chatRoom.volunteer?.firstName || '';
+                        const last = chatRoom.volunteer?.lastName || '';
+                        const name = (first || last) ? `${first} ${last}`.trim() : (chatRoom.volunteer?.email || 'Unknown Volunteer');
+                        return <span>{name}</span>;
+                    })()}
+                </div>
+                <div className="flex items-center gap-1.5 text-xs">
+                    <div className={cn("w-2 h-2 rounded-full", isConnected ? "bg-green-500" : "bg-yellow-500")} />
+                    <span className="text-muted-foreground">{isConnected ? 'Online' : 'Connecting...'}</span>
+                </div>
+            </div>
+
+            {/* Messages */}
+            <MessageList
+                messages={chatRoom.messages || []}
+                currentUserId={currentUserId}
+                className="flex-1"
+                onAction={(action, meta) => {
+                    console.log('Action', action, meta);
+                    // Implement handles for 'accept_return' etc
+                }}
+            />
+
+            {/* Typing indicator */}
+            {typingUsers.length > 0 && (
+                <div className="px-4 py-1 text-xs text-muted-foreground">
+                    Someone is typing...
+                </div>
+            )}
+
+            {/* Input */}
+            <div onKeyDown={handleTyping}>
+                <ChatInput onSend={handleSend} isLoading={sendMessageMutation.isLoading} />
+            </div>
+        </div>
+    );
+}
