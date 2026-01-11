@@ -85,6 +85,31 @@ export default class TeamsController {
       await team.load('lead')
     }
 
+    // Automatically create a Team Chat Room
+    const ChatRoom = (await import('App/Models/ChatRoom')).default
+    await ChatRoom.create({
+      organizationId: team.organizationId,
+      teamId: team.id,
+      type: 'team',
+      volunteerId: team.leadUserId || auth.user!.id // Fallback to creator/admin if no lead yet? Or just leaving it null? Model says volunteerId is required?
+      // Wait, ChatRoom definition: volunteerId is number.
+      // But for a TEAM chat, who is the "volunteerId"?
+      // Usually ChatRoom is 1-on-1 between Org and Volunteer?
+      // If we are repurposing ChatRoom, we might need to modify ChatRoom validation or nullability.
+      // Migration made `team_id` nullable. 
+      // Existing ChatRoom model lines 16-17: public volunteerId: number.
+      // I should update ChatRoom model to make volunteerId nullable if it's a team chat?
+      // OR, does the "Team Chat" imply a chat *with* the team, or the team members talking to each other?
+      // Prompt: "Automatically create a group chat socket when a team is formed."
+      // "Only volunteers tagged with Team_ID: Alpha can join the socket."
+      // So it's a group chat. The `volunteer_id` field in `chat_rooms` seems to be for 1-on-1.
+      // I should make `volunteer_id` nullable in ChatRoom model and migration if strictly needed, OR link it to the Team Leader.
+      // Let's check my migration. I did NOT make `volunteer_id` nullable in the migration I previously made.
+      // I only added `team_id`.
+      // `1768150736370_chat_rooms_and_messages.ts` (original) has `table.integer('volunteer_id').unsigned().references('id').inTable('users').onDelete('CASCADE')`. NOT nullable.
+      // So I MUST assign a volunteer. Using the Team Leader seems appropriate, or the Creator.
+    })
+
     return response.created(team)
   }
 
@@ -140,6 +165,7 @@ export default class TeamsController {
       .where('id', params.id)
       .preload('lead')
       .preload('organization')
+      .preload('chatRooms')
       .first()
 
     if (!team) {
