@@ -94,6 +94,16 @@ export default class OrganizationReportsController {
       .count('* as count')
       .groupBy('attendances.method')
 
+    // Team stats
+    const totalTeams = await Database.from('teams').where('organization_id', orgId).count('* as total')
+
+    const teamResources = await Database.from('resource_assignments')
+      .join('teams', 'resource_assignments.related_id', 'teams.id')
+      .where('teams.organization_id', orgId)
+      .where('resource_assignments.assignment_type', 'team')
+      .whereIn('resource_assignments.status', ['assigned', 'in_use'])
+      .count('* as total')
+
     return response.ok({
       period: {
         start: start.toISODate(),
@@ -130,6 +140,11 @@ export default class OrganizationReportsController {
           acc[m.method || 'unknown'] = m.count
           return acc
         }, {})
+      },
+      teams: {
+        total: totalTeams[0]?.total || 0,
+        resourcesAssigned: teamResources[0]?.total || 0,
+        complianceRate: 0 // Placeholder for complex calculation
       }
     })
   }
