@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import api from '../lib/api';
 import { ChatRoom } from '../types/chat';
@@ -14,6 +14,7 @@ export default function ChatPage({ height = "h-[calc(100vh-164px)]" }: { height?
     const [searchParams, setSearchParams] = useSearchParams();
     const activeRoomId = searchParams.get('roomId');
 
+    const queryClient = useQueryClient();
     const { data: user } = useQuery(['currentUser'], () => api.getCurrentUser());
     const { data: chats, isLoading } = useQuery<ChatRoom[]>(['chats'], () => api.listChats());
 
@@ -26,34 +27,57 @@ export default function ChatPage({ height = "h-[calc(100vh-164px)]" }: { height?
     };
 
     // Auto-select room based on search params if roomId is missing
+    // Auto-select room based on search params if roomId is missing
     useEffect(() => {
-        if (!activeRoomId && chats && user) {
-            const orgId = searchParams.get('orgId');
-            const teamId = searchParams.get('teamId');
-            const userId = searchParams.get('userId');
+        const findAndSelectRoom = async () => {
+            if (!activeRoomId && chats && user) {
+                const orgId = searchParams.get('orgId');
+                const teamId = searchParams.get('teamId');
+                const userId = searchParams.get('userId');
 
-            let targetRoom: ChatRoom | undefined;
+                if (!orgId && !teamId && !userId) return;
 
-            if (orgId) {
-                targetRoom = chats.find(c =>
-                    c.organizationId === Number(orgId) && c.volunteerId === user.id
-                );
-            } else if (teamId) {
-                targetRoom = chats.find(c =>
-                    c.teamId === Number(teamId)
-                );
-            } else if (userId) {
-                // Find chat where partner matches the userId
-                targetRoom = chats.find(c =>
-                    c.volunteerId === Number(userId)
-                );
+                let targetRoom: ChatRoom | undefined;
+
+                if (orgId) {
+                    targetRoom = chats.find(c =>
+                        c.organizationId === Number(orgId) && c.volunteerId === user.id
+                    );
+                } else if (teamId) {
+                    targetRoom = chats.find(c =>
+                        c.teamId === Number(teamId)
+                    );
+                } else if (userId) {
+                    // Find chat where partner matches the userId
+                    targetRoom = chats.find(c =>
+                        c.volunteerId === Number(userId)
+                    );
+                }
+
+                if (targetRoom) {
+                    handleSelectChat(targetRoom.id);
+                } else {
+                    // Start new chat if orgId or teamId provided
+                    try {
+                        const room = await api.startChat({
+                            organizationId: orgId ? Number(orgId) : undefined,
+                            teamId: teamId ? Number(teamId) : undefined,
+                            volunteerId: user.id
+                        });
+                        if (room && (room as any).data) {
+                            const newRoom = (room as any).data;
+                            handleSelectChat(newRoom.id);
+                            queryClient.invalidateQueries(['chats']);
+                        }
+                    } catch (e) {
+                        console.error("Failed to start chat", e);
+                    }
+                }
             }
+        };
 
-            if (targetRoom) {
-                handleSelectChat(targetRoom.id);
-            }
-        }
-    }, [activeRoomId, chats, user, searchParams]);
+        findAndSelectRoom();
+    }, [activeRoomId, chats, user, searchParams, queryClient]);
 
     // const selectedChat = chats?.find(c => c.id === Number(activeRoomId));
 
