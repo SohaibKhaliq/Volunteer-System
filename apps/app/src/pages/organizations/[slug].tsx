@@ -40,7 +40,8 @@ interface Opportunity {
 }
 
 export default function PublicOrganizationDetail() {
-  const { slug } = useParams<{ slug: string }>();
+  const { slug, id } = useParams<{ slug?: string; id?: string }>();
+  const effectiveSlug = slug || id;
 
   // Fetch organization details
   const {
@@ -48,16 +49,16 @@ export default function PublicOrganizationDetail() {
     isLoading: isOrgLoading,
     error
   } = useQuery({
-    queryKey: ['publicOrganization', slug],
-    queryFn: () => api.getPublicOrganization(slug!),
-    enabled: !!slug
+    queryKey: ['publicOrganization', effectiveSlug],
+    queryFn: () => api.getPublicOrganization(effectiveSlug!),
+    enabled: !!effectiveSlug
   });
 
   // Fetch opportunities
   const { data: oppsData, isLoading: isOppsLoading } = useQuery({
-    queryKey: ['publicOrganizationOpportunities', slug],
-    queryFn: () => api.getPublicOrganizationOpportunities(slug!, { upcoming: 'true', limit: 6 }),
-    enabled: !!slug
+    queryKey: ['publicOrganizationOpportunities', effectiveSlug],
+    queryFn: () => api.getPublicOrganizationOpportunities(effectiveSlug!, { upcoming: 'true', limit: 6 }),
+    enabled: !!effectiveSlug
   });
 
   if (isOrgLoading) {
@@ -68,7 +69,7 @@ export default function PublicOrganizationDetail() {
     );
   }
 
-  if (error || !orgData?.data) {
+  if (error || !orgData) {
     return (
       <div className="container mx-auto py-8 px-4">
         <Card>
@@ -87,8 +88,8 @@ export default function PublicOrganizationDetail() {
     );
   }
 
-  const org: OrganizationDetail = orgData.data;
-  const opportunities: Opportunity[] = oppsData?.data?.data || [];
+  const org: OrganizationDetail = orgData;
+  const opportunities: Opportunity[] = oppsData?.data || [];
 
   return (
     <div className="container mx-auto py-8 px-4">
