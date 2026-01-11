@@ -180,14 +180,9 @@ export default function AppProvider({ children }: AppProviderProps) {
   });
   const prevPathRef = useRef<string>(location.pathname);
 
-  const { data: featuresData } = useQuery({
-    queryKey: ['admin', 'features'],
-    queryFn: () => api.getFeatures(),
-    enabled: !!token
-  });
 
-  const features = featuresData?.data ?? featuresData ?? {};
-  const complianceEnforcement = features.complianceEnforcement === true;
+  const complianceEnforcementSetting = settings?.find((s: any) => s.key === 'enable_compliance_enforcement')?.value;
+  const complianceEnforcement = complianceEnforcementSetting === 'true';
   const user = me?.data ?? me;
   const isCompliant = user?.complianceStatus === 'compliant';
 
