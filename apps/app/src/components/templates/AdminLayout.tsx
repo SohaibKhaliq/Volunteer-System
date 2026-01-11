@@ -214,6 +214,7 @@ export default function AdminLayout() {
         title: 'Safety & Compliance',
         items: [
           { path: '/admin/compliance', icon: Shield, label: 'Compliance' },
+          { path: '/admin/certificate-templates', icon: Award, label: 'Certificate Templates' },
           { path: '/admin/certifications', icon: Award, label: 'Certifications' },
           { path: '/admin/background-checks', icon: ClipboardCheck, label: 'Background Checks', showBadge: true }
         ]
