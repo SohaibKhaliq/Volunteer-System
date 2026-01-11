@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { toast } from '@/components/atoms/use-toast';
@@ -24,10 +25,11 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Textarea } from '@/components/ui/textarea';
-import { Search, Filter, MoreHorizontal, Loader2, Plus, FileText, XCircle } from 'lucide-react';
+import { Search, Filter, MoreHorizontal, Loader2, Plus, FileText, XCircle, MessageSquare } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 export default function OrganizationVolunteers() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -111,6 +113,22 @@ export default function OrganizationVolunteers() {
       updateStatusMutation.mutate({ memberId: actionMember.user_id, status: actionMember.status, notes });
       setNotesDialogOpen(false);
     }
+  };
+
+  const startChatMutation = useMutation({
+    mutationFn: async (volunteerId: number) => {
+      return api.startChat({ organizationId: orgId, volunteerId });
+    },
+    onSuccess: (room) => {
+      navigate(`/organization/communications?roomId=${room.id}`);
+    },
+    onError: () => {
+      toast.error('Failed to start chat');
+    }
+  });
+
+  const handleMessage = (member: any) => {
+    startChatMutation.mutate(member.user_id);
   };
 
   const getStatusBadge = (status: string) => {
@@ -214,6 +232,15 @@ export default function OrganizationVolunteers() {
                     <TableCell>{member.hours || 0} hrs</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleMessage(member)}
+                          title="Message"
+                          disabled={startChatMutation.isLoading}
+                        >
+                          <MessageSquare className="h-4 w-4 text-blue-600" />
+                        </Button>
                         {member.status?.toLowerCase() === 'pending' && (
                           <>
                             {member.notes && (
