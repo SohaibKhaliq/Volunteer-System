@@ -633,6 +633,9 @@ Route.group(() => {
 
   // Achievements
   Route.get('/achievements', 'VolunteerController.myAchievements').middleware(['auth']) // Protected
+
+  // Teams
+  Route.get('/teams', 'VolunteerController.myTeams').middleware(['auth'])
 })
   .prefix('/volunteer')
   .middleware(['auth'])
