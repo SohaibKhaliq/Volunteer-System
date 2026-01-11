@@ -19,7 +19,7 @@ const Organizations = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const { data: organizations, isLoading } = useQuery(
     ['organizations'],
-    () => api.listOrganizations() as unknown as Promise<any[]>
+    () => api.listOrganizations({ withCounts: 'true' }) as unknown as Promise<any[]>
   );
 
   const queryClient = useQueryClient();
@@ -175,7 +175,7 @@ const Organizations = () => {
                       <MapPin className="h-3.5 w-3.5 text-primary" /> {org.city || org.location || 'Remote'}
                     </div>
                     <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-lg">
-                      <Users className="h-3.5 w-3.5 text-primary" /> {org.members_count || 0} members
+                      <Users className="h-3.5 w-3.5 text-primary" /> {org.volunteer_count || 0} members
                     </div>
                   </div>
                 </CardContent>
