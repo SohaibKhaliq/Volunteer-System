@@ -1,5 +1,6 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import ChatRoom from 'App/Models/ChatRoom'
+import Team from 'App/Models/Team'
 import Message from 'App/Models/Message'
 import Organization from 'App/Models/Organization'
 import Database from '@ioc:Adonis/Lucid/Database'
@@ -201,28 +202,71 @@ export default class ChatController {
    * Start or get existing chat room without sending a message
    */
   public async start({ request, auth, response }: HttpContextContract) {
-    const user = await auth.use('api').authenticate()
-    const { organizationId, volunteerId, resourceId } = request.all()
+    const authUser = await auth.use('api').authenticate()
+    const { organizationId, volunteerId, resourceId, teamId } = request.all()
+    
+    console.log('--- Chat Start Debug ---')
+    console.log('Auth User ID:', authUser.id)
+    console.log('Received Params:', { organizationId, volunteerId, resourceId, teamId })
 
-    if (!organizationId || !volunteerId) {
-      return response.badRequest('organizationId and volunteerId required')
+    const vId = volunteerId ? Number(volunteerId) : null
+    const tId = teamId ? Number(teamId) : null
+    const rId = resourceId ? Number(resourceId) : null
+    let effectiveOrgId = organizationId ? Number(organizationId) : null
+    
+    // If teamId provided, resolve organizationId if not present
+    if (tId && !effectiveOrgId) {
+      const team = await Team.find(tId)
+      if (team) {
+        effectiveOrgId = team.organizationId
+        console.log('Resolved orgId from team:', effectiveOrgId)
+      } else {
+        console.log('Team not found for ID:', tId)
+      }
+    }
+
+    if (!effectiveOrgId) {
+      console.log('Error: missing effectiveOrgId')
+      return response.badRequest({ message: 'organizationId (or valid teamId) required' })
+    }
+    if (!vId) {
+      console.log('Error: missing volunteerId')
+      return response.badRequest({ message: 'volunteerId required' })
     }
 
     // Reuse logic or simplify: Just find or create the room
     // Find existing
-    let room = await ChatRoom.query()
-      .where('organization_id', organizationId)
-      .where('volunteer_id', volunteerId)
-      .where('resource_id', resourceId || null)
-      .first()
+    const roomQuery = ChatRoom.query()
+      .where('organization_id', effectiveOrgId)
+      .where('volunteer_id', vId)
 
-    if (!room) {
+    if (rId) {
+      roomQuery.where('resource_id', rId)
+    } else {
+      roomQuery.whereNull('resource_id')
+    }
+
+    if (tId) {
+      roomQuery.where('team_id', tId)
+    } else {
+      roomQuery.whereNull('team_id')
+    }
+
+    let room = await roomQuery.first()
+
+    if (room) {
+      console.log('Found existing room:', room.id)
+    } else {
         // Create new
+        console.log('Creating new room...')
         room = await ChatRoom.create({
-          organizationId,
-          volunteerId,
-          resourceId: resourceId || null
+          organizationId: effectiveOrgId,
+          volunteerId: vId,
+          resourceId: rId,
+          teamId: tId,
+          type: tId ? 'team' : (rId ? 'resource_related' : 'direct')
         })
+        console.log('Created room ID:', room.id)
     }
     
     return response.ok(room)
