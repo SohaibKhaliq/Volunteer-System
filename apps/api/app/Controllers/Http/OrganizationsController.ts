@@ -162,7 +162,10 @@ export default class OrganizationsController {
     const page = Number(request.qs().page || 1)
     const perPage = Number(request.qs().perPage || 20)
 
-    const query = Resource.query().where('organization_id', organizationId).whereNull('deleted_at')
+    const query = Resource.query()
+      .where('organization_id', organizationId)
+      .whereNull('deleted_at')
+      .preload('assignments', (q) => q.preload('volunteer'))
     const pag = await query.paginate(page, perPage)
     return response.ok(pag)
   }
