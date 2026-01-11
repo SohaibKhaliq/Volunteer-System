@@ -17,8 +17,27 @@ export default function ChatPage({ height = "h-[calc(100vh-164px)]" }: { height?
     const { data: chats, isLoading } = useQuery<ChatRoom[]>(['chats'], () => api.listChats());
 
     const handleSelectChat = (roomId: number) => {
-        setSearchParams({ roomId: roomId.toString() });
+        setSearchParams((prev) => {
+            const next = new URLSearchParams(prev);
+            next.set('roomId', roomId.toString());
+            return next;
+        });
     };
+
+    // Auto-select room based on orgId if roomId is missing
+    useEffect(() => {
+        if (!activeRoomId && chats && user) {
+            const orgId = searchParams.get('orgId');
+            if (orgId) {
+                const targetRoom = chats.find(c =>
+                    c.organizationId === Number(orgId) && c.volunteerId === user.id
+                );
+                if (targetRoom) {
+                    handleSelectChat(targetRoom.id);
+                }
+            }
+        }
+    }, [activeRoomId, chats, user, searchParams]);
 
     // const selectedChat = chats?.find(c => c.id === Number(activeRoomId));
 
