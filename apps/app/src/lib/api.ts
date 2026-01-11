@@ -386,6 +386,21 @@ const api = {
   updateOrganizationTeam: async (id: number, data: any) => organizationApi.updateTeam(id, data),
   deleteOrganizationTeam: async (id: number) => organizationApi.deleteTeam(id),
 
+  // Team Details
+  getTeamMembers: async (teamId: number) => axios.get(`/organization/teams/${teamId}/members`),
+  addTeamMember: async (teamId: number, data: any) => axios.post(`/organization/teams/${teamId}/members`, data),
+  removeTeamMember: async (teamId: number, userId: number) =>
+    axios.delete(`/organization/teams/${teamId}/members/${userId}`),
+
+  getTeamResources: async (teamId: number) => axios.get(`/organization/teams/${teamId}/resources`),
+  assignTeamResource: async (teamId: number, data: any) => axios.post(`/organization/teams/${teamId}/resources`, data),
+
+  getTeamRequirements: async (teamId: number) => axios.get(`/organization/teams/${teamId}/requirements`),
+  addTeamRequirement: async (teamId: number, data: any) =>
+    axios.post(`/organization/teams/${teamId}/requirements`, data),
+  deleteTeamRequirement: async (teamId: number, reqId: number) =>
+    axios.delete(`/organization/teams/${teamId}/requirements/${reqId}`),
+
   // Events
   listOrganizationEvents: async () => axios.get('/organization/events'),
   createOrganizationEvent: async (data: any) => axios.post('/organization/events', data),
@@ -622,6 +637,9 @@ const api = {
   // Volunteer Achievements
   getVolunteerAchievements: async () => axios.get('/volunteer/achievements'),
 
+  // Volunteer Teams
+  getMyTeams: async () => axios.get('/volunteer/teams'),
+
   // ==========================================
   // ROLES & TYPES MANAGEMENT
   // ==========================================
@@ -684,7 +702,47 @@ const api = {
     favicon_url?: string;
   }) => axios.post('/admin/system-settings/branding', branding),
   createBackup: async () => axios.get('/admin/backup'),
-  getBackupStatus: async () => axios.get('/admin/backup/status')
+  getBackupStatus: async () => axios.get('/admin/backup/status'),
+
+  /* Chat */
+  listChats: async () => axios.get('/chat'),
+  getChat: async (id: number) => axios.get(`/chat/${id}`),
+  sendMessage: async (data: any) => axios.post('/chat', data),
+  startChat: async (data: any) => axios.post('/chat/start', data),
+  /* Certificate Templates (Admin) */
+  listCertificateTemplates: async (params?: any) => axios.get('/admin/certificate-templates', { params }),
+  createCertificateTemplate: async (data: any) => axios.post('/admin/certificate-templates', data),
+  getCertificateTemplate: async (id: number) => axios.get(`/admin/certificate-templates/${id}`),
+  updateCertificateTemplate: async (id: number, data: any) => axios.put(`/admin/certificate-templates/${id}`, data),
+  deleteCertificateTemplate: async (id: number) => axios.delete(`/admin/certificate-templates/${id}`),
+
+  /* Training Modules (Organization) */
+  listTrainingModules: async (params?: any) => axios.get('/organization/training-modules', { params }),
+  createTrainingModule: async (data: any) => axios.post('/organization/training-modules', data),
+  getTrainingModule: async (id: number) => axios.get(`/organization/training-modules/${id}`),
+  updateTrainingModule: async (id: number, data: any) => axios.put(`/organization/training-modules/${id}`, data),
+  deleteTrainingModule: async (id: number) => axios.delete(`/organization/training-modules/${id}`),
+
+  /* Certificates (Organization) */
+  listIssuedCertificates: async (params?: any) => axios.get('/organization/certificates', { params }),
+  issueCertificate: async (data: any) => axios.post('/organization/certificates', data),
+  revokeCertificate: async (id: number, reason: string) =>
+    axios.post(`/organization/certificates/${id}/revoke`, { reason }),
+
+  /* Training (Volunteer) */
+  listVolunteerTraining: async () => axios.get('/volunteer/training'),
+  getVolunteerTrainingModule: async (moduleId: number) => axios.get(`/volunteer/training/${moduleId}`),
+  startVolunteerTraining: async (moduleId: number) => axios.post(`/volunteer/training/${moduleId}/start`),
+  completeVolunteerTraining: async (moduleId: number, data: { score: number }) =>
+    axios.post(`/volunteer/training/${moduleId}/complete`, data),
+
+  /* Certificates (Volunteer) */
+  getMyCertificates: async () => axios.get('/volunteer/certificates'),
+  downloadCertificate: async (id: number) => axios.get(`/volunteer/certificates/${id}/download`),
+
+  /* Verification (Public) */
+  verifyCertificate: async (uuid: string) => axios.get(`/verify/${uuid}`), // Legacy method name, sticking to it for compat if used elsewhere? Or change?
+  getPublicCertificate: async (id: string) => axios.get(`/public/certificates/${id}`)
 } as const;
 
 export const useLazyQuery = (key: QueryKey, fn: QueryFunction, options = {}) => {
