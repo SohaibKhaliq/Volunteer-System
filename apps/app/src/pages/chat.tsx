@@ -1,18 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import api from '../lib/api';
 import { ChatRoom } from '../types/chat';
 import { ChatWindow } from '../components/Chat/ChatWindow';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
-import { Card } from '../components/ui/card';
 import { ScrollArea } from '../components/ui/scroll-area';
 import { cn } from '../lib/utils';
 import { Loader2, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function ChatPage({ height = "h-[calc(100vh-164px)]" }: { height?: string }) {
-    const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const activeRoomId = searchParams.get('roomId');
 
@@ -23,7 +21,7 @@ export default function ChatPage({ height = "h-[calc(100vh-164px)]" }: { height?
         setSearchParams({ roomId: roomId.toString() });
     };
 
-    const selectedChat = chats?.find(c => c.id === Number(activeRoomId));
+    // const selectedChat = chats?.find(c => c.id === Number(activeRoomId));
 
     if (isLoading) {
         return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin" /></div>;
