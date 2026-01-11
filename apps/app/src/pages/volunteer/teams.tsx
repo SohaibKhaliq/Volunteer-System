@@ -34,10 +34,7 @@ const VolunteerTeams = () => {
     }
 
     const handleOpenChat = (teamId: number) => {
-        // In a real app, this would find the chat room ID for the team
-        console.log('Opening chat for team:', teamId);
-        // For now, we redirect to communications/chat
-        navigate('/communications');
+        navigate(`/profile?tab=messages&teamId=${teamId}`);
     };
 
     return (
@@ -118,7 +115,7 @@ const VolunteerTeams = () => {
                                                     variant="ghost"
                                                     size="icon"
                                                     className="h-8 w-8 rounded-full hover:bg-white dark:hover:bg-slate-800"
-                                                    onClick={() => navigate(`/communications?chatWith=${team.lead.id}`)}
+                                                    onClick={() => navigate(`/profile?tab=messages&userId=${team.lead.id}`)}
                                                 >
                                                     <MessageSquare className="h-4 w-4 text-primary" />
                                                 </Button>
