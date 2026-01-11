@@ -215,6 +215,7 @@ const routes: RouteObject[] = [
       { path: 'communications', element: <OrganizationCommunications /> },
       { path: 'certificates', element: <OrganizationCertificates /> },
       { path: 'training', element: <OrganizationTraining /> },
+      { path: 'training-modules', element: <OrganizationTraining /> },
       { path: 'settings', element: <OrganizationSettings /> },
       // Reactivated Orphans (Organization Context)
       { path: 'applications', element: <OrganizationApplications /> },
