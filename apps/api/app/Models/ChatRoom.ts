@@ -11,20 +11,20 @@ export default class ChatRoom extends BaseModel {
   @column({ isPrimary: true })
   public id: number
 
-  @column()
+  @column({ columnName: 'organization_id' })
   public organizationId: number
 
-  @column()
+  @column({ columnName: 'volunteer_id' })
   public volunteerId: number
 
-  @column()
+  @column({ columnName: 'resource_id' })
   public resourceId: number | null
 
-  @column()
+  @column({ columnName: 'team_id' })
   public teamId: number | null
 
   @column()
-  public type: 'text' | 'team' | 'resource_related' | string
+  public type: 'direct' | 'team' | 'resource_related'
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
