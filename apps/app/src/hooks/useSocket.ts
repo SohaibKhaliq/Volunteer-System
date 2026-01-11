@@ -25,6 +25,17 @@ export const useSocket = (options: UseSocketOptions = {}) => {
   const [isConnected, setIsConnected] = useState(false);
   const queryClient = useQueryClient();
 
+  // Use refs for callbacks to avoid re-triggering the connection effect
+  const onConnectRef = useRef(onConnect);
+  const onDisconnectRef = useRef(onDisconnect);
+  const onErrorRef = useRef(onError);
+
+  useEffect(() => {
+    onConnectRef.current = onConnect;
+    onDisconnectRef.current = onDisconnect;
+    onErrorRef.current = onError;
+  }, [onConnect, onDisconnect, onError]);
+
   useEffect(() => {
     if (!enabled) return;
 
@@ -57,18 +68,18 @@ export const useSocket = (options: UseSocketOptions = {}) => {
     socket.on('connect', () => {
       console.log('[Socket.IO] Connected:', socket.id);
       setIsConnected(true);
-      onConnect?.();
+      onConnectRef.current?.();
     });
 
     socket.on('disconnect', () => {
       console.log('[Socket.IO] Disconnected');
       setIsConnected(false);
-      onDisconnect?.();
+      onDisconnectRef.current?.();
     });
 
     socket.on('connect_error', (error) => {
       console.error('[Socket.IO] Connection error:', error);
-      onError?.(error);
+      onErrorRef.current?.(error);
     });
 
     // ==========================================
@@ -327,7 +338,7 @@ export const useSocket = (options: UseSocketOptions = {}) => {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [enabled, onConnect, onDisconnect, onError, queryClient]);
+  }, [enabled, queryClient]);
 
   const joinChat = (roomId: number) => {
     socketRef.current?.emit('join-chat', roomId);
