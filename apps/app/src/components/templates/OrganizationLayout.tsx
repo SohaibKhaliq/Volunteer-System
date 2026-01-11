@@ -7,17 +7,19 @@ import {
   Building2,
   Calendar,
   Users,
-  Clock,
-  ShieldCheck,
-  FileBarChart,
+  Clock, // Restored
+  ShieldCheck, // Restored
+  FileBarChart, // Restored
   Settings,
   LogOut,
   Bell,
   MessageSquare,
   Briefcase,
-  Package,
+  Package, // Restored
   Award,
-  List
+  List, // Restored
+  Shield, // New
+  Layers, // New
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import ThemeToggle from '@/components/molecules/theme-toggle';
@@ -40,8 +42,11 @@ export default function OrganizationLayout() {
     { path: '/organization/applications', icon: List, label: 'Applications' },
     { path: '/organization/compliance', icon: ShieldCheck, label: 'Compliance' },
     { path: '/organization/compliance-requirements', icon: ShieldCheck, label: 'Compliance Reqs' },
+    { path: '/organization/training', icon: Award, label: 'Training' }, // Added Training nav item
     { path: '/organization/reports', icon: FileBarChart, label: 'Reports' },
     { path: '/organization/resources', icon: Package, label: 'Resources' },
+    { path: '/organization/training-modules', icon: Briefcase, label: 'Training Modules' },
+    { path: '/organization/certificates', icon: Award, label: 'Certificates' },
     { path: '/organization/achievements', icon: Award, label: 'Achievements' },
     { path: '/organization/communications', icon: MessageSquare, label: 'Communications' },
     { path: '/organization/settings', icon: Settings, label: 'Settings' }
