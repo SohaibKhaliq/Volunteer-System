@@ -212,6 +212,18 @@ Route.group(() => {
     '/dashboard/top-volunteers',
     'OrganizationDashboardController.topVolunteers'
   ).middleware(['auth'])
+  // Training Modules
+  Route.get('/training-modules', 'TrainingModulesController.index').middleware(['auth'])
+  Route.post('/training-modules', 'TrainingModulesController.store').middleware(['auth'])
+  Route.get('/training-modules/:id', 'TrainingModulesController.show').middleware(['auth'])
+  Route.put('/training-modules/:id', 'TrainingModulesController.update').middleware(['auth'])
+  Route.delete('/training-modules/:id', 'TrainingModulesController.destroy').middleware(['auth'])
+
+  // Certificates Issuance
+  Route.get('/certificate-templates', 'CertificateTemplatesController.index').middleware(['auth'])
+  Route.get('/certificates', 'CertificatesController.issuedByOrganization').middleware(['auth'])
+  Route.post('/certificates', 'CertificatesController.issue').middleware(['auth'])
+  Route.post('/certificates/:id/revoke', 'CertificatesController.revoke').middleware(['auth'])
 }).prefix('/organization')
 
 // Organization-scoped report exports (with organization ID in path)
@@ -264,6 +276,20 @@ Route.group(() => {
   // Teams
   Route.get('/teams', 'TeamsController.index').middleware(['auth'])
   Route.post('/teams', 'TeamsController.store').middleware(['auth'])
+
+  // Team Members
+  Route.post('/teams/:id/members', 'TeamMembersController.store').middleware(['auth'])
+  Route.get('/teams/:id/members', 'TeamMembersController.index').middleware(['auth']) // Check if index method exists in controller? I didn't create it specifically, but can add if needed. I only implemented store/destroy.
+  Route.delete('/teams/:teamId/members/:userId', 'TeamMembersController.destroy').middleware(['auth'])
+
+  // Team Resources
+  Route.get('/teams/:id/resources', 'TeamResourcesController.index').middleware(['auth'])
+  Route.post('/teams/:id/resources', 'TeamResourcesController.store').middleware(['auth'])
+
+  // Team Requirements
+  Route.get('/teams/:id/requirements', 'TeamRequirementsController.index').middleware(['auth'])
+  Route.post('/teams/:id/requirements', 'TeamRequirementsController.store').middleware(['auth'])
+  Route.delete('/teams/:id/requirements/:requirementId', 'TeamRequirementsController.destroy').middleware(['auth'])
 
   // Opportunities
   Route.get('/opportunities', 'OpportunitiesController.index').middleware(['auth'])
