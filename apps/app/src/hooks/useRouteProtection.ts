@@ -5,7 +5,7 @@ import api from '@/lib/api';
 import useSystemRoles from '@/hooks/useSystemRoles';
 import { useStore } from '@/lib/store';
 
-export type UserRole = 'admin' | 'organization_admin' | 'volunteer';
+export type UserRole = 'admin' | 'organization_admin' | 'organization_coordinator' | 'volunteer';
 
 /**
  * Hook to protect routes based on user role
@@ -70,7 +70,10 @@ export function getUserRole(user: any): UserRole {
   if (user.organizations && Array.isArray(user.organizations)) {
     for (const org of user.organizations) {
       const orgRole = org.role || org.pivot?.role;
-      if (orgRole && /admin|owner|manager/i.test(String(orgRole))) return 'organization_admin';
+      if (orgRole) {
+        if (/admin|owner|manager/i.test(String(orgRole))) return 'organization_admin';
+        if (/coordinator/i.test(String(orgRole))) return 'organization_coordinator';
+      }
     }
   }
   if (user.teamMemberships && Array.isArray(user.teamMemberships)) {
