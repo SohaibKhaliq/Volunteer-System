@@ -80,7 +80,7 @@ export default function OrganizationShifts() {
 
   const { data: volunteersRaw } = useQuery({
     queryKey: ['organizationVolunteers', selectedOrganization?.id],
-    queryFn: () => api.listOrganizationVolunteers({ organizationId: selectedOrganization?.id }),
+    queryFn: () => api.listOrganizationVolunteers({ organization_id: selectedOrganization?.id }),
     enabled: !!selectedOrganization?.id
   });
 
@@ -807,7 +807,7 @@ function AssignVolunteersDialog({ open, onOpenChange, shift, volunteers }: any) 
                     className="justify-start"
                   >
                     <Users className="h-4 w-4 mr-2" />
-                    {s.user.firstName} {s.user.lastName}
+                    {s.user.first_name || s.user.firstName} {s.user.last_name || s.user.lastName}
                     <Badge variant="secondary" className="ml-auto">
                       Score: {s.score}
                     </Badge>
@@ -826,7 +826,7 @@ function AssignVolunteersDialog({ open, onOpenChange, shift, volunteers }: any) 
               <SelectContent>
                 {volunteers.map((v: any) => (
                   <SelectItem key={v.id} value={v.id.toString()}>
-                    {v.firstName || v.first_name} {v.lastName || v.last_name}
+                    {v.first_name || v.firstName} {v.last_name || v.lastName}
                   </SelectItem>
                 ))}
               </SelectContent>
