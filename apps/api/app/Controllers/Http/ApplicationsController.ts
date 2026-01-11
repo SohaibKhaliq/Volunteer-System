@@ -60,6 +60,40 @@ export default class ApplicationsController {
       return response.conflict({ message: 'You have already applied to this opportunity' })
     }
 
+    // --- Compliance Check ---
+    const ComplianceRequirement = (await import('App/Models/ComplianceRequirement')).default
+    const ComplianceDocument = (await import('App/Models/ComplianceDocument')).default
+
+    const requirements = await ComplianceRequirement.query()
+      .where('organization_id', opportunity.organizationId)
+      .andWhere((q) => {
+        q.whereNull('opportunity_id').orWhere('opportunity_id', opportunity.id)
+      })
+      .andWhere('is_mandatory', true)
+      .andWhereIn('enforcement_level', ['onboarding', 'signup'])
+
+    if (requirements.length > 0) {
+      const docTypes = requirements.map((r) => r.docType)
+      const userDocs = await ComplianceDocument.query()
+        .where('user_id', user.id)
+        .whereIn('doc_type', docTypes)
+        .where('status', 'Valid')
+        .where((q) => {
+          q.whereNull('expires_at').orWhere('expires_at', '>', DateTime.now().toSQL())
+        })
+
+      const validDocTypes = new Set(userDocs.map((d) => d.docType))
+      const missingRequirements = requirements.filter((r) => !validDocTypes.has(r.docType))
+
+      if (missingRequirements.length > 0) {
+        return response.forbidden({
+          message: 'You do not meet the compliance requirements to apply.',
+          requirements: missingRequirements.map((r) => ({ name: r.name, docType: r.docType }))
+        })
+      }
+    }
+    // --- End Compliance Check ---
+
     // Note: Capacity check happens on acceptance, not on application
     // Applications are just requests; the capacity limit applies to accepted applications
     // This avoids race conditions on application creation
