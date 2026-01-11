@@ -73,6 +73,14 @@ export const organizationApi = {
   getTeam: async (id: number) => axios.get(`/organization/teams/${id}`),
   updateTeam: async (id: number, data: any) => axios.put(`/organization/teams/${id}`, data),
   deleteTeam: async (id: number) => axios.delete(`/organization/teams/${id}`),
+  getTeamMembers: async (id: number) => axios.get(`/organization/teams/${id}/members`),
+  addTeamMember: async (id: number, data: any) => axios.post(`/organization/teams/${id}/members`, data),
+  removeTeamMember: async (id: number, userId: number) => axios.delete(`/organization/teams/${id}/members/${userId}`),
+  getTeamRequirements: async (id: number) => axios.get(`/organization/teams/${id}/requirements`),
+  addTeamRequirement: async (id: number, data: any) => axios.post(`/organization/teams/${id}/requirements`, data),
+  deleteTeamRequirement: async (id: number, reqId: number) => axios.delete(`/organization/teams/${id}/requirements/${reqId}`),
+  getTeamResources: async (id: number) => axios.get(`/organization/teams/${id}/resources`),
+  assignTeamResource: async (id: number, data: any) => axios.post(`/organization/teams/${id}/resources`, data),
 
   // ==========================================
   // EVENTS
