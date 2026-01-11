@@ -44,12 +44,14 @@ import {
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
+// Page Imports
+import VolunteerCertificates from '@/pages/volunteer/certificates';
+import VolunteerTeams from '@/pages/volunteer/teams';
+import ChatPage from '@/pages/chat';
+import VolunteerApplicationsPage from '@/pages/volunteer/applications';
+import VolunteerOrganizationsPage from '@/pages/volunteer/organizations';
+import VolunteerCompliance from '@/pages/volunteer/compliance';
 import VolunteerAttendance from '@/pages/volunteer/attendance';
-import { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useQueryClient } from '@tanstack/react-query';
-import { useStore } from '@/lib/store';
-import { useRef } from 'react';
 
 export default function Profile() {
   const { t } = useTranslation();
@@ -69,7 +71,6 @@ export default function Profile() {
   }, [tabParam]);
 
   // State
-  const [activeTab, setActiveTab] = useState('applications');
   const [avatarVersion, setAvatarVersion] = useState(Date.now());
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -413,7 +414,9 @@ export default function Profile() {
             {/* --- MESSAGES --- */}
             {activeTab === 'messages' && (
               <div className="animate-in fade-in duration-300">
-                <ChatPage height="h-[calc(100vh-200px)]" />
+                <ChatPage
+                  height="h-[calc(100vh-200px)]"
+                />
               </div>
             )}
 
