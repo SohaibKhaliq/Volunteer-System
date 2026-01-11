@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -57,16 +57,30 @@ export default function OrganizationShifts() {
 
   const { data: shiftsRaw, isLoading } = useQuery({
     queryKey: ['organizationShifts', selectedEvent],
-    queryFn: () =>
-      api.listShifts({
+    queryFn: async () => {
+      const shifts = await api.listShifts({
         scope: 'organization',
         event_id: selectedEvent || undefined
-      })
+      });
+      // Preload assignments for each shift
+      const shiftsArray = Array.isArray(shifts) ? shifts : (shifts as any)?.data || [];
+      const shiftsWithAssignments = await Promise.all(
+        shiftsArray.map(async (shift: any) => {
+          try {
+            const assignments = await api.listShiftAssignments({ shift_id: shift.id });
+            return { ...shift, assignments: Array.isArray(assignments) ? assignments : (assignments as any)?.data || [] };
+          } catch {
+            return { ...shift, assignments: [] };
+          }
+        })
+      );
+      return shiftsWithAssignments;
+    }
   });
 
   const { data: volunteersRaw } = useQuery({
     queryKey: ['organizationVolunteers', selectedOrganization?.id],
-    queryFn: () => api.listOrganizationVolunteers({ organization_id: selectedOrganization?.id }),
+    queryFn: () => api.listOrganizationVolunteers({ organizationId: selectedOrganization?.id }),
     enabled: !!selectedOrganization?.id
   });
 
@@ -576,7 +590,7 @@ function EditShiftDialog({ open, onOpenChange, shift, events }: any) {
   });
 
   // Update form when shift changes
-  useState(() => {
+  useEffect(() => {
     if (shift) {
       setFormData({
         title: shift.title || '',
@@ -587,7 +601,7 @@ function EditShiftDialog({ open, onOpenChange, shift, events }: any) {
         capacity: shift.capacity?.toString() || ''
       });
     }
-  });
+  }, [shift]);
 
   const updateMutation = useMutation({
     mutationFn: (data: any) => api.updateShift(shift?.id, data),
@@ -716,11 +730,11 @@ function AssignVolunteersDialog({ open, onOpenChange, shift, volunteers }: any) 
     enabled: !!shift?.id && open
   });
 
-  useState(() => {
+  useEffect(() => {
     if (suggestionsData) {
       setSuggestions((suggestionsData as any)?.suggestions || []);
     }
-  });
+  }, [suggestionsData]);
 
   const checkConflictMutation = useMutation({
     mutationFn: ({ shiftId, userId }: any) => api.checkShiftConflicts(shiftId, userId),
