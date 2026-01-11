@@ -234,6 +234,12 @@ export default class AuthController {
   public async login({ request, response, auth }: HttpContextContract) {
     const { email, password } = request.only(['email', 'password'])
 
+    if (!email || !password) {
+      return response.badRequest({
+        error: { message: 'Email and password are required' }
+      })
+    }
+
     try {
       // Step 1 & 2: Validate credentials and verify password
       const user = await User.findBy('email', email)
