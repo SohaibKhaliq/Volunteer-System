@@ -13,6 +13,7 @@ import UserAchievement from 'App/Models/UserAchievement'
 import Achievement from 'App/Models/Achievement'
 import AchievementProgress from 'App/Models/AchievementProgress'
 import ShiftAssignment from 'App/Models/ShiftAssignment'
+import Team from 'App/Models/Team'
 
 /**
  * VolunteerController - Volunteer Panel endpoints
