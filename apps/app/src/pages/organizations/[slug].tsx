@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, MapPin, Users, Clock, Calendar, Globe, ArrowLeft } from 'lucide-react';
+import { Loader2, MapPin, Users, Clock, Calendar, Globe, ArrowLeft, MessageSquare } from 'lucide-react';
 
 interface OrganizationDetail {
   id: number;
@@ -40,6 +40,7 @@ interface Opportunity {
 }
 
 export default function PublicOrganizationDetail() {
+  const navigate = useNavigate();
   const { slug, id } = useParams<{ slug?: string; id?: string }>();
   const effectiveSlug = slug || id;
 
@@ -125,12 +126,32 @@ export default function PublicOrganizationDetail() {
                   )}
                 </div>
                 {org.website && (
-                  <a href={org.website} target="_blank" rel="noopener noreferrer">
-                    <Button variant="outline">
-                      <Globe className="h-4 w-4 mr-2" />
-                      Website
+                  <div className="flex gap-2">
+                    <a href={org.website} target="_blank" rel="noopener noreferrer">
+                      <Button variant="outline">
+                        <Globe className="h-4 w-4 mr-2" />
+                        Website
+                      </Button>
+                    </a>
+                    <Button
+                      variant="outline"
+                      className="gap-2 border-primary/20 hover:bg-primary/5 text-primary"
+                      onClick={() => navigate(`/profile?tab=messages&orgId=${org.id}`)}
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                      Message
                     </Button>
-                  </a>
+                  </div>
+                )}
+                {!org.website && (
+                  <Button
+                    variant="outline"
+                    className="gap-2 border-primary/20 hover:bg-primary/5 text-primary"
+                    onClick={() => navigate(`/profile?tab=messages&orgId=${org.id}`)}
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                    Message
+                  </Button>
                 )}
               </div>
               <p className="text-muted-foreground">{org.description || 'No description available.'}</p>
