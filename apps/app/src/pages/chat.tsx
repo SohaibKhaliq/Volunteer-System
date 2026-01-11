@@ -1,6 +1,5 @@
-import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import api from '../lib/api';
 import { ChatRoom } from '../types/chat';
 import { ChatWindow } from '../components/Chat/ChatWindow';
