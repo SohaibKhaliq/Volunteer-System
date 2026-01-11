@@ -53,7 +53,9 @@ export default class ResourceAssignmentSeeder extends BaseSeeder {
         related_id: eventId,
         assigned_at: assignedDate.toISOString().slice(0, 19).replace('T', ' '),
         expected_return_at: expectedReturnDate.toISOString().slice(0, 19).replace('T', ' '),
-        returned_at: returnedDate ? returnedDate.toISOString().slice(0, 19).replace('T', ' ') : null,
+        returned_at: returnedDate
+          ? returnedDate.toISOString().slice(0, 19).replace('T', ' ')
+          : null,
         status: status,
         notes: 'Assigned for event use',
         created_at: timestamp,
@@ -76,15 +78,17 @@ export default class ResourceAssignmentSeeder extends BaseSeeder {
     try {
       // Delete existing assignments to avoid duplicates
       await trx.rawQuery('DELETE FROM resource_assignments')
-      
+
       // Insert assignments in batches
       const batchSize = 10
       for (let i = 0; i < rows.length; i += batchSize) {
         const batch = rows.slice(i, i + batchSize)
-        
+
         const placeholders = batch.map(() => '(?,?,?,?,?,?,?,?,?,?)').join(',')
-        const sql = 'INSERT INTO resource_assignments (resource_id,assignment_type,related_id,assigned_at,expected_return_at,returned_at,status,notes,created_at,updated_at) VALUES ' + placeholders
-        
+        const sql =
+          'INSERT INTO resource_assignments (resource_id,assignment_type,related_id,assigned_at,expected_return_at,returned_at,status,notes,created_at,updated_at) VALUES ' +
+          placeholders
+
         const bindings: any[] = []
         for (const row of batch) {
           bindings.push(
@@ -100,7 +104,7 @@ export default class ResourceAssignmentSeeder extends BaseSeeder {
             row.updated_at
           )
         }
-        
+
         await trx.rawQuery(sql, bindings)
       }
 
