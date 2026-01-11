@@ -11,7 +11,7 @@ import { cn } from '../lib/utils';
 import { Loader2, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
 
-export default function ChatPage() {
+export default function ChatPage({ height = "h-[calc(100vh-164px)]" }: { height?: string }) {
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const activeRoomId = searchParams.get('roomId');
@@ -43,7 +43,7 @@ export default function ChatPage() {
     );
 
     return (
-        <div className="flex h-[calc(100vh-64px)] overflow-hidden bg-background">
+        <div className={cn("flex overflow-hidden bg-background rounded-xl border", height)}>
             {/* Chat List Sidebar */}
             <div className={cn(
                 "w-full md:w-80 border-r flex flex-col bg-card",
