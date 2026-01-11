@@ -25,17 +25,32 @@ export default function ChatPage({ height = "h-[calc(100vh-164px)]" }: { height?
         });
     };
 
-    // Auto-select room based on orgId if roomId is missing
+    // Auto-select room based on search params if roomId is missing
     useEffect(() => {
         if (!activeRoomId && chats && user) {
             const orgId = searchParams.get('orgId');
+            const teamId = searchParams.get('teamId');
+            const userId = searchParams.get('userId');
+
+            let targetRoom: ChatRoom | undefined;
+
             if (orgId) {
-                const targetRoom = chats.find(c =>
+                targetRoom = chats.find(c =>
                     c.organizationId === Number(orgId) && c.volunteerId === user.id
                 );
-                if (targetRoom) {
-                    handleSelectChat(targetRoom.id);
-                }
+            } else if (teamId) {
+                targetRoom = chats.find(c =>
+                    c.teamId === Number(teamId)
+                );
+            } else if (userId) {
+                // Find chat where partner matches the userId
+                targetRoom = chats.find(c =>
+                    c.volunteerId === Number(userId)
+                );
+            }
+
+            if (targetRoom) {
+                handleSelectChat(targetRoom.id);
             }
         }
     }, [activeRoomId, chats, user, searchParams]);
