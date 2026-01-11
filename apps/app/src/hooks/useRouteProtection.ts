@@ -57,7 +57,11 @@ export function useRouteProtection(allowedRoles: UserRole[], redirectTo: string 
  */
 export function getUserRole(user: any): UserRole {
   if (!user) return 'volunteer';
-  // Prefer DB-driven role names and organization/team roles. Avoid direct isAdmin flag checks here.
+  // Check for explicit admin flag first
+  if (user.isAdmin === true || user.is_admin === true || user.isAdmin === 1 || user.is_admin === 1) {
+    return 'admin';
+  }
+  // Prefer DB-driven role names and organization/team roles.
   if (user.roles && Array.isArray(user.roles)) {
     const roleNames = user.roles.map((r: any) => String(r.name || r.slug || r).toLowerCase());
     if (roleNames.some((n: string) => n.includes('admin') || n.includes('owner') || n.includes('super')))
