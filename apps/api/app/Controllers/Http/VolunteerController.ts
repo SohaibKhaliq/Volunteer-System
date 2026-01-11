@@ -12,6 +12,7 @@ import VolunteerHour from 'App/Models/VolunteerHour'
 import UserAchievement from 'App/Models/UserAchievement'
 import Achievement from 'App/Models/Achievement'
 import AchievementProgress from 'App/Models/AchievementProgress'
+import ShiftAssignment from 'App/Models/ShiftAssignment'
 
 /**
  * VolunteerController - Volunteer Panel endpoints
@@ -796,39 +797,31 @@ export default class VolunteerController {
 
       const { page = 1, perPage = 20, from, to } = request.qs()
 
-      const query = Attendance.query()
+      const query = ShiftAssignment.query()
         .where('user_id', user.id)
-        .preload('opportunity', (q: ModelQueryBuilderContract<typeof Opportunity>) => {
-          q.preload('organization')
+        .preload('shift', (q) => {
+          q.preload('event', (eq) => {
+            eq.preload('organization')
+          })
         })
-        .orderBy('check_in_at', 'desc')
+        .orderBy('created_at', 'desc')
 
-      if (from) {
-        query.where('check_in_at', '>=', from)
-      }
-      if (to) {
-        query.where('check_in_at', '<=', to)
-      }
+      // Use created_at or shift date for filtering if needed, 
+      // but usually ShiftAssignment is the entity.
+      
+      const assignments = await query.paginate(page, perPage)
 
-      const attendances = await query.paginate(page, perPage)
-
-      // Calculate total hours
-      const all = await Attendance.query()
+      // Calculate total hours from approved hours or from assignments
+      const hoursResult = await ShiftAssignment.query()
         .where('user_id', user.id)
-        .whereNotNull('check_in_at')
-        .whereNotNull('check_out_at')
-
-      let totalMinutes = 0
-      for (const a of all) {
-        if (a.checkInAt && a.checkOutAt) {
-          const diff = a.checkOutAt.diff(a.checkInAt, 'minutes').minutes
-          totalMinutes += diff
-        }
-      }
+        .whereNotNull('hours')
+        .sum('hours as total')
+      
+      const totalHours = Number(hoursResult[0]?.$extras?.total || 0)
 
       return response.ok({
-        ...attendances.toJSON(),
-        totalHours: Math.round((totalMinutes / 60) * 10) / 10
+        ...assignments.toJSON(),
+        totalHours: Math.round(totalHours * 10) / 10
       })
     } catch (error) {
       Logger.error('My attendance error: %o', error)
