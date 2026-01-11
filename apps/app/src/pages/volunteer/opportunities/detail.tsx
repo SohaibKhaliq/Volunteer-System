@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { format } from 'date-fns';
-import { Calendar, Clock, MapPin, Building2, User, ChevronLeft, CheckCircle, Info } from 'lucide-react';
+import { Calendar, Clock, MapPin, Building2, User, ChevronLeft, CheckCircle, Info, MessageSquare } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -180,13 +180,12 @@ export default function OpportunityDetail() {
                 {status && status !== 'withdrawn' ? (
                   <div className="space-y-3">
                     <div
-                      className={`p-4 rounded-md border flex items-center gap-3 ${
-                        status === 'accepted'
+                      className={`p-4 rounded-md border flex items-center gap-3 ${status === 'accepted'
                           ? 'bg-green-50 border-green-200 text-green-800'
                           : status === 'waitlisted'
                             ? 'bg-orange-50 border-orange-200 text-orange-800'
                             : 'bg-blue-50 border-blue-200 text-blue-800'
-                      }`}
+                        }`}
                     >
                       {status === 'accepted' && <CheckCircle className="w-5 h-5" />}
                       {status === 'waitlisted' && <Clock className="w-5 h-5" />}
@@ -242,6 +241,17 @@ export default function OpportunityDetail() {
                     </DialogContent>
                   </Dialog>
                 )}
+              </div>
+
+              <div className="pt-2">
+                <Button
+                  variant="outline"
+                  className="w-full gap-2 border-primary/20 hover:bg-primary/5 text-primary"
+                  onClick={() => navigate(`/profile?tab=messages&orgId=${opportunity.organization?.id}`)}
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  Message Organization
+                </Button>
               </div>
             </CardContent>
           </Card>
