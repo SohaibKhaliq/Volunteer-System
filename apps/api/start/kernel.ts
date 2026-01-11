@@ -24,6 +24,7 @@ import { initResourceNotifier } from 'App/Services/ResourceNotifier'
 | are defined for every HTTP requests.
 |
 */
+Server.middleware.register([
   () => import('@ioc:Adonis/Core/BodyParser'),
   () => import('@ioc:Adonis/Addons/RmbMiddleware'),
   () => import('App/Middleware/SilentAuth')
