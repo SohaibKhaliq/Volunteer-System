@@ -49,9 +49,6 @@ import { cn } from '@/lib/utils';
 import VolunteerDashboard from '@/pages/volunteer/dashboard';
 import VolunteerApplicationsPage from '@/pages/volunteer/applications';
 import VolunteerOrganizationsPage from '@/pages/volunteer/organizations';
-import VolunteerDashboard from '@/pages/volunteer/dashboard';
-import VolunteerApplicationsPage from '@/pages/volunteer/applications';
-import VolunteerOrganizationsPage from '@/pages/volunteer/organizations';
 import VolunteerCompliance from '@/pages/volunteer/compliance';
 import VolunteerAttendance from '@/pages/volunteer/attendance';
 
