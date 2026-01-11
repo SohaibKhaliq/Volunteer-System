@@ -3,7 +3,6 @@ import ChatRoom from 'App/Models/ChatRoom'
 import Team from 'App/Models/Team'
 import Message from 'App/Models/Message'
 import Organization from 'App/Models/Organization'
-import Database from '@ioc:Adonis/Lucid/Database'
 import { DateTime } from 'luxon'
 import http from 'http'
 
@@ -209,7 +208,7 @@ export default class ChatController {
     console.log('Auth User ID:', authUser.id)
     console.log('Received Params:', { organizationId, volunteerId, resourceId, teamId })
 
-    const vId = volunteerId ? Number(volunteerId) : null
+    const vId = volunteerId ? Number(volunteerId) : authUser.id
     const tId = teamId ? Number(teamId) : null
     const rId = resourceId ? Number(resourceId) : null
     let effectiveOrgId = organizationId ? Number(organizationId) : null
@@ -229,10 +228,8 @@ export default class ChatController {
       console.log('Error: missing effectiveOrgId')
       return response.badRequest({ message: 'organizationId (or valid teamId) required' })
     }
-    if (!vId) {
-      console.log('Error: missing volunteerId')
-      return response.badRequest({ message: 'volunteerId required' })
-    }
+
+    // Since vId defaults to authUser.id, it will always be present if authenticated
 
     // Reuse logic or simplify: Just find or create the room
     // Find existing
