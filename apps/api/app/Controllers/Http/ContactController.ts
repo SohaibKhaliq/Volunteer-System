@@ -1,7 +1,7 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import Logger from '@ioc:Adonis/Core/Logger'
 import { schema, rules } from '@ioc:Adonis/Core/Validator'
-import Mail from '@ioc:Adonis/Addons/Mail'
+// import Mail from '@ioc:Adonis/Addons/Mail' // Commented out - Mail not configured
 
 import ContactSubmission from 'App/Models/ContactSubmission'
 import AuditLog from 'App/Models/AuditLog'
@@ -72,26 +72,27 @@ export default class ContactController {
       })
 
       // Step 3: Optionally notify admin
-      try {
-        await Mail.send((message) => {
-          message
-            .from('noreply@volunteersystem.com')
-            .to('admin@volunteersystem.com')
-            .subject(`New Contact Form Submission: ${data.subject || 'No Subject'}`)
-            .htmlView('emails/contact_notification', {
-              firstName: data.firstName,
-              lastName: data.lastName,
-              email: data.email,
-              phone: data.phone,
-              subject: data.subject,
-              message: data.message,
-              submissionId: submission.id
-            })
-        })
-      } catch (mailError) {
-        Logger.warn('Failed to send admin notification email:', mailError)
-        // Don't fail the request if email fails
-      }
+      // Commented out - Mail not configured
+      // try {
+      //   await Mail.send((message) => {
+      //     message
+      //       .from('noreply@volunteersystem.com')
+      //       .to('admin@volunteersystem.com')
+      //       .subject(`New Contact Form Submission: ${data.subject || 'No Subject'}`)
+      //       .htmlView('emails/contact_notification', {
+      //         firstName: data.firstName,
+      //         lastName: data.lastName,
+      //         email: data.email,
+      //         phone: data.phone,
+      //         subject: data.subject,
+      //         message: data.message,
+      //         submissionId: submission.id
+      //       })
+      //   })
+      // } catch (mailError) {
+      //   Logger.warn('Failed to send admin notification email:', mailError)
+      //   // Don't fail the request if email fails
+      // }
 
       // Log contact submission
       await AuditLog.safeCreate({
