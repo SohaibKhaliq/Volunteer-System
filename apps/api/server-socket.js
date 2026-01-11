@@ -245,7 +245,6 @@ async function main() {
         }
 
         if (data.userId) io.to(`user:${data.userId}`).emit('notification', data)
-        if (data.userId) io.to(`user:${data.userId}`).emit('notification', data)
         if (data.roomId) {
             io.to(`chat:${data.roomId}`).emit('message', data.message || data)
         }
