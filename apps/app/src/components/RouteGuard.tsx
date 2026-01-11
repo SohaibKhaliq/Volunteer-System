@@ -4,7 +4,8 @@ import { useQuery } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useStore } from '@/lib/store';
 import { Loader2 } from 'lucide-react';
-import { getUserRole, type UserRole } from '@/hooks/useRouteProtection';
+import useSystemRoles from '@/hooks/useSystemRoles';
+import { UserRole, getUserRole } from '@/hooks/useRouteProtection';
 
 interface RouteGuardProps {
   children: ReactNode;
@@ -19,6 +20,10 @@ interface RouteGuardProps {
 export default function RouteGuard({ children, allowedRoles, fallback, redirectTo = '/' }: RouteGuardProps) {
   const navigate = useNavigate();
   const { token } = useStore();
+  // We use getUserRole now, but let's keep useSystemRoles if we need granular checks for debugging or legacy reasons, 
+  // though getUserRole encapsulates it. getUserRole uses raw data structure logic.
+  // The system roles hook was: const { isPrivilegedUser, isOrganizationAdminUser } = useSystemRoles();
+  // We can remove it if getUserRole is sufficient. getUserRole is sufficient.
 
   const { data: user, isLoading } = useQuery({
     queryKey: ['me'],
@@ -27,21 +32,26 @@ export default function RouteGuard({ children, allowedRoles, fallback, redirectT
     retry: false
   });
 
-  const userData = user?.data ?? user;
-  const userRole = userData ? getUserRole(userData) : null;
+  const rawData = user?.data ?? user;
+  const userData = rawData?.user ?? rawData; // Unwrap { user: ... } if present
+
+  // Determine effective role based on centralized logic
+  const effectiveRole = getUserRole(userData);
+  const isAuthorized = userData && allowedRoles.includes(effectiveRole);
 
   // Use effect to handle navigation - avoids state updates during render
   useEffect(() => {
     // No user data - redirect
     if (!isLoading && !userData) {
       navigate(redirectTo, { replace: true });
+      return;
     }
 
     // Check role - redirect if not allowed
-    if (!isLoading && userData && userRole && !allowedRoles.includes(userRole)) {
+    if (!isLoading && userData && !isAuthorized) {
       navigate(redirectTo, { replace: true });
     }
-  }, [userData, userRole, isLoading, allowedRoles, navigate, redirectTo]);
+  }, [userData, isAuthorized, isLoading, navigate, redirectTo]);
 
   // Loading state
   if (isLoading) {
@@ -55,7 +65,7 @@ export default function RouteGuard({ children, allowedRoles, fallback, redirectT
   }
 
   // Don't render children if user is not authorized
-  if (!userData || !userRole || !allowedRoles.includes(userRole)) {
+  if (!userData || !isAuthorized) {
     return null;
   }
 
