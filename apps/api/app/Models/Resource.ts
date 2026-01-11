@@ -14,6 +14,9 @@ export default class Resource extends BaseModel {
   public category: string
 
   @column()
+  public isReturnable: boolean
+
+  @column()
   public description?: string
 
   @column()
