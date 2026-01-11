@@ -254,8 +254,9 @@ export default class OrganizationsController {
 
     // If an id param is present, only system admins may access arbitrary organizations
     if (params?.id) {
-      const user = auth.user!
-      if (!user.isAdmin && !(await user.can("view_organizations"))) {
+      const user = auth.user
+      // If no user is logged in, or user is not admin and lacks permission
+      if (!user || (!user.isAdmin && !(await user.can("view_organizations")))) {
         return response.forbidden({ message: 'Admin access required' })
       }
       const org = await Organization.find(params.id)
