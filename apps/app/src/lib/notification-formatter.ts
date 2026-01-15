@@ -74,6 +74,10 @@ export const NotificationFormatter = {
       }
     }
 
+    if (type === 'achievement_awarded') {
+      return `Earned: ${p.title || 'a new achievement'}`;
+    }
+
     if (p.userName && p.userRegistered) {
        return `User ${p.userName} has registered`;
     }
