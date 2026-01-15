@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import api from '@/lib/api';
+import { safeFormatDate } from '@/lib/format-utils';
 
 const VolunteerHistory = () => {
   const { t } = useTranslation();
@@ -42,7 +43,7 @@ const VolunteerHistory = () => {
                 <TableRow key={item.id}>
                   <TableCell className="font-medium">{item.event?.title || 'Unknown Event'}</TableCell>
                   <TableCell>{item.event?.organization?.name || '-'}</TableCell>
-                  <TableCell>{new Date(item.date).toLocaleDateString()}</TableCell>
+                  <TableCell>{safeFormatDate(item.date)}</TableCell>
                   <TableCell>{item.hours}</TableCell>
                   <TableCell>
                     <Badge variant={item.status === 'approved' ? 'default' : 'secondary'}>{item.status}</Badge>
