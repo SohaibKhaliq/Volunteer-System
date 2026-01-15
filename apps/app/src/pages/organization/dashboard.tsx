@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Users, Calendar, Clock, TrendingUp, Loader2, ArrowRight } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, XAxis, Tooltip } from 'recharts';
+import { safeFormatDate, safeFormatTime } from '@/lib/format-utils';
 
 export default function OrganizationDashboard() {
   // Dashboard stats (fetched)
@@ -105,12 +106,11 @@ export default function OrganizationDashboard() {
     .map((ev: EventItem) => {
       // prefer explicit start date fields, fall back to created time
       const rawDate = ev.startAt ?? ev.start_at ?? ev.start_date ?? ev.createdAt ?? ev.created_at;
-      const ts = rawDate ? Date.parse(String(rawDate)) : NaN;
-      const dateLabel = !Number.isNaN(ts) ? new Date(ts).toLocaleDateString() : 'Unknown';
+      const dateLabel = safeFormatDate(rawDate);
       const attendees = Number(ev.assigned_volunteers ?? ev.volunteer_count ?? 0);
-      return { dateLabel, dateRaw: ts, attendees };
+      return { dateLabel, attendees };
     })
-    .filter((d: { dateLabel: string }) => d.dateLabel !== 'Unknown');
+    .filter((d: { dateLabel: string }) => d.dateLabel !== 'TBD');
 
   type RecentItem = {
     id?: string | number;
@@ -131,13 +131,12 @@ export default function OrganizationDashboard() {
         (e as any).start_date ??
         (e as any).createdAt ??
         (e as any).created_at;
-      const ts = raw ? Date.parse(String(raw)) : Date.now();
       recentActivity.push({
         id: (e as any).id ?? (e as any).title,
         type: 'event',
         text: `Event created: ${e.title ?? 'Unnamed event'}`,
-        when: raw ? new Date(ts).toLocaleString() : undefined,
-        ts
+        when: safeFormatDate(raw, 'p MMM d, yyyy'),
+        ts: raw ? Date.parse(String(raw)) : Date.now()
       });
     }
   }
@@ -152,13 +151,12 @@ export default function OrganizationDashboard() {
   if (Array.isArray(volunteersList)) {
     for (const v of volunteersList.slice(0, 10)) {
       const raw = (v as any).createdAt ?? (v as any).created_at;
-      const ts = raw ? Date.parse(String(raw)) : Date.now();
       recentActivity.push({
         id: (v as any).id ?? (v as any).user?.email,
         type: 'volunteer',
         text: `New volunteer: ${v.user?.first_name ?? v.user?.firstName ?? v.user?.email ?? 'Unknown'}`,
-        when: raw ? new Date(ts).toLocaleString() : undefined,
-        ts
+        when: safeFormatDate(raw, 'p MMM d, yyyy'),
+        ts: raw ? Date.parse(String(raw)) : Date.now()
       });
     }
   }
@@ -182,7 +180,7 @@ export default function OrganizationDashboard() {
             id: d.id,
             type: 'compliance',
             text: `Compliance doc expiring soon: ${d.name ?? d.doc_type ?? 'document'}`,
-            when: new Date(expiresTs).toLocaleString(),
+            when: safeFormatDate(expiresRaw, 'p MMM d, yyyy'),
             ts: expiresTs
           });
         }
@@ -194,7 +192,7 @@ export default function OrganizationDashboard() {
           id: d.id,
           type: 'compliance',
           text: `Compliance uploaded: ${d.name ?? d.doc_type ?? 'document'}`,
-          when: new Date(createdTs).toLocaleString(),
+          when: safeFormatDate(createdRaw, 'p MMM d, yyyy'),
           ts: createdTs
         });
       }
@@ -225,7 +223,7 @@ export default function OrganizationDashboard() {
     .sort((a: { ts: number }, b: { ts: number }) => a.ts - b.ts)[0];
 
   const nextEventLabel = nextEvent
-    ? `${nextEvent.ev.title ?? 'Untitled'} — ${new Date(nextEvent.ts).toLocaleString()}`
+    ? `${nextEvent.ev.title ?? 'Untitled'} — ${safeFormatDate(nextEvent.ts)} ${safeFormatTime(nextEvent.ts)}`
     : null;
 
   // use compliance in UI to avoid unused var
