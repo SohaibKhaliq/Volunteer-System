@@ -21,6 +21,7 @@ import {
   CartesianGrid
 } from 'recharts';
 import { Badge } from '@/components/ui/badge';
+import { safeFormatDate } from '@/lib/format-utils';
 
 export default function AdminDashboard() {
   const { data: overviewRes, isLoading: loadingOverview } = useQuery(['reports', 'overview'], () =>
@@ -98,13 +99,13 @@ export default function AdminDashboard() {
 
   const eventDistribution = Array.isArray((eventStats as any)?.byStatus)
     ? (eventStats as any).byStatus.map((s: any) => ({
-        name: s.status || 'Other',
-        value: s.count || 0
-      }))
+      name: s.status || 'Other',
+      value: s.count || 0
+    }))
     : chartData.slice(0, 3).map((d: any) => ({
-        name: d.month,
-        value: d.volunteers || d.hours || 0
-      }));
+      name: d.month,
+      value: d.volunteers || d.hours || 0
+    }));
 
   const chartColors = ['#4f46e5', '#0ea5e9', '#f97316', '#10b981'];
 
@@ -257,7 +258,7 @@ export default function AdminDashboard() {
           {activity.map((a: any, i: number) => (
             <div key={i} className="flex justify-between text-sm text-muted-foreground">
               <span>{a.desc}</span>
-              <span>{a.time}</span>
+              <span>{safeFormatDate(a.time, 'p MMM d, yyyy')}</span>
             </div>
           ))}
         </CardContent>
