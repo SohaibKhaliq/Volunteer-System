@@ -30,22 +30,9 @@ import {
 } from 'lucide-react';
 import { toast } from '@/components/atoms/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { safeFormatDate, safeFormatTime } from '@/lib/format-utils';
 
-interface ComplianceDocument {
-  id: number;
-  userId: number;
-  userName: string;
-  userEmail: string;
-  docType: 'background_check' | 'wwcc' | 'police_check' | 'certification' | 'other';
-  status: 'pending' | 'approved' | 'rejected' | 'expired';
-  uploadedAt: string;
-  expiresAt?: string;
-  verifiedAt?: string;
-  verifiedBy?: string;
-  notes?: string;
-  riskLevel?: 'low' | 'medium' | 'high';
-  source?: 'compliance' | 'background_check';
-}
+
 
 export default function AdminCompliance() {
   const queryClient = useQueryClient();
@@ -53,9 +40,18 @@ export default function AdminCompliance() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [docTypeFilter, setDocTypeFilter] = useState<string>('all');
 
-  const { data: docsRaw, isLoading: isLoadingDocs } = useQuery(['compliance'], () => api.listCompliance());
-  const { data: checksRaw, isLoading: isLoadingChecks } = useQuery(['background-checks'], () => api.listBackgroundChecks());
-  const { data: usersRaw } = useQuery(['users', 'all'], () => api.listUsers());
+  const { data: docsRaw, isLoading: isLoadingDocs } = useQuery({
+    queryKey: ['compliance'],
+    queryFn: () => api.listCompliance()
+  });
+  const { data: checksRaw, isLoading: isLoadingChecks } = useQuery({
+    queryKey: ['background-checks'],
+    queryFn: () => api.listBackgroundChecks()
+  });
+  const { data: usersRaw } = useQuery({
+    queryKey: ['users', 'all'],
+    queryFn: () => api.listUsers()
+  });
 
   const isLoading = isLoadingDocs || isLoadingChecks;
 
@@ -129,16 +125,18 @@ export default function AdminCompliance() {
     };
   });
 
-  const docs = [...normalizedDocs, ...normalizedChecks].sort((a, b) =>
-    new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime()
-  );
+  const docs = [...normalizedDocs, ...normalizedChecks].sort((a, b) => {
+    const timeA = a.uploadedAt ? new Date(a.uploadedAt).getTime() : 0;
+    const timeB = b.uploadedAt ? new Date(b.uploadedAt).getTime() : 0;
+    return timeB - timeA;
+  });
 
   // Mutations
   const approveMutation = useMutation({
     mutationFn: (docId: number) =>
       api.updateComplianceDoc(docId, { status: 'approved', verifiedAt: new Date().toISOString() }),
     onSuccess: () => {
-      queryClient.invalidateQueries(['compliance']);
+      queryClient.invalidateQueries({ queryKey: ['compliance'] });
       toast({ title: 'Document approved', variant: 'success' });
     }
   });
@@ -147,7 +145,7 @@ export default function AdminCompliance() {
     mutationFn: ({ docId, notes }: { docId: number; notes: string }) =>
       api.updateComplianceDoc(docId, { status: 'rejected', notes }),
     onSuccess: () => {
-      queryClient.invalidateQueries(['compliance']);
+      queryClient.invalidateQueries({ queryKey: ['compliance'] });
       toast({ title: 'Document rejected', variant: 'success' });
     }
   });
@@ -195,7 +193,7 @@ export default function AdminCompliance() {
   const riskMutation = useMutation({
     mutationFn: ({ id, risk }: { id: number; risk: string }) => api.updateComplianceDoc(id, { risk_level: risk }),
     onSuccess: () => {
-      queryClient.invalidateQueries(['compliance']);
+      queryClient.invalidateQueries({ queryKey: ['compliance'] });
       toast({ title: 'Risk level updated', variant: 'success' });
     },
     onError: () => toast.error('Failed to update risk level')
@@ -249,13 +247,17 @@ export default function AdminCompliance() {
 
   const isExpiringSoon = (expiresAt?: string) => {
     if (!expiresAt) return false;
-    const daysUntilExpiry = Math.ceil((new Date(expiresAt).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+    const expiry = new Date(expiresAt).getTime();
+    if (isNaN(expiry)) return false;
+    const daysUntilExpiry = Math.ceil((expiry - new Date().getTime()) / (1000 * 60 * 60 * 24));
     return daysUntilExpiry <= 30 && daysUntilExpiry > 0;
   };
 
   const isExpired = (expiresAt?: string) => {
     if (!expiresAt) return false;
-    return new Date(expiresAt) < new Date();
+    const expiry = new Date(expiresAt);
+    if (isNaN(expiry.getTime())) return false;
+    return expiry < new Date();
   };
 
   if (isLoading) {
@@ -400,11 +402,11 @@ export default function AdminCompliance() {
                     <Badge variant="outline">{getDocTypeLabel(doc.docType)}</Badge>
                   </TableCell>
                   <TableCell>{getStatusBadge(doc.status)}</TableCell>
-                  <TableCell className="text-sm">{new Date(doc.uploadedAt).toLocaleDateString()}</TableCell>
+                  <TableCell className="text-sm">{safeFormatDate(doc.uploadedAt)}</TableCell>
                   <TableCell>
                     {doc.expiresAt ? (
                       <div className="text-sm">
-                        <div>{new Date(doc.expiresAt).toLocaleDateString()}</div>
+                        <div>{safeFormatDate(doc.expiresAt)}</div>
                         {isExpired(doc.expiresAt) && <Badge className="bg-red-500 mt-1">Expired</Badge>}
                         {isExpiringSoon(doc.expiresAt) && !isExpired(doc.expiresAt) && (
                           <Badge className="bg-orange-500 mt-1">Expiring Soon</Badge>
@@ -532,11 +534,11 @@ export default function AdminCompliance() {
                 </div>
                 <div>
                   <div className="text-sm font-medium">Uploaded</div>
-                  <div>{selectedDoc.uploadedAt ? new Date(selectedDoc.uploadedAt).toLocaleString() : 'N/A'}</div>
+                  <div>{safeFormatDate(selectedDoc.uploadedAt)} {safeFormatTime(selectedDoc.uploadedAt)}</div>
                 </div>
                 <div>
                   <div className="text-sm font-medium">Expires</div>
-                  <div>{selectedDoc.expiresAt ? new Date(selectedDoc.expiresAt).toLocaleDateString() : 'N/A'}</div>
+                  <div>{safeFormatDate(selectedDoc.expiresAt, 'dd MMM yyyy', 'N/A')}</div>
                 </div>
                 <div>
                   <div className="text-sm font-medium">Status</div>
