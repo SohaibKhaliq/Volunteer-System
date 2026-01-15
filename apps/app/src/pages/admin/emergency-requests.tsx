@@ -20,8 +20,8 @@ import {
 import api from '@/lib/api';
 import { HelpRequest } from '@/types/types';
 import { useQuery } from '@tanstack/react-query';
-import { format } from 'date-fns';
-import { MoreHorizontal, Search, Filter, AlertCircle, Phone, MapPin, Hash } from 'lucide-react';
+import { safeFormatDate } from '@/lib/format-utils';
+import { MoreHorizontal, Search, AlertCircle, Phone, MapPin, Hash } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { RequestDetailsModal } from '@/components/organisms/RequestDetailsModal';
@@ -247,14 +247,7 @@ const AdminEmergencyRequests = () => {
 
                     <TableCell className="align-top py-4">
                       <span className="text-sm text-slate-500">
-                        {(() => {
-                          try {
-                            const dateStr = request.createdAt || request.created_at;
-                            return dateStr ? format(new Date(dateStr), 'MMM d, HH:mm') : 'N/A';
-                          } catch (e) {
-                            return 'Invalid Date';
-                          }
-                        })()}
+                        {safeFormatDate(request.createdAt || request.created_at, 'MMM d, HH:mm', 'N/A')}
                       </span>
                     </TableCell>
 
