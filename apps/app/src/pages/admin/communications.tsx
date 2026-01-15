@@ -20,6 +20,7 @@ import SkeletonCard from '@/components/atoms/skeleton-card';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { toast } from '@/components/atoms/use-toast';
+import { safeFormatDate } from '@/lib/format-utils';
 
 export default function AdminCommunications() {
   const queryClient = useQueryClient();
@@ -188,7 +189,7 @@ export default function AdminCommunications() {
                         {c.status}
                       </Badge>
                     </TableCell>
-                    <TableCell>{c.scheduledAt ? new Date(c.scheduledAt).toLocaleString() : '-'}</TableCell>
+                    <TableCell>{safeFormatDate(c.scheduledAt, 'PPp', '-')}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Button
@@ -443,7 +444,7 @@ export default function AdminCommunications() {
                         </TableCell>
                         <TableCell>{l.attempts}</TableCell>
                         <TableCell className="max-w-xs break-words">{l.error || '-'}</TableCell>
-                        <TableCell>{l.lastAttemptAt ? new Date(l.lastAttemptAt).toLocaleString() : '-'}</TableCell>
+                        <TableCell>{safeFormatDate(l.lastAttemptAt, 'PPp', '-')}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Button
