@@ -39,6 +39,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { toast } from '@/components/atoms/use-toast';
+import { safeFormatDate } from '@/lib/format-utils';
 
 interface Task {
   id: number;
@@ -86,9 +87,10 @@ export default function AdminTasks() {
   const [searchParams] = useSearchParams();
   const eventIdParam = searchParams.get('eventId');
 
-  const { data: tasksRaw, isLoading } = useQuery<any>(['tasks', eventIdParam], () =>
-    api.list('tasks', eventIdParam ? { event_id: eventIdParam } : undefined)
-  );
+  const { data: tasksRaw, isLoading } = useQuery<any>({
+    queryKey: ['tasks', eventIdParam],
+    queryFn: () => api.list('tasks', eventIdParam ? { event_id: eventIdParam } : undefined)
+  });
   // normalize tasks from API (handle snake_case or camelCase and paginated responses)
   const tasks: Task[] | undefined = useMemo(() => {
     const list: any[] = Array.isArray(tasksRaw) ? tasksRaw : (tasksRaw?.data ?? []);
@@ -107,13 +109,16 @@ export default function AdminTasks() {
       createdAt: item.created_at ?? item.createdAt ?? null
     }));
   }, [tasksRaw]);
-  const { data: events = [] } = useQuery(['events'], () => api.listEvents());
+  const { data: events = [] } = useQuery({
+    queryKey: ['events'],
+    queryFn: () => api.listEvents()
+  });
 
   // Mutations
   const createMutation = useMutation({
     mutationFn: (data: Partial<Task>) => api.create('tasks', data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['tasks']);
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
       toast({ title: 'Task created successfully', variant: 'success' });
       setShowCreateDialog(false);
       // reset create form
@@ -129,7 +134,7 @@ export default function AdminTasks() {
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: Partial<Task> }) => api.update('tasks', id, data),
     onMutate: async ({ id, data }: { id: number; data: Partial<Task> }) => {
-      await queryClient.cancelQueries(['tasks']);
+      await queryClient.cancelQueries({ queryKey: ['tasks'] });
       // Snapshot previous values for rollback
       const previousAll = queryClient.getQueryData<any>(['tasks']);
       const previousByEvent = queryClient.getQueryData<any>(['tasks', eventIdParam]);
@@ -171,11 +176,11 @@ export default function AdminTasks() {
       };
 
       try {
-        queryClient.setQueryData(['tasks'], (prev) => applyServerUpdate(prev));
-        queryClient.setQueryData(['tasks', eventIdParam], (prev) => applyServerUpdate(prev));
+        queryClient.setQueryData(['tasks'], (prev: any) => applyServerUpdate(prev));
+        queryClient.setQueryData(['tasks', eventIdParam], (prev: any) => applyServerUpdate(prev));
       } catch (e) {
         // fallback to invalidation if applying update fails
-        queryClient.invalidateQueries(['tasks']);
+        queryClient.invalidateQueries({ queryKey: ['tasks'] });
       }
 
       toast({ title: 'Task updated', variant: 'success' });
@@ -196,14 +201,21 @@ export default function AdminTasks() {
   const deleteMutation = useMutation({
     mutationFn: (taskId: number) => api.delete('tasks', taskId),
     onSuccess: () => {
-      queryClient.invalidateQueries(['tasks']);
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
       toast({ title: 'Task deleted', variant: 'success' });
     }
   });
 
   // Assignment flow: list users and assignments, create/delete assignments
-  const { data: allUsers = [] } = useQuery(['users', 'all'], () => api.listUsers(), { staleTime: 60 * 1000 });
-  const { data: allAssignments = [] } = useQuery(['assignments'], () => api.listAssignments());
+  const { data: allUsers = [] } = useQuery({
+    queryKey: ['users', 'all'],
+    queryFn: () => api.listUsers(),
+    staleTime: 60 * 1000
+  });
+  const { data: allAssignments = [] } = useQuery({
+    queryKey: ['assignments'],
+    queryFn: () => api.listAssignments()
+  });
 
   // Normalize API responses which may be AxiosResponse or raw arrays
   const usersList: any[] = Array.isArray(allUsers) ? (allUsers as any) : ((allUsers as any)?.data ?? []);
@@ -214,9 +226,9 @@ export default function AdminTasks() {
   const createAssignmentMutation = useMutation({
     mutationFn: (data: any) => api.createAssignment(data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['tasks']);
-      queryClient.invalidateQueries(['events']);
-      queryClient.invalidateQueries(['assignments']);
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['assignments'] });
       toast({ title: 'Assignments updated', variant: 'success' });
     }
   });
@@ -224,9 +236,9 @@ export default function AdminTasks() {
   const deleteAssignmentMutation = useMutation({
     mutationFn: (id: number) => api.deleteAssignment(id),
     onSuccess: () => {
-      queryClient.invalidateQueries(['tasks']);
-      queryClient.invalidateQueries(['events']);
-      queryClient.invalidateQueries(['assignments']);
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['events'] });
+      queryClient.invalidateQueries({ queryKey: ['assignments'] });
     }
   });
 
@@ -269,20 +281,7 @@ export default function AdminTasks() {
     return new Date(dueDate) < new Date();
   };
 
-  const formatDate = (d?: string | null) => {
-    if (!d) return '—';
-    const dt = new Date(d);
-    if (!isNaN(dt.getTime())) return dt.toLocaleDateString();
-    // Try a fallback by converting space to T for MySQL DATETIME strings
-    try {
-      const alt = String(d).trim().replace(' ', 'T');
-      const dt2 = new Date(alt);
-      if (!isNaN(dt2.getTime())) return dt2.toLocaleDateString();
-    } catch (e) {
-      // ignore
-    }
-    return '—';
-  };
+  const formatDate = (d?: string | null) => safeFormatDate(d);
 
   // Safely resolve a display string from a value that may be a string, number, or nested object
   const resolveDisplayString = (val: any): string | undefined => {
