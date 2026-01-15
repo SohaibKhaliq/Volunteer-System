@@ -117,7 +117,7 @@ export default function Login() {
       <div className="flex items-center justify-center p-8 bg-background">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center lg:text-left">
-            <h1 className="text-4xl font-black tracking-tight text-foreground">{t('Welcome back')}</h1>
+            <h1 className="text-4xl font-bold tracking-tight text-foreground">{t('Welcome back')}</h1>
             <p className="text-muted-foreground mt-3 text-lg font-medium">
               {t('Enter your credentials to access your account')}
             </p>
@@ -125,7 +125,12 @@ export default function Login() {
 
           <form onSubmit={submit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="email" className="font-bold text-foreground/80 px-1">{t('Email')}</Label>
+              <Label
+                htmlFor="email"
+                className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1"
+              >
+                {t('Email')}
+              </Label>
               <Input
                 id="email"
                 name="email"
@@ -134,14 +139,22 @@ export default function Login() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="name@example.com"
                 required
-                className="h-12 bg-card/50 border-border/50 rounded-xl focus:bg-card transition-all"
+                className="h-12 bg-slate-50 dark:bg-slate-900 border-border/50 rounded-lg focus:bg-background transition-all"
               />
             </div>
 
             <div className="space-y-2">
               <div className="flex items-center justify-between px-1">
-                <Label htmlFor="password" className="font-bold text-foreground/80">{t('Password')}</Label>
-                <Link to="/forgot-password" self-center className="text-sm font-bold text-primary hover:underline underline-offset-4">
+                <Label
+                  htmlFor="password"
+                  className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1"
+                >
+                  {t('Password')}
+                </Label>
+                <Link
+                  to="/forgot-password"
+                  className="text-xs font-bold text-primary hover:underline underline-offset-4 uppercase tracking-wider self-center"
+                >
                   {t('Forgot password?')}
                 </Link>
               </div>
@@ -153,11 +166,15 @@ export default function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
                 required
-                className="h-12 bg-card/50 border-border/50 rounded-xl focus:bg-card transition-all"
+                className="h-12 bg-slate-50 dark:bg-slate-900 border-border/50 rounded-lg focus:bg-background transition-all"
               />
             </div>
 
-            <Button type="submit" className="w-full h-14 rounded-2xl shadow-xl shadow-primary/20 font-bold text-lg" disabled={mutation.isLoading}>
+            <Button
+              type="submit"
+              className="w-full h-14 rounded-md shadow-xl shadow-primary/20 font-bold text-lg"
+              disabled={mutation.isLoading}
+            >
               {mutation.isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
@@ -200,8 +217,10 @@ export default function Login() {
           <div className="max-w-xl">
             <div className="w-16 h-1 w-primary-foreground/30 mb-8 rounded-full" />
             <blockquote className="space-y-6">
-              <p className="text-3xl font-black leading-[1.3] tracking-tight italic">
-                {t('“Volunteering is at the very core of being a human. No one has made it through life without someone else\'s help.”')}
+              <p className="text-3xl font-bold leading-[1.3] tracking-tight italic">
+                {t(
+                  "“Volunteering is at the very core of being a human. No one has made it through life without someone else's help.”"
+                )}
               </p>
               <footer className="flex items-center gap-4">
                 <div className="h-0.5 w-8 bg-primary-foreground/50" />
