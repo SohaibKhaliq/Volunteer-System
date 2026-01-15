@@ -76,58 +76,58 @@ export default function VerifyCertificate() {
                     </div>
                 </div>
 
-                <Card className="border-none shadow-2xl overflow-hidden relative">
+                <Card className="border-none shadow-2xl overflow-hidden relative rounded-xl">
                     {/* Decorative Top Border */}
-                    <div className={cn("h-3 w-full",
-                        isValid ? "bg-gradient-to-r from-green-500 to-emerald-600" :
-                            isExpired ? "bg-gradient-to-r from-red-500 to-rose-600" :
-                                "bg-gradient-to-r from-amber-500 to-orange-600"
+                    <div className={cn("h-1.5 w-full",
+                        isValid ? "bg-green-600" :
+                            isExpired ? "bg-red-600" :
+                                "bg-amber-600"
                     )} />
 
-                    <CardHeader className="text-center pt-8 pb-4">
-                        <div className="mx-auto w-20 h-20 bg-primary/5 rounded-2xl flex items-center justify-center mb-4 transform rotate-3">
-                            <ShieldCheck className="h-10 w-10 text-primary" />
+                    <CardHeader className="text-center pt-12 pb-8">
+                        <div className="mx-auto w-16 h-16 bg-slate-50 dark:bg-slate-900 rounded-xl flex items-center justify-center mb-6 border border-border shadow-sm">
+                            <ShieldCheck className="h-8 w-8 text-primary" />
                         </div>
-                        <CardTitle className="text-3xl font-black tracking-tight text-foreground">
+                        <CardTitle className="text-3xl font-bold tracking-tight text-foreground">
                             {cert.doc_type || 'Certification'}
                         </CardTitle>
-                        <p className="text-muted-foreground font-medium flex items-center justify-center gap-2 mt-2">
-                            Issued by <span className="font-bold text-foreground">{cert.organization?.name || 'Eghata System'}</span>
+                        <p className="text-muted-foreground font-medium flex items-center justify-center gap-2 mt-3">
+                            Issued by <span className="font-bold text-foreground underline decoration-primary/30 decoration-2 underline-offset-4">{cert.organization?.name || 'Eghata System'}</span>
                         </p>
                     </CardHeader>
 
-                    <CardContent className="space-y-8 px-8 sm:px-12 pb-12">
+                    <CardContent className="space-y-10 px-8 sm:px-16 pb-16">
                         {/* Main Details Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-muted/30 rounded-2xl border border-dashed border-border/60">
-                            <div className="space-y-1">
-                                <div className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                                    <User className="h-3.5 w-3.5" />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8 p-10 bg-slate-50/50 dark:bg-slate-950/30 rounded-xl border border-border">
+                            <div className="space-y-2">
+                                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
+                                    <User className="h-3 w-3" />
                                     Issued To
                                 </div>
                                 <div className="text-lg font-bold">
                                     {cert.user?.firstName} {cert.user?.lastName}
                                 </div>
-                                <div className="text-sm text-muted-foreground font-medium">
-                                    ID: {cert.user_id}
+                                <div className="text-xs text-muted-foreground font-medium">
+                                    Volunteer ID: {cert.user_id}
                                 </div>
                             </div>
 
-                            <div className="space-y-1">
-                                <div className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                                    <FileText className="h-3.5 w-3.5" />
+                            <div className="space-y-2">
+                                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
+                                    <FileText className="h-3 w-3" />
                                     Certificate ID
                                 </div>
                                 <div className="text-lg font-bold font-mono">
                                     #{cert.id}
                                 </div>
-                                <div className="text-sm text-muted-foreground font-medium">
-                                    {isValid ? 'Valid & Authentic' : 'Check Status'}
+                                <div className="text-xs text-muted-foreground font-medium">
+                                    {isValid ? 'Authentic Document' : 'Status Verification Required'}
                                 </div>
                             </div>
 
-                            <div className="space-y-1">
-                                <div className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                                    <Calendar className="h-3.5 w-3.5" />
+                            <div className="space-y-2 border-t md:border-t-0 md:pt-0 pt-6 border-border/50">
+                                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
+                                    <Calendar className="h-3 w-3" />
                                     Issued Date
                                 </div>
                                 <div className="text-lg font-bold">
@@ -135,9 +135,9 @@ export default function VerifyCertificate() {
                                 </div>
                             </div>
 
-                            <div className="space-y-1">
-                                <div className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                                    <Calendar className="h-3.5 w-3.5" />
+                            <div className="space-y-2 border-t md:border-t-0 md:pt-0 pt-6 border-border/50">
+                                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
+                                    <Calendar className="h-3 w-3" />
                                     Expiry Date
                                 </div>
                                 <div className={cn("text-lg font-bold", isExpired && "text-destructive")}>
