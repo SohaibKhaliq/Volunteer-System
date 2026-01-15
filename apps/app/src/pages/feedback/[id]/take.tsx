@@ -85,18 +85,28 @@ export default function TakeSurvey() {
 
   if (!survey) return <div>Loading...</div>;
 
-  // check settings for expiration
+  // check settings for expiration (defensive against null or "null" strings)
   let surveySettings: any = {};
   try {
-    surveySettings = survey.settings
-      ? typeof survey.settings === 'string'
-        ? JSON.parse(survey.settings)
-        : survey.settings
-      : {};
+    const raw = survey.settings;
+    if (typeof raw === 'string') {
+      const trimmed = raw.trim();
+      if (trimmed) {
+        const parsed = JSON.parse(trimmed);
+        surveySettings = parsed && typeof parsed === 'object' ? parsed : {};
+      } else {
+        surveySettings = {};
+      }
+    } else if (raw && typeof raw === 'object') {
+      surveySettings = raw;
+    } else {
+      surveySettings = {};
+    }
   } catch (e) {
     surveySettings = {};
   }
-  if (surveySettings.expirationDate && new Date(surveySettings.expirationDate) < new Date()) {
+
+  if (surveySettings && surveySettings.expirationDate && new Date(surveySettings.expirationDate) < new Date()) {
     return <div>This survey has expired.</div>;
   }
 
