@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader2, MapPin, Users, Clock, Calendar, Globe, ArrowLeft, MessageSquare } from 'lucide-react';
+import { safeFormatDate, safeFormatTime } from '@/lib/format-utils';
 
 interface OrganizationDetail {
   id: number;
@@ -26,7 +27,7 @@ interface OrganizationDetail {
   };
 }
 
-interface Opportunity {
+interface EventItem {
   id: number;
   title: string;
   slug: string;
@@ -90,7 +91,7 @@ export default function PublicOrganizationDetail() {
   }
 
   const org: OrganizationDetail = orgData;
-  const opportunities: Opportunity[] = oppsData?.data || [];
+  const events: EventItem[] = oppsData?.data || [];
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -196,23 +197,23 @@ export default function PublicOrganizationDetail() {
 
       {/* Upcoming Opportunities */}
       <div className="mb-8">
-        <h2 className="text-2xl font-bold tracking-tight mb-4">Upcoming Opportunities</h2>
+        <h2 className="text-2xl font-bold tracking-tight mb-4">Upcoming Events</h2>
         {isOppsLoading ? (
           <div className="flex justify-center py-8">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
-        ) : opportunities.length === 0 ? (
+        ) : events.length === 0 ? (
           <Card>
             <CardContent className="flex flex-col items-center justify-center py-8">
               <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No Upcoming Opportunities</h3>
-              <p className="text-muted-foreground">Check back later for new volunteer opportunities.</p>
+              <h3 className="text-lg font-semibold mb-2">No Upcoming Events</h3>
+              <p className="text-muted-foreground">Check back later for new events.</p>
             </CardContent>
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {opportunities.map((opp) => (
-              <OpportunityCard key={opp.id} opportunity={opp} />
+            {events.map((event) => (
+              <EventCard key={event.id} event={event} />
             ))}
           </div>
         )}
@@ -221,45 +222,41 @@ export default function PublicOrganizationDetail() {
   );
 }
 
-function OpportunityCard({ opportunity }: { opportunity: Opportunity }) {
-  const startDate = new Date(opportunity.startAt);
+function EventCard({ event }: { event: EventItem }) {
+  const navigate = useNavigate();
 
   return (
     <Card className="hover:shadow-lg transition-shadow">
       <CardHeader>
         <div className="flex justify-between items-start">
-          <CardTitle className="text-lg">{opportunity.title}</CardTitle>
-          <Badge variant="outline">{opportunity.type}</Badge>
+          <CardTitle className="text-lg">{event.title}</CardTitle>
+          <Badge variant="outline">{event.type}</Badge>
         </div>
-        {opportunity.team && <CardDescription>{opportunity.team.name}</CardDescription>}
+        {event.team && <CardDescription>{event.team.name}</CardDescription>}
       </CardHeader>
       <CardContent>
         <div className="space-y-2 mb-4">
           <div className="flex items-center text-sm text-muted-foreground">
             <Calendar className="h-4 w-4 mr-2" />
-            {startDate.toLocaleDateString('en-US', {
-              weekday: 'short',
-              month: 'short',
-              day: 'numeric',
-              hour: 'numeric',
-              minute: '2-digit'
-            })}
+            {safeFormatDate(event.startAt, "eee, MMM d")} at {safeFormatTime(event.startAt)}
           </div>
-          {opportunity.location && (
+          {event.location && (
             <div className="flex items-center text-sm text-muted-foreground">
               <MapPin className="h-4 w-4 mr-2" />
-              {opportunity.location}
+              {event.location}
             </div>
           )}
           <div className="flex items-center text-sm text-muted-foreground">
             <Users className="h-4 w-4 mr-2" />
-            {opportunity.capacity} spots available
+            {event.capacity} spots available
           </div>
         </div>
         <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-          {opportunity.description || 'No description available.'}
+          {event.description || 'No description available.'}
         </p>
-        <Button className="w-full">Apply Now</Button>
+        <Button className="w-full" onClick={() => navigate(`/events/${event.id}`)}>
+          Apply Now
+        </Button>
       </CardContent>
     </Card>
   );
