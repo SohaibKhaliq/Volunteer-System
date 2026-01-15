@@ -305,14 +305,15 @@ Route.group(() => {
   .prefix('/exports')
   .middleware(['auth'])
 
-
 // Chat Routes
 Route.group(() => {
   Route.get('/', 'ChatController.index')
   Route.get('/:id', 'ChatController.show')
   Route.post('/', 'ChatController.store')
   Route.post('/start', 'ChatController.start')
-}).prefix('/chat').middleware(['auth'])
+})
+  .prefix('/chat')
+  .middleware(['auth'])
 
 // Backup Routes
 Route.group(() => {
@@ -383,6 +384,9 @@ Route.post('/users/:id/activate', 'UsersController.activate').middleware(['auth'
 
 Route.post('/events/:id/ai-match', 'EventsController.aiMatch').middleware(['auth'])
 Route.post('/events/:id/join', 'EventsController.join').middleware(['auth'])
+Route.post('/events/:id/withdraw', 'EventsController.withdraw').middleware(['auth'])
+// Note: `events` resource is defined earlier in this file to allow public index/show routes.
+// Duplicate resource registration was removed to avoid E_DUPLICATE_ROUTE_NAME for "events.index".
 
 // Australian Compliance - WWCC validation
 Route.post('/compliance/validate-wwcc', 'ComplianceController.validateWWCC').middleware(['auth'])
@@ -541,6 +545,17 @@ Route.group(() => {
     '/organizations/:organizationId/invites/:id/accept',
     'OrganizationInvitesController.adminAccept'
   )
+
+  // Approvals for community-created services (admin only)
+  Route.get('/approvals/:entity', 'AdminApprovalsController.index').middleware(['auth', 'admin'])
+  Route.post('/approvals/:entity/:id/approve', 'AdminApprovalsController.approve').middleware([
+    'auth',
+    'admin'
+  ])
+  Route.post('/approvals/:entity/:id/reject', 'AdminApprovalsController.reject').middleware([
+    'auth',
+    'admin'
+  ])
   // Admin: invite send jobs monitor & retry
   Route.get('/invite-send-jobs', 'InviteSendJobsController.index')
   // place static routes before parameterized routes so 'stats' and 'retry-failed'
@@ -646,21 +661,25 @@ Route.group(() => {
 // Admin: Certificate Templates
 Route.group(() => {
   Route.resource('certificate-templates', 'CertificateTemplatesController').apiOnly()
-}).prefix('/admin').middleware(['auth', 'admin'])
+})
+  .prefix('/admin')
+  .middleware(['auth', 'admin'])
 
 // Public Verification
 Route.get('/verify/:uuid', 'CertificatesController.verify')
 
 // Volunteer: Training & Certificates
 Route.group(() => {
-    Route.get('/training', 'TrainingProgressesController.index')
-    Route.get('/training/:moduleId', 'TrainingProgressesController.show')
-    Route.post('/training/:moduleId/start', 'TrainingProgressesController.start')
-    Route.post('/training/:moduleId/complete', 'TrainingProgressesController.complete')
+  Route.get('/training', 'TrainingProgressesController.index')
+  Route.get('/training/:moduleId', 'TrainingProgressesController.show')
+  Route.post('/training/:moduleId/start', 'TrainingProgressesController.start')
+  Route.post('/training/:moduleId/complete', 'TrainingProgressesController.complete')
 
-    Route.get('/certificates', 'CertificatesController.myCertificates')
-    Route.get('/certificates/:id/download', 'CertificatesController.download')
-}).prefix('/volunteer').middleware(['auth'])
+  Route.get('/certificates', 'CertificatesController.myCertificates')
+  Route.get('/certificates/:id/download', 'CertificatesController.download')
+})
+  .prefix('/volunteer')
+  .middleware(['auth'])
 
 // ==========================================
 // CALENDAR / ICAL ROUTES
@@ -679,5 +698,3 @@ Route.group(() => {
 })
   .prefix('/calendar')
   .middleware(['auth'])
-
-
