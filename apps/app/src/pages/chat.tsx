@@ -8,177 +8,172 @@ import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { ScrollArea } from '../components/ui/scroll-area';
 import { cn } from '../lib/utils';
 import { Loader2, MessageSquare } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, parseISO, isValid } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 
-export default function ChatPage({ height = "h-[calc(100vh-164px)]" }: { height?: string }) {
-    const [searchParams, setSearchParams] = useSearchParams();
-    const activeRoomId = searchParams.get('roomId');
+export default function ChatPage({ height = 'h-[calc(100vh-164px)]' }: { height?: string }) {
+  const { t } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeRoomId = searchParams.get('roomId');
 
-    const queryClient = useQueryClient();
-    const { data: user } = useQuery(['currentUser'], () => api.getCurrentUser());
-    const { data: chats, isLoading } = useQuery<ChatRoom[]>(['chats'], () => api.listChats());
+  const queryClient = useQueryClient();
+  const { data: user } = useQuery(['currentUser'], () => api.getCurrentUser());
+  const { data: chats, isLoading } = useQuery<ChatRoom[]>(['chats'], () => api.listChats());
 
-    const handleSelectChat = (roomId: number) => {
-        setSearchParams((prev) => {
-            const next = new URLSearchParams(prev);
-            next.set('roomId', roomId.toString());
-            return next;
-        });
+  const handleSelectChat = (roomId: number) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.set('roomId', roomId.toString());
+      return next;
+    });
+  };
+
+  // Auto-select room based on search params if roomId is missing
+  // Auto-select room based on search params if roomId is missing
+  useEffect(() => {
+    const findAndSelectRoom = async () => {
+      if (!activeRoomId && chats && user) {
+        const orgId = searchParams.get('orgId');
+        const teamId = searchParams.get('teamId');
+        const userId = searchParams.get('userId');
+
+        if (!orgId && !teamId && !userId) return;
+
+        let targetRoom: ChatRoom | undefined;
+
+        if (orgId) {
+          targetRoom = chats.find((c) => c.organizationId === Number(orgId) && c.volunteerId === user.user.id);
+        } else if (teamId) {
+          targetRoom = chats.find((c) => c.teamId === Number(teamId));
+        } else if (userId) {
+          // Find chat where partner matches the userId
+          targetRoom = chats.find((c) => c.volunteerId === Number(userId));
+        }
+
+        if (targetRoom) {
+          handleSelectChat(targetRoom.id);
+        } else {
+          // Start new chat if orgId or teamId provided
+          try {
+            const room = await api.startChat({
+              organizationId: orgId ? Number(orgId) : undefined,
+              teamId: teamId ? Number(teamId) : undefined,
+              volunteerId: user.user.id
+            });
+            if (room && (room as any).data) {
+              const newRoom = (room as any).data;
+              handleSelectChat(newRoom.id);
+              queryClient.invalidateQueries(['chats']);
+            }
+          } catch (e) {
+            console.error('Failed to start chat', e);
+          }
+        }
+      }
     };
 
-    // Auto-select room based on search params if roomId is missing
-    // Auto-select room based on search params if roomId is missing
-    useEffect(() => {
-        const findAndSelectRoom = async () => {
-            if (!activeRoomId && chats && user) {
-                const orgId = searchParams.get('orgId');
-                const teamId = searchParams.get('teamId');
-                const userId = searchParams.get('userId');
+    findAndSelectRoom();
+  }, [activeRoomId, chats, user, searchParams, queryClient]);
 
-                if (!orgId && !teamId && !userId) return;
+  // const selectedChat = chats?.find(c => c.id === Number(activeRoomId));
 
-                let targetRoom: ChatRoom | undefined;
-
-                if (orgId) {
-                    targetRoom = chats.find(c =>
-                        c.organizationId === Number(orgId) && c.volunteerId === user.user.id
-                    );
-                } else if (teamId) {
-                    targetRoom = chats.find(c =>
-                        c.teamId === Number(teamId)
-                    );
-                } else if (userId) {
-                    // Find chat where partner matches the userId
-                    targetRoom = chats.find(c =>
-                        c.volunteerId === Number(userId)
-                    );
-                }
-
-                if (targetRoom) {
-                    handleSelectChat(targetRoom.id);
-                } else {
-                    // Start new chat if orgId or teamId provided
-                    try {
-                        const room = await api.startChat({
-                            organizationId: orgId ? Number(orgId) : undefined,
-                            teamId: teamId ? Number(teamId) : undefined,
-                            volunteerId: user.user.id
-                        });
-                        if (room && (room as any).data) {
-                            const newRoom = (room as any).data;
-                            handleSelectChat(newRoom.id);
-                            queryClient.invalidateQueries(['chats']);
-                        }
-                    } catch (e) {
-                        console.error("Failed to start chat", e);
-                    }
-                }
-            }
-        };
-
-        findAndSelectRoom();
-    }, [activeRoomId, chats, user, searchParams, queryClient]);
-
-    // const selectedChat = chats?.find(c => c.id === Number(activeRoomId));
-
-    if (isLoading) {
-        return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin" /></div>;
-    }
-
-    // Premium Empty State
-    const EmptyState = () => (
-        <div className="flex flex-col items-center justify-center h-full text-center p-8 bg-muted/10">
-            <div className="bg-primary/10 p-6 rounded-full mb-4">
-                <MessageSquare className="w-12 h-12 text-primary" />
-            </div>
-            <h3 className="text-xl font-semibold mb-2">Select a Conversation</h3>
-            <p className="text-muted-foreground max-w-sm">
-                Choose an existing chat from the left or start a new coordination for your tasks.
-            </p>
-        </div>
-    );
-
+  if (isLoading) {
     return (
-        <div className={cn("flex overflow-hidden bg-background rounded-xl border", height)}>
-            {/* Chat List Sidebar */}
-            <div className={cn(
-                "w-full md:w-80 border-r flex flex-col bg-card",
-                activeRoomId ? "hidden md:flex" : "flex"
-            )}>
-                <div className="p-4 border-b font-semibold text-lg">Messages</div>
-                <ScrollArea className="flex-1">
-                    <div className="flex flex-col gap-1 p-2">
-                        {chats?.length === 0 && (
-                            <div className="p-4 text-center text-muted-foreground text-sm">No active conversations.</div>
-                        )}
-                        {chats?.map((chat) => {
-                            // Determine display name/image
-                            const isMeVolunteer = user?.id === chat.volunteerId;
-                            const remoteName = isMeVolunteer
-                                ? chat.organization?.name
-                                : `${chat.volunteer?.firstName} ${chat.volunteer?.lastName}`;
-                            const remoteImage = isMeVolunteer
-                                ? chat.organization?.logoUrl
-                                : chat.volunteer?.profileImageUrl;
-
-                            const lastMessage = chat.messages?.[0];
-                            const isActive = Number(activeRoomId) === chat.id;
-
-                            return (
-                                <button
-                                    key={chat.id}
-                                    onClick={() => handleSelectChat(chat.id)}
-                                    className={cn(
-                                        "flex items-start gap-3 p-3 text-left rounded-lg transition-colors",
-                                        isActive ? "bg-accent" : "hover:bg-muted/50"
-                                    )}
-                                >
-                                    <Avatar>
-                                        <AvatarImage src={remoteImage} />
-                                        <AvatarFallback>{remoteName?.[0]}</AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex-1 overflow-hidden">
-                                        <div className="flex justify-between items-baseline">
-                                            <span className="font-medium truncate">{remoteName}</span>
-                                            {lastMessage && (
-                                                <span className="text-[10px] text-muted-foreground whitespace-nowrap ml-1">
-                                                    {format(new Date(lastMessage.createdAt), 'MMM d')}
-                                                </span>
-                                            )}
-                                        </div>
-                                        {chat.resource && (
-                                            <div className="text-[10px] text-primary mb-0.5 truncate bg-primary/10 inline-block px-1.5 rounded">
-                                                Ref: {chat.resource.name}
-                                            </div>
-                                        )}
-                                        <div className="text-sm text-muted-foreground truncate">
-                                            {lastMessage ? (
-                                                lastMessage.type === 'system' ? 'System Message' : lastMessage.content
-                                            ) : 'No messages'}
-                                        </div>
-                                    </div>
-                                </button>
-                            );
-                        })}
-                    </div>
-                </ScrollArea>
-            </div>
-
-            {/* Main Chat Window */}
-            <div className={cn(
-                "flex-1 flex flex-col",
-                !activeRoomId ? "hidden md:flex" : "flex"
-            )}>
-                {Number(activeRoomId) ? (
-                    <ChatWindow
-                        roomId={Number(activeRoomId)}
-                        currentUserId={user?.id}
-                        onClose={() => setSearchParams({})}
-                    />
-                ) : (
-                    <EmptyState />
-                )}
-            </div>
-        </div>
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="animate-spin" />
+      </div>
     );
+  }
+
+  // Premium Empty State
+  const EmptyState = () => (
+    <div className="flex flex-col items-center justify-center h-full text-center p-8 bg-slate-50/50 dark:bg-slate-950/20">
+      <div className="bg-primary/10 p-6 rounded-2xl mb-6 shadow-xl shadow-primary/5">
+        <MessageSquare className="w-12 h-12 text-primary" />
+      </div>
+      <h3 className="text-2xl font-bold tracking-tight mb-2">{t('Select a Conversation')}</h3>
+      <p className="text-muted-foreground max-w-sm font-medium">
+        {t('Choose an existing chat from the left or start a new coordination for your tasks.')}
+      </p>
+    </div>
+  );
+
+  return (
+    <div className={cn('flex overflow-hidden bg-background rounded-xl border border-border shadow-2xl shadow-slate-200/50 dark:shadow-slate-900/50', height)}>
+      {/* Chat List Sidebar */}
+      <div className={cn('w-full md:w-80 border-r border-border flex flex-col bg-card', activeRoomId ? 'hidden md:flex' : 'flex')}>
+        <div className="p-6 border-b border-border">
+          <h2 className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">{t('Messages')}</h2>
+        </div>
+        <ScrollArea className="flex-1">
+          <div className="flex flex-col gap-1 p-2">
+            {chats?.length === 0 && (
+              <div className="p-4 text-center text-muted-foreground text-sm">No active conversations.</div>
+            )}
+            {chats?.map((chat) => {
+              // Determine display name/image
+              const isMeVolunteer = user?.id === chat.volunteerId;
+              const remoteName = isMeVolunteer
+                ? chat.organization?.name
+                : `${chat.volunteer?.firstName} ${chat.volunteer?.lastName}`;
+              const remoteImage = isMeVolunteer ? chat.organization?.logoUrl : chat.volunteer?.profileImageUrl;
+
+              const lastMessage = chat.messages?.[0];
+              const isActive = Number(activeRoomId) === chat.id;
+
+              return (
+                <button
+                  key={chat.id}
+                  onClick={() => handleSelectChat(chat.id)}
+                  className={cn(
+                    'flex items-start gap-4 p-4 text-left rounded-xl transition-all duration-200 mx-2',
+                    isActive ? 'bg-slate-100 dark:bg-slate-800 shadow-sm' : 'hover:bg-slate-50 dark:hover:bg-slate-900/50'
+                  )}
+                >
+                  <Avatar className="h-12 w-12 border-2 border-background shadow-md">
+                    <AvatarImage src={remoteImage} className="object-cover" />
+                    <AvatarFallback className="bg-slate-100 dark:bg-slate-800 text-slate-400 font-bold">{remoteName?.[0]}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 overflow-hidden">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="font-bold text-slate-900 dark:text-slate-100 truncate tracking-tight">{remoteName}</span>
+                      {lastMessage && (
+                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 whitespace-nowrap ml-2">
+                          {(() => {
+                            const d = lastMessage.createdAt ? parseISO(lastMessage.createdAt) : null;
+                            return d && isValid(d) ? format(d, 'MMM d') : '';
+                          })()}
+                        </span>
+                      )}
+                    </div>
+                    {chat.resource && (
+                      <div className="text-[9px] font-black uppercase tracking-widest text-primary mb-1.5 truncate bg-primary/5 border border-primary/10 inline-block px-2 py-0.5 rounded-md">
+                        {t('Ref')}: {chat.resource.name}
+                      </div>
+                    )}
+                    <div className="text-sm text-slate-500 font-medium truncate">
+                      {lastMessage
+                        ? lastMessage.type === 'system'
+                          ? t('System Message')
+                          : lastMessage.content
+                        : t('No messages')}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </ScrollArea>
+      </div>
+
+      {/* Main Chat Window */}
+      <div className={cn('flex-1 flex flex-col', !activeRoomId ? 'hidden md:flex' : 'flex')}>
+        {Number(activeRoomId) ? (
+          <ChatWindow roomId={Number(activeRoomId)} currentUserId={user?.id} onClose={() => setSearchParams({})} />
+        ) : (
+          <EmptyState />
+        )}
+      </div>
+    </div>
+  );
 }
