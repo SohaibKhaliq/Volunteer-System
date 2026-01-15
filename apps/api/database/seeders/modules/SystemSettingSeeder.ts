@@ -30,14 +30,14 @@ export default class SystemSettingSeeder extends BaseSeeder {
       { key: 'enable_resources', value: 'true', type: 'boolean', category: 'features' },
       { key: 'enable_shifts', value: 'true', type: 'boolean', category: 'features' },
       // Branding
-      { key: 'platform_name', value: 'Eghata Volunteer System', type: 'string', category: 'branding' },
+      { key: 'platform_name', value: 'Local Aid Volunteer System', type: 'string', category: 'branding' },
       { key: 'platform_tagline', value: 'Connecting volunteers with opportunities', type: 'string', category: 'branding' },
       { key: 'primary_color', value: '#3B82F6', type: 'string', category: 'branding' },
       { key: 'secondary_color', value: '#10B981', type: 'string', category: 'branding' },
       { key: 'logo_url', value: '', type: 'string', category: 'branding' },
       { key: 'favicon_url', value: '', type: 'string', category: 'branding' },
       // System Extensions
-      { key: 'support_email', value: 'support@eghata.gov.au', type: 'string', category: 'system' },
+      { key: 'support_email', value: 'support@localaid.org.au', type: 'string', category: 'system' },
       { key: 'maintenance_message', value: 'System is under maintenance. Please check back later.', type: 'string', category: 'system' }
     ]
 

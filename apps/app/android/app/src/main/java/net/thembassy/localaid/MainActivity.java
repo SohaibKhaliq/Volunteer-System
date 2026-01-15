@@ -1,4 +1,4 @@
-package net.thembassy.Local Aid;
+package net.thembassy.localaid;
 
 import com.getcapacitor.BridgeActivity;
 

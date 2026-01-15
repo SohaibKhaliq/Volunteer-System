@@ -10,7 +10,7 @@ interface MaintenanceLockProps {
 
 export default function MaintenanceLock({
     message = "We're currently performing some scheduled maintenance to improve your experience. We'll be back online shortly.",
-    supportEmail = "support@eghata.gov.au",
+    supportEmail = "support@localaid.org.au",
     platformName = "Volunteer System"
 }: MaintenanceLockProps) {
     return (

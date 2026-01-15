@@ -1,7 +1,7 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'net.thembassy.Local Aid',
+  appId: 'net.thembassy.localaid',
   appName: 'Local Aid',
   webDir: 'dist',
   server: {

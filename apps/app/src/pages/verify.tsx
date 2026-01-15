@@ -92,7 +92,7 @@ export default function VerifyCertificate() {
                             {cert.doc_type || 'Certification'}
                         </CardTitle>
                         <p className="text-muted-foreground font-medium flex items-center justify-center gap-2 mt-3">
-                            Issued by <span className="font-bold text-foreground underline decoration-primary/30 decoration-2 underline-offset-4">{cert.organization?.name || 'Eghata System'}</span>
+                            Issued by <span className="font-bold text-foreground underline decoration-primary/30 decoration-2 underline-offset-4">{cert.organization?.name || 'Local Aid System'}</span>
                         </p>
                     </CardHeader>
 
@@ -182,7 +182,7 @@ export default function VerifyCertificate() {
                 </Card>
 
                 <div className="text-center mt-8">
-                    <p className="text-sm font-medium text-muted-foreground">Powered by <span className="font-black text-foreground">Eghata</span></p>
+                    <p className="text-sm font-medium text-muted-foreground">Powered by <span className="font-black text-foreground">Local Aid</span></p>
                 </div>
             </div>
         </div>
