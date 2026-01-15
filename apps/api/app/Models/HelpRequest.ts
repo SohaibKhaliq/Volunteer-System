@@ -93,6 +93,16 @@ export default class HelpRequest extends BaseModel {
   @column()
   public assignedVolunteerId: number
 
+  // Approval fields: managed by admin
+  @column()
+  public approvalStatus: 'pending' | 'approved' | 'rejected'
+
+  @column({ columnName: 'approved_by' })
+  public approvedBy?: number
+
+  @column.dateTime()
+  public approvedAt?: DateTime
+
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
 
