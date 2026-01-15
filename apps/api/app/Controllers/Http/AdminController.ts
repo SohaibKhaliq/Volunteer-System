@@ -131,11 +131,26 @@ export default class AdminController {
         .where('read', false)
         .count('* as total')
 
+      // Pending approvals (help requests, offers, carpooling)
+      const pendingHelpRequests = await Database.from('help_requests')
+        .where('approval_status', 'pending')
+        .count('* as total')
+      const pendingOffers = await Database.from('offers')
+        .where('approval_status', 'pending')
+        .count('* as total')
+      const pendingCarpooling = await Database.from('carpooling_ads')
+        .where('approval_status', 'pending')
+        .count('* as total')
+
       return response.ok({
         backgroundChecksPending: Number(bgChecks[0]?.total || bgChecks[0]?.$extras?.total || 0),
         importsPending: Number(importJobs[0]?.total || importJobs[0]?.$extras?.total || 0),
         pendingHours: Number(pendingHours[0]?.total || pendingHours[0]?.$extras?.total || 0),
-        unreadNotifications: Number(unreadNotifs[0]?.total || unreadNotifs[0]?.$extras?.total || 0)
+        unreadNotifications: Number(unreadNotifs[0]?.total || unreadNotifs[0]?.$extras?.total || 0),
+        approvalsPending:
+          Number(pendingHelpRequests[0]?.total || pendingHelpRequests[0]?.$extras?.total || 0) +
+          Number(pendingOffers[0]?.total || pendingOffers[0]?.$extras?.total || 0) +
+          Number(pendingCarpooling[0]?.total || pendingCarpooling[0]?.$extras?.total || 0)
       })
     } catch (error) {
       Logger.error('Admin summary error: %o', error)
@@ -173,8 +188,7 @@ export default class AdminController {
         : []
 
       const isSuper =
-        roleNames.some((r: string) => r.includes('super') || r.includes('owner')) ||
-        !!user.isAdmin
+        roleNames.some((r: string) => r.includes('super') || r.includes('owner')) || !!user.isAdmin
 
       const defaults: Record<string, boolean> = {
         dataOps: false,
@@ -189,10 +203,21 @@ export default class AdminController {
         monitoring: settingsFeatures?.monitoring ?? defaults.monitoring,
         scheduling: settingsFeatures?.scheduling ?? defaults.scheduling,
         // System-wide module toggles
-        shifts: (await Database.from('system_settings').where('key', 'enable_shifts').first())?.value === 'true',
-        resources: (await Database.from('system_settings').where('key', 'enable_resources').first())?.value === 'true',
-        gamification: (await Database.from('system_settings').where('key', 'enable_gamification').first())?.value === 'true',
-        complianceEnforcement: (await Database.from('system_settings').where('key', 'enable_compliance_enforcement').first())?.value === 'true'
+        shifts:
+          (await Database.from('system_settings').where('key', 'enable_shifts').first())?.value ===
+          'true',
+        resources:
+          (await Database.from('system_settings').where('key', 'enable_resources').first())
+            ?.value === 'true',
+        gamification:
+          (await Database.from('system_settings').where('key', 'enable_gamification').first())
+            ?.value === 'true',
+        complianceEnforcement:
+          (
+            await Database.from('system_settings')
+              .where('key', 'enable_compliance_enforcement')
+              .first()
+          )?.value === 'true'
       }
 
       return response.ok(final)
@@ -702,17 +727,14 @@ export default class AdminController {
 
       const { limit = 10 } = request.qs()
 
-      const logs = await AuditLog.query()
-        .preload('user')
-        .orderBy('created_at', 'desc')
-        .limit(limit)
+      const logs = await AuditLog.query().preload('user').orderBy('created_at', 'desc').limit(limit)
 
       // Format for frontend dashboard: array of {desc, time}
       const activities = logs.map((log) => {
         const userName = log.user?.firstName || log.user?.email || 'Unknown User'
         const action = log.action || 'performed action'
         const target = log.targetType || 'resource'
-        
+
         // Create human-readable description
         let desc = `${userName} ${action.replace('_', ' ')} ${target}`
         if (log.targetId) {
@@ -723,7 +745,7 @@ export default class AdminController {
         const now = new Date()
         const diffMs = now.getTime() - createdAt.getTime()
         const diffMins = Math.floor(diffMs / 60000)
-        
+
         let time = ''
         if (diffMins < 1) {
           time = 'Just now'
@@ -832,7 +854,7 @@ export default class AdminController {
       // Validate and save each setting
       // Validate and save each setting
       const SystemSetting = (await import('App/Models/SystemSetting')).default
-      
+
       for (const [key, value] of Object.entries(settings)) {
         // Ensure objects are valid JSON-serializable
         if (typeof value === 'object') {
@@ -862,7 +884,10 @@ export default class AdminController {
       return response.ok({ message: 'Settings updated successfully' })
     } catch (error) {
       Logger.error('Update system settings error: %o', error)
-      return response.internalServerError({ message: 'Failed to update settings', error: error.message })
+      return response.internalServerError({
+        message: 'Failed to update settings',
+        error: error.message
+      })
     }
   }
 
@@ -926,7 +951,9 @@ export default class AdminController {
               const maybeSharp = await import('sharp').catch(() => null)
               const sharpLib = maybeSharp ? (maybeSharp.default ?? maybeSharp) : null
               if (sharpLib) {
-                await sharpLib(`${destDir}/${filename}`).resize(200, 200, { fit: 'contain' }).toFile(`${thumbDir}/${filename}`)
+                await sharpLib(`${destDir}/${filename}`)
+                  .resize(200, 200, { fit: 'contain' })
+                  .toFile(`${thumbDir}/${filename}`)
               }
             } catch (err) {
               Logger.warn('Branding logo thumbnail generation failed: %o', err)
@@ -939,7 +966,9 @@ export default class AdminController {
       if (keys.length === 0) return response.badRequest({ message: 'No branding data provided' })
 
       // Fetch previous values for audit log
-      const rows = await Database.from('system_settings').whereIn('key', keys).select('key', 'value')
+      const rows = await Database.from('system_settings')
+        .whereIn('key', keys)
+        .select('key', 'value')
       const previous: Record<string, any> = {}
       rows.forEach((r) => (previous[r.key] = r.value))
 
@@ -963,7 +992,10 @@ export default class AdminController {
       return response.ok({ message: 'Branding updated successfully', branding })
     } catch (error) {
       Logger.error('Update branding error: %o', error)
-      return response.internalServerError({ message: 'Failed to update branding', error: error.message })
+      return response.internalServerError({
+        message: 'Failed to update branding',
+        error: error.message
+      })
     }
   }
 
