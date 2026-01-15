@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import api from '@/lib/api';
 import SkeletonCard from '@/components/atoms/skeleton-card';
-import { format } from 'date-fns';
+import { safeFormatDate } from '@/lib/format-utils';
 
 export default function AdminAuditLogs() {
   const { data, isLoading } = useQuery({
@@ -68,7 +68,7 @@ export default function AdminAuditLogs() {
                       {log.user?.firstName} {log.user?.lastName}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">{log.ipAddress || 'N/A'}</TableCell>
-                    <TableCell>{format(new Date(log.createdAt), 'PPpp')}</TableCell>
+                    <TableCell>{safeFormatDate(log.createdAt, 'PPpp')}</TableCell>
                     <TableCell>
                       <Button variant="ghost" size="sm" onClick={() => getLog.mutate(log.id)}>
                         Details
