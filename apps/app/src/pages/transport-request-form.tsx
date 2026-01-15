@@ -80,8 +80,8 @@ const TransportRequestForm = () => {
     mutationFn: (formData: FormData) => api.createCarpooling(formData),
     onSuccess: (data: FixType) => {
       toast({
-        title: t('Transport Request Created'),
-        description: t('Your request has been successfully created.'),
+        title: t('Transport Request Submitted'),
+        description: t('Your request has been submitted and is pending admin approval.'),
         className: 'rounded-2xl border-primary/20 shadow-2xl'
       });
       timeout.current = setTimeout(() => {
@@ -135,17 +135,15 @@ const TransportRequestForm = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Hero Header */}
-      <div className="relative overflow-hidden bg-primary pt-24 pb-48">
-        <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:30px_30px]" />
-        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/95 to-primary/90" />
+      <div className="relative overflow-hidden bg-slate-900 pt-24 pb-48">
+        <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:30px_30px]" />
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800" />
         <div className="container relative px-4 mx-auto text-center">
-          <Badge className="bg-white/10 text-white border-white/20 hover:bg-white/20 mb-6 backdrop-blur-sm px-4 py-1.5 rounded-full">
+          <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 mb-6 backdrop-blur-sm px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-md">
             {t('Commuting Together')}
           </Badge>
-          <h1 className="text-4xl md:text-6xl font-black tracking-tight text-white mb-6">
-            {t('Request Transport')}
-          </h1>
-          <p className="text-primary-foreground/80 text-lg md:text-xl max-w-2xl mx-auto font-medium">
+          <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-white mb-6">{t('Request Transport')}</h1>
+          <p className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto font-medium">
             {t('Need a ride? Fill in the details below and find community-led transport.')}
           </p>
         </div>
@@ -156,15 +154,15 @@ const TransportRequestForm = () => {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8" encType="multipart/form-data">
               {/* Route & Journey */}
-              <Card className="border-border/50 shadow-2xl shadow-primary/5 rounded-[2.5rem] bg-card overflow-hidden">
+              <Card className="border-border shadow-2xl shadow-slate-200/50 dark:shadow-slate-900/50 rounded-xl bg-card overflow-hidden">
                 <CardHeader className="p-8 md:p-12 pb-0">
-                  <div className="flex items-center gap-4 mb-2">
-                    <div className="p-3 rounded-2xl bg-primary/10 text-primary">
+                  <div className="flex items-center gap-4 mb-3">
+                    <div className="p-3 rounded-xl bg-primary/10 text-primary">
                       <Map className="h-6 w-6" />
                     </div>
-                    <CardTitle className="text-2xl font-black">{t('Route & Journey')}</CardTitle>
+                    <CardTitle className="text-2xl font-bold tracking-tight">{t('Route & Journey')}</CardTitle>
                   </div>
-                  <CardDescription className="text-lg font-medium pl-14">
+                  <CardDescription className="text-lg font-medium pl-14 text-muted-foreground">
                     {t('Specify your starting point and destination.')}
                   </CardDescription>
                 </CardHeader>
@@ -236,15 +234,15 @@ const TransportRequestForm = () => {
               </Card>
 
               {/* Description & Media */}
-              <Card className="border-border/50 shadow-2xl shadow-primary/5 rounded-[2.5rem] bg-card overflow-hidden">
+              <Card className="border-border shadow-2xl shadow-slate-200/50 dark:shadow-slate-900/50 rounded-xl bg-card overflow-hidden">
                 <CardHeader className="p-8 md:p-12 pb-0">
-                  <div className="flex items-center gap-4 mb-2">
-                    <div className="p-3 rounded-2xl bg-primary/10 text-primary">
+                  <div className="flex items-center gap-4 mb-3">
+                    <div className="p-3 rounded-xl bg-primary/10 text-primary">
                       <FileText className="h-6 w-6" />
                     </div>
-                    <CardTitle className="text-2xl font-black">{t('Additional Details')}</CardTitle>
+                    <CardTitle className="text-2xl font-bold tracking-tight">{t('Additional Details')}</CardTitle>
                   </div>
-                  <CardDescription className="text-lg font-medium pl-14">
+                  <CardDescription className="text-lg font-medium pl-14 text-muted-foreground">
                     {t('Provide more context about your journey or any specific needs.')}
                   </CardDescription>
                 </CardHeader>
@@ -282,15 +280,15 @@ const TransportRequestForm = () => {
               </Card>
 
               {/* Contact Information */}
-              <Card className="border-border/50 shadow-2xl shadow-primary/5 rounded-[2.5rem] bg-card overflow-hidden">
+              <Card className="border-border shadow-2xl shadow-slate-200/50 dark:shadow-slate-900/50 rounded-xl bg-card overflow-hidden">
                 <CardHeader className="p-8 md:p-12 pb-0">
-                  <div className="flex items-center gap-4 mb-2">
-                    <div className="p-3 rounded-2xl bg-primary/10 text-primary">
+                  <div className="flex items-center gap-4 mb-3">
+                    <div className="p-3 rounded-xl bg-primary/10 text-primary">
                       <User className="h-6 w-6" />
                     </div>
-                    <CardTitle className="text-2xl font-black">{t('Contact Information')}</CardTitle>
+                    <CardTitle className="text-2xl font-bold tracking-tight">{t('Contact Information')}</CardTitle>
                   </div>
-                  <CardDescription className="text-lg font-medium pl-14">
+                  <CardDescription className="text-lg font-medium pl-14 text-muted-foreground">
                     {t('How can potential drivers reach you?')}
                   </CardDescription>
                 </CardHeader>
@@ -315,7 +313,12 @@ const TransportRequestForm = () => {
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <TextInput label={t('Phone Number')} placeholder={t('e.g. +123...')} type="tel" {...field} />
+                            <TextInput
+                              label={t('Phone Number')}
+                              placeholder={t('e.g. +123...')}
+                              type="tel"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage className="font-bold" />
                         </FormItem>
@@ -328,7 +331,13 @@ const TransportRequestForm = () => {
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <TextInput label={t('Email Address')} type="email" placeholder={t('example@email.com')} optional {...field} />
+                            <TextInput
+                              label={t('Email Address')}
+                              type="email"
+                              placeholder={t('example@email.com')}
+                              optional
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage className="font-bold" />
                         </FormItem>
@@ -342,14 +351,16 @@ const TransportRequestForm = () => {
                 <Button
                   type="submit"
                   disabled={!isDirty || !isValid || isSubmitting || isLoading}
-                  className="w-full h-16 rounded-2xl text-xl font-black shadow-2xl shadow-primary/20 hover:shadow-primary/30 hover:translate-y-[-2px] transition-all disabled:opacity-50 disabled:translate-y-0"
+                  className="w-full h-16 rounded-lg text-lg font-bold shadow-2xl shadow-primary/20 hover:shadow-primary/30 hover:translate-y-[-1px] transition-all disabled:opacity-50 disabled:translate-y-0"
                 >
-                  {(isSubmitting || isLoading) ? (
+                  {isSubmitting || isLoading ? (
                     <div className="flex items-center gap-3">
                       <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       {t('Submitting Request...')}
                     </div>
-                  ) : t('Submit Transport Request')}
+                  ) : (
+                    t('Submit Transport Request')
+                  )}
                 </Button>
                 <Button
                   type="button"
