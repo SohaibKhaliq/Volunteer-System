@@ -40,6 +40,7 @@ import {
 } from 'lucide-react';
 
 import { toast } from '@/components/atoms/use-toast';
+import { safeFormatDate } from '@/lib/format-utils';
 import ManageRolesModal from '@/components/admin/ManageRolesModal';
 import UserProfileModal from '@/components/admin/UserProfileModal';
 import EditUserModal from '@/components/admin/EditUserModal';
@@ -80,11 +81,11 @@ export default function AdminUsers() {
   }, [debouncedSearch, statusFilter, perPage]);
 
   // Users Query (React Query v4 Syntax)
-  const { data: usersRes, isLoading } = useQuery(
-    ['users', debouncedSearch, statusFilter, page, perPage],
-    () => api.listUsersPaged(debouncedSearch, page, perPage, statusFilter === 'all' ? undefined : statusFilter),
-    { keepPreviousData: true }
-  );
+  const { data: usersRes, isLoading } = useQuery({
+    queryKey: ['users', debouncedSearch, statusFilter, page, perPage],
+    queryFn: () => api.listUsersPaged(debouncedSearch, page, perPage, statusFilter === 'all' ? undefined : statusFilter),
+    keepPreviousData: true
+  });
 
   const users = usersRes?.data || [];
   // map backend fields to UI-friendly fields
@@ -110,56 +111,59 @@ export default function AdminUsers() {
   const usersMeta = usersRes?.meta || {};
 
   // Analytics Query
-  const { data: analytics } = useQuery(['userAnalytics'], () => api.getUserAnalytics());
+  const { data: analytics } = useQuery({
+    queryKey: ['userAnalytics'],
+    queryFn: () => api.getUserAnalytics()
+  });
 
   // Mutations
-  const disableMutation = useMutation((userId: number) => api.disableUser(userId), {
+  const disableMutation = useMutation({
+    mutationFn: (userId: number) => api.disableUser(userId),
     onSuccess: () => {
-      queryClient.invalidateQueries(['users']);
+      queryClient.invalidateQueries({ queryKey: ['users'] });
       toast({ title: 'User disabled', variant: 'success' });
     }
   });
 
-  const enableMutation = useMutation((userId: number) => api.enableUser(userId), {
+  const enableMutation = useMutation({
+    mutationFn: (userId: number) => api.enableUser(userId),
     onSuccess: () => {
-      queryClient.invalidateQueries(['users']);
+      queryClient.invalidateQueries({ queryKey: ['users'] });
       toast({ title: 'User enabled', variant: 'success' });
     }
   });
 
-  const deleteMutation = useMutation((userId: number) => api.deleteUser(userId), {
+  const deleteMutation = useMutation({
+    mutationFn: (userId: number) => api.deleteUser(userId),
     onSuccess: () => {
-      queryClient.invalidateQueries(['users']);
+      queryClient.invalidateQueries({ queryKey: ['users'] });
       toast({ title: 'User deleted', variant: 'success' });
     }
   });
 
-  const sendReminderMutation = useMutation((userId: number) => api.sendReengagementEmail(userId), {
+  const sendReminderMutation = useMutation({
+    mutationFn: (userId: number) => api.sendReengagementEmail(userId),
     onSuccess: () => {
       toast({ title: 'Reminder sent', variant: 'success' });
     }
   });
 
   // New mutations for role & activation endpoints
-  const addRoleMutation = useMutation(
-    ({ userId, roleId }: { userId: number; roleId: number }) => api.addUserRole(userId, roleId),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(['users']);
-        toast({ title: 'Role assigned', variant: 'success' });
-      }
+  const addRoleMutation = useMutation({
+    mutationFn: ({ userId, roleId }: { userId: number; roleId: number }) => api.addUserRole(userId, roleId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast({ title: 'Role assigned', variant: 'success' });
     }
-  );
+  });
 
-  const removeRoleMutation = useMutation(
-    ({ userId, roleId }: { userId: number; roleId: number }) => api.removeUserRole(userId, roleId),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(['users']);
-        toast({ title: 'Role removed', variant: 'success' });
-      }
+  const removeRoleMutation = useMutation({
+    mutationFn: ({ userId, roleId }: { userId: number; roleId: number }) => api.removeUserRole(userId, roleId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      toast({ title: 'Role removed', variant: 'success' });
     }
-  );
+  });
 
   // Roles modal state
   const [rolesModalUser, setRolesModalUser] = useState<User | null>(null);
@@ -177,7 +181,7 @@ export default function AdminUsers() {
   const closeEditModal = () => setEditModalUser(null);
 
   const handleUserUpdated = () => {
-    queryClient.invalidateQueries(['users']);
+    queryClient.invalidateQueries({ queryKey: ['users'] });
     toast({ title: 'User updated', variant: 'success' });
     closeEditModal();
   };
@@ -373,10 +377,10 @@ export default function AdminUsers() {
                     <div className="flex flex-wrap gap-1">
                       {user.roles?.length
                         ? user.roles.map((role) => (
-                            <Badge key={role.id} variant="outline">
-                              {role.name}
-                            </Badge>
-                          ))
+                          <Badge key={role.id} variant="outline">
+                            {role.name}
+                          </Badge>
+                        ))
                         : 'No roles'}
                     </div>
                   </TableCell>
@@ -385,7 +389,7 @@ export default function AdminUsers() {
 
                   <TableCell>{getComplianceBadge(user.complianceStatus)}</TableCell>
 
-                  <TableCell>{user.lastLoginAt ? new Date(user.lastLoginAt).toLocaleDateString() : 'Never'}</TableCell>
+                  <TableCell>{safeFormatDate(user.lastLoginAt, 'PP', 'Never')}</TableCell>
 
                   <TableCell className="text-right">
                     <DropdownMenu>
