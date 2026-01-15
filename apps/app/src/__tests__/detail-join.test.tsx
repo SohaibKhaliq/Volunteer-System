@@ -44,7 +44,7 @@ describe('Event detail join behavior', () => {
     );
 
     // wait for the join button to appear
-    const joinBtn = await screen.findByRole('button', { name: /Join Now/i });
+    const joinBtn = await screen.findByRole('button', { name: /Apply Now/i });
 
     // click the button
     fireEvent.click(joinBtn);
