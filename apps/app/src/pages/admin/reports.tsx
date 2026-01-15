@@ -56,21 +56,19 @@ export default function AdminReports() {
   const [timeRange, setTimeRange] = useState('30days');
   const [exportFormat, setExportFormat] = useState('pdf');
 
-  const { data: rawReportData, isLoading } = useQuery<ReportData>(
-    ['admin-reports-data', reportType, timeRange],
-    () => api.getReports({ type: reportType, range: timeRange }),
-    {
-      suspense: false,
-      retry: false,
-      onError: (err: any) => {
-        try {
-          toast({ title: 'Unable to load reports', description: err?.message || 'Please try again' });
-        } catch (e) {
-          // ignore
-        }
+  const { data: rawReportData, isLoading } = useQuery<ReportData>({
+    queryKey: ['admin-reports-data', reportType, timeRange],
+    queryFn: () => api.getReports({ type: reportType, range: timeRange }),
+    suspense: false,
+    retry: false,
+    onError: (err: any) => {
+      try {
+        toast({ title: 'Unable to load reports', description: err?.message || 'Please try again' });
+      } catch (e) {
+        // ignore
       }
     }
-  );
+  });
 
   const reportData = useMemo(() => {
     if (!rawReportData || typeof rawReportData !== 'object' || Array.isArray(rawReportData)) return null;
