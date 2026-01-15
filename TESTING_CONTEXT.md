@@ -19,7 +19,7 @@ Use this file to store the credentials and context needed for testing the applic
 
 ## Project Overview
 
-**Eghata** is a volunteering management platform designed to connect volunteers with organizations and manage emergency aid requests. It facilitates the entire lifecycle of volunteering, from recruitment and compliance to shift management and reporting.
+**Local Aid** is a volunteering management platform designed to connect volunteers with organizations and manage emergency aid requests. It facilitates the entire lifecycle of volunteering, from recruitment and compliance to shift management and reporting.
 
 ### Core Architecture
 -   **Backend**: AdonisJS (Node.js) using Lucid ORM for PostgreSQL.
