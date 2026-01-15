@@ -92,6 +92,7 @@ export default class CarpoolingAdsController {
         },
         status: payload.type === 'offer' ? CarpoolingStatus.planned : CarpoolingStatus.requested,
         type: payload.type as 'request' | 'offer',
+        approvalStatus: 'pending',
         files: JSON.stringify(placedFiles)
       })
 
@@ -147,9 +148,14 @@ export default class CarpoolingAdsController {
     }
   }
 
-  public async index({ response }: HttpContextContract) {
+  public async index({ request, response }: HttpContextContract) {
     try {
-      const carpoolings = await CarpoolingAd.all()
+      const isAdmin = request.auth && request.auth.user && request.auth.user.isAdmin
+      const query = CarpoolingAd.query().orderBy('created_at', 'desc')
+      if (!isAdmin) {
+        query.where('approval_status', 'approved')
+      }
+      const carpoolings = await query
 
       return carpoolings
     } catch (error) {
