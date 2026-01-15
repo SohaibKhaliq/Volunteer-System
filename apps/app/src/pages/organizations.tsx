@@ -102,17 +102,16 @@ const Organizations = () => {
   return (
     <div className="flex flex-col min-h-screen bg-background">
       {/* Hero Section */}
-      <section className="relative py-24 pb-32 flex flex-col items-center justify-center bg-primary text-white overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/90 to-primary/80 z-10" />
-        <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:30px_30px] z-10" />
-        <div className="container relative z-20 px-4 text-center">
-          <h1 className="text-5xl md:text-7xl font-black mb-6 tracking-tight">{t('Partner Organizations')}</h1>
-          <p className="text-xl text-primary-foreground/90 max-w-2xl mx-auto font-medium">
-            {t('Discover amazing groups working to make a difference. Join them or support their cause.')}
-          </p>
-          <div className="mt-8">
+      <section className="relative py-32 flex flex-col items-center justify-center bg-slate-900 text-white overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 via-primary/5 to-transparent z-10" />
+        <div className="container relative z-20 px-4">
+          <div className="max-w-3xl">
+            <h1 className="text-4xl md:text-7xl font-bold mb-6 tracking-tight">{t('Partner Organizations')}</h1>
+            <p className="text-xl text-slate-300 font-medium leading-relaxed mb-10">
+              {t('Discover amazing groups working to make a difference. Join them or support their cause.')}
+            </p>
             <Link to="/organizations/register">
-              <Button size="lg" variant="secondary" className="h-14 px-8 rounded-2xl font-black shadow-2xl shadow-black/20 text-primary hover:bg-white/90">
+              <Button size="lg" className="h-14 px-10 rounded-md font-bold shadow-xl bg-primary hover:bg-primary/90 text-white transition-all">
                 <Building2 className="mr-2 h-5 w-5" />
                 {t('Register Your Organization')}
               </Button>
@@ -121,19 +120,19 @@ const Organizations = () => {
         </div>
       </section>
 
-      <div className="container px-4 -mt-16 relative z-30 pb-24">
+      <div className="container px-4 -mt-10 relative z-30 pb-24">
         {/* Search & Filter */}
-        <div className="bg-card p-4 rounded-[2rem] shadow-2xl shadow-primary/10 border border-border/50 mb-12 flex flex-col md:flex-row gap-4">
+        <div className="bg-card p-2 rounded-xl shadow-2xl shadow-slate-200/50 dark:shadow-slate-900/50 border border-border mb-12 flex flex-col md:flex-row gap-2">
           <div className="relative flex-1 group">
-            <Search className="absolute left-6 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+            <Search className="absolute left-5 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
             <Input
               placeholder={t('Search organizations by name or category...')}
-              className="pl-14 h-14 bg-muted/30 border-transparent hover:bg-muted/50 focus:bg-background focus:border-primary/20 rounded-2xl transition-all text-lg"
+              className="pl-12 h-14 bg-slate-50 dark:bg-slate-900 border-none focus-visible:ring-0 rounded-lg transition-all text-lg"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-          <Button variant="outline" className="h-14 rounded-2xl border-border/50 px-8 font-bold text-muted-foreground hover:text-foreground hover:border-primary/20">
+          <Button variant="outline" className="h-14 rounded-lg border-border px-8 font-bold text-muted-foreground hover:text-foreground">
             <Users className="mr-2 h-5 w-5" />
             {t('Filters')}
           </Button>
@@ -146,7 +145,7 @@ const Organizations = () => {
               <div key={i} className="h-[500px] bg-card rounded-[2.5rem] animate-pulse border border-border/50 shadow-sm" />
             ))
             : filteredOrgs.map((org: any) => (
-              <Card key={org.id} className="group hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 overflow-hidden border-border/50 rounded-[2.5rem] bg-card flex flex-col">
+              <Card key={org.id} className="group hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 overflow-hidden border-border rounded-xl bg-card flex flex-col">
                 <div className="h-56 bg-muted relative overflow-hidden">
                   <img
                     src={
@@ -156,45 +155,45 @@ const Organizations = () => {
                     alt={org.name}
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <Badge className="absolute top-5 right-5 bg-white/95 text-foreground backdrop-blur-md border-none shadow-lg px-4 py-1.5 text-xs font-black uppercase tracking-wider rounded-xl">
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <Badge className="absolute top-4 right-4 bg-white/95 text-foreground backdrop-blur-md border-none shadow-lg px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-md">
                     {org.category || 'General'}
                   </Badge>
                 </div>
-                <CardContent className="space-y-6 pt-6 flex-1">
-                  <div className="flex flex-col gap-2">
-                    <CardTitle className="text-2xl font-black tracking-tight group-hover:text-primary transition-colors">
+                <CardContent className="space-y-4 pt-8 flex-1">
+                  <div className="flex flex-col gap-1">
+                    <CardTitle className="text-2xl font-bold tracking-tight group-hover:text-primary transition-colors">
                       {org.name}
                     </CardTitle>
-                    <p className="text-muted-foreground line-clamp-2 leading-relaxed font-medium">
+                    <p className="text-muted-foreground line-clamp-2 leading-relaxed text-sm font-medium">
                       {org.description || 'Dedicated to supporting our community through collaborative efforts.'}
                     </p>
                   </div>
-                  <div className="flex items-center gap-4 text-xs font-bold text-muted-foreground uppercase tracking-widest">
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-lg">
-                      <MapPin className="h-3.5 w-3.5 text-primary" /> {org.city || org.location || 'Remote'}
+                  <div className="flex items-center gap-4 text-[10px] font-black text-muted-foreground uppercase tracking-widest">
+                    <div className="flex items-center gap-1.5">
+                      <MapPin className="h-3.5 w-3.5 text-primary/70" /> {org.city || org.location || 'Remote'}
                     </div>
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-lg">
-                      <Users className="h-3.5 w-3.5 text-primary" /> {org.volunteer_count || 0} members
+                    <div className="flex items-center gap-1.5">
+                      <Users className="h-3.5 w-3.5 text-primary/70" /> {org.volunteer_count || 0} members
                     </div>
                   </div>
                 </CardContent>
-                <CardFooter className="border-t border-border/50 bg-muted/10 p-6 flex gap-3">
+                <CardFooter className="border-t border-border bg-slate-50/50 dark:bg-slate-900/50 p-6 flex gap-3">
                   <Link to={`/organizations/${org.slug || org.id}`} className="flex-1">
-                    <Button variant="ghost" className="w-full h-12 justify-between group rounded-xl bg-white hover:bg-primary hover:text-white border border-border/50 shadow-sm transition-all font-bold px-4">
-                      {t('View Profile')}
-                      <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    <Button variant="ghost" className="w-full h-11 justify-between group rounded-md bg-white dark:bg-slate-900 hover:bg-primary hover:text-white border border-border transition-all font-bold px-4 text-xs">
+                      {t('Profile')}
+                      <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform" />
                     </Button>
                   </Link>
                   <Button
                     variant="outline"
                     size="icon"
-                    className="h-12 w-12 rounded-xl flex-shrink-0 border-primary/20 hover:bg-primary/5 text-primary"
+                    className="h-11 w-11 rounded-md border-border hover:bg-primary hover:text-white text-primary transition-colors"
                     onClick={() => navigate(`/profile?tab=messages&orgId=${org.id}`)}
                   >
-                    <MessageSquare className="h-5 w-5" />
+                    <MessageSquare className="h-4 w-4" />
                   </Button>
-                  <div className="w-40">
+                  <div className="w-32">
                     {(() => {
                       const membership = membershipMap[org.id];
                       const status = membership ? membership.status : 'not_member';
@@ -204,19 +203,19 @@ const Organizations = () => {
                           <Button
                             size="sm"
                             variant="destructive"
-                            className="w-full h-12 rounded-xl shadow-lg shadow-destructive/10 font-bold"
+                            className="w-full h-11 rounded-md font-bold text-xs"
                             onClick={() => leaveMutation.mutate(org.id)}
                             disabled={isLeaving}
                           >
-                            {isLeaving ? 'Leaving...' : t('Leave')}
+                            {isLeaving ? '...' : t('Leave')}
                           </Button>
                         );
                       }
                       if (status === 'pending') {
                         const isJoining = loadingByOrg[org.id] === 'joining';
                         return (
-                          <Button size="sm" className="w-full h-12 rounded-xl bg-muted text-muted-foreground font-bold" disabled>
-                            {isJoining ? 'Requesting...' : t('Requested')}
+                          <Button size="sm" className="w-full h-11 rounded-md bg-muted text-muted-foreground font-bold text-xs" disabled>
+                            {isJoining ? '...' : t('Pending')}
                           </Button>
                         );
                       }
@@ -225,7 +224,7 @@ const Organizations = () => {
                       return (
                         <Button
                           size="sm"
-                          className="w-full h-12 rounded-xl shadow-lg shadow-primary/10 font-bold"
+                          className="w-full h-11 rounded-md font-bold text-xs shadow-lg shadow-primary/10 transition-all hover:translate-y-[-1px]"
                           onClick={() => {
                             if (!token) {
                               const returnTo = encodeURIComponent(
