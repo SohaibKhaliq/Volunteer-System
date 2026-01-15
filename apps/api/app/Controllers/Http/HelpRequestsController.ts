@@ -86,6 +86,7 @@ export default class HelpRequestController {
         description: parsedPayload.description,
         source: parsedPayload.source,
         status: HelpRequestStatus.Requested,
+        approvalStatus: 'pending',
         name: parsedPayload.name,
         email: parsedPayload.email,
         phone: parsedPayload.phone,
@@ -191,7 +192,13 @@ export default class HelpRequestController {
       const severity = request.input('severity')
       const type = request.input('type')
 
+      const isAdmin = request.auth && request.auth.user && request.auth.user.isAdmin
       const query = HelpRequest.query().preload('types').orderBy('created_at', 'desc')
+
+      // Only show approved requests to public users
+      if (!isAdmin) {
+        query.where('approval_status', 'approved')
+      }
 
       if (search) {
         query.where((q) => {
@@ -207,9 +214,7 @@ export default class HelpRequestController {
 
       if (type && type !== 'all') {
         query.whereHas('types', (q) => {
-          q.where('type', type)
-            .orWhere('category', type)
-            .orWhere('name', type)
+          q.where('type', type).orWhere('category', type).orWhere('name', type)
         })
       }
 
@@ -257,8 +262,24 @@ export default class HelpRequestController {
       const helpRequest = await HelpRequest.findOrFail(params.id)
       Logger.info('Found request: %o', helpRequest.id)
 
-      const { volunteerId } = request.only(['volunteerId'])
+      const volunteerId = request.input('volunteerId')
       Logger.info('Volunteer ID: %s', volunteerId)
+
+      if (!volunteerId) {
+        return response.badRequest({ error: { message: 'volunteerId is required' } })
+      }
+
+      // Ensure the volunteer exists
+      const User = (await import('App/Models/User')).default
+      const volunteer = await User.find(volunteerId)
+      if (!volunteer) {
+        return response.badRequest({ error: { message: 'Volunteer not found' } })
+      }
+
+      // Optional: ensure the role is volunteer (best-effort, tolerate absence of role system)
+      if ((volunteer as any).role && (volunteer as any).role !== 'volunteer') {
+        Logger.warn('Assigning a non-volunteer user: %s', volunteerId)
+      }
 
       helpRequest.assignedVolunteerId = volunteerId
       helpRequest.status = HelpRequestStatus.Assigned
