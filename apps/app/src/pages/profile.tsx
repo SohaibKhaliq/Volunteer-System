@@ -3,23 +3,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import api from '@/lib/api';
 import { useStore } from '@/lib/store';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Switch } from '@/components/ui/switch';
 import TagInput from '@/components/molecules/tag-input';
 import { Separator } from '@/components/ui/separator';
@@ -40,10 +30,17 @@ import {
   Award,
   Users,
   MessageSquare,
-  CalendarClock
+  Calendar,
+  CalendarClock,
+  MapPin,
+  Car,
+  FileText,
+  BookOpen,
+  LayoutTemplate
 } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { safeFormatDate } from '@/lib/format-utils';
 
 // Page Imports
 import VolunteerCertificates from '@/pages/volunteer/certificates';
@@ -54,6 +51,9 @@ import VolunteerApplicationsPage from '@/pages/volunteer/applications';
 import VolunteerOrganizationsPage from '@/pages/volunteer/organizations';
 import VolunteerCompliance from '@/pages/volunteer/compliance';
 import VolunteerAttendance from '@/pages/volunteer/attendance';
+import CarpoolingPage from '@/pages/carpooling';
+import FeedbackDashboard from '@/pages/feedback';
+import VolunteerTraining from '@/pages/volunteer/training';
 
 export default function Profile() {
   const { t } = useTranslation();
@@ -75,16 +75,21 @@ export default function Profile() {
   // State
   const [avatarVersion, setAvatarVersion] = useState(Date.now());
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  // Pagination for overview lists
+  const [assignmentsPage, setAssignmentsPage] = useState(1);
+  const ASSIGNMENTS_PER_PAGE = 5;
+  const [historyPage, setHistoryPage] = useState(1);
+  const HISTORY_PER_PAGE = 3;
 
   // Queries
-  const { data: profileData, isLoading } = useQuery(
-    ['volunteer-profile'],
-    () => api.getVolunteerProfile()
-  );
-  const { data: preferencesResponse } = useQuery(
-    ['user-preferences'],
-    () => api.getPreferences()
-  );
+  const { data: profileData, isLoading } = useQuery(['volunteer-profile'], () => api.getVolunteerProfile());
+  const { data: preferencesResponse } = useQuery(['user-preferences'], () => api.getPreferences());
+  const { data: assignments } = useQuery(['my-assignments'], () => api.getMyAssignments(), {
+    enabled: activeTab === 'overview'
+  });
+  const { data: hoursHistory } = useQuery(['my-hours-history'], () => api.getMyVolunteerHours(), {
+    enabled: activeTab === 'overview'
+  });
 
   // Helper getters
   const userData = profileData || {};
@@ -99,7 +104,7 @@ export default function Profile() {
     address: '',
     skills: [] as string[],
     interests: [] as string[],
-    availability: '',
+    availability: ''
   });
 
   const [prefsFormData, setPrefsFormData] = useState<any>({});
@@ -116,7 +121,7 @@ export default function Profile() {
         address: profileData.profileMetadata?.address || '',
         skills: profileData.profileMetadata?.skills || [],
         interests: profileData.profileMetadata?.interests || [],
-        availability: profileData.profileMetadata?.availability || '',
+        availability: profileData.profileMetadata?.availability || ''
       });
     }
   }, [profileData]);
@@ -128,33 +133,27 @@ export default function Profile() {
   }, [preferencesResponse]);
 
   // Mutations
-  const updateMutation = useMutation(
-    (data: any) => api.updateVolunteerProfile(data),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(['volunteer-profile']);
-        toast({ title: t('Profile updated'), description: t('Your information has been saved.') });
-      },
-      onError: (error: any) => {
-        console.error('Profile update error:', error);
-        toast({
-          title: t('Update failed'),
-          description: error?.response?.data?.error?.message || t('Could not update profile.'),
-          variant: 'destructive',
-        });
-      },
+  const updateMutation = useMutation((data: any) => api.updateVolunteerProfile(data), {
+    onSuccess: () => {
+      queryClient.invalidateQueries(['volunteer-profile']);
+      toast({ title: t('Profile updated'), description: t('Your information has been saved.') });
+    },
+    onError: (error: any) => {
+      console.error('Profile update error:', error);
+      toast({
+        title: t('Update failed'),
+        description: error?.response?.data?.error?.message || t('Could not update profile.'),
+        variant: 'destructive'
+      });
     }
-  );
+  });
 
-  const preferencesMutation = useMutation(
-    (data: any) => api.updatePreferences(data),
-    {
-      onSuccess: () => {
-        queryClient.invalidateQueries(['user-preferences']);
-        // toast({ title: t('Preferences updated') });
-      },
+  const preferencesMutation = useMutation((data: any) => api.updatePreferences(data), {
+    onSuccess: () => {
+      queryClient.invalidateQueries(['user-preferences']);
+      // toast({ title: t('Preferences updated') });
     }
-  );
+  });
 
   // Handlers
   const handleSaveAll = async () => {
@@ -167,10 +166,10 @@ export default function Profile() {
         profileMetadata: {
           bio: formData.bio ? formData.bio.trim() : undefined,
           address: formData.address ? formData.address.trim() : undefined,
-          skills: Array.isArray(formData.skills) ? formData.skills.filter(s => typeof s === 'string') : [],
-          interests: Array.isArray(formData.interests) ? formData.interests.filter(s => typeof s === 'string') : [],
-          availability: formData.availability ? formData.availability.trim() : undefined,
-        },
+          skills: Array.isArray(formData.skills) ? formData.skills.filter((s) => typeof s === 'string') : [],
+          interests: Array.isArray(formData.interests) ? formData.interests.filter((s) => typeof s === 'string') : [],
+          availability: formData.availability ? formData.availability.trim() : undefined
+        }
       };
 
       await updateMutation.mutateAsync(payload);
@@ -179,7 +178,7 @@ export default function Profile() {
       if (Object.keys(prefsFormData).length > 0) {
         await preferencesMutation.mutateAsync({
           ...prefsFormData,
-          maxHoursPerWeek: prefsFormData.maxHoursPerWeek ? Number(prefsFormData.maxHoursPerWeek) : undefined,
+          maxHoursPerWeek: prefsFormData.maxHoursPerWeek ? Number(prefsFormData.maxHoursPerWeek) : undefined
         });
       }
     } catch (error) {
@@ -195,7 +194,7 @@ export default function Profile() {
       toast({
         title: t('File too large'),
         description: t('Maximum file size is 5MB.'),
-        variant: 'destructive',
+        variant: 'destructive'
       });
       return;
     }
@@ -215,7 +214,7 @@ export default function Profile() {
       toast({
         title: t('Upload failed'),
         description: err?.response?.data?.error?.message || t('Could not upload avatar.'),
-        variant: 'destructive',
+        variant: 'destructive'
       });
     }
   };
@@ -242,6 +241,7 @@ export default function Profile() {
   // Render Helpers
   const NavigationMenu = ({ mobile = false }) => {
     const items = [
+      { id: 'overview', label: t('Overview'), icon: LayoutTemplate },
       { id: 'certificates', label: t('Certificates'), icon: Award },
       { id: 'messages', label: t('Messages'), icon: MessageSquare },
       { id: 'applications', label: t('Applications'), icon: ListChecks },
@@ -250,12 +250,15 @@ export default function Profile() {
       { id: 'shifts', label: t('Shifts'), icon: CalendarClock },
       { id: 'attendance', label: t('Attendance'), icon: CheckCircle2 },
       { id: 'resources', label: t('Resources'), icon: Box },
+      { id: 'carpooling', label: t('Carpooling'), icon: Car },
+      { id: 'training', label: t('Training'), icon: BookOpen },
+      { id: 'surveys', label: t('Surveys'), icon: FileText },
       { id: 'compliance', label: t('Compliance'), icon: Shield },
-      { id: 'settings', label: t('Settings'), icon: Settings },
+      { id: 'settings', label: t('Settings'), icon: Settings }
     ];
 
     return (
-      <nav className={cn("space-y-1", mobile ? "p-4" : "")}>
+      <nav className={cn('space-y-1.5', mobile ? 'p-4' : '')}>
         {items.map((item) => (
           <button
             key={item.id}
@@ -264,13 +267,18 @@ export default function Profile() {
               if (mobile) setIsMobileMenuOpen(false);
             }}
             className={cn(
-              "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200",
+              'w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold transition-all duration-200',
               activeTab === item.id
-                ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
-                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-lg shadow-slate-200/50 dark:shadow-none'
+                : 'text-muted-foreground hover:bg-slate-50 dark:hover:bg-slate-900 hover:text-foreground'
             )}
           >
-            <item.icon className={cn("h-4 w-4", activeTab === item.id ? "text-primary-foreground" : "text-muted-foreground")} />
+            <item.icon
+              className={cn(
+                'h-4 w-4',
+                activeTab === item.id ? 'text-white dark:text-slate-900' : 'text-muted-foreground'
+              )}
+            />
             {item.label}
           </button>
         ))}
@@ -289,7 +297,6 @@ export default function Profile() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="container mx-auto px-4 py-8 lg:py-12">
-
         {/* Mobile Header */}
         <div className="lg:hidden flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
@@ -298,7 +305,9 @@ export default function Profile() {
               <AvatarFallback>{userData.firstName?.[0]}</AvatarFallback>
             </Avatar>
             <div>
-              <h1 className="text-xl font-bold">{userData.firstName} {userData.lastName}</h1>
+              <h1 className="text-xl font-bold">
+                {userData.firstName} {userData.lastName}
+              </h1>
               <p className="text-xs text-muted-foreground">{userData.email}</p>
             </div>
           </div>
@@ -308,10 +317,13 @@ export default function Profile() {
 
           {/* Simple Mobile Menu Overlay */}
           {isMobileMenuOpen && (
-            <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)}>
+            <div
+              className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
               <div
                 className="fixed inset-y-0 left-0 z-50 h-full w-[300px] bg-card border-r p-6 shadow-2xl transition-transform duration-300"
-                onClick={e => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex items-center justify-between mb-8">
                   <h2 className="text-lg font-bold">{t('Menu')}</h2>
@@ -326,26 +338,33 @@ export default function Profile() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-
           {/* Sidebar (Desktop) */}
           <div className="hidden lg:block lg:col-span-3 xl:col-span-3 space-y-6">
             {/* Profile Card */}
-            <Card className="border-border/50 shadow-sm rounded-3xl overflow-hidden bg-card/50 backdrop-blur-sm sticky top-24">
-              <CardContent className="p-6 flex flex-col items-center text-center">
-                <div className="relative mb-4 group cursor-pointer">
-                  <Avatar className="h-32 w-32 border-4 border-background shadow-xl rounded-full">
+            <Card className="border-border shadow-2xl shadow-slate-200/50 dark:shadow-slate-900/50 rounded-2xl overflow-hidden bg-card sticky top-24">
+              <CardContent className="p-8 flex flex-col items-center text-center">
+                <div className="relative mb-6 group cursor-pointer">
+                  <Avatar className="h-28 w-28 border-4 border-background shadow-2xl rounded-full ring-1 ring-border">
                     <AvatarImage src={`${userData.profileImageUrl}?v=${avatarVersion}`} className="object-cover" />
-                    <AvatarFallback className="text-3xl font-bold bg-muted text-muted-foreground">
-                      {userData.firstName?.[0]}{userData.lastName?.[0]}
+                    <AvatarFallback className="text-3xl font-bold bg-slate-100 dark:bg-slate-800 text-slate-400">
+                      {userData.firstName?.[0]}
+                      {userData.lastName?.[0]}
                     </AvatarFallback>
                     {/* Overlay */}
                     <div
-                      className="absolute inset-0 bg-black/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                      className="absolute inset-0 bg-slate-900/60 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm"
                       onClick={() => fileInputRef.current?.click()}
                     >
-                      <Camera className="h-8 w-8 text-white" />
+                      <Camera className="h-6 w-6 text-white" />
                     </div>
                   </Avatar>
+                  <Button
+                    size="icon"
+                    className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full shadow-lg border-2 border-background"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Camera className="h-3.5 w-3.5" />
+                  </Button>
                   <input
                     type="file"
                     ref={fileInputRef}
@@ -355,28 +374,40 @@ export default function Profile() {
                   />
                 </div>
 
-                <h2 className="text-2xl font-bold tracking-tight mb-1">
+                <h2 className="text-2xl font-bold tracking-tight mb-1 text-foreground">
                   {userData.firstName} {userData.lastName}
                 </h2>
-                <p className="text-sm text-muted-foreground font-medium mb-4 flex items-center gap-1.5 break-all justify-center">
-                  {userData.isBackgroundChecked && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />}
+                <p className="text-xs text-muted-foreground font-bold tracking-widest uppercase mb-6 flex items-center gap-1.5 break-all justify-center">
+                  {userData.isBackgroundChecked && (
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 fill-emerald-500/10" />
+                  )}
                   {userData.email}
                 </p>
 
-                <div className="w-full grid grid-cols-2 gap-2 mb-6">
-                  <div className="p-3 bg-primary/5 rounded-2xl border border-primary/10">
-                    <div className="text-2xl font-black text-primary">{userData.hours || 0}</div>
-                    <div className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Hours</div>
+                <div className="w-full grid grid-cols-2 gap-3 mb-8">
+                  <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-border">
+                    <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 leading-none mb-1">
+                      {userData.hours || 0}
+                    </div>
+                    <div className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.15em]">
+                      Hours
+                    </div>
                   </div>
-                  <div className="p-3 bg-muted/50 rounded-2xl border border-border/50">
-                    <div className="text-2xl font-black text-foreground">{profileCompletion}%</div>
-                    <div className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Profile</div>
+                  <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-border">
+                    <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 leading-none mb-1">
+                      {profileCompletion}%
+                    </div>
+                    <div className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.15em]">
+                      Profile
+                    </div>
                   </div>
                 </div>
 
                 {/* Navigation */}
                 <div className="w-full text-left">
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3 pl-2">Menu</p>
+                  <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-4 pl-1">
+                    Menu
+                  </p>
                   <NavigationMenu />
                 </div>
               </CardContent>
@@ -385,6 +416,158 @@ export default function Profile() {
 
           {/* Main Content Area */}
           <div className="lg:col-span-9 xl:col-span-9 space-y-6">
+            {/* --- OVERVIEW --- */}
+            {activeTab === 'overview' && (
+              <div className="space-y-6 animate-in fade-in duration-300">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Upcoming Assignments */}
+                  <Card className="border-border shadow-2xl shadow-slate-200/50 dark:shadow-slate-900/50 rounded-2xl overflow-hidden bg-card">
+                    <CardHeader className="p-8 pb-4 flex flex-row items-center justify-between">
+                      <CardTitle className="text-xl font-bold tracking-tight">{t('Upcoming Assignments')}</CardTitle>
+                      <CalendarClock className="h-5 w-5 text-primary opacity-50" />
+                    </CardHeader>
+                    <CardContent className="p-8 pt-0">
+                      {assignments?.length > 0 ? (
+                        <>
+                          {(() => {
+                            const start = (assignmentsPage - 1) * ASSIGNMENTS_PER_PAGE;
+                            const paginated = assignments.slice(start, start + ASSIGNMENTS_PER_PAGE);
+                            return (
+                              <>
+                                <div className="space-y-4">
+                                  {paginated.map((asgn: any) => (
+                                    <div
+                                      key={asgn.id}
+                                      className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-border group hover:border-primary/20 transition-all"
+                                    >
+                                      <h4 className="font-bold text-slate-900 dark:text-slate-100 mb-1">
+                                        {asgn.task?.title}
+                                      </h4>
+                                      <p className="text-sm text-primary font-bold mb-2">{asgn.task?.event?.title}</p>
+                                      <div className="flex items-center gap-4 text-xs text-muted-foreground font-medium">
+                                        <span className="flex items-center gap-1.5">
+                                          <Calendar className="h-3.5 w-3.5" />{' '}
+                                          {safeFormatDate(asgn.task?.event?.startDate)}
+                                        </span>
+                                        <span className="flex items-center gap-1.5">
+                                          <MapPin className="h-3.5 w-3.5" /> {asgn.task?.event?.location}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+
+                                {assignments.length > ASSIGNMENTS_PER_PAGE && (
+                                  <div className="flex justify-center gap-2 mt-4">
+                                    <Button
+                                      variant="outline"
+                                      disabled={assignmentsPage === 1}
+                                      onClick={() => setAssignmentsPage(assignmentsPage - 1)}
+                                    >
+                                      {t('Previous')}
+                                    </Button>
+                                    <div className="flex items-center text-sm text-muted-foreground">
+                                      Page {assignmentsPage} of {Math.ceil(assignments.length / ASSIGNMENTS_PER_PAGE)}
+                                    </div>
+                                    <Button
+                                      variant="outline"
+                                      disabled={assignmentsPage * ASSIGNMENTS_PER_PAGE >= assignments.length}
+                                      onClick={() => setAssignmentsPage(assignmentsPage + 1)}
+                                    >
+                                      {t('Next')}
+                                    </Button>
+                                  </div>
+                                )}
+                              </>
+                            );
+                          })()}
+                        </>
+                      ) : (
+                        <div className="py-12 flex flex-col items-center justify-center text-center text-muted-foreground bg-slate-50/50 dark:bg-slate-950/20 rounded-xl border border-dashed border-border">
+                          <p className="font-medium text-sm">{t('No upcoming assignments')}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Recent History */}
+                  <Card className="border-border shadow-2xl shadow-slate-200/50 dark:shadow-slate-900/50 rounded-2xl overflow-hidden bg-card">
+                    <CardHeader className="p-8 pb-4 flex flex-row items-center justify-between">
+                      <CardTitle className="text-xl font-bold tracking-tight">{t('Volunteer History')}</CardTitle>
+                      <CheckCircle2 className="h-5 w-5 text-emerald-500 opacity-50" />
+                    </CardHeader>
+                    <CardContent className="p-8 pt-0">
+                      {hoursHistory?.length > 0 ? (
+                        <>
+                          {(() => {
+                            const start = (historyPage - 1) * HISTORY_PER_PAGE;
+                            const paginated = hoursHistory.slice(start, start + HISTORY_PER_PAGE);
+                            return (
+                              <>
+                                <div className="space-y-4">
+                                  {paginated.map((hour: any) => (
+                                    <div
+                                      key={hour.id}
+                                      className="flex items-center justify-between p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-border group hover:border-primary/20 transition-all"
+                                    >
+                                      <div>
+                                        <h4 className="font-bold text-slate-900 dark:text-slate-100">
+                                          {hour.event?.title}
+                                        </h4>
+                                        <p className="text-xs text-muted-foreground font-medium mt-1">
+                                          {safeFormatDate(hour.date)}
+                                        </p>
+                                      </div>
+                                      <div className="text-right">
+                                        <div className="text-sm font-black text-slate-900 dark:text-slate-100">
+                                          {hour.hours}h
+                                        </div>
+                                        <Badge
+                                          variant="outline"
+                                          className="text-[9px] h-5 px-1.5 font-black uppercase tracking-widest bg-emerald-50 text-emerald-700 border-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-900/30"
+                                        >
+                                          {hour.status}
+                                        </Badge>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+
+                                {hoursHistory.length > HISTORY_PER_PAGE && (
+                                  <div className="flex justify-center gap-2 mt-4">
+                                    <Button
+                                      variant="outline"
+                                      disabled={historyPage === 1}
+                                      onClick={() => setHistoryPage(historyPage - 1)}
+                                    >
+                                      {t('Previous')}
+                                    </Button>
+                                    <div className="flex items-center text-sm text-muted-foreground">
+                                      Page {historyPage} of {Math.ceil(hoursHistory.length / HISTORY_PER_PAGE)}
+                                    </div>
+                                    <Button
+                                      variant="outline"
+                                      disabled={historyPage * HISTORY_PER_PAGE >= hoursHistory.length}
+                                      onClick={() => setHistoryPage(historyPage + 1)}
+                                    >
+                                      {t('Next')}
+                                    </Button>
+                                  </div>
+                                )}
+                              </>
+                            );
+                          })()}
+                        </>
+                      ) : (
+                        <div className="py-12 flex flex-col items-center justify-center text-center text-muted-foreground bg-slate-50/50 dark:bg-slate-950/20 rounded-xl border border-dashed border-border">
+                          <p className="font-medium text-sm">{t('No volunteer history yet')}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            )}
 
             {/* --- CERTIFICATES --- */}
             {activeTab === 'certificates' && (
@@ -417,9 +600,7 @@ export default function Profile() {
             {/* --- MESSAGES --- */}
             {activeTab === 'messages' && (
               <div className="animate-in fade-in duration-300">
-                <ChatPage
-                  height="h-[calc(100vh-200px)]"
-                />
+                <ChatPage height="h-[calc(100vh-200px)]" />
               </div>
             )}
 
@@ -470,87 +651,129 @@ export default function Profile() {
               </div>
             )}
 
+            {/* --- CARPOOLING --- */}
+            {activeTab === 'carpooling' && (
+              <div className="animate-in fade-in duration-300">
+                <CarpoolingPage />
+              </div>
+            )}
+
+            {/* --- TRAINING --- */}
+            {activeTab === 'training' && (
+              <div className="animate-in fade-in duration-300">
+                <VolunteerTraining />
+              </div>
+            )}
+
+            {/* --- SURVEYS --- */}
+            {activeTab === 'surveys' && (
+              <div className="animate-in fade-in duration-300">
+                <FeedbackDashboard />
+              </div>
+            )}
+
             {/* --- SETTINGS (The Main Form) --- */}
             {activeTab === 'settings' && (
               <div className="space-y-6 animate-in fade-in duration-300">
-
                 {/* Profile Form Card */}
-                <Card className="border-border/50 shadow-sm rounded-3xl overflow-hidden bg-card/50">
-                  <CardHeader className="p-8 border-b border-border/40">
+                <Card className="border-border shadow-2xl shadow-slate-200/50 dark:shadow-slate-900/50 rounded-2xl overflow-hidden bg-card">
+                  <CardHeader className="p-10 border-b border-border bg-slate-50/50 dark:bg-slate-950/50">
                     <div className="flex items-center justify-between">
                       <div>
-                        <CardTitle className="text-2xl font-bold">{t('Profile Information')}</CardTitle>
-                        <CardDescription>{t('Update your personal details.')}</CardDescription>
+                        <CardTitle className="text-2xl font-bold tracking-tight">{t('Profile Information')}</CardTitle>
+                        <CardDescription className="text-sm font-medium mt-1">
+                          {t('Update your personal details and how others see you.')}
+                        </CardDescription>
                       </div>
-                      <Button onClick={handleSaveAll} disabled={updateMutation.isLoading} className="rounded-xl shadow-lg shadow-primary/20">
+                      <Button
+                        onClick={handleSaveAll}
+                        disabled={updateMutation.isLoading}
+                        className="rounded-lg shadow-xl shadow-primary/20 h-11 px-8 font-bold"
+                      >
                         {updateMutation.isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                         {t('Save Changes')}
                       </Button>
                     </div>
                   </CardHeader>
-                  <CardContent className="p-8 space-y-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                      <div className="space-y-2">
-                        <Label>{t('First Name')}</Label>
+                  <CardContent className="p-10 space-y-10">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8">
+                      <div className="space-y-3">
+                        <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">
+                          {t('First Name')}
+                        </Label>
                         <Input
                           value={formData.firstName}
-                          onChange={e => setFormData({ ...formData, firstName: e.target.value })}
-                          className="h-11 rounded-xl bg-background/50"
+                          onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                          className="h-12 rounded-lg bg-slate-50 dark:bg-slate-900 border-border focus:bg-background transition-colors"
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label>{t('Last Name')}</Label>
+                      <div className="space-y-3">
+                        <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">
+                          {t('Last Name')}
+                        </Label>
                         <Input
                           value={formData.lastName}
-                          onChange={e => setFormData({ ...formData, lastName: e.target.value })}
-                          className="h-11 rounded-xl bg-background/50"
+                          onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                          className="h-12 rounded-lg bg-slate-50 dark:bg-slate-900 border-border focus:bg-background transition-colors"
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label>{t('Email Address')}</Label>
+                      <div className="space-y-3">
+                        <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">
+                          {t('Email Address')}
+                        </Label>
                         <Input
                           value={formData.email}
                           disabled
-                          className="h-11 rounded-xl bg-muted/50 text-muted-foreground"
+                          className="h-12 rounded-lg bg-slate-100 dark:bg-slate-900 border-border text-muted-foreground opacity-70"
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label>{t('Phone Number')}</Label>
+                      <div className="space-y-3">
+                        <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">
+                          {t('Phone Number')}
+                        </Label>
                         <Input
                           value={formData.phone}
-                          onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                           placeholder="+1 234 567 8900"
-                          className="h-11 rounded-xl bg-background/50"
+                          className="h-12 rounded-lg bg-slate-50 dark:bg-slate-900 border-border focus:bg-background transition-colors"
                           required={false}
                         />
                       </div>
-                      <div className="col-span-1 md:col-span-2 space-y-2">
-                        <Label>{t('Address')}</Label>
+                      <div className="col-span-1 md:col-span-2 space-y-3">
+                        <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">
+                          {t('Physical Address')}
+                        </Label>
                         <Input
                           value={formData.address}
-                          onChange={e => setFormData({ ...formData, address: e.target.value })}
-                          className="h-11 rounded-xl bg-background/50"
+                          onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                          className="h-12 rounded-lg bg-slate-50 dark:bg-slate-900 border-border focus:bg-background transition-colors"
                         />
                       </div>
-                      <div className="col-span-1 md:col-span-2 space-y-2">
-                        <Label>{t('Bio')}</Label>
+                      <div className="col-span-1 md:col-span-2 space-y-3">
+                        <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">
+                          {t('Personal Bio')}
+                        </Label>
                         <Textarea
                           value={formData.bio}
-                          onChange={e => setFormData({ ...formData, bio: e.target.value })}
-                          className="min-h-[120px] rounded-xl bg-background/50 resize-y"
-                          placeholder={t('Tell us about yourself...')}
+                          onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                          className="min-h-[140px] rounded-lg bg-slate-50 dark:bg-slate-900 border-border focus:bg-background transition-colors p-4 resize-none leading-relaxed"
+                          placeholder={t('Tell us about your background, skills, and why you love volunteering...')}
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label>{t('Skills')}</Label>
+                      <div className="space-y-3">
+                        <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">
+                          {t('Skills')}
+                        </Label>
                         <TagInput
                           value={formData.skills}
                           onChange={(vals) => setFormData({ ...formData, skills: vals })}
                           placeholder={t('Add skill...')}
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label>{t('Interests')}</Label>
+                      <div className="space-y-3">
+                        <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">
+                          {t('Interests')}
+                        </Label>
                         <TagInput
                           value={formData.interests}
                           onChange={(vals) => setFormData({ ...formData, interests: vals })}
@@ -562,58 +785,68 @@ export default function Profile() {
                 </Card>
 
                 {/* Preferences Card */}
-                <Card className="border-border/50 shadow-sm rounded-3xl overflow-hidden bg-card/50">
-                  <CardHeader className="p-8 border-b border-border/40">
-                    <CardTitle className="text-xl font-bold">{t('Preferences')}</CardTitle>
-                    <CardDescription>{t('Manage your app experience.')}</CardDescription>
+                <Card className="border-border shadow-2xl shadow-slate-200/50 dark:shadow-slate-900/50 rounded-2xl overflow-hidden bg-card">
+                  <CardHeader className="p-10 border-b border-border bg-slate-50/50 dark:bg-slate-950/50">
+                    <CardTitle className="text-2xl font-bold tracking-tight">{t('Preferences')}</CardTitle>
+                    <CardDescription className="text-sm font-medium mt-1">
+                      {t('Customize your experience and communication preferences.')}
+                    </CardDescription>
                   </CardHeader>
-                  <CardContent className="p-8 space-y-8">
-
-                    <div className="space-y-4">
-                      <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                        <Bell className="h-4 w-4" /> {t('Notifications')}
+                  <CardContent className="p-10 space-y-10">
+                    <div className="space-y-6">
+                      <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2 mb-6">
+                        <Bell className="h-4 w-4 text-primary" /> {t('Notification Settings')}
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="flex items-center justify-between p-4 rounded-xl bg-background/40 border border-border/50">
-                          <Label htmlFor="emailNotif" className="cursor-pointer">{t('Email Notifications')}</Label>
+                        <div className="flex items-center justify-between p-6 rounded-xl bg-slate-50/50 dark:bg-slate-950/30 border border-border group hover:border-primary/20 transition-colors">
+                          <Label htmlFor="emailNotif" className="cursor-pointer font-bold">
+                            {t('Email Notifications')}
+                          </Label>
                           <Switch
                             id="emailNotif"
                             checked={prefsFormData.emailNotifications}
-                            onCheckedChange={c => handlePrefChange('emailNotifications', c)}
+                            onCheckedChange={(c) => handlePrefChange('emailNotifications', c)}
                           />
                         </div>
-                        <div className="flex items-center justify-between p-4 rounded-xl bg-background/40 border border-border/50">
-                          <Label htmlFor="smsNotif" className="cursor-pointer">{t('SMS Notifications')}</Label>
+                        <div className="flex items-center justify-between p-6 rounded-xl bg-slate-50/50 dark:bg-slate-950/30 border border-border group hover:border-primary/20 transition-colors">
+                          <Label htmlFor="smsNotif" className="cursor-pointer font-bold">
+                            {t('SMS Notifications')}
+                          </Label>
                           <Switch
                             id="smsNotif"
                             checked={prefsFormData.smsNotifications}
-                            onCheckedChange={c => handlePrefChange('smsNotifications', c)}
+                            onCheckedChange={(c) => handlePrefChange('smsNotifications', c)}
                           />
                         </div>
                       </div>
                     </div>
 
-                    <Separator />
+                    <Separator className="bg-border/60" />
 
-                    <div className="space-y-4">
-                      <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                        <Shield className="h-4 w-4" /> {t('Privacy')}
+                    <div className="space-y-6">
+                      <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2 mb-6">
+                        <Shield className="h-4 w-4 text-primary" /> {t('Privacy & Visibility')}
                       </h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="flex items-center justify-between p-4 rounded-xl bg-background/40 border border-border/50">
-                          <Label htmlFor="profilePublic" className="cursor-pointer">{t('Public Profile')}</Label>
+                        <div className="flex items-center justify-between p-6 rounded-xl bg-slate-50/50 dark:bg-slate-950/30 border border-border group hover:border-primary/20 transition-colors">
+                          <Label htmlFor="profilePublic" className="cursor-pointer font-bold">
+                            {t('Public Profile')}
+                          </Label>
                           <Switch
                             id="profilePublic"
                             checked={prefsFormData.profilePublic}
-                            onCheckedChange={c => handlePrefChange('profilePublic', c)}
+                            onCheckedChange={(c) => handlePrefChange('profilePublic', c)}
                           />
                         </div>
                       </div>
                     </div>
-
                   </CardContent>
-                  <CardFooter className="p-8 bg-muted/20 border-t border-border/40 flex justify-end">
-                    <Button onClick={handleSaveAll} disabled={updateMutation.isLoading || preferencesMutation.isLoading} className="rounded-xl shadow-lg">
+                  <CardFooter className="p-10 bg-slate-50/50 dark:bg-slate-950/50 border-t border-border flex justify-end">
+                    <Button
+                      onClick={handleSaveAll}
+                      disabled={updateMutation.isLoading || preferencesMutation.isLoading}
+                      className="rounded-lg h-12 px-10 font-bold shadow-xl shadow-primary/10"
+                    >
                       {t('Save All Changes')}
                     </Button>
                   </CardFooter>
@@ -623,7 +856,9 @@ export default function Profile() {
                 <Card className="border-red-200 dark:border-red-900/30 shadow-sm rounded-3xl overflow-hidden bg-red-50/50 dark:bg-red-950/10">
                   <CardHeader className="p-8">
                     <CardTitle className="text-xl font-bold text-destructive">{t('Danger Zone')}</CardTitle>
-                    <CardDescription className="text-red-600/80 dark:text-red-400/80">{t('Sign out of your account.')}</CardDescription>
+                    <CardDescription className="text-red-600/80 dark:text-red-400/80">
+                      {t('Sign out of your account.')}
+                    </CardDescription>
                   </CardHeader>
                   <CardContent className="p-8 pt-0">
                     <Button variant="destructive" onClick={handleLogout} className="rounded-xl">
@@ -631,10 +866,8 @@ export default function Profile() {
                     </Button>
                   </CardContent>
                 </Card>
-
               </div>
             )}
-
           </div>
         </div>
       </div>
