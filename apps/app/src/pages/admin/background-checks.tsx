@@ -6,10 +6,14 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from '@/components/atoms/use-toast';
+import { safeFormatDate } from '@/lib/format-utils';
 
 export default function AdminBackgroundChecks() {
   const queryClient = useQueryClient();
-  const { data, isLoading } = useQuery(['admin', 'background-checks'], () => api.listBackgroundChecks());
+  const { data, isLoading } = useQuery({
+    queryKey: ['admin', 'background-checks'],
+    queryFn: () => api.listBackgroundChecks()
+  });
   const checks: any[] = Array.isArray(data) ? data : (data?.data ?? []);
 
   const [viewOpen, setViewOpen] = useState(false);
@@ -116,7 +120,7 @@ export default function AdminBackgroundChecks() {
                       <TableCell>{c.id}</TableCell>
                       <TableCell>{c.user?.name ?? c.user?.email ?? `User ${c.user_id ?? c.userId}`}</TableCell>
                       <TableCell className="capitalize">{(c.status ?? 'unknown').toString()}</TableCell>
-                      <TableCell>{new Date(c.created_at ?? c.createdAt ?? Date.now()).toLocaleString()}</TableCell>
+                      <TableCell>{safeFormatDate(c.created_at ?? c.createdAt, 'PPp')}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Button
@@ -174,7 +178,7 @@ export default function AdminBackgroundChecks() {
 
               <div className="flex items-center gap-2">
                 <strong>Submitted</strong>
-                <span>{new Date(viewing?.created_at ?? viewing?.createdAt ?? Date.now()).toLocaleString()}</span>
+                <span>{safeFormatDate(viewing?.created_at ?? viewing?.createdAt, 'PPp')}</span>
               </div>
 
               <div className="flex items-center gap-2">
