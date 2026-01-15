@@ -38,6 +38,10 @@ export default function OpportunityDetail() {
 
   const applyMutation = useMutation({
     mutationFn: async (vars: { notes?: string }) => {
+      // Guard: ensure we don't re-apply if user already has an application
+      if (opportunity?.userApplicationStatus && opportunity.userApplicationStatus !== 'withdrawn') {
+        return Promise.reject({ response: { data: { message: 'You have already applied to this opportunity.' } } });
+      }
       return axios.post(`/volunteer/opportunities/${id}/apply`, vars);
     },
     onSuccess: () => {
@@ -180,12 +184,13 @@ export default function OpportunityDetail() {
                 {status && status !== 'withdrawn' ? (
                   <div className="space-y-3">
                     <div
-                      className={`p-4 rounded-md border flex items-center gap-3 ${status === 'accepted'
+                      className={`p-4 rounded-md border flex items-center gap-3 ${
+                        status === 'accepted'
                           ? 'bg-green-50 border-green-200 text-green-800'
                           : status === 'waitlisted'
                             ? 'bg-orange-50 border-orange-200 text-orange-800'
                             : 'bg-blue-50 border-blue-200 text-blue-800'
-                        }`}
+                      }`}
                     >
                       {status === 'accepted' && <CheckCircle className="w-5 h-5" />}
                       {status === 'waitlisted' && <Clock className="w-5 h-5" />}
