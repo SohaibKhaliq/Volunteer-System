@@ -58,6 +58,7 @@ export default class OffersController {
         address: parsedPayload.location.address,
         description: parsedPayload.description,
         status: OfferStatus.planned,
+        approvalStatus: 'pending',
         name: parsedPayload.name,
         email: parsedPayload.email,
         phone: parsedPayload.phone,
@@ -153,9 +154,14 @@ export default class OffersController {
     }
   }
 
-  public async index({ response }: HttpContextContract) {
+  public async index({ request, response }: HttpContextContract) {
     try {
-      const offers = await Offer.all()
+      const isAdmin = request.auth && request.auth.user && request.auth.user.isAdmin
+      const query = Offer.query().orderBy('created_at', 'desc')
+      if (!isAdmin) {
+        query.where('approval_status', 'approved')
+      }
+      const offers = await query
 
       return offers
     } catch (error) {
