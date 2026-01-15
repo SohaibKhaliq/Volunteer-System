@@ -39,6 +39,7 @@ import AdminCommunications from '@/pages/admin/communications';
 import AdminResources from '@/pages/admin/resources';
 import AdminResourcesDashboard from '@/pages/admin/resources-dashboard';
 import AdminImports from '@/pages/admin/imports';
+import AdminApprovals from '@/pages/admin/approvals';
 import AdminPendingHoursByOrg from '@/pages/admin/pending-hours-orgs';
 import AdminTemplates from '@/pages/admin/templates';
 import AdminBackgroundChecks from '@/pages/admin/background-checks';
@@ -167,6 +168,7 @@ const routes: RouteObject[] = [
       { path: 'resources', element: <AdminResources /> },
       { path: 'resources/dashboard', element: <AdminResourcesDashboard /> },
       { path: 'imports', element: <AdminImports /> },
+      { path: 'approvals', element: <AdminApprovals /> },
       { path: 'scheduling', element: <AdminScheduling /> },
       { path: 'feedback', element: <AdminFeedback /> },
       { path: 'feedback/create', element: <AdminFeedbackCreate /> },
@@ -258,7 +260,10 @@ const routes: RouteObject[] = [
       {
         path: 'chats',
         element: (
-          <RouteGuard allowedRoles={['admin', 'organization_admin', 'organization_coordinator', 'volunteer']} redirectTo="/login">
+          <RouteGuard
+            allowedRoles={['admin', 'organization_admin', 'organization_coordinator', 'volunteer']}
+            redirectTo="/login"
+          >
             <ChatPage />
           </RouteGuard>
         )
@@ -277,7 +282,7 @@ const routes: RouteObject[] = [
       // Reactivated Orphans (Public/Shared)
       { path: 'centrelink-reporting', element: <CentrelinkReporting /> },
       { path: 'organizations/:id', element: <OrganizationRouter /> },
-      { path: 'settings/calendar', element: <SettingsCalendar /> },
+      { path: 'settings/calendar', element: <SettingsCalendar /> }
     ]
   },
   // Volunteer Protected Routes
