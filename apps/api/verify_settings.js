@@ -28,7 +28,7 @@ async function verifySettings() {
 
     // 3. Update a Setting
     console.log('Step 3: Updating platform_name...');
-    const newName = 'Eghata Pro ' + Math.floor(Math.random() * 1000);
+    const newName = 'Local Aid Pro ' + Math.floor(Math.random() * 1000);
     await axios.put(`${API_URL}/admin/system-settings`, {
       platform_name: newName
     }, {
