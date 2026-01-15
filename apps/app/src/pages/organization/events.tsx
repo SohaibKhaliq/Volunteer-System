@@ -23,6 +23,8 @@ export default function OrganizationEvents() {
   const queryClient = useQueryClient();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<any>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
 
   // Fetch Events
   const { data: events, isLoading } = useQuery({
@@ -41,6 +43,8 @@ export default function OrganizationEvents() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['organizationEvents'] });
       setIsCreateOpen(false);
+      setImageFile(null);
+      setBannerFile(null);
       toast.success(editingEvent ? 'Event updated successfully' : 'Event created successfully');
     },
     onError: () => {
@@ -89,6 +93,8 @@ export default function OrganizationEvents() {
       capacity: '',
       skills: ''
     });
+    setImageFile(null);
+    setBannerFile(null);
     setIsCreateOpen(true);
   };
 
@@ -111,18 +117,37 @@ export default function OrganizationEvents() {
   };
 
   const handleSubmit = () => {
-    const payload = {
-      ...formData,
-      capacity: parseInt(formData.capacity) || 0,
-      skills: formData.skills
-        .split(',')
-        .map((s: string) => s.trim())
-        .filter((s: string) => s)
-    };
-    // include coords if present
-    if (formData.latitude !== '') (payload as any).latitude = parseFloat(String(formData.latitude));
-    if (formData.longitude !== '') (payload as any).longitude = parseFloat(String(formData.longitude));
-    saveEventMutation.mutate(payload);
+    // if files present, build FormData
+    if (imageFile || bannerFile) {
+      const fd = new FormData();
+      fd.append('title', formData.title);
+      fd.append('description', formData.description || '');
+      if (formData.date) fd.append('date', formData.date);
+      if (formData.time) fd.append('time', formData.time);
+      fd.append('location', formData.location || '');
+      fd.append('capacity', String(parseInt(formData.capacity) || 0));
+      fd.append('type', formData.type || 'Community');
+      fd.append('status', formData.status || 'Upcoming');
+      fd.append('skills', formData.skills || '');
+      if (formData.latitude !== '') fd.append('latitude', String(formData.latitude));
+      if (formData.longitude !== '') fd.append('longitude', String(formData.longitude));
+      if (imageFile) fd.append('image', imageFile);
+      if (bannerFile) fd.append('banner', bannerFile);
+      saveEventMutation.mutate(fd as any);
+    } else {
+      const payload = {
+        ...formData,
+        capacity: parseInt(formData.capacity) || 0,
+        skills: formData.skills
+          .split(',')
+          .map((s: string) => s.trim())
+          .filter((s: string) => s)
+      };
+      // include coords if present
+      if (formData.latitude !== '') (payload as any).latitude = parseFloat(String(formData.latitude));
+      if (formData.longitude !== '') (payload as any).longitude = parseFloat(String(formData.longitude));
+      saveEventMutation.mutate(payload);
+    }
   };
 
   if (isLoading) {
@@ -274,23 +299,13 @@ export default function OrganizationEvents() {
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="date">Date</Label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                />
+              <div>
+                <label className="text-sm font-medium mb-2 block">Event Image</label>
+                <input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files?.[0] ?? null)} />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="time">Time</Label>
-                <Input
-                  id="time"
-                  type="time"
-                  value={formData.time}
-                  onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                />
+              <div>
+                <label className="text-sm font-medium mb-2 block">Banner Image</label>
+                <input type="file" accept="image/*" onChange={(e) => setBannerFile(e.target.files?.[0] ?? null)} />
               </div>
             </div>
 
