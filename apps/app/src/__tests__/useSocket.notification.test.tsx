@@ -31,6 +31,7 @@ vi.mock('canvas-confetti', () => ({
 
 // Use a lightweight component that uses the hook
 import useSocket from '@/hooks/useSocket';
+import { useStore } from '@/lib/store';
 
 function TestHookUser() {
   // call the hook so it registers socket handlers
@@ -44,8 +45,8 @@ describe('useSocket notification integration', () => {
     // clear handlers between tests
     for (const k of Object.keys(handlers)) delete handlers[k];
     qc = new QueryClient();
-    // ensure token exists so hook attempts connection
-    localStorage.setItem('token', 'abc');
+    // ensure token exists in the store so hook attempts connection
+    useStore.getState().setToken('abc');
   });
 
   it('registers notification handler and triggers query invalidation for hours approved', async () => {
