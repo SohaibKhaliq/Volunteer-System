@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Trophy, Share2, Download, Award, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
+import { safeFormatDate } from '@/lib/format-utils';
 
 /**
  * Volunteer Achievements Page
@@ -131,7 +132,7 @@ export default function VolunteerAchievements() {
                         {achievement.name || achievement.title}
                       </CardTitle>
                       {achievement.earnedAt && (
-                        <CardDescription>Earned {new Date(achievement.earnedAt).toLocaleDateString()}</CardDescription>
+                        <CardDescription>Earned {safeFormatDate(achievement.earnedAt)}</CardDescription>
                       )}
                     </div>
                     <Badge variant="secondary" className="bg-yellow-500 text-white">
