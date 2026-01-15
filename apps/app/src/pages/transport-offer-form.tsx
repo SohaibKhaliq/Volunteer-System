@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Map, FileText, User } from 'lucide-react';
 import FileInput from '@/components/molecules/file-input';
-import Navbar from '@/components/molecules/navbar';
 import NumberInput from '@/components/molecules/numper-input';
 import TextAreaInput from '@/components/molecules/text-area-input';
 import TextInput from '@/components/molecules/text-input';
@@ -20,6 +19,7 @@ import { useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
 
 import * as z from 'zod';
 
@@ -64,7 +64,7 @@ const TransportOfferForm = () => {
           lng: 0
         }
       },
-      date: new Date().toString(),
+      date: format(new Date(), "yyyy-MM-dd'T'HH:mm"),
       capacity: 1,
       description: '',
       name: '',
@@ -81,9 +81,8 @@ const TransportOfferForm = () => {
     mutationFn: (formData: FormData) => api.createCarpooling(formData),
     onSuccess: (data: FixType) => {
       toast({
-        title: t('Transport Offer Created'),
-        description: t('Your offer has been successfully created.'),
-        className: 'rounded-2xl border-primary/20 shadow-2xl'
+        title: t('Transport Offer Submitted'),
+        description: t('Your offer has been submitted and is pending admin approval.')
       });
       timeout.current = setTimeout(() => {
         return navigate('/detail/' + DetailTypes.RideRequest + '/' + data.id);
@@ -93,8 +92,7 @@ const TransportOfferForm = () => {
       toast({
         title: t('Error'),
         description: t('Something went wrong'),
-        variant: 'destructive',
-        className: 'rounded-2xl shadow-2xl'
+        variant: 'destructive'
       });
     }
   });
@@ -134,17 +132,15 @@ const TransportOfferForm = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Hero Header */}
-      <div className="relative overflow-hidden bg-primary pt-24 pb-48">
-        <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:30px_30px]" />
-        <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/95 to-primary/90" />
+      <div className="relative overflow-hidden bg-slate-900 pt-24 pb-48">
+        <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:30px_30px]" />
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800" />
         <div className="container relative px-4 mx-auto text-center">
-          <Badge className="bg-white/10 text-white border-white/20 hover:bg-white/20 mb-6 backdrop-blur-sm px-4 py-1.5 rounded-full">
+          <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 mb-6 backdrop-blur-sm px-3 py-1 text-[10px] font-black uppercase tracking-widest rounded-md">
             {t('Help the Community')}
           </Badge>
-          <h1 className="text-4xl md:text-6xl font-black tracking-tight text-white mb-6">
-            {t('Offer Transport')}
-          </h1>
-          <p className="text-primary-foreground/80 text-lg md:text-xl max-w-2xl mx-auto font-medium">
+          <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-white mb-6">{t('Offer Transport')}</h1>
+          <p className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto font-medium">
             {t('Have extra space in your vehicle? Offer a ride and help someone in your community.')}
           </p>
         </div>
@@ -155,15 +151,15 @@ const TransportOfferForm = () => {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8" encType="multipart/form-data">
               {/* Route & Journey */}
-              <Card className="border-border/50 shadow-2xl shadow-primary/5 rounded-[2.5rem] bg-card overflow-hidden">
+              <Card className="border-border shadow-2xl shadow-slate-200/50 dark:shadow-slate-900/50 rounded-xl bg-card overflow-hidden">
                 <CardHeader className="p-8 md:p-12 pb-0">
-                  <div className="flex items-center gap-4 mb-2">
-                    <div className="p-3 rounded-2xl bg-primary/10 text-primary">
+                  <div className="flex items-center gap-4 mb-3">
+                    <div className="p-3 rounded-xl bg-primary/10 text-primary">
                       <Map className="h-6 w-6" />
                     </div>
-                    <CardTitle className="text-2xl font-black">{t('Route & Journey')}</CardTitle>
+                    <CardTitle className="text-2xl font-bold tracking-tight">{t('Route & Journey')}</CardTitle>
                   </div>
-                  <CardDescription className="text-lg font-medium pl-14">
+                  <CardDescription className="text-lg font-medium pl-14 text-muted-foreground">
                     {t('Specify your starting point and destination.')}
                   </CardDescription>
                 </CardHeader>
@@ -235,15 +231,15 @@ const TransportOfferForm = () => {
               </Card>
 
               {/* Description & Media */}
-              <Card className="border-border/50 shadow-2xl shadow-primary/5 rounded-[2.5rem] bg-card overflow-hidden">
+              <Card className="border-border shadow-2xl shadow-slate-200/50 dark:shadow-slate-900/50 rounded-xl bg-card overflow-hidden">
                 <CardHeader className="p-8 md:p-12 pb-0">
-                  <div className="flex items-center gap-4 mb-2">
-                    <div className="p-3 rounded-2xl bg-primary/10 text-primary">
+                  <div className="flex items-center gap-4 mb-3">
+                    <div className="p-3 rounded-xl bg-primary/10 text-primary">
                       <FileText className="h-6 w-6" />
                     </div>
-                    <CardTitle className="text-2xl font-black">{t('Offer Details')}</CardTitle>
+                    <CardTitle className="text-2xl font-bold tracking-tight">{t('Offer Details')}</CardTitle>
                   </div>
-                  <CardDescription className="text-lg font-medium pl-14">
+                  <CardDescription className="text-lg font-medium pl-14 text-muted-foreground">
                     {t('Provide more information about your trip or how you can help.')}
                   </CardDescription>
                 </CardHeader>
@@ -281,15 +277,15 @@ const TransportOfferForm = () => {
               </Card>
 
               {/* Contact Information */}
-              <Card className="border-border/50 shadow-2xl shadow-primary/5 rounded-[2.5rem] bg-card overflow-hidden">
+              <Card className="border-border shadow-2xl shadow-slate-200/50 dark:shadow-slate-900/50 rounded-xl bg-card overflow-hidden">
                 <CardHeader className="p-8 md:p-12 pb-0">
-                  <div className="flex items-center gap-4 mb-2">
-                    <div className="p-3 rounded-2xl bg-primary/10 text-primary">
+                  <div className="flex items-center gap-4 mb-3">
+                    <div className="p-3 rounded-xl bg-primary/10 text-primary">
                       <User className="h-6 w-6" />
                     </div>
-                    <CardTitle className="text-2xl font-black">{t('Contact Information')}</CardTitle>
+                    <CardTitle className="text-2xl font-bold tracking-tight">{t('Contact Information')}</CardTitle>
                   </div>
-                  <CardDescription className="text-lg font-medium pl-14">
+                  <CardDescription className="text-lg font-medium pl-14 text-muted-foreground">
                     {t('How can passengers reach you to coordinate?')}
                   </CardDescription>
                 </CardHeader>
@@ -314,7 +310,12 @@ const TransportOfferForm = () => {
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <TextInput label={t('Phone Number')} placeholder={t('e.g. +123...')} type="tel" {...field} />
+                            <TextInput
+                              label={t('Phone Number')}
+                              placeholder={t('e.g. +123...')}
+                              type="tel"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage className="font-bold" />
                         </FormItem>
@@ -327,7 +328,13 @@ const TransportOfferForm = () => {
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <TextInput label={t('Email Address')} type="email" placeholder={t('example@email.com')} optional {...field} />
+                            <TextInput
+                              label={t('Email Address')}
+                              type="email"
+                              placeholder={t('example@email.com')}
+                              optional
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage className="font-bold" />
                         </FormItem>
@@ -341,14 +348,16 @@ const TransportOfferForm = () => {
                 <Button
                   type="submit"
                   disabled={!isDirty || !isValid || isSubmitting || isLoading}
-                  className="w-full h-16 rounded-2xl text-xl font-black shadow-2xl shadow-primary/20 hover:shadow-primary/30 hover:translate-y-[-2px] transition-all disabled:opacity-50 disabled:translate-y-0"
+                  className="w-full h-16 rounded-lg text-lg font-bold shadow-2xl shadow-primary/20 hover:shadow-primary/30 hover:translate-y-[-1px] transition-all disabled:opacity-50 disabled:translate-y-0"
                 >
-                  {(isSubmitting || isLoading) ? (
+                  {isSubmitting || isLoading ? (
                     <div className="flex items-center gap-3">
                       <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       {t('Creating Offer...')}
                     </div>
-                  ) : t('Create Transport Offer')}
+                  ) : (
+                    t('Create Transport Offer')
+                  )}
                 </Button>
                 <Button
                   type="button"
