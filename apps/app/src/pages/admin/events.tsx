@@ -42,6 +42,7 @@ import {
 } from 'lucide-react';
 import { toast } from '@/components/atoms/use-toast';
 import { Command, CommandGroup, CommandInput, CommandItem } from '@/components/atoms/command';
+import { safeFormatDate, safeFormatTime } from '@/lib/format-utils';
 
 interface Event {
   id: number;
@@ -96,6 +97,10 @@ export default function AdminEvents() {
   const [createLongitude, setCreateLongitude] = useState<number | ''>('');
   const [createCapacity, setCreateCapacity] = useState<number | ''>('');
   const [createOrganizationId, setCreateOrganizationId] = useState<number | ''>('');
+  const [createImageFile, setCreateImageFile] = useState<File | null>(null);
+  const [createBannerFile, setCreateBannerFile] = useState<File | null>(null);
+  const [editImageFile, setEditImageFile] = useState<File | null>(null);
+  const [editBannerFile, setEditBannerFile] = useState<File | null>(null);
 
   useEffect(() => {
     if (editEvent) {
@@ -117,7 +122,9 @@ export default function AdminEvents() {
     }
   }, [editEvent]);
 
-  const { data: events, isLoading } = useQuery<Event[]>(['events'], api.listEvents, {
+  const { data: events, isLoading } = useQuery<Event[]>({
+    queryKey: ['events'],
+    queryFn: api.listEvents,
     select: (data: any) => {
       if (!data) return [] as Event[];
       const list: any[] = Array.isArray(data) ? data : data.data || [];
@@ -142,9 +149,9 @@ export default function AdminEvents() {
 
   // Mutations
   const createMutation = useMutation({
-    mutationFn: (data: Partial<Event>) => api.createEvent(data),
+    mutationFn: (data: Partial<Event> | FormData) => api.createEvent(data as any),
     onSuccess: () => {
-      queryClient.invalidateQueries(['events']);
+      queryClient.invalidateQueries({ queryKey: ['events'] });
       toast({ title: 'Event created successfully', variant: 'success' });
       setShowCreateDialog(false);
       // reset create form
@@ -155,14 +162,18 @@ export default function AdminEvents() {
       setCreateLocation('');
       setCreateCapacity('');
       setCreateOrganizationId('');
+      setCreateImageFile(null);
+      setCreateBannerFile(null);
     }
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<Event> }) => api.updateEvent(id, data),
+    mutationFn: ({ id, data }: { id: number; data: Partial<Event> | FormData }) => api.updateEvent(id, data as any),
     onSuccess: () => {
-      queryClient.invalidateQueries(['events']);
+      queryClient.invalidateQueries({ queryKey: ['events'] });
       toast({ title: 'Event updated', variant: 'success' });
+      setEditImageFile(null);
+      setEditBannerFile(null);
     }
   });
 
@@ -175,13 +186,14 @@ export default function AdminEvents() {
     return () => clearTimeout(t);
   }, [contactQuery]);
 
-  const { data: contactResults = [] } = useQuery(['users', debouncedContactQuery], () =>
-    api.listUsers(debouncedContactQuery)
-  );
+  const { data: contactResults = [] } = useQuery({
+    queryKey: ['users', debouncedContactQuery],
+    queryFn: () => api.listUsers(debouncedContactQuery)
+  });
   const deleteMutation = useMutation({
     mutationFn: (eventId: number) => api.deleteEvent(eventId),
     onSuccess: () => {
-      queryClient.invalidateQueries(['events']);
+      queryClient.invalidateQueries({ queryKey: ['events'] });
       toast({ title: 'Event deleted', variant: 'success' });
     }
   });
@@ -189,7 +201,7 @@ export default function AdminEvents() {
   const aiMatchMutation = useMutation({
     mutationFn: (eventId: number) => api.aiMatchVolunteers(eventId),
     onSuccess: (data: any) => {
-      queryClient.invalidateQueries(['events']);
+      queryClient.invalidateQueries({ queryKey: ['events'] });
       // data.data.matches contains the array
       const matches = data?.data?.matches || data?.matches || [];
       setAiMatches(matches);
@@ -199,7 +211,9 @@ export default function AdminEvents() {
   });
 
   // Fetch organizations to resolve names when events only contain organizationId
-  const { data: orgs = [] } = useQuery<any[]>(['organizations'], api.listOrganizations, {
+  const { data: orgs = [] } = useQuery<any[]>({
+    queryKey: ['organizations'],
+    queryFn: api.listOrganizations,
     select: (data: any) => {
       if (!data) return [] as any[];
       const list: any[] = Array.isArray(data) ? data : data.data || [];
@@ -234,10 +248,13 @@ export default function AdminEvents() {
     let completed = 0;
 
     (events || []).forEach((e) => {
-      const s = e.startAt ? new Date(e.startAt).getTime() : null;
-      const en = e.endAt ? new Date(e.endAt).getTime() : null;
+      const s = e.startAt ? new Date(e.startAt).getTime() : NaN;
+      const en = e.endAt ? new Date(e.endAt).getTime() : NaN;
 
-      if (s !== null && en !== null) {
+      const hasStart = !isNaN(s);
+      const hasEnd = !isNaN(en);
+
+      if (hasStart && hasEnd) {
         if (en < now) {
           completed += 1;
         } else if (s <= now && now <= en) {
@@ -245,16 +262,13 @@ export default function AdminEvents() {
         } else if (s > now) {
           upcoming += 1;
         }
-      } else if (s !== null && en === null) {
-        // Has start but no end: if start in future -> upcoming, else ongoing
+      } else if (hasStart && !hasEnd) {
         if (s > now) upcoming += 1;
         else ongoing += 1;
-      } else if (s === null && en !== null) {
-        // Has end but no start: if end in past -> completed, else ongoing
+      } else if (!hasStart && hasEnd) {
         if (en < now) completed += 1;
         else ongoing += 1;
       } else {
-        // No dates: count as upcoming by default
         upcoming += 1;
       }
     });
@@ -290,8 +304,8 @@ export default function AdminEvents() {
     return Math.round((event.assignedVolunteers / event.requiredVolunteers) * 100);
   };
 
-  const formatDate = (iso?: string | null) => (iso ? new Date(iso).toLocaleDateString() : 'TBD');
-  const formatTime = (iso?: string | null) => (iso ? new Date(iso).toLocaleTimeString() : 'TBD');
+  const formatDate = (iso?: string | null) => safeFormatDate(iso);
+  const formatTime = (iso?: string | null) => safeFormatTime(iso);
 
   const toSQLDatetime = (input?: string | null) => {
     if (!input) return null;
@@ -398,8 +412,27 @@ export default function AdminEvents() {
                     ))}
                   </select>
                 </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Event Image</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setCreateImageFile(e.target.files?.[0] ?? null)}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Banner Image</label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setCreateBannerFile(e.target.files?.[0] ?? null)}
+                    />
+                  </div>
+                </div>
                 <div className="flex items-center gap-2">
-                  <input id="create-recurring" type="checkbox" checked={false} onChange={() => { }} />
+                  <input id="create-recurring" type="checkbox" checked={false} onChange={() => {}} />
                   <label htmlFor="create-recurring" className="text-sm">
                     Recurring Event
                   </label>
@@ -411,18 +444,35 @@ export default function AdminEvents() {
                 </Button>
                 <Button
                   onClick={() => {
-                    const payload: any = {
-                      title: createTitle,
-                      description: createDescription,
-                      start_at: toSQLDatetime(createStartAt),
-                      end_at: toSQLDatetime(createEndAt),
-                      location: createLocation,
-                      capacity: createCapacity || 0
-                    };
-                    if (typeof createLatitude === 'number') payload.latitude = createLatitude;
-                    if (typeof createLongitude === 'number') payload.longitude = createLongitude;
-                    if (createOrganizationId) payload.organization_id = createOrganizationId;
-                    createMutation.mutate(payload);
+                    // build payload or FormData
+                    if (createImageFile || createBannerFile) {
+                      const fd = new FormData();
+                      fd.append('title', createTitle);
+                      fd.append('description', createDescription);
+                      if (createStartAt) fd.append('start_at', toSQLDatetime(createStartAt) || '');
+                      if (createEndAt) fd.append('end_at', toSQLDatetime(createEndAt) || '');
+                      fd.append('location', createLocation);
+                      fd.append('capacity', String(createCapacity || 0));
+                      if (typeof createLatitude === 'number') fd.append('latitude', String(createLatitude));
+                      if (typeof createLongitude === 'number') fd.append('longitude', String(createLongitude));
+                      if (createOrganizationId) fd.append('organization_id', String(createOrganizationId));
+                      if (createImageFile) fd.append('image', createImageFile);
+                      if (createBannerFile) fd.append('banner', createBannerFile);
+                      createMutation.mutate(fd as any);
+                    } else {
+                      const payload: any = {
+                        title: createTitle,
+                        description: createDescription,
+                        start_at: toSQLDatetime(createStartAt),
+                        end_at: toSQLDatetime(createEndAt),
+                        location: createLocation,
+                        capacity: createCapacity || 0
+                      };
+                      if (typeof createLatitude === 'number') payload.latitude = createLatitude;
+                      if (typeof createLongitude === 'number') payload.longitude = createLongitude;
+                      if (createOrganizationId) payload.organization_id = createOrganizationId;
+                      createMutation.mutate(payload);
+                    }
                   }}
                 >
                   Create Event
@@ -743,15 +793,11 @@ export default function AdminEvents() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>AI Volunteer Recommendations</DialogTitle>
-            <DialogDescription>
-              Based on skills, availability, and past activity.
-            </DialogDescription>
+            <DialogDescription>Based on skills, availability, and past activity.</DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-4 max-h-[60vh] overflow-y-auto">
             {aiMatches.length === 0 ? (
-              <div className="text-center text-muted-foreground py-8">
-                No matching volunteers found for this event.
-              </div>
+              <div className="text-center text-muted-foreground py-8">No matching volunteers found for this event.</div>
             ) : (
               aiMatches.map((match: any, i: number) => (
                 <div key={i} className="flex items-start justify-between p-4 border rounded-lg bg-gray-50">
@@ -847,6 +893,17 @@ export default function AdminEvents() {
               </select>
               <div />
             </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Event Image</label>
+                <input type="file" accept="image/*" onChange={(e) => setEditImageFile(e.target.files?.[0] ?? null)} />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Banner Image</label>
+                <input type="file" accept="image/*" onChange={(e) => setEditBannerFile(e.target.files?.[0] ?? null)} />
+              </div>
+            </div>
             <div className="flex items-center gap-2">
               <input
                 id="edit-recurring"
@@ -877,21 +934,44 @@ export default function AdminEvents() {
             <Button
               onClick={() => {
                 if (!editEvent) return;
-                const payload: any = {
-                  title: editTitle,
-                  description: editDescription,
-                  start_at: toSQLDatetime(editStartAt),
-                  end_at: toSQLDatetime(editEndAt),
-                  location: editLocation,
-                  latitude: typeof editLatitude === 'number' ? editLatitude : undefined,
-                  longitude: typeof editLongitude === 'number' ? editLongitude : undefined,
-                  capacity: typeof editRequiredVolunteers === 'number' ? editRequiredVolunteers : 0,
-                  is_published: editStatus === 'published'
-                };
-                // include organization_id if selected
-                if (editOrganizationId) payload.organization_id = editOrganizationId;
-                else if ((editEvent as any).organizationId) payload.organization_id = (editEvent as any).organizationId;
-                updateMutation.mutate({ id: editEvent.id, data: payload });
+
+                if (editImageFile || editBannerFile) {
+                  const fd = new FormData();
+                  fd.append('title', editTitle);
+                  fd.append('description', editDescription);
+                  if (editStartAt) fd.append('start_at', toSQLDatetime(editStartAt) || '');
+                  if (editEndAt) fd.append('end_at', toSQLDatetime(editEndAt) || '');
+                  fd.append('location', editLocation);
+                  fd.append(
+                    'capacity',
+                    String(typeof editRequiredVolunteers === 'number' ? editRequiredVolunteers : 0)
+                  );
+                  fd.append('is_published', String(editStatus === 'published'));
+                  if (typeof editLatitude === 'number') fd.append('latitude', String(editLatitude));
+                  if (typeof editLongitude === 'number') fd.append('longitude', String(editLongitude));
+                  if (editOrganizationId) fd.append('organization_id', String(editOrganizationId));
+                  if (editImageFile) fd.append('image', editImageFile);
+                  if (editBannerFile) fd.append('banner', editBannerFile);
+                  updateMutation.mutate({ id: editEvent.id, data: fd as any });
+                } else {
+                  const payload: any = {
+                    title: editTitle,
+                    description: editDescription,
+                    start_at: toSQLDatetime(editStartAt),
+                    end_at: toSQLDatetime(editEndAt),
+                    location: editLocation,
+                    latitude: typeof editLatitude === 'number' ? editLatitude : undefined,
+                    longitude: typeof editLongitude === 'number' ? editLongitude : undefined,
+                    capacity: typeof editRequiredVolunteers === 'number' ? editRequiredVolunteers : 0,
+                    is_published: editStatus === 'published'
+                  };
+                  // include organization_id if selected
+                  if (editOrganizationId) payload.organization_id = editOrganizationId;
+                  else if ((editEvent as any).organizationId)
+                    payload.organization_id = (editEvent as any).organizationId;
+                  updateMutation.mutate({ id: editEvent.id, data: payload });
+                }
+
                 setShowEditDialog(false);
               }}
             >
