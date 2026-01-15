@@ -11,18 +11,19 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { format } from 'date-fns';
+import { safeFormatDate } from '@/lib/format-utils';
 import LoadingSpinner from '@/components/atoms/loading-spinner';
 
 const ContactSubmissions = () => {
   const { t } = useTranslation();
 
-  const { data, isLoading } = useQuery(['contact-submissions'], () =>
-    api.getContactSubmissions()
-  );
+  const { data, isLoading } = useQuery({
+    queryKey: ['contact-submissions'],
+    queryFn: () => api.getContactSubmissions()
+  });
 
   const submissions = data?.data?.data || data?.data || [];
-  const meta = data?.data?.meta || {};
+
 
   if (isLoading) return <LoadingSpinner />;
 
@@ -55,7 +56,7 @@ const ContactSubmissions = () => {
                 submissions.map((item: any) => (
                   <TableRow key={item.id}>
                     <TableCell className="whitespace-nowrap">
-                      {format(new Date(item.created_at || item.createdAt), 'MMM dd, yyyy HH:mm')}
+                      {safeFormatDate(item.created_at || item.createdAt, 'MMM dd, yyyy HH:mm')}
                     </TableCell>
                     <TableCell>
                       {item.firstName} {item.lastName}
