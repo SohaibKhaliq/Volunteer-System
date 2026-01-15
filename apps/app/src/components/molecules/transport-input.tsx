@@ -1,5 +1,5 @@
 import { ReactComponent as SwitchIcon } from '@/assets/icons/switch.svg';
-import { useState } from 'react';
+import { forwardRef, useState } from 'react';
 import { Button } from '../atoms/button';
 import AddressInput, { Location } from './address-input';
 import { useTranslation } from 'react-i18next';
@@ -15,13 +15,13 @@ interface TransportInputProps {
   onChange: (value: TransportValue) => void;
 }
 
-const TransportInput = ({ value, onChange }: TransportInputProps) => {
+const TransportInput = forwardRef<HTMLDivElement, TransportInputProps>(({ value, onChange }, ref) => {
   const { t, i18n } = useTranslation();
   const ar = i18n.language === 'ar-ma';
 
   const [transportValue, setTransportValue] = useState<TransportValue>(value);
   return (
-    <div className="relative flex items-center gap-2">
+    <div ref={ref} className="relative flex items-center gap-2">
       <div className="flex flex-col flex-grow gap-2">
         <AddressInput
           placeholder={t('Start address')}
@@ -75,6 +75,6 @@ const TransportInput = ({ value, onChange }: TransportInputProps) => {
       </Button>
     </div>
   );
-};
+});
 
 export default TransportInput;
