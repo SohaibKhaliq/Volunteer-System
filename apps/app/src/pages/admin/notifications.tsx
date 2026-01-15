@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
 import { useStore } from '@/lib/store';
 import { NotificationFormatter } from '@/lib/notification-formatter';
+import { safeFormatDate } from '@/lib/format-utils';
 
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
@@ -58,11 +59,11 @@ export default function AdminNotifications() {
   const [viewing, setViewing] = useState<any | null>(null);
 
   // Notifications Query
-  const { data: res, isLoading, isPreviousData } = useQuery(
-    ['admin-notifications', page, perPage],
-    () => api.listNotifications({ page, perPage }),
-    { keepPreviousData: true }
-  );
+  const { data: res, isLoading, isPreviousData } = useQuery({
+    queryKey: ['admin-notifications', page, perPage],
+    queryFn: () => api.listNotifications({ page, perPage }),
+    keepPreviousData: true
+  });
 
   const notifications = Array.isArray(res?.data) ? res.data : [];
   const meta = res?.meta || {};
@@ -71,8 +72,8 @@ export default function AdminNotifications() {
   const markReadMutation = useMutation({
     mutationFn: (id: number) => api.markNotificationRead(id),
     onSuccess: () => {
-      queryClient.invalidateQueries(['admin-notifications']);
-      queryClient.invalidateQueries(['notifications']);
+      queryClient.invalidateQueries({ queryKey: ['admin-notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast({ title: 'Marked as read' });
     }
   });
@@ -80,8 +81,8 @@ export default function AdminNotifications() {
   const markUnreadMutation = useMutation({
     mutationFn: (id: number) => api.markNotificationUnread(id),
     onSuccess: () => {
-      queryClient.invalidateQueries(['admin-notifications']);
-      queryClient.invalidateQueries(['notifications']);
+      queryClient.invalidateQueries({ queryKey: ['admin-notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast({ title: 'Marked as unread' });
     }
   });
@@ -89,8 +90,8 @@ export default function AdminNotifications() {
   const markAllReadMutation = useMutation({
     mutationFn: () => api.markAllNotificationsRead(), // Assuming this exists or we iterate
     onSuccess: () => {
-      queryClient.invalidateQueries(['admin-notifications']);
-      queryClient.invalidateQueries(['notifications']);
+      queryClient.invalidateQueries({ queryKey: ['admin-notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast({ title: 'All marked as read' });
     }
   });
@@ -108,7 +109,7 @@ export default function AdminNotifications() {
 
       socket.on('notification', () => {
         // Just invalidate to refresh list
-        queryClient.invalidateQueries(['admin-notifications']);
+        queryClient.invalidateQueries({ queryKey: ['admin-notifications'] });
       });
 
       return () => socket.close();
@@ -132,8 +133,8 @@ export default function AdminNotifications() {
     );
 
     setSelected([]);
-    queryClient.invalidateQueries(['admin-notifications']);
-    queryClient.invalidateQueries(['notifications']);
+    queryClient.invalidateQueries({ queryKey: ['admin-notifications'] });
+    queryClient.invalidateQueries({ queryKey: ['notifications'] });
     toast({ title: `Marked ${selected.length} notifications as ${read ? 'read' : 'unread'}` });
   };
 
@@ -190,7 +191,7 @@ export default function AdminNotifications() {
           <p className="text-muted-foreground">Monitor and manage system-wide alerts and messages.</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => queryClient.invalidateQueries(['admin-notifications'])}>
+          <Button variant="outline" size="sm" onClick={() => queryClient.invalidateQueries({ queryKey: ['admin-notifications'] })}>
             <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
@@ -266,7 +267,7 @@ export default function AdminNotifications() {
                     {renderPayloadSummary(n)}
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
-                    {new Date(n.createdAt || n.created_at).toLocaleString()}
+                    {safeFormatDate(n.createdAt || n.created_at, 'PPp')}
                   </TableCell>
                   <TableCell className="text-right">
                     {n.read ? (
@@ -356,7 +357,7 @@ export default function AdminNotifications() {
           <DialogHeader>
             <DialogTitle>Notification Details</DialogTitle>
             <DialogDescription>
-              {viewing ? new Date(viewing.createdAt || viewing.created_at).toLocaleString() : ''}
+              {viewing ? safeFormatDate(viewing.createdAt || viewing.created_at, 'PPp') : ''}
             </DialogDescription>
           </DialogHeader>
 
