@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '@/lib/api';
@@ -20,6 +20,7 @@ import {
 import { Building2, Users, Calendar, MapPin, CheckCircle, LogOut, ArrowRight, Loader2, Search, Filter } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
+import { safeFormatDate } from '@/lib/format-utils';
 
 const VolunteerOrganizationsPage = () => {
   const { t } = useTranslation();
@@ -34,10 +35,10 @@ const VolunteerOrganizationsPage = () => {
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
   // Debounce search effect (simple timeout)
-  useState(() => {
+  useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 500);
     return () => clearTimeout(timer);
-  }); // This runs on every render? No. `useState` lazy init only runs once. I need `useEffect`.
+  }, [search]);
 
   // Join Dialog State
   const [orgToJoin, setOrgToJoin] = useState<any>(null);
@@ -243,7 +244,7 @@ const VolunteerOrganizationsPage = () => {
                         <div className="flex items-center gap-2 text-sm font-bold text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-xl w-fit">
                           <Calendar className="h-4 w-4 text-primary" />
                           <span>
-                            {t('Joined')} {new Date(org.joined_at).toLocaleDateString()}
+                            {t('Joined')} {safeFormatDate(org.joined_at)}
                           </span>
                         </div>
                       )}
