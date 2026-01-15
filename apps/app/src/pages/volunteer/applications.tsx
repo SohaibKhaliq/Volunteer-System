@@ -7,11 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Calendar, MapPin, Building2, Loader2, ArrowRight, CheckCircle2, Clock, XCircle, Send } from 'lucide-react';
+import { Calendar, MapPin, Building2, Loader2, ArrowRight, CheckCircle2, Clock, XCircle, Send, List } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { safeFormatDate, safeFormatTime } from '@/lib/format-utils';
 
 const VolunteerApplicationsPage = () => {
   const { t } = useTranslation();
@@ -79,12 +79,7 @@ const VolunteerApplicationsPage = () => {
   };
 
   const formatDate = (dateString: string) => {
-    if (!dateString) return 'TBD';
-    return new Date(dateString).toLocaleDateString(undefined, {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
+    return safeFormatDate(dateString, "MMM d, yyyy");
   };
 
   const handleWithdraw = (id: number) => {
@@ -157,7 +152,7 @@ const VolunteerApplicationsPage = () => {
               </div>
               <div>
                 <p className={`font-medium ${event.color}`}>{event.title}</p>
-                {event.date && <p className="text-sm text-muted-foreground">{format(new Date(event.date), 'PPP p')}</p>}
+                {event.date && <p className="text-sm text-muted-foreground">{safeFormatDate(event.date, 'PPP')} {safeFormatTime(event.date, 'p')}</p>}
                 {!event.date && event.status === 'pending' && (
                   <p className="text-sm text-muted-foreground">Awaiting response...</p>
                 )}
