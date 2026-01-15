@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Mail, Phone, MapPin, Send } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
@@ -37,52 +37,54 @@ const Contact = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
-      <section className="bg-gradient-to-br from-primary via-primary/90 to-primary/80 text-white py-24 relative overflow-hidden">
-        <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:20px_20px]" />
-        <div className="container px-4 text-center relative z-10">
-          <h1 className="text-4xl md:text-6xl font-black tracking-tight mb-6">{t('Contact Us')}</h1>
-          <p className="text-xl text-primary-foreground/80 max-w-2xl mx-auto font-medium">
-            {t("Have questions or feedback? We'd love to hear from you.")}
-          </p>
+      <section className="bg-slate-900 text-white py-32 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 via-primary/5 to-transparent z-10" />
+        <div className="container px-4 relative z-10">
+          <div className="max-w-3xl">
+            <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-6">{t('Contact Us')}</h1>
+            <p className="text-xl text-slate-300 font-medium leading-relaxed">
+              {t("Have questions or feedback? We'd love to hear from you.")}
+            </p>
+          </div>
         </div>
       </section>
 
-      <section className="py-16 -mt-16 relative z-20">
+      <section className="py-24 -mt-16 relative z-20">
         <div className="container px-4">
-          <div className="bg-card rounded-[2.5rem] shadow-2xl shadow-primary/5 overflow-hidden flex flex-col md:flex-row max-w-6xl mx-auto border border-border/50">
+          <div className="bg-card rounded-2xl shadow-2xl shadow-indigo-500/5 overflow-hidden flex flex-col md:flex-row max-w-6xl mx-auto border border-border">
             {/* Contact Info */}
-            <div className="bg-primary/5 dark:bg-primary/10 p-10 md:w-2/5 flex flex-col justify-between border-b md:border-b-0 md:border-r border-border/50">
+            <div className="bg-slate-50 dark:bg-slate-950/50 p-12 md:w-2/5 flex flex-col justify-between border-b md:border-b-0 md:border-r border-border">
               <div>
-                <h2 className="text-3xl font-black tracking-tight text-foreground mb-6">{t('Get in Touch')}</h2>
-                <p className="text-muted-foreground mb-10 font-medium">
+                <h2 className="text-3xl font-bold tracking-tight text-foreground mb-8">{t('Get in Touch')}</h2>
+                <p className="text-muted-foreground mb-12 font-medium leading-relaxed">
                   {t('Fill out the form and our team will get back to you within 24 hours.')}
                 </p>
 
-                <div className="space-y-8">
-                  <div className="flex items-start gap-4 group">
-                    <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                      <Mail className="h-6 w-6 text-primary" />
+                <div className="space-y-10">
+                  <div className="flex items-start gap-5 group">
+                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-white transition-all duration-300">
+                      <Mail className="h-5 w-5 text-primary group-hover:text-white" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-foreground mb-1">{t('Email')}</h3>
+                      <h3 className="font-bold text-foreground mb-1 leading-none">{t('Email')}</h3>
                       <p className="text-muted-foreground text-sm font-medium">support@Local Aid.com</p>
                     </div>
                   </div>
-                  <div className="flex items-start gap-4 group">
-                    <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                      <Phone className="h-6 w-6 text-primary" />
+                  <div className="flex items-start gap-5 group">
+                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-white transition-all duration-300">
+                      <Phone className="h-5 w-5 text-primary group-hover:text-white" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-foreground mb-1">{t('Phone')}</h3>
+                      <h3 className="font-bold text-foreground mb-1 leading-none">{t('Phone')}</h3>
                       <p className="text-muted-foreground text-sm font-medium">+1 (555) 123-4567</p>
                     </div>
                   </div>
-                  <div className="flex items-start gap-4 group">
-                    <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                      <MapPin className="h-6 w-6 text-primary" />
+                  <div className="flex items-start gap-5 group">
+                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-white transition-all duration-300">
+                      <MapPin className="h-5 w-5 text-primary group-hover:text-white" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-foreground mb-1">{t('Office')}</h3>
+                      <h3 className="font-bold text-foreground mb-1 leading-none">{t('Office')}</h3>
                       <p className="text-muted-foreground text-sm font-medium leading-relaxed">
                         123 Volunteer Way
                         <br />
@@ -111,39 +113,39 @@ const Contact = () => {
             </div>
 
             {/* Contact Form */}
-            <div className="p-10 md:w-3/5">
-              <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="p-12 md:w-3/5">
+              <form onSubmit={handleSubmit} className="space-y-8">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                  <div className="space-y-2">
-                    <label htmlFor="firstName" className="text-sm font-bold text-foreground/80 px-1">
+                  <div className="space-y-2.5">
+                    <label htmlFor="firstName" className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">
                       {t('First Name')}
                     </label>
-                    <Input id="firstName" name="firstName" required placeholder="John" className="h-14 bg-card/50 border-border/50 rounded-xl focus:bg-card transition-all" />
+                    <Input id="firstName" name="firstName" required placeholder="John" className="h-12 bg-slate-50 dark:bg-slate-900 border-border rounded-lg focus:bg-background transition-colors" />
                   </div>
-                  <div className="space-y-2">
-                    <label htmlFor="lastName" className="text-sm font-bold text-foreground/80 px-1">
+                  <div className="space-y-2.5">
+                    <label htmlFor="lastName" className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">
                       {t('Last Name')}
                     </label>
-                    <Input id="lastName" name="lastName" required placeholder="Doe" className="h-14 bg-card/50 border-border/50 rounded-xl focus:bg-card transition-all" />
+                    <Input id="lastName" name="lastName" required placeholder="Doe" className="h-12 bg-slate-50 dark:bg-slate-900 border-border rounded-lg focus:bg-background transition-colors" />
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label htmlFor="email" className="text-sm font-bold text-foreground/80 px-1">
+                <div className="space-y-2.5">
+                  <label htmlFor="email" className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">
                     {t('Email Address')}
                   </label>
-                  <Input id="email" name="email" type="email" required placeholder="john@example.com" className="h-14 bg-card/50 border-border/50 rounded-xl focus:bg-card transition-all" />
+                  <Input id="email" name="email" type="email" required placeholder="john@example.com" className="h-12 bg-slate-50 dark:bg-slate-900 border-border rounded-lg focus:bg-background transition-colors" />
                 </div>
 
-                <div className="space-y-2">
-                  <label htmlFor="subject" className="text-sm font-bold text-foreground/80 px-1">
+                <div className="space-y-2.5">
+                  <label htmlFor="subject" className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">
                     {t('Subject')}
                   </label>
-                  <Input id="subject" name="subject" required placeholder={t('How can we help?')} className="h-14 bg-card/50 border-border/50 rounded-xl focus:bg-card transition-all" />
+                  <Input id="subject" name="subject" required placeholder={t('How can we help?')} className="h-12 bg-slate-50 dark:bg-slate-900 border-border rounded-lg focus:bg-background transition-colors" />
                 </div>
 
-                <div className="space-y-2">
-                  <label htmlFor="message" className="text-sm font-bold text-foreground/80 px-1">
+                <div className="space-y-2.5">
+                  <label htmlFor="message" className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">
                     {t('Message')}
                   </label>
                   <Textarea
@@ -151,14 +153,14 @@ const Contact = () => {
                     name="message"
                     required
                     placeholder={t('Tell us more about your inquiry...')}
-                    className="min-h-[160px] bg-card/50 border-border/50 rounded-2xl focus:bg-card transition-all p-4"
+                    className="min-h-[200px] bg-slate-50 dark:bg-slate-900 border-border rounded-lg focus:bg-background transition-colors p-4 resize-none"
                   />
                 </div>
 
-                <Button type="submit" className="w-full h-14 rounded-2xl shadow-xl shadow-primary/20 font-bold text-lg" disabled={isSubmitting}>
+                <Button type="submit" className="w-full h-14 rounded-lg shadow-xl shadow-primary/20 font-bold text-lg transition-all active:scale-[0.98]" disabled={isSubmitting}>
                   {isSubmitting ? (
                     <span className="flex items-center gap-2">
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                      <Loader2 className="animate-spin h-5 w-5" />
                       {t('Sending...')}
                     </span>
                   ) : (
