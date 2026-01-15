@@ -1,5 +1,7 @@
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 import AppEvent from 'App/Models/Event'
+import Application from '@ioc:Adonis/Core/Application'
+import fs from 'fs'
 
 export default class EventsController {
   public async index({ auth, request, response }: HttpContextContract) {
@@ -80,53 +82,65 @@ export default class EventsController {
     const events = await query.orderBy('start_at', 'asc')
 
     // enrich events with required_volunteers and assigned_volunteers for frontend convenience
-    const payload = events.map((ev) => {
-      const evJson: any = ev.toJSON()
-      const required = (ev.tasks || []).reduce((sum, t: any) => {
-        // try both slotCount and slot_count
-        const slots = (t.slotCount ?? t.slot_count ?? 0) || 0
-        return sum + Number(slots)
-      }, 0)
-      const assigned = (ev.tasks || []).reduce((sum, t: any) => {
-        const assigns = Array.isArray(t.assignments) ? t.assignments.length : 0
-        return sum + assigns
-      }, 0)
-      evJson.required_volunteers = required
-      evJson.assigned_volunteers = assigned
-      // Friendly properties for frontend (date/time, registered/capacity)
-      try {
-        const d = new Date(ev.startAt as any)
-        evJson.date = d.toLocaleDateString()
-        evJson.time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      } catch (e) {
-        evJson.date = ev.startAt
-        evJson.time = ''
-      }
-      evJson.registered = assigned
-      evJson.capacity = ev.capacity ?? ev.capacity
-      evJson.type = ev.type ?? 'Community'
-      try {
-        const start = new Date(ev.startAt as any)
-        evJson.status = start > new Date() ? 'Upcoming' : 'Past'
-      } catch (e) {
-        evJson.status = 'Upcoming'
-      }
+    const payload = await Promise.all(
+      events.map(async (ev) => {
+        const evJson: any = ev.toJSON()
+        const required = (ev.tasks || []).reduce((sum, t: any) => {
+          // try both slotCount and slot_count
+          const slots = (t.slotCount ?? t.slot_count ?? 0) || 0
+          return sum + Number(slots)
+        }, 0)
+        const assigned = (ev.tasks || []).reduce((sum, t: any) => {
+          const assigns = Array.isArray(t.assignments) ? t.assignments.length : 0
+          return sum + assigns
+        }, 0)
+        evJson.required_volunteers = required
+        evJson.assigned_volunteers = assigned
+        // Friendly properties for frontend (date/time, registered/capacity)
+        try {
+          const d = new Date(ev.startAt as any)
+          evJson.date = d.toLocaleDateString()
+          evJson.time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        } catch (e) {
+          evJson.date = ev.startAt
+          evJson.time = ''
+        }
+        evJson.registered = assigned
+        evJson.capacity = ev.capacity ?? ev.capacity
+        evJson.type = ev.type ?? 'Community'
+        try {
+          const start = new Date(ev.startAt as any)
+          evJson.status = start > new Date() ? 'Upcoming' : 'Past'
+        } catch (e) {
+          evJson.status = 'Upcoming'
+        }
 
-      // coordinates: prefer explicit latitude/longitude columns, otherwise check metadata.coordinates
-      const latVal = (ev as any).latitude
-      const lngVal = (ev as any).longitude
-      if (
-        typeof latVal !== 'undefined' &&
-        typeof lngVal !== 'undefined' &&
-        latVal !== null &&
-        lngVal !== null
-      ) {
-        evJson.coordinates = [Number(latVal), Number(lngVal)]
-      } else if (evJson.metadata && evJson.metadata.coordinates) {
-        evJson.coordinates = evJson.metadata.coordinates
-      }
-      return evJson
-    })
+        // coordinates: prefer explicit latitude/longitude columns, otherwise check metadata.coordinates
+        const latVal = (ev as any).latitude
+        const lngVal = (ev as any).longitude
+        if (
+          typeof latVal !== 'undefined' &&
+          typeof lngVal !== 'undefined' &&
+          latVal !== null &&
+          lngVal !== null
+        ) {
+          evJson.coordinates = [Number(latVal), Number(lngVal)]
+        } else if (evJson.metadata && evJson.metadata.coordinates) {
+          evJson.coordinates = evJson.metadata.coordinates
+        }
+
+        try {
+          const urls = await (ev as any).resolveMediaUrls()
+          evJson.image = urls.image
+          evJson.banner = urls.banner
+          evJson.image_thumb = urls.image_thumb ?? null
+        } catch (e) {
+          // ignore
+        }
+
+        return evJson
+      })
+    )
 
     return response.ok(payload)
   }
@@ -187,29 +201,90 @@ export default class EventsController {
       }
     }
 
+    // handle optional media uploads (image/banner)
+    try {
+      const imageFile = request.file('image')
+      if (imageFile) {
+        await imageFile.moveToDisk('local', { dirname: 'events' })
+        const filename = imageFile.fileName
+        payload.image = `events/${filename}`
+
+        // generate thumbnail for image
+        try {
+          const tmpRoot = Application.tmpPath('uploads')
+          const dest = `${tmpRoot}/events/${filename}`
+          const thumbDir = `${tmpRoot}/events/thumbs`
+          if (!fs.existsSync(thumbDir)) fs.mkdirSync(thumbDir, { recursive: true })
+          const thumbPath = `${thumbDir}/${filename}`
+          const maybeSharp = await import('sharp').catch(() => null)
+          const sharpLib = maybeSharp ? (maybeSharp.default ?? maybeSharp) : null
+          if (sharpLib) {
+            await sharpLib(dest).resize(800, 450, { fit: 'cover' }).toFile(thumbPath)
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      const bannerFile = request.file('banner')
+      if (bannerFile) {
+        await bannerFile.moveToDisk('local', { dirname: 'events' })
+        const filename = bannerFile.fileName
+        payload.banner = `events/${filename}`
+      }
+    } catch (err) {
+      // Log but don't block creation
+      // eslint-disable-next-line no-console
+      console.warn('Failed to save media files for event:', err)
+    }
+
     const event = await AppEvent.create(payload)
-    return response.created(event)
+
+    // resolve media urls to include in response
+    try {
+      const urls = await event.resolveMediaUrls()
+      const out: any = event.toJSON()
+      out.image = urls.image
+      out.banner = urls.banner
+      out.image_thumb = urls.image_thumb ?? null
+      return response.created(out)
+    } catch (e) {
+      return response.created(event)
+    }
   }
 
-  public async show({ params, response }: HttpContextContract) {
+  public async show({ auth, params, response }: HttpContextContract) {
     const event = await AppEvent.query()
       .where('id', params.id)
+      .preload('organization')
       .preload('tasks', (taskQuery) => taskQuery.preload('assignments'))
       .first()
     if (!event) return response.notFound()
 
-    // If user is an org user, ensure the event matches their organization
-    // If user is an org user, we don't need to restrict view access to only their org's events.
-    // Public users and other org members should be able to see events.
-    // The restriction should only be for update/delete/create which is handled by middleware/other methods.
-
     const evJson: any = event.toJSON()
+
+    // Check application/assignment status for the current user
+    let userApplicationStatus: string | null = null
+    if (auth.user) {
+      const Assignment = (await import('App/Models/Assignment')).default
+      const assignment = await Assignment.query()
+        .whereHas('task', (q) => q.where('event_id', event.id))
+        .where('user_id', auth.user.id)
+        .first()
+
+      if (assignment) {
+        userApplicationStatus = assignment.status // map directly to our frontend-friendly status
+      }
+    }
+
     const assigned = (event.tasks || []).reduce(
       (sum: number, t: any) => sum + (Array.isArray(t.assignments) ? t.assignments.length : 0),
       0
     )
     evJson.spots = { filled: assigned }
     evJson.capacity = event.capacity ?? event.capacity
+    evJson.userApplicationStatus = userApplicationStatus
+
     return response.ok(evJson)
   }
 
@@ -268,9 +343,55 @@ export default class EventsController {
       }
     }
 
+    // handle optional media uploads (image/banner) during update
+    try {
+      const imageFile = request.file('image')
+      if (imageFile) {
+        await imageFile.moveToDisk('local', { dirname: 'events' })
+        const filename = imageFile.fileName
+        normalized.image = `events/${filename}`
+
+        // generate thumbnail for image
+        try {
+          const tmpRoot = Application.tmpPath('uploads')
+          const dest = `${tmpRoot}/events/${filename}`
+          const thumbDir = `${tmpRoot}/events/thumbs`
+          if (!fs.existsSync(thumbDir)) fs.mkdirSync(thumbDir, { recursive: true })
+          const thumbPath = `${thumbDir}/${filename}`
+          const maybeSharp = await import('sharp').catch(() => null)
+          const sharpLib = maybeSharp ? (maybeSharp.default ?? maybeSharp) : null
+          if (sharpLib) {
+            await sharpLib(dest).resize(800, 450, { fit: 'cover' }).toFile(thumbPath)
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      const bannerFile = request.file('banner')
+      if (bannerFile) {
+        await bannerFile.moveToDisk('local', { dirname: 'events' })
+        const filename = bannerFile.fileName
+        normalized.banner = `events/${filename}`
+      }
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn('Failed to save media files for event (update):', err)
+    }
+
     event.merge(normalized)
     await event.save()
-    return response.ok(event)
+
+    try {
+      const urls = await event.resolveMediaUrls()
+      const out: any = event.toJSON()
+      out.image = urls.image
+      out.banner = urls.banner
+      out.image_thumb = urls.image_thumb ?? null
+      return response.ok(out)
+    } catch (e) {
+      return response.ok(event)
+    }
   }
 
   public async destroy({ auth, params, request, response }: HttpContextContract) {
@@ -322,9 +443,7 @@ export default class EventsController {
 
     // Fetch active volunteers
     const User = (await import('App/Models/User')).default
-    const candidates = await User.query()
-      .where('volunteer_status', 'active')
-      .preload('assignments') // to check past experience
+    const candidates = await User.query().where('volunteer_status', 'active').preload('assignments') // to check past experience
 
     // Filter and Score
     const matches = candidates
@@ -434,5 +553,27 @@ export default class EventsController {
     })
 
     return response.created(assignment)
+  }
+
+  /**
+   * Withdraw from an event. Deletes the assignment for the current user.
+   */
+  public async withdraw({ params, auth, response }: HttpContextContract) {
+    if (!auth.user) return response.unauthorized()
+
+    // Find the assignment through the tasks of this event
+    const Assignment = (await import('App/Models/Assignment')).default
+    const assignment = await Assignment.query()
+      .whereHas('task', (q) => q.where('event_id', params.id))
+      .where('user_id', auth.user.id)
+      .first()
+
+    if (!assignment) {
+      return response.notFound({ message: 'No active assignment found for this event' })
+    }
+
+    await assignment.delete()
+
+    return response.ok({ message: 'Successfully withdrawn from event' })
   }
 }
