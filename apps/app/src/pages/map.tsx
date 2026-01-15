@@ -181,12 +181,12 @@ const MapPage = () => {
           </Popover>
 
           {/* View Toggle */}
-          <div className="ml-auto md:ml-2 flex bg-muted/50 p-1 rounded-full border border-border/50 shrink-0">
+          <div className="ml-auto md:ml-2 flex bg-slate-100 dark:bg-slate-900 p-1 rounded-lg border border-border/50 shrink-0">
             <button
               onClick={() => setViewMode('list')}
               className={cn(
-                "p-2 rounded-full transition-all",
-                viewMode === 'list' ? "bg-background shadow-sm text-primary" : "text-muted-foreground hover:text-foreground"
+                "p-2 rounded-md transition-all",
+                viewMode === 'list' ? "bg-background shadow-lg text-primary" : "text-muted-foreground hover:text-foreground"
               )}
               title={t('List View')}
             >
@@ -195,8 +195,8 @@ const MapPage = () => {
             <button
               onClick={() => setViewMode('split')}
               className={cn(
-                "p-2 rounded-full transition-all hidden md:block",
-                viewMode === 'split' ? "bg-background shadow-sm text-primary" : "text-muted-foreground hover:text-foreground"
+                "p-2 rounded-md transition-all hidden md:block",
+                viewMode === 'split' ? "bg-background shadow-lg text-primary" : "text-muted-foreground hover:text-foreground"
               )}
               title={t('Split View')}
             >
@@ -205,8 +205,8 @@ const MapPage = () => {
             <button
               onClick={() => setViewMode('map')}
               className={cn(
-                "p-2 rounded-full transition-all",
-                viewMode === 'map' ? "bg-background shadow-sm text-primary" : "text-muted-foreground hover:text-foreground"
+                "p-2 rounded-md transition-all",
+                viewMode === 'map' ? "bg-background shadow-lg text-primary" : "text-muted-foreground hover:text-foreground"
               )}
               title={t('Map View')}
             >
@@ -228,10 +228,10 @@ const MapPage = () => {
           <div className="p-6 space-y-6">
             <div className="flex justify-between items-end">
               <div>
-                <h2 className="font-black text-2xl text-foreground tracking-tight">{t('Available Opportunities')}</h2>
+                <h2 className="font-bold text-2xl text-foreground tracking-tight">{t('Available Opportunities')}</h2>
                 <p className="text-muted-foreground text-sm mt-1">{t('Find the perfect way to give back')}</p>
               </div>
-              <Badge variant="outline" className="h-7 px-3 rounded-full bg-card border-border/50 font-semibold text-muted-foreground">
+              <Badge variant="outline" className="h-7 px-3 rounded-md bg-slate-50 dark:bg-slate-900 border-border/50 font-bold text-[10px] uppercase tracking-widest text-muted-foreground">
                 {filteredEvents.length} {t('results')}
               </Badge>
             </div>
@@ -255,7 +255,7 @@ const MapPage = () => {
                 filteredEvents.map((event: any) => (
                   <Card
                     key={event.id}
-                    className="group overflow-hidden border border-border/50 shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 bg-card rounded-2xl"
+                    className="group overflow-hidden border border-border transition-all duration-300 bg-card rounded-xl shadow-2xl shadow-slate-200/50 dark:shadow-slate-900/50"
                   >
                     <div className="flex flex-col sm:flex-row h-full">
                       <div className="w-full sm:w-40 h-48 sm:h-auto relative shrink-0 overflow-hidden">
@@ -277,10 +277,10 @@ const MapPage = () => {
                       <div className="flex-1 p-5 flex flex-col justify-between relative">
                         <div className="space-y-3">
                           <div className="flex justify-between items-start gap-2">
-                            <div className="text-[10px] font-bold uppercase tracking-widest text-primary/70">
+                            <div className="text-[10px] font-black uppercase tracking-widest text-primary/70">
                               {event.organization}
                             </div>
-                            <span className="text-[10px] text-muted-foreground font-semibold whitespace-nowrap bg-muted/50 px-2 py-1 rounded-md border border-border/30">
+                            <span className="text-[10px] text-muted-foreground font-black uppercase tracking-widest whitespace-nowrap bg-slate-50 dark:bg-slate-900 px-2 py-1 rounded-md border border-border">
                               {event.date}
                             </span>
                           </div>
@@ -291,24 +291,24 @@ const MapPage = () => {
 
                           <div className="space-y-2 mt-auto">
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <MapPin className="h-4 w-4 text-primary/40 shrink-0" />
-                              <span className="truncate">{event.location}</span>
+                              <MapPin className="h-4 w-4 text-primary shrink-0 opacity-50" />
+                              <span className="truncate font-medium">{event.location}</span>
                             </div>
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <Clock className="h-4 w-4 text-primary/40 shrink-0" />
-                              <span>{event.time}</span>
+                              <Clock className="h-4 w-4 text-primary shrink-0 opacity-50" />
+                              <span className="font-medium">{event.time}</span>
                             </div>
                           </div>
                         </div>
 
-                        <div className="mt-5 flex gap-3 pt-4 border-t border-border/50">
+                        <div className="mt-5 flex gap-3 pt-4 border-t border-border">
                           <Link to={`/detail/event/${event.id}`} className="flex-1">
-                            <Button variant="outline" className="w-full rounded-xl border-border/50 bg-background hover:bg-muted hover:text-foreground transition-all font-bold text-xs">
+                            <Button variant="ghost" className="w-full h-11 justify-center rounded-lg border border-border bg-white dark:bg-slate-900 hover:bg-primary hover:text-white transition-all font-bold text-xs">
                               {t('Details')}
                             </Button>
                           </Link>
                           <Button
-                            className="flex-1 rounded-xl shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all font-bold text-xs"
+                            className="flex-1 h-11 rounded-lg shadow-xl shadow-primary/20 font-bold text-xs"
                             onClick={(e) => {
                               e.preventDefault();
                               if (!token) {
@@ -322,12 +322,7 @@ const MapPage = () => {
                             }}
                             disabled={!!loadingByEvent[event.id]}
                           >
-                            {loadingByEvent[event.id] ? (
-                              <span className="flex items-center gap-2">
-                                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                {t('Joining...')}
-                              </span>
-                            ) : t('Join Now')}
+                            {loadingByEvent[event.id] ? t('Joining...') : t('Join Now')}
                           </Button>
                         </div>
                       </div>
