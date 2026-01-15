@@ -118,39 +118,37 @@ const OrganizationDetail = () => {
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground">
       {/* Header / Banner */}
-      <div className="bg-background relative">
-        <div className="h-64 md:h-80 relative overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/95 to-primary/90 z-10" />
-          <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:30px_30px] z-10" />
+      <div className="bg-slate-900 relative">
+        <div className="h-64 md:h-96 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 via-primary/5 to-transparent z-10" />
           <img
             src="https://images.unsplash.com/photo-1559027615-cd4628902d4a?q=80&w=2074&auto=format&fit=crop"
             alt="Collaboration"
-            className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-50"
+            className="absolute inset-0 w-full h-full object-cover opacity-40"
           />
         </div>
 
-        <div className="container px-4 relative -mt-32 z-20 pb-8">
+        <div className="container px-4 relative -mt-32 z-20 pb-12">
           <div className="flex flex-col md:flex-row items-end gap-8">
-            <div className="w-44 h-44 bg-card rounded-3xl shadow-2xl shadow-primary/20 p-4 flex items-center justify-center overflow-hidden border border-border/50">
+            <div className="w-48 h-48 bg-card rounded-2xl shadow-2xl p-6 flex items-center justify-center overflow-hidden border border-border">
               {org.logo ? (
                 <img src={org.logo} alt={org.name} className="w-full h-full object-contain" />
               ) : (
-                <Users className="w-20 h-20 text-muted-foreground/30" />
+                <Users className="w-16 h-16 text-muted-foreground/20" />
               )}
             </div>
 
             <div className="flex-1 pb-4">
               <div className="flex flex-col md:flex-row justify-between items-end gap-6">
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <div className="flex items-center gap-3">
-                    {org.type && <Badge className="bg-primary/20 text-primary border-none font-bold px-4 py-1 rounded-full uppercase tracking-widest text-[10px]">{org.type}</Badge>}
-                    <Badge variant="outline" className="border-primary/30 text-primary-foreground font-bold px-4 py-1 rounded-full uppercase tracking-widest text-[10px] bg-primary/10 backdrop-blur-md">{t('Organization')}</Badge>
+                    {org.type && <Badge className="bg-white/10 text-white border-none font-bold px-4 py-1.5 rounded-md uppercase tracking-widest text-[10px] backdrop-blur-md">{org.type}</Badge>}
                   </div>
-                  <h1 className="text-4xl md:text-5xl font-black text-white tracking-tight drop-shadow-md">{org.name}</h1>
-                  <div className="flex flex-wrap gap-6 text-sm font-bold text-primary-foreground/80">
+                  <h1 className="text-4xl md:text-6xl font-bold text-white tracking-tight">{org.name}</h1>
+                  <div className="flex flex-wrap gap-4">
                     {org.address && (
-                      <div className="flex items-center gap-2 bg-black/20 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10">
-                        <MapPin className="h-4 w-4 text-primary-foreground" />
+                      <div className="flex items-center gap-2 bg-slate-900/40 backdrop-blur-md px-4 py-2 rounded-lg border border-white/10 text-white/90 text-sm font-medium">
+                        <MapPin className="h-4 w-4 text-primary" />
                         {org.address}
                       </div>
                     )}
@@ -159,18 +157,18 @@ const OrganizationDetail = () => {
                 <div className="pb-2">
                   {membership ? (
                     membership.status === 'active' ? (
-                      <Button size="lg" className="h-14 px-10 rounded-2xl bg-white text-primary hover:bg-white/90 font-black shadow-xl" disabled>
+                      <Button size="lg" className="h-14 px-10 rounded-md bg-white text-slate-900 hover:bg-white/90 font-bold shadow-xl" disabled>
                         {t('Active Member')}
                       </Button>
                     ) : (
-                      <Button size="lg" className="h-14 px-10 rounded-2xl bg-white/20 text-white backdrop-blur-md border-2 border-white/30 font-black" disabled>
+                      <Button size="lg" className="h-14 px-10 rounded-md bg-white/10 text-white backdrop-blur-md border border-white/20 font-bold" disabled>
                         {t('Pending Approval')}
                       </Button>
                     )
                   ) : (
                     <Button
                       size="lg"
-                      className="h-14 px-10 rounded-2xl bg-white text-primary hover:bg-white/90 font-black shadow-2xl shadow-black/20"
+                      className="h-14 px-10 rounded-md bg-primary text-white hover:bg-primary/90 font-bold shadow-xl shadow-primary/20"
                       onClick={handleJoinOrganization}
                       disabled={joinMutation.isPending}
                     >
@@ -189,9 +187,9 @@ const OrganizationDetail = () => {
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-12">
             {/* About */}
-            <section className="bg-card p-10 rounded-[2.5rem] border border-border/50 shadow-sm">
-              <h2 className="text-2xl font-black mb-6 text-foreground tracking-tight">{t('About Us')}</h2>
-              <div className="prose max-w-none text-muted-foreground font-medium leading-relaxed">
+            <section className="bg-card p-12 rounded-2xl border border-border shadow-2xl shadow-slate-200/50 dark:shadow-slate-900/50">
+              <h2 className="text-3xl font-bold mb-8 text-foreground tracking-tight">{t('About Us')}</h2>
+              <div className="prose max-w-none text-muted-foreground font-medium leading-relaxed text-lg">
                 <p>{org.description || t('No description available.')}</p>
               </div>
             </section>
@@ -207,34 +205,34 @@ const OrganizationDetail = () => {
                   <Loader2 className="h-10 w-10 animate-spin text-primary" />
                 </div>
               ) : events && events.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {events.map((event: any) => (
                     <div
                       key={event.id}
-                      className="group bg-card p-6 rounded-[2rem] border border-border/50 hover:shadow-2xl transition-all duration-500 relative overflow-hidden"
+                      className="group bg-card p-8 rounded-2xl border border-border hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 relative overflow-hidden"
                     >
-                      <div className="flex justify-between items-start mb-6">
-                        <div className="h-12 w-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary group-hover:rotate-12 transition-transform">
+                      <div className="flex justify-between items-start mb-8">
+                        <div className="h-12 w-12 bg-indigo-50 dark:bg-indigo-950/30 rounded-lg flex items-center justify-center text-indigo-600 transition-colors">
                           <Calendar className="h-6 w-6" />
                         </div>
-                        <Badge className="bg-emerald-500/10 text-emerald-600 border-none font-black text-[10px] rounded-lg tracking-wider uppercase">{event.status || t('Available')}</Badge>
+                        <Badge className="bg-emerald-50 text-emerald-600 border-none font-black text-[10px] rounded-md tracking-widest uppercase px-3 py-1">{event.status || t('Available')}</Badge>
                       </div>
-                      <h3 className="text-xl font-black mb-3 text-foreground group-hover:text-primary transition-colors">{event.title}</h3>
-                      <p className="text-muted-foreground text-sm mb-6 line-clamp-2 font-medium leading-relaxed">{event.description}</p>
+                      <h3 className="text-xl font-bold mb-3 text-foreground group-hover:text-primary transition-colors">{event.title}</h3>
+                      <p className="text-muted-foreground text-sm mb-8 line-clamp-2 font-medium leading-relaxed">{event.description}</p>
 
-                      <div className="space-y-3 mb-8">
-                        <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground/80">
-                          <Calendar className="h-3.5 w-3.5 text-primary" />
+                      <div className="space-y-3 mb-10">
+                        <div className="flex items-center gap-3 text-xs font-bold text-muted-foreground/80 tracking-wide">
+                          <Calendar className="h-4 w-4 text-primary/70" />
                           {event.date} • {event.time}
                         </div>
-                        <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground/80">
-                          <MapPin className="h-3.5 w-3.5 text-primary" />
+                        <div className="flex items-center gap-3 text-xs font-bold text-muted-foreground/80 tracking-wide">
+                          <MapPin className="h-4 w-4 text-primary/70" />
                           {event.location}
                         </div>
                       </div>
 
                       <Link to={`/detail/event/${event.id}`}>
-                        <Button variant="outline" className="w-full rounded-xl border-border/50 font-bold transition-all group-hover:bg-primary group-hover:text-white group-hover:border-primary">
+                        <Button variant="outline" className="w-full h-12 rounded-lg border-border font-bold transition-all group-hover:bg-primary group-hover:text-white group-hover:border-primary shadow-sm hover:shadow-md">
                           {t('View Details')} <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
                       </Link>
@@ -295,29 +293,26 @@ const OrganizationDetail = () => {
               </div>
             </div>
 
-            <div className="bg-card p-8 rounded-3xl border border-border/50 shadow-sm relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-4 opacity-5">
-                <Users className="w-24 h-24 rotate-12" />
-              </div>
-              <h3 className="text-lg font-black mb-8 tracking-tight text-foreground uppercase tracking-widest text-[10px] opacity-50">{t('Impact Stats')}</h3>
+            <div className="bg-card p-8 rounded-2xl border border-border shadow-2xl shadow-slate-200/50 dark:shadow-slate-900/50 relative overflow-hidden">
+              <h3 className="text-[10px] font-black mb-8 tracking-[0.2em] text-muted-foreground uppercase">{t('Impact Summary')}</h3>
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-5 bg-muted/30 rounded-2xl border border-border/30">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-500 flex items-center justify-center">
+                <div className="flex items-center justify-between p-6 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-border/50 transition-colors hover:border-primary/20">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 flex items-center justify-center">
                       <Users className="h-5 w-5" />
                     </div>
                     <div className="text-sm font-bold text-muted-foreground">{t('Total Volunteers')}</div>
                   </div>
-                  <div className="text-2xl font-black text-foreground">{org.volunteer_count || 0}</div>
+                  <div className="text-2xl font-bold text-foreground">{org.volunteer_count || 0}</div>
                 </div>
-                <div className="flex items-center justify-between p-5 bg-muted/30 rounded-2xl border border-border/30">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center">
+                <div className="flex items-center justify-between p-6 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-border/50 transition-colors hover:border-primary/20">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 flex items-center justify-center">
                       <Calendar className="h-5 w-5" />
                     </div>
                     <div className="text-sm font-bold text-muted-foreground">{t('Active Events')}</div>
                   </div>
-                  <div className="text-2xl font-black text-foreground">{org.event_count || 0}</div>
+                  <div className="text-2xl font-bold text-foreground">{org.event_count || 0}</div>
                 </div>
               </div>
             </div>
