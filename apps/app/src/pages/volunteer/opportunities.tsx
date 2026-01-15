@@ -19,6 +19,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar, MapPin, Building2, Users, Clock, Search, Bookmark, Loader2, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { Link } from 'react-router-dom';
+import { safeFormatDate, safeFormatTime } from '@/lib/format-utils';
 
 const VolunteerOpportunitiesPage = () => {
   const { t } = useTranslation();
@@ -58,8 +59,7 @@ const VolunteerOpportunitiesPage = () => {
         return { items: [], nextPage: undefined };
       }
     },
-    getNextPageParam: (lastPage) => lastPage.nextPage,
-    initialPageParam: 1
+    getNextPageParam: (lastPage) => lastPage.nextPage
   });
 
   // Intersection Observer for infinite scroll
@@ -100,7 +100,13 @@ const VolunteerOpportunitiesPage = () => {
 
   // Apply mutation
   const applyMutation = useMutation({
-    mutationFn: (opportunityId: number) => api.applyToOpportunity(opportunityId, applicationNotes),
+    mutationFn: (opportunityId: number) => {
+      const opp = opportunities.find((o: any) => o.id === opportunityId);
+      if (opp?.userApplicationStatus && opp.userApplicationStatus !== 'withdrawn') {
+        return Promise.reject({ response: { data: { message: t('You have already applied to this opportunity.') } } });
+      }
+      return api.applyToOpportunity(opportunityId, applicationNotes);
+    },
     onSuccess: () => {
       toast.success(t('Application submitted successfully!'));
       setApplyDialogOpen(false);
@@ -108,10 +114,33 @@ const VolunteerOpportunitiesPage = () => {
       queryClient.invalidateQueries({ queryKey: ['browse-opportunities'] });
       queryClient.invalidateQueries({ queryKey: ['volunteer-applications'] });
     },
-    onError: () => {
-      toast.error(t('Failed to submit application'));
+    onError: (err: any) => {
+      const message = err?.response?.data?.message || t('Failed to submit application');
+      toast.error(message);
     }
   });
+
+  const handleApply = (opportunity: any) => {
+    // Prevent opening the dialog if already applied
+    if (opportunity?.userApplicationStatus && opportunity.userApplicationStatus !== 'withdrawn') {
+      toast.error(t('You have already applied to this opportunity.'));
+      return;
+    }
+
+    setSelectedOpportunity(opportunity);
+    setApplyDialogOpen(true);
+  };
+
+  const submitApplication = () => {
+    if (selectedOpportunity) {
+      if (selectedOpportunity.userApplicationStatus && selectedOpportunity.userApplicationStatus !== 'withdrawn') {
+        toast.error(t('You have already applied to this opportunity.'));
+        setApplyDialogOpen(false);
+        return;
+      }
+      applyMutation.mutate(selectedOpportunity.id);
+    }
+  };
 
   // Bookmark mutations
   const bookmarkMutation = useMutation({
@@ -131,37 +160,17 @@ const VolunteerOpportunitiesPage = () => {
   });
 
   // Flatten paginated data
-  const opportunities = opportunitiesData?.pages.flatMap((page) => page.items) || [];
+  const opportunities = opportunitiesData?.pages.flatMap((page: any) => page.items) || [];
   const bookmarkedIds = bookmarksData || [];
 
   const formatDate = (dateString: string) => {
-    if (!dateString) return 'TBD';
-    return new Date(dateString).toLocaleDateString(undefined, {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
+    return safeFormatDate(dateString, "eee, MMM d, yyyy");
   };
 
   const formatTime = (dateString: string) => {
-    if (!dateString) return '';
-    return new Date(dateString).toLocaleTimeString(undefined, {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    return safeFormatTime(dateString, 'hh:mm a');
   };
 
-  const handleApply = (opportunity: any) => {
-    setSelectedOpportunity(opportunity);
-    setApplyDialogOpen(true);
-  };
-
-  const submitApplication = () => {
-    if (selectedOpportunity) {
-      applyMutation.mutate(selectedOpportunity.id);
-    }
-  };
 
   const toggleBookmark = (id: number) => {
     if (bookmarkedIds.includes(id)) {
@@ -290,7 +299,7 @@ const VolunteerOpportunitiesPage = () => {
                           {Math.round(
                             (new Date(opp.endAt || opp.end_at).getTime() -
                               new Date(opp.startAt || opp.start_at).getTime()) /
-                              3600000
+                            3600000
                           )}
                           h
                         </span>
