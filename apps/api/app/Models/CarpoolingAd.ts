@@ -58,6 +58,16 @@ export default class CarpoolingAd extends BaseModel {
   @column()
   public files: string
 
+  // Approval fields
+  @column()
+  public approvalStatus: 'pending' | 'approved' | 'rejected'
+
+  @column({ columnName: 'approved_by' })
+  public approvedBy?: number
+
+  @column.dateTime()
+  public approvedAt?: DateTime
+
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
 
