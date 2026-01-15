@@ -20,6 +20,7 @@ import { API_URL } from '@/lib/config';
 import { toast } from '@/components/atoms/use-toast';
 // Checkbox was unused and this component may not exist in workspace; removed
 import { Switch } from '@/components/ui/switch';
+import { safeFormatDate } from '@/lib/format-utils';
 
 interface User {
   id: number;
@@ -307,9 +308,9 @@ export default function AdminCertifications() {
                   : cert.user?.name || String(cert.user_id || 'Unknown')}
               </TableCell>
               <TableCell>{cert.doc_type || cert.type || '-'}</TableCell>
-              <TableCell>{cert.issued_at ? new Date(cert.issued_at).toLocaleDateString() : '-'}</TableCell>
+              <TableCell>{safeFormatDate(cert.issued_at, 'dd MMM yyyy', '-')}</TableCell>
               <TableCell>
-                {cert.expires_at ? new Date(cert.expires_at).toLocaleDateString() : cert.expires || '-'}
+                {safeFormatDate(cert.expires_at || cert.expires, 'dd MMM yyyy', '-')}
               </TableCell>
               <TableCell>
                 <div className={cn(
@@ -682,7 +683,7 @@ export default function AdminCertifications() {
                 <label className="text-sm font-medium">Issued Date</label>
                 <Input
                   type="date"
-                  value={editing?.issued_at ? editing.issued_at.split('T')[0] : ''}
+                  value={editing?.issued_at && typeof editing.issued_at === 'string' ? editing.issued_at.split('T')[0] : ''}
                   onChange={(e) =>
                     setEditing((prev) =>
                       prev ? { ...prev, issued_at: e.target.value } : { issued_at: e.target.value }
@@ -694,7 +695,7 @@ export default function AdminCertifications() {
                 <label className="text-sm font-medium">Expires</label>
                 <Input
                   type="date"
-                  value={editing?.expires_at ? editing.expires_at.split('T')[0] : ''}
+                  value={editing?.expires_at && typeof editing.expires_at === 'string' ? editing.expires_at.split('T')[0] : ''}
                   onChange={(e) =>
                     setEditing((prev) =>
                       prev ? { ...prev, expires_at: e.target.value } : { expires_at: e.target.value }
