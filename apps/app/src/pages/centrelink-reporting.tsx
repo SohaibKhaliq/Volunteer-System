@@ -14,12 +14,12 @@ import {
   Calendar,
   Clock,
   CheckCircle,
-  XCircle,
   FileText,
   ArrowLeft,
   AlertCircle
 } from 'lucide-react';
-import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { safeFormatDate } from '@/lib/format-utils';
 import { toast } from '@/components/atoms/use-toast';
 
 export default function CentrelinkReporting() {
@@ -39,7 +39,7 @@ export default function CentrelinkReporting() {
   });
 
   // Get SU462 data if a period is selected
-  const { data: su462Data, isLoading: isLoadingSU462 } = useQuery({
+  const { isLoading: isLoadingSU462 } = useQuery({
     queryKey: ['centrelink', 'su462', userId, selectedPeriod],
     queryFn: async () => {
       const response = await api.generateSU462(Number(userId), selectedPeriod || undefined);
@@ -65,14 +65,12 @@ export default function CentrelinkReporting() {
       toast({
         title: t('Export successful'),
         description: t('SU462 report has been downloaded'),
-        className: 'rounded-2xl border-primary/20 shadow-2xl'
       });
     } catch (error: any) {
       toast({
         title: t('Export failed'),
         description: error?.response?.data?.message || t('Failed to export SU462 report'),
         variant: 'destructive',
-        className: 'rounded-2xl shadow-2xl'
       });
     }
   };
@@ -193,7 +191,7 @@ export default function CentrelinkReporting() {
                     {t('Volunteer Hours')}
                   </CardTitle>
                   <CardDescription className="font-medium text-muted-foreground">
-                    {t('Fortnight')} {fortnight.period} • {format(new Date(fortnight.start), 'dd MMM')} - {format(new Date(fortnight.end), 'dd MMM yyyy')}
+                    {t('Fortnight')} {fortnight.period} • {safeFormatDate(fortnight.start, 'dd MMM')} - {safeFormatDate(fortnight.end, 'dd MMM yyyy')}
                   </CardDescription>
                 </div>
                 <Badge variant={summary.approvedHours > 0 ? 'default' : 'secondary'} className="px-4 py-1.5 rounded-full font-bold">
@@ -225,7 +223,7 @@ export default function CentrelinkReporting() {
                       {hours.map((hour: any, index: number) => (
                         <TableRow key={index} className="border-border/50 hover:bg-muted/10 transition-colors">
                           <TableCell className="px-8 py-6 font-bold text-lg">
-                            {format(new Date(hour.date), 'dd MMM yyyy')}
+                            {safeFormatDate(hour.date, 'dd MMM yyyy')}
                           </TableCell>
                           <TableCell className="px-8 py-6">
                             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-primary/5 text-primary font-black">
