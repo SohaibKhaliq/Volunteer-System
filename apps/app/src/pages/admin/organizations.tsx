@@ -38,6 +38,7 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import { toast } from '@/components/atoms/use-toast';
+import { safeFormatDate } from '@/lib/format-utils';
 import OrganizationModal from '@/components/admin/OrganizationModal';
 import OrganizationAnalytics from '@/components/admin/OrganizationAnalytics';
 
@@ -70,37 +71,35 @@ export default function AdminOrganizations() {
   const [analyticsOrgName, setAnalyticsOrgName] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
 
-  const { data: orgs, isLoading } = useQuery<Organization[]>(
-    ['organizations'],
-    () => api.listOrganizations({ withCompliance: 'true', withCounts: 'true', withPerformance: 'true' }),
-    {
-      select: (data: any) => {
-        // Normalize backend snake_case to camelCase for the UI
-        if (!data) return [] as Organization[];
-        const list: any[] = Array.isArray(data) ? data : data.data || [];
-        return list.map((o) => ({
-          id: o.id,
-          name: o.name,
-          description: o.description,
-          logo: o.logo ?? null,
-          logoThumb: o.logo_thumb ?? null,
-          isApproved: o.is_approved ?? o.isApproved ?? false,
-          isActive: o.is_active ?? o.isActive ?? true,
-          createdAt: o.created_at ?? o.createdAt ?? new Date().toISOString(),
-          volunteerCount: o.volunteer_count ?? o.volunteerCount ?? 0,
-          eventCount: o.event_count ?? o.eventCount ?? 0,
-          complianceScore: o.compliance_score ?? o.complianceScore ?? null,
-          performanceScore: o.performance_score ?? o.performanceScore ?? undefined
-        })) as Organization[];
-      }
+  const { data: orgs, isLoading } = useQuery<Organization[]>({
+    queryKey: ['organizations'],
+    queryFn: () => api.listOrganizations({ withCompliance: 'true', withCounts: 'true', withPerformance: 'true' }),
+    select: (data: any) => {
+      // Normalize backend snake_case to camelCase for the UI
+      if (!data) return [] as Organization[];
+      const list: any[] = Array.isArray(data) ? data : data.data || [];
+      return list.map((o) => ({
+        id: o.id,
+        name: o.name,
+        description: o.description,
+        logo: o.logo ?? null,
+        logoThumb: o.logo_thumb ?? null,
+        isApproved: o.is_approved ?? o.isApproved ?? false,
+        isActive: o.is_active ?? o.isActive ?? true,
+        createdAt: o.created_at ?? o.createdAt ?? new Date().toISOString(),
+        volunteerCount: o.volunteer_count ?? o.volunteerCount ?? 0,
+        eventCount: o.event_count ?? o.eventCount ?? 0,
+        complianceScore: o.compliance_score ?? o.complianceScore ?? null,
+        performanceScore: o.performance_score ?? o.performanceScore ?? undefined
+      })) as Organization[];
     }
-  );
+  });
 
   // Mutations
   const approveMutation = useMutation({
     mutationFn: (orgId: number) => api.approveOrganization(orgId),
     onSuccess: () => {
-      queryClient.invalidateQueries(['organizations']);
+      queryClient.invalidateQueries({ queryKey: ['organizations'] });
       toast({ title: 'Organization approved', variant: 'success' });
     },
     onError: () => toast({ title: 'Approval failed', variant: 'destructive' })
@@ -109,7 +108,7 @@ export default function AdminOrganizations() {
   const rejectMutation = useMutation({
     mutationFn: (orgId: number) => api.updateOrganization(orgId, { is_approved: false }),
     onSuccess: () => {
-      queryClient.invalidateQueries(['organizations']);
+      queryClient.invalidateQueries({ queryKey: ['organizations'] });
       toast({ title: 'Organization rejected', variant: 'success' });
     }
   });
@@ -117,7 +116,7 @@ export default function AdminOrganizations() {
   const suspendMutation = useMutation({
     mutationFn: (orgId: number) => api.suspendOrganization(orgId),
     onSuccess: () => {
-      queryClient.invalidateQueries(['organizations']);
+      queryClient.invalidateQueries({ queryKey: ['organizations'] });
       toast({ title: 'Organization suspended', variant: 'success' });
     }
   });
@@ -125,7 +124,7 @@ export default function AdminOrganizations() {
   const reactivateMutation = useMutation({
     mutationFn: (orgId: number) => api.reactivateOrganization(orgId),
     onSuccess: () => {
-      queryClient.invalidateQueries(['organizations']);
+      queryClient.invalidateQueries({ queryKey: ['organizations'] });
       toast({ title: 'Organization reactivated', variant: 'success' });
     }
   });
@@ -133,7 +132,7 @@ export default function AdminOrganizations() {
   const deleteMutation = useMutation({
     mutationFn: (orgId: number) => api.deleteOrganization(orgId),
     onSuccess: () => {
-      queryClient.invalidateQueries(['organizations']);
+      queryClient.invalidateQueries({ queryKey: ['organizations'] });
       toast({ title: 'Organization deleted', variant: 'success' });
     }
   });
@@ -398,7 +397,7 @@ export default function AdminOrganizations() {
                     )}
                   </TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {new Date(org.createdAt).toLocaleDateString()}
+                    {safeFormatDate(org.createdAt)}
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
