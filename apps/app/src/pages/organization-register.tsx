@@ -1,64 +1,79 @@
-import { useState, FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import api from '@/lib/api';
 import { Input } from '@/components/ui/input';
-import { toast } from '@/components/atoms/use-toast';
+import { toast } from 'sonner';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Building2 } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+
+const orgRegisterSchema = z
+  .object({
+    name: z.string().min(2, 'Organization name must be at least 2 characters'),
+    email: z.string().email('Please enter a valid email address'),
+    phone: z.string().min(5, 'Phone number is required'),
+    address: z.string().min(5, 'Address is required'),
+    description: z.string().optional(),
+    password: z
+      .string()
+      .min(8, 'Password must be at least 8 characters')
+      .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Password must include uppercase, lowercase, and a number'),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ['confirmPassword'],
+  });
+
+type OrgRegisterFormValues = z.infer<typeof orgRegisterSchema>;
 
 export default function OrganizationRegister() {
   const { t } = useTranslation();
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    address: '',
-    description: '',
-    password: '',
-    confirmPassword: ''
-  });
-
   const navigate = useNavigate();
 
-  const mutation = useMutation((data: any) => api.register(data), {
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors },
+  } = useForm<OrgRegisterFormValues>({
+    resolver: zodResolver(orgRegisterSchema),
+  });
+
+  const mutation = useMutation((data: OrgRegisterFormValues) => api.register({ ...data, role: 'organization' }), {
     onSuccess(response: any) {
-      // Check if organization registration is pending approval
       if (response?.status === 'pending') {
-        toast({
-          title: 'Application Submitted Successfully',
-          description: 'Your organization registration is under review. You will be notified once approved.'
-        });
+        toast.info(t('Your organization registration is under review. You will be notified once approved.'));
       } else {
-        toast({
-          title: 'Registration Successful',
-          description: response?.message || 'Welcome! You can now log in.'
-        });
+        toast.success(t('Registration Successful! Welcome! You can now log in.'));
       }
       navigate('/login');
     },
     onError(error: any) {
-      toast({
-        title: 'Registration failed',
-        description: error?.response?.data?.error?.message || 'Something went wrong'
-      });
-    }
+      const backendErrors = error?.response?.data?.error?.details?.errors;
+      if (Array.isArray(backendErrors)) {
+        backendErrors.forEach((err: any) => {
+          if (err.field && err.message) {
+            setError(err.field as any, {
+              type: 'manual',
+              message: err.rule === 'unique' ? t('This email is already registered') : t(err.message),
+            });
+          }
+        });
+        toast.error(t('Please fix the errors in the form.'));
+      } else {
+        toast.error(error?.response?.data?.error?.message || t('Registration failed. Please try again.'));
+      }
+    },
   });
 
-  const submit = (e: FormEvent) => {
-    e.preventDefault();
-    if (formData.password !== formData.confirmPassword) {
-      toast({ title: 'Passwords do not match' });
-      return;
-    }
-    // Add org specific flag or data structure if needed by backend
-    mutation.mutate({
-      ...formData,
-      role: 'organization' // Assuming backend handles role assignment
-    });
+  const onSubmit = (data: OrgRegisterFormValues) => {
+    mutation.mutate(data);
   };
 
   return (
@@ -73,63 +88,72 @@ export default function OrganizationRegister() {
             </p>
           </div>
 
-          <form onSubmit={submit} className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="name" className="font-bold text-foreground/80 px-1">{t('Organization Name')}</Label>
+              <Label htmlFor="name" className="font-bold text-foreground/80 px-1">
+                {t('Organization Name')}
+              </Label>
               <Input
                 id="name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                {...register('name')}
                 placeholder={t('e.g. Green Earth Initiative')}
-                required
-                className="h-12 bg-card/50 border-border/50 rounded-xl focus:bg-card transition-all"
+                className={`h - 12 bg - card / 50 border - border / 50 rounded - xl focus: bg - card transition - all ${errors.name ? 'border-red-500' : ''
+                  } `}
               />
+              {errors.name && <p className="text-xs text-red-500 ml-1 italic">{t(errors.name.message!)}</p>}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="email" className="font-bold text-foreground/80 px-1">{t('Email')}</Label>
+                <Label htmlFor="email" className="font-bold text-foreground/80 px-1">
+                  {t('Email')}
+                </Label>
                 <Input
                   id="email"
                   type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  {...register('email')}
                   placeholder="contact@org.com"
-                  required
-                  className="h-12 bg-card/50 border-border/50 rounded-xl focus:bg-card transition-all"
+                  className={`h - 12 bg - card / 50 border - border / 50 rounded - xl focus: bg - card transition - all ${errors.email ? 'border-red-500' : ''
+                    } `}
                 />
+                {errors.email && <p className="text-xs text-red-500 ml-1 italic">{t(errors.email.message!)}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone" className="font-bold text-foreground/80 px-1">{t('Phone')}</Label>
+                <Label htmlFor="phone" className="font-bold text-foreground/80 px-1">
+                  {t('Phone')}
+                </Label>
                 <Input
                   id="phone"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  {...register('phone')}
                   placeholder="+123..."
-                  required
-                  className="h-12 bg-card/50 border-border/50 rounded-xl focus:bg-card transition-all"
+                  className={`h - 12 bg - card / 50 border - border / 50 rounded - xl focus: bg - card transition - all ${errors.phone ? 'border-red-500' : ''
+                    } `}
                 />
+                {errors.phone && <p className="text-xs text-red-500 ml-1 italic">{t(errors.phone.message!)}</p>}
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="address" className="font-bold text-foreground/80 px-1">{t('Address')}</Label>
+              <Label htmlFor="address" className="font-bold text-foreground/80 px-1">
+                {t('Address')}
+              </Label>
               <Input
                 id="address"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                {...register('address')}
                 placeholder={t('123 Main St, City')}
-                required
-                className="h-12 bg-card/50 border-border/50 rounded-xl focus:bg-card transition-all"
+                className={`h - 12 bg - card / 50 border - border / 50 rounded - xl focus: bg - card transition - all ${errors.address ? 'border-red-500' : ''
+                  } `}
               />
+              {errors.address && <p className="text-xs text-red-500 ml-1 italic">{t(errors.address.message!)}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description" className="font-bold text-foreground/80 px-1">{t('Description')}</Label>
+              <Label htmlFor="description" className="font-bold text-foreground/80 px-1">
+                {t('Description')}
+              </Label>
               <Textarea
                 id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                {...register('description')}
                 placeholder={t('Tell us about your mission...')}
                 rows={3}
                 className="bg-card/50 border-border/50 rounded-xl focus:bg-card transition-all"
@@ -138,26 +162,32 @@ export default function OrganizationRegister() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="password" className="font-bold text-foreground/80 px-1">{t('Password')}</Label>
+                <Label htmlFor="password" className="font-bold text-foreground/80 px-1">
+                  {t('Password')}
+                </Label>
                 <Input
                   id="password"
                   type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  required
-                  className="h-12 bg-card/50 border-border/50 rounded-xl focus:bg-card transition-all"
+                  {...register('password')}
+                  className={`h - 12 bg - card / 50 border - border / 50 rounded - xl focus: bg - card transition - all ${errors.password ? 'border-red-500' : ''
+                    } `}
                 />
+                {errors.password && <p className="text-xs text-red-500 ml-1 italic">{t(errors.password.message!)}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword" className="font-bold text-foreground/80 px-1">{t('Confirm Password')}</Label>
+                <Label htmlFor="confirmPassword" className="font-bold text-foreground/80 px-1">
+                  {t('Confirm Password')}
+                </Label>
                 <Input
                   id="confirmPassword"
                   type="password"
-                  value={formData.confirmPassword}
-                  onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                  required
-                  className="h-12 bg-card/50 border-border/50 rounded-xl focus:bg-card transition-all"
+                  {...register('confirmPassword')}
+                  className={`h - 12 bg - card / 50 border - border / 50 rounded - xl focus: bg - card transition - all ${errors.confirmPassword ? 'border-red-500' : ''
+                    } `}
                 />
+                {errors.confirmPassword && (
+                  <p className="text-xs text-red-500 ml-1 italic">{t(errors.confirmPassword.message!)}</p>
+                )}
               </div>
             </div>
 
@@ -183,7 +213,11 @@ export default function OrganizationRegister() {
               </ul>
             </div>
 
-            <Button type="submit" className="w-full h-14 rounded-2xl shadow-xl shadow-primary/20 font-bold text-lg" disabled={mutation.isLoading}>
+            <Button
+              type="submit"
+              className="w-full h-14 rounded-2xl shadow-xl shadow-primary/20 font-bold text-lg"
+              disabled={mutation.isLoading}
+            >
               {mutation.isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
