@@ -1,19 +1,27 @@
-import { useState, useEffect, FormEvent } from 'react';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import api from '@/lib/api';
 import { Input } from '@/components/ui/input';
-import { toast } from '@/components/atoms/use-toast';
+import { toast } from 'sonner';
 import { useLocation, Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+
+const loginSchema = z.object({
+  email: z.string().email('Please enter a valid email address'),
+  password: z.string().min(1, 'Password is required'),
+});
+
+type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function Login() {
   const { t } = useTranslation();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const { setToken, setUser } = useStore();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -36,7 +44,15 @@ export default function Login() {
     }
   }, [token, returnTo, navigate]);
 
-  const mutation = useMutation((credentials: any) => api.login(credentials), {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+  });
+
+  const mutation = useMutation((credentials: LoginFormValues) => api.login(credentials), {
     async onSuccess(data) {
       const token = (data as any)?.token?.token;
       if (token) {
@@ -51,11 +67,7 @@ export default function Login() {
         // Invalidate the 'me' query to force AppProvider to refetch user data
         queryClient.invalidateQueries(['me']);
 
-        try {
-          toast({ title: 'Welcome back!', description: 'You have successfully signed in.' });
-        } catch (e) {
-          console.warn('Unable to show toast', e);
-        }
+        toast.success(t('Welcome back! You have successfully signed in.'));
 
         // Determine redirect target. Prefer explicit returnTo param when valid.
         let target = '/';
@@ -99,16 +111,12 @@ export default function Login() {
       }
     },
     onError(error: any) {
-      toast({
-        title: 'Authentication failed',
-        description: error?.response?.data?.error?.message || 'Invalid email or password'
-      });
-    }
+      toast.error(error?.response?.data?.error?.message || t('Invalid email or password'));
+    },
   });
 
-  const submit = (e: FormEvent) => {
-    e.preventDefault();
-    mutation.mutate({ email, password });
+  const onSubmit = (data: LoginFormValues) => {
+    mutation.mutate(data);
   };
 
   return (
@@ -123,7 +131,7 @@ export default function Login() {
             </p>
           </div>
 
-          <form onSubmit={submit} className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="space-y-2">
               <Label
                 htmlFor="email"
@@ -133,14 +141,15 @@ export default function Login() {
               </Label>
               <Input
                 id="email"
-                name="email"
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                {...register('email')}
                 placeholder="name@example.com"
-                required
-                className="h-12 bg-slate-50 dark:bg-slate-900 border-border/50 rounded-lg focus:bg-background transition-all"
+                className={`h-12 bg-slate-50 dark:bg-slate-900 border-border/50 rounded-lg focus:bg-background transition-all ${errors.email ? 'border-red-500 focus-visible:ring-red-500' : ''
+                  }`}
               />
+              {errors.email && (
+                <p className="text-xs font-medium text-red-500 ml-1 italic">{t(errors.email.message!)}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -160,14 +169,15 @@ export default function Login() {
               </div>
               <Input
                 id="password"
-                name="password"
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                {...register('password')}
                 placeholder="••••••••"
-                required
-                className="h-12 bg-slate-50 dark:bg-slate-900 border-border/50 rounded-lg focus:bg-background transition-all"
+                className={`h-12 bg-slate-50 dark:bg-slate-900 border-border/50 rounded-lg focus:bg-background transition-all ${errors.password ? 'border-red-500 focus-visible:ring-red-500' : ''
+                  }`}
               />
+              {errors.password && (
+                <p className="text-xs font-medium text-red-500 ml-1 italic">{t(errors.password.message!)}</p>
+              )}
             </div>
 
             <Button
