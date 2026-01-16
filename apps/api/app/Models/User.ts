@@ -93,6 +93,15 @@ export default class User extends BaseModel {
   @column.dateTime({ columnName: 'email_verified_at' })
   public emailVerifiedAt?: DateTime
 
+  @column({ columnName: 'verification_token' })
+  public verificationToken?: string | null
+
+  @column({ columnName: 'password_reset_token' })
+  public passwordResetToken?: string | null
+
+  @column.dateTime({ columnName: 'password_reset_expires_at' })
+  public passwordResetExpiresAt?: DateTime | null
+
   @hasMany(() => CarpoolingAd)
   public carpoolingAds: HasMany<typeof CarpoolingAd>
 
@@ -148,9 +157,9 @@ export default class User extends BaseModel {
     if (this.isAdmin) return true
     
     // Load roles and their permissions
-    const roles = await this.related('roles').query().preload('permissions' as any)
+    const roles = await (this as any).related('roles').query().preload('permissions')
     
-    return roles.some((role: any) => {
+    return (roles as any[]).some((role: any) => {
       if (!role.permissions) return false
       return role.permissions.some((p: any) => p.name === permission)
     })
