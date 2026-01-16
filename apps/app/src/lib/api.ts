@@ -10,7 +10,19 @@ const api = {
     return axios.post('/login', credentials, { _suppressError: true });
   },
   register: async (data: any): Promise<LoginDTO | null> => {
-    return axios.post('/register', data);
+    return axios.post('/register', data, { _suppressError: true });
+  },
+  verifyEmail: async (token: string) => {
+    return axios.get(`/verify-email/${token}`);
+  },
+  resendVerification: async () => {
+    return axios.post('/verify-email/resend');
+  },
+  forgotPassword: async (email: string) => {
+    return axios.post('/forgot-password', { email });
+  },
+  resetPassword: async (data: any) => {
+    return axios.post('/reset-password', data);
   },
   logout: async () => {
     return axios.post('/logout');
