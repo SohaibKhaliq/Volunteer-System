@@ -22,9 +22,12 @@ export function showApiError(err: any, title = 'Error') {
       }
     }
 
-    // Show a friendly toast; use destructive variant for HTTP errors
-    const variant = err?.response?.status && err.response.status >= 400 ? 'destructive' : undefined;
-    toast({ title, description: message, variant });
+    // Show a friendly toast
+    if (err?.response?.status && err.response.status >= 400) {
+      toast.error(message);
+    } else {
+      toast.success(message);
+    }
   } catch (e) {
     // best-effort; don't crash
     console.warn('showApiError failed', e);
