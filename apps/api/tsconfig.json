@@ -24,7 +24,8 @@
       "@adonisjs/drive-s3",
       "@adonisjs/route-model-binding/build/adonis-typings",
       "@adonisjs/limiter",
-      "@adonisjs/redis"
+      "@adonisjs/redis",
+      "@adonisjs/view"
     ]
   }
 }
