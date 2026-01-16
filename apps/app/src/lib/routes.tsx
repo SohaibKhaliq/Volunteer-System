@@ -14,6 +14,8 @@ import Map from '@/pages/map';
 import Logout from '@/pages/logout';
 import Organizations from '@/pages/organizations';
 import OrganizationRegister from '@/pages/organization-register';
+import ForgotPassword from '@/pages/ForgotPassword';
+import ResetPassword from '@/pages/ResetPassword';
 import TransportOfferForm from '@/pages/transport-offer-form';
 import TransportRequestForm from '@/pages/transport-request-form';
 import Profile from '@/pages/profile';
@@ -113,6 +115,7 @@ import VolunteerSettings from '@/pages/volunteer/settings';
 import VolunteerCompliance from '@/pages/volunteer/compliance';
 import OrganizationRouter from '@/components/OrganizationRouter';
 import VerifyCertificate from '@/pages/verify';
+import VerifyEmail from '@/pages/VerifyEmail';
 import OrganizationCertificates from '@/pages/organization/certificates';
 import OrganizationTraining from '@/pages/organization/training';
 import VolunteerCertificates from '@/pages/volunteer/certificates';
@@ -243,6 +246,8 @@ const routes: RouteObject[] = [
       { path: 'login', element: <Login /> },
       { path: 'logout', element: <Logout /> },
       { path: 'register', element: <Register /> },
+      { path: 'forgot-password', element: <ForgotPassword /> },
+      { path: 'reset-password', element: <ResetPassword /> },
       { path: 'map', element: <Map /> },
       { path: 'organizations', element: <Organizations /> },
       { path: 'organizations/register', element: <OrganizationRegister /> },
@@ -279,6 +284,7 @@ const routes: RouteObject[] = [
       { path: 'opportunities/:id', element: <Detail /> },
       { path: 'events/:id', element: <Detail /> },
       { path: 'verify/:id', element: <VerifyCertificate /> },
+      { path: 'verify-email/:token', element: <VerifyEmail /> },
       // Reactivated Orphans (Public/Shared)
       { path: 'centrelink-reporting', element: <CentrelinkReporting /> },
       { path: 'organizations/:id', element: <OrganizationRouter /> },
