@@ -38,5 +38,13 @@ export default Env.rules({
   REDIS_CONNECTION: Env.schema.enum(['local'] as const),
   REDIS_HOST: Env.schema.string({ format: 'host' }),
   REDIS_PORT: Env.schema.number(),
-  REDIS_PASSWORD: Env.schema.string.optional()
+  REDIS_PASSWORD: Env.schema.string.optional(),
+
+  MAIL_HOST: Env.schema.string(),
+  MAIL_PORT: Env.schema.number(),
+  MAIL_USER: Env.schema.string(),
+  MAIL_PASSWORD: Env.schema.string(),
+  MAIL_FROM: Env.schema.string(),
+  MAIL_SECURE: Env.schema.boolean.optional(),
+  FRONTEND_URL: Env.schema.string()
 })
