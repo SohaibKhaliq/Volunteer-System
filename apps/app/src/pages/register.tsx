@@ -1,61 +1,81 @@
-import { useState, FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import api from '@/lib/api';
 import { Input } from '@/components/ui/input';
-import { toast } from '@/components/atoms/use-toast';
+import { toast } from 'sonner';
 import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+
+const registerSchema = z.object({
+  firstName: z.string().min(2, 'First name must be at least 2 characters'),
+  lastName: z.string().min(2, 'Last name must be at least 2 characters'),
+  email: z.string().email('Please enter a valid email address'),
+  password: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, 'Password must include uppercase, lowercase, and a number'),
+});
+
+type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function Register() {
   const { t } = useTranslation();
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const { setToken, setUser } = useStore();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
-  const mutation = useMutation((data: any) => api.register(data), {
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors },
+  } = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
+  });
+
+  const mutation = useMutation((data: RegisterFormValues) => api.register(data), {
     onSuccess(data) {
       const token = (data as any)?.token?.token;
       if (token) {
         setToken(token);
-
-        // Update user in store if available in response
         const userData = (data as any)?.user;
         if (userData) {
           setUser(userData);
         }
-
-        // Invalidate the 'me' query to force AppProvider to refetch user data
         queryClient.invalidateQueries(['me']);
-
-        try {
-          toast({ title: 'Account created!', description: 'Welcome to Local Aid.' });
-        } catch (e) { }
+        toast.success(t('Account created! Welcome to Local Aid.'));
         navigate('/');
       } else {
-        // maybe email verification required?
-        toast({ title: 'Registration successful', description: 'Please check your email to verify your account.' });
+        toast.success(t('Account created! Please check your email to verify your account.'));
         navigate('/login');
       }
     },
     onError(error: any) {
-      toast({
-        title: 'Registration failed',
-        description: error?.response?.data?.error?.message || 'Something went wrong'
-      });
-    }
+      const backendErrors = error?.response?.data?.error?.details?.errors;
+      if (Array.isArray(backendErrors)) {
+        backendErrors.forEach((err: any) => {
+          if (err.field && err.message) {
+            setError(err.field as any, {
+              type: 'manual',
+              message: err.rule === 'unique' ? t('This email is already registered') : t(err.message),
+            });
+          }
+        });
+        toast.error(t('Please fix the errors in the form.'));
+      } else {
+        toast.error(error?.response?.data?.error?.message || t('Registration failed. Please try again.'));
+      }
+    },
   });
 
-  const submit = (e: FormEvent) => {
-    e.preventDefault();
-    mutation.mutate({ firstName, lastName, email, password });
+  const onSubmit = (data: RegisterFormValues) => {
+    mutation.mutate(data);
   };
 
   return (
@@ -70,66 +90,92 @@ export default function Register() {
             </p>
           </div>
 
-          <form onSubmit={submit} className="space-y-5">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="firstName" className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">{t('First name')}</Label>
+                <Label
+                  htmlFor="firstName"
+                  className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1"
+                >
+                  {t('First name')}
+                </Label>
                 <Input
                   id="firstName"
-                  name="firstName"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
+                  {...register('firstName')}
                   placeholder="John"
-                  required
-                  className="h-12 bg-slate-50 dark:bg-slate-900 border-border/50 rounded-lg focus:bg-background transition-all"
+                  className={`h-12 bg-slate-50 dark:bg-slate-900 border-border/50 rounded-lg focus:bg-background transition-all ${errors.firstName ? 'border-red-500 focus-visible:ring-red-500' : ''
+                    }`}
                 />
+                {errors.firstName && (
+                  <p className="text-xs font-medium text-red-500 ml-1 italic">{t(errors.firstName.message!)}</p>
+                )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="lastName" className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">{t('Last name')}</Label>
+                <Label
+                  htmlFor="lastName"
+                  className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1"
+                >
+                  {t('Last name')}
+                </Label>
                 <Input
                   id="lastName"
-                  name="lastName"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
+                  {...register('lastName')}
                   placeholder="Doe"
-                  required
-                  className="h-12 bg-slate-50 dark:bg-slate-900 border-border/50 rounded-lg focus:bg-background transition-all"
+                  className={`h-12 bg-slate-50 dark:bg-slate-900 border-border/50 rounded-lg focus:bg-background transition-all ${errors.lastName ? 'border-red-500 focus-visible:ring-red-500' : ''
+                    }`}
                 />
+                {errors.lastName && (
+                  <p className="text-xs font-medium text-red-500 ml-1 italic">{t(errors.lastName.message!)}</p>
+                )}
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">{t('Email')}</Label>
+              <Label htmlFor="email" className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">
+                {t('Email')}
+              </Label>
               <Input
                 id="email"
-                name="email"
                 type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                {...register('email')}
                 placeholder="name@example.com"
-                required
-                className="h-12 bg-slate-50 dark:bg-slate-900 border-border/50 rounded-lg focus:bg-background transition-all"
+                className={`h-12 bg-slate-50 dark:bg-slate-900 border-border/50 rounded-lg focus:bg-background transition-all ${errors.email ? 'border-red-500 focus-visible:ring-red-500' : ''
+                  }`}
               />
+              {errors.email && (
+                <p className="text-xs font-medium text-red-500 ml-1 italic">{t(errors.email.message!)}</p>
+              )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1">{t('Password')}</Label>
+              <Label
+                htmlFor="password"
+                className="text-xs font-black uppercase tracking-widest text-muted-foreground ml-1"
+              >
+                {t('Password')}
+              </Label>
               <Input
                 id="password"
-                name="password"
                 type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                {...register('password')}
                 placeholder={t('Create a password')}
-                required
-                className="h-12 bg-slate-50 dark:bg-slate-900 border-border/50 rounded-lg focus:bg-background transition-all"
+                className={`h-12 bg-slate-50 dark:bg-slate-900 border-border/50 rounded-lg focus:bg-background transition-all ${errors.password ? 'border-red-500 focus-visible:ring-red-500' : ''
+                  }`}
               />
-              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
-                {t('Must be at least 8 characters long')}
-              </p>
+              {errors.password ? (
+                <p className="text-xs font-medium text-red-500 ml-1 italic">{t(errors.password.message!)}</p>
+              ) : (
+                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+                  {t('Must be at least 8 characters long')}
+                </p>
+              )}
             </div>
 
-            <Button type="submit" className="w-full h-14 rounded-md shadow-xl shadow-primary/20 font-bold text-lg" disabled={mutation.isLoading}>
+            <Button
+              type="submit"
+              className="w-full h-14 rounded-md shadow-xl shadow-primary/20 font-bold text-lg"
+              disabled={mutation.isLoading}
+            >
               {mutation.isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-5 w-5 animate-spin" />
