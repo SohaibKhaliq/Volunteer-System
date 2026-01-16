@@ -210,6 +210,9 @@ Route.post('/ai/forecast', 'AiController.forecast') // returns demand forecast f
 // Public Authentication Routes
 Route.post('/register', 'AuthController.register')
 Route.post('/login', 'AuthController.login')
+Route.get('/verify-email/:token', 'AuthController.verify')
+Route.post('/forgot-password', 'AuthController.forgotPassword')
+Route.post('/reset-password', 'AuthController.resetPassword')
 
 // Contact Form (Public)
 Route.post('/contact', 'ContactController.store')
@@ -219,6 +222,7 @@ Route.group(() => {
   Route.post('/logout', 'AuthController.logout')
   Route.get('/me', 'AuthController.me')
   Route.post('/refresh', 'AuthController.refresh')
+  Route.post('/verify-email/resend', 'AuthController.resendVerification')
 }).middleware('auth:api')
 
 // User Preferences Routes
