@@ -50,6 +50,8 @@ function useToast() {
 const toast = Object.assign(baseToast, {
   success: (message: string, opts?: ToastOptions) => sonnerToast.success(message, opts),
   error: (message: string, opts?: ToastOptions) => sonnerToast.error(message, opts),
+  info: (message: string, opts?: ToastOptions) => sonnerToast.info(message, opts),
+  warning: (message: string, opts?: ToastOptions) => sonnerToast.warning(message, opts),
   custom: (renderer: any, opts?: ToastOptions) => sonnerToast.custom(renderer, opts as any)
 });
 
