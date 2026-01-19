@@ -16,7 +16,7 @@ export default limiterConfig({
   | The default store for persisting rate limiter data
   |
   */
-  default: 'redis',
+  default: 'db',
 
   /*
   |--------------------------------------------------------------------------
@@ -30,29 +30,18 @@ export default limiterConfig({
   stores: {
     /*
     |--------------------------------------------------------------------------
-    | Redis
+    | Database (MySQL)
     |--------------------------------------------------------------------------
     |
-    | The redis store uses "@adonisjs/redis" package for communicating with a
-    | redis database. Make sure to install and configure the redis package
-    | first.
-    |
-    | npm i @adonisjs/redis
+    | The db store uses your default database connection to store rate limits.
+    | Ensure you have run the rate_limits migration.
     |
     */
-    redis: {
-      client: 'redis',
-
-      /*
-      |--------------------------------------------------------------------------
-      | Redis connection
-      |--------------------------------------------------------------------------
-      |
-      | The connection config is defined inside the "config/redis.ts" file. In
-      | this file, you just have to reference the connection name.
-      |
-      */
-      connectionName: 'local'
+    db: {
+      client: 'db',
+      dbName: 'mysql',
+      connectionName: 'mysql',
+      tableName: 'rate_limits'
     }
   }
 })

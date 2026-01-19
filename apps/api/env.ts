@@ -35,11 +35,6 @@ export default Env.rules({
   S3_REGION: Env.schema.string(),
   S3_ENDPOINT: Env.schema.string.optional(),
 
-  REDIS_CONNECTION: Env.schema.enum(['local'] as const),
-  REDIS_HOST: Env.schema.string({ format: 'host' }),
-  REDIS_PORT: Env.schema.number(),
-  REDIS_PASSWORD: Env.schema.string.optional(),
-
   MAIL_HOST: Env.schema.string(),
   MAIL_PORT: Env.schema.number(),
   MAIL_USER: Env.schema.string(),
