@@ -83,7 +83,8 @@ export default function AdminUsers() {
   // Users Query (React Query v4 Syntax)
   const { data: usersRes, isLoading } = useQuery({
     queryKey: ['users', debouncedSearch, statusFilter, page, perPage],
-    queryFn: () => api.listUsersPaged(debouncedSearch, page, perPage, statusFilter === 'all' ? undefined : statusFilter),
+    queryFn: () =>
+      api.listUsersPaged(debouncedSearch, page, perPage, statusFilter === 'all' ? undefined : statusFilter),
     keepPreviousData: true
   });
 
@@ -337,7 +338,7 @@ export default function AdminUsers() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-lg shadow-sm">
+      <div className="bg-white rounded-lg shadow-sm overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -377,10 +378,10 @@ export default function AdminUsers() {
                     <div className="flex flex-wrap gap-1">
                       {user.roles?.length
                         ? user.roles.map((role) => (
-                          <Badge key={role.id} variant="outline">
-                            {role.name}
-                          </Badge>
-                        ))
+                            <Badge key={role.id} variant="outline">
+                              {role.name}
+                            </Badge>
+                          ))
                         : 'No roles'}
                     </div>
                   </TableCell>
@@ -428,10 +429,7 @@ export default function AdminUsers() {
                         <DropdownMenuSeparator />
 
                         {user.isActive ? (
-                          <DropdownMenuItem
-                            className="text-orange-600"
-                            onClick={() => disableMutation.mutate(user.id)}
-                          >
+                          <DropdownMenuItem className="text-orange-600" onClick={() => disableMutation.mutate(user.id)}>
                             <Ban className="h-4 w-4 mr-2" />
                             Disable Account
                           </DropdownMenuItem>
