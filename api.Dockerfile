@@ -1,18 +1,15 @@
 ARG NODE_IMAGE=node:22-alpine
 
-# Stage 1: Build
+# Stage 1: Build Stage
 FROM $NODE_IMAGE AS build
 RUN npm install -g pnpm
 WORKDIR /app
 COPY . .
 RUN pnpm install --frozen-lockfile
+# Compile AdonisJS 6 (Compiles to apps/api/build)
 RUN pnpm run --filter api build
 
-# Stage 2: Prune for production
-# Added --legacy flag to bypass pnpm v10 strict workspace injection requirements
-RUN pnpm --filter api --prod deploy --legacy /prod/api
-
-# Stage 3: Runtime
+# Stage 2: Production Stage
 FROM $NODE_IMAGE AS production
 RUN apk --no-cache add dumb-init
 ENV NODE_ENV=production
@@ -21,13 +18,18 @@ ENV HOST=0.0.0.0
 
 WORKDIR /app
 
-# Copy the pruned package (prod deps)
-COPY --from=build /prod/api .
+# 1. Copy only the production-ready package files
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/api/package.json ./apps/api/package.json
 
-# Copy the actual build folder (compiled JS)
+# 2. Install ONLY production dependencies
+RUN npm install -g pnpm && pnpm install --prod --frozen-lockfile
+
+# 3. Copy the compiled build from the build stage
+# We place it in the root so the paths match our CMD
 COPY --from=build /app/apps/api/build ./build
 
 EXPOSE 8080
 
-# AdonisJS 6 entrypoint
+# AdonisJS 6 entrypoint is ALWAYS in build/bin/server.js
 CMD [ "dumb-init", "node", "build/bin/server.js" ]

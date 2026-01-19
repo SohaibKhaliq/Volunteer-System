@@ -39,8 +39,10 @@ steps:
       - '--region'
       - 'us-central1'
       - '--set-env-vars'
-      - 'HOST=0.0.0.0,NODE_ENV=production' # Vital for health checks
+      - 'HOST=0.0.0.0,NODE_ENV=production,APP_KEY=${_APP_KEY}'
       - '--allow-unauthenticated'
+      - '--update-env-vars'
+      - 'HOST=0.0.0.0,NODE_ENV=production,APP_KEY=${_APP_KEY}'
 
   # 5. Deploy Frontend
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -60,3 +62,4 @@ options:
 
 substitutions:
   _API_URL: 'https://api.localaid.site'
+  _APP_KEY: 'DTJ0jvV5LWyqDoAoGsmdZziBISnNGDji'
