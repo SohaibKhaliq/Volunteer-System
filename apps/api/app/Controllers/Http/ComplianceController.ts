@@ -8,12 +8,21 @@ import ComplianceService from 'App/Services/ComplianceService'
 export default class ComplianceController {
   public async index({ auth, response }: HttpContextContract) {
     const user = auth.user!
-    const docs = await ComplianceDocument.query().where('user_id', user.id).preload('user')
+    let query = ComplianceDocument.query().preload('user').preload('organization')
+
+    if (!user.isAdmin) {
+      // For non-system admins, we might want to show documents for their organization if they are an org admin
+      // But for now, let's stick to the request: if not admin, show own.
+      // However, if we want this to work for Org panel too, we'd need more logic.
+      // Given the Admin panel issue, this fix is specifically for system admins.
+      query = query.where('user_id', user.id)
+    }
+
+    const docs = await query
     return response.ok(docs)
   }
 
-  public async getTypes({ auth, response }: HttpContextContract) {
-    const user = auth.user!
+  public async getTypes({ response }: HttpContextContract) {
 
     // 1. System Defaults
     const systemTypes = [
@@ -42,20 +51,7 @@ export default class ComplianceController {
 
     const orgTypes = reqs.map((r) => ({
       label: `${r.name} (${r.organization?.name || 'Org Requirement'})`,
-      value: r.id.toString(), // Use ID as value for specific requirements, or we can use a composite key
-      // actually, to keep it simple for the "doc_type" column which is string:
-      // if it's a known type (like 'certification'), we might want to group it.
-      // But the user request implies "dynamic types" appearing in the dropdown.
-      // So we will use the requirement name as the type, or a special prefix.
-      // Let's use "req_<id>" and store the link in metadata, OR just use the 'docType' field
-      // of the requirement if it aligns with system types.
-      //
-      // BETTER APPROACH: The Requirement entity defines *what* is needed.
-      // The `docType` in the dropdown should probably be the *kind* of document (e.g. "Certificate").
-      // But the user wants "Types... defined by Admin and Organization".
-      // So we will return specific requirement names as selectable "Types".
       value: `req_${r.id}`,
-      originalType: r.docType,
       isMandatory: r.isMandatory,
       source: r.organization?.name || 'Organization'
     }))
@@ -99,15 +95,15 @@ export default class ComplianceController {
       const user = auth.user!
       // Basic payload
       const payload = request.only([
-        // 'user_id', // Don't allow setting arbitrary user_id
         'doc_type',
         'issued_at',
         'expires_at',
         'wwcc_number',
         'wwcc_state',
         'organization_id',
-        'target_user_id'
-      ])
+        'target_user_id',
+        'user_id'
+      ]) as any
 
       // Step 1: Resolve Organization Context
       const OrganizationTeamMember = (await import('App/Models/OrganizationTeamMember')).default
@@ -117,7 +113,7 @@ export default class ComplianceController {
 
       const providedOrgId = payload.organization_id || payload.organizationId || null
 
-      if (!providedOrgId) {
+      if (!providedOrgId && !user.isAdmin) {
         if (memberships.length === 0) {
           return response.badRequest({ error: 'No organization associated with this user.' })
         }
@@ -129,11 +125,13 @@ export default class ComplianceController {
       }
 
       // If organization id not provided but user has single membership, use that org
-      const resolvedOrgId = providedOrgId ? Number(providedOrgId) : memberships[0].organizationId
+      const resolvedOrgId = providedOrgId ? Number(providedOrgId) : (memberships.length === 1 ? memberships[0].organizationId : null)
 
-      // Validate organization exists
-      const org = await OrganizationModel.find(resolvedOrgId)
-      if (!org) return response.badRequest({ error: 'Provided organization not found.' })
+      // Validate organization exists if provided
+      if (resolvedOrgId) {
+        const org = await OrganizationModel.find(resolvedOrgId)
+        if (!org) return response.badRequest({ error: 'Provided organization not found.' })
+      }
 
       // Validate user belongs to organization (membership may not exist if volunteer only)
       const membership = memberships.find((m) => m.organizationId === Number(resolvedOrgId)) || null
@@ -141,7 +139,9 @@ export default class ComplianceController {
       // Step 2: Resolve User Role (Authorization Gate)
       // Roles: ADMIN, ORGANIZATION_MEMBER, VOLUNTEER
       let role: 'ADMIN' | 'ORGANIZATION_MEMBER' | 'VOLUNTEER' = 'VOLUNTEER'
-      if (membership) {
+      if (user.isAdmin) {
+        role = 'ADMIN'
+      } else if (membership) {
         const r = String(membership.role || '').toLowerCase()
         if (r.includes('admin') || r.includes('owner')) role = 'ADMIN'
         else role = 'ORGANIZATION_MEMBER'
@@ -173,7 +173,7 @@ export default class ComplianceController {
       }
 
       // Determine target user (who the document is for)
-      const targetUserId = payload.target_user_id || payload.targetUserId || null
+      const targetUserId = payload.target_user_id || payload.targetUserId || payload.user_id || null
 
       // Validation rules
       if (role === 'VOLUNTEER') {
@@ -214,8 +214,8 @@ export default class ComplianceController {
 
       if (role === 'ADMIN') {
         // Admins can upload organization-wide docs and volunteer docs on behalf of others
-        // Ensure organization_id is provided (admins must specify scope)
-        if (!resolvedOrgId) {
+        // Ensure organization_id is provided (admins must specify scope) if not Super Admin
+        if (!resolvedOrgId && !user.isAdmin) {
           return response.badRequest({ error: 'organization_id is required for admin uploads.' })
         }
       }
@@ -309,7 +309,8 @@ export default class ComplianceController {
     const doc = await ComplianceDocument.find(params.id)
     if (!doc) return response.notFound()
 
-    if (doc.userId !== auth.user!.id) {
+    const user = auth.user!
+    if (!user.isAdmin && doc.userId !== user.id) {
       return response.forbidden({ message: 'Access denied' })
     }
 
@@ -333,7 +334,9 @@ export default class ComplianceController {
 
       // Resolve role relative to this document/org
       let role: 'ADMIN' | 'ORGANIZATION_MEMBER' | 'VOLUNTEER' = 'VOLUNTEER'
-      if (membershipForDoc) {
+      if (user.isAdmin) {
+        role = 'ADMIN'
+      } else if (membershipForDoc) {
         const r = String(membershipForDoc.role || '').toLowerCase()
         if (r.includes('admin') || r.includes('owner')) role = 'ADMIN'
         else role = 'ORGANIZATION_MEMBER'
@@ -411,7 +414,13 @@ export default class ComplianceController {
       // Reset status to pending on update
       incoming['status'] = 'pending'
 
-      doc.merge(incoming)
+      doc.merge({
+        docType: incoming.doc_type,
+        issuedAt: incoming.issued_at,
+        expiresAt: incoming.expires_at,
+        metadata: incoming['metadata'],
+        status: incoming['status']
+      } as any)
       await doc.save()
       return response.ok(doc)
     } catch (err) {
@@ -434,7 +443,9 @@ export default class ComplianceController {
     const membershipForDoc = memberships.find((m) => m.organizationId === Number(docOrgId)) || null
 
     let role: 'ADMIN' | 'ORGANIZATION_MEMBER' | 'VOLUNTEER' = 'VOLUNTEER'
-    if (membershipForDoc) {
+    if (user.isAdmin) {
+      role = 'ADMIN'
+    } else if (membershipForDoc) {
       const r = String(membershipForDoc.role || '').toLowerCase()
       if (r.includes('admin') || r.includes('owner')) role = 'ADMIN'
       else role = 'ORGANIZATION_MEMBER'
@@ -481,9 +492,16 @@ export default class ComplianceController {
     return response.ok({ message: 'Compliance reminder sent' })
   }
 
-  public async file({ params, response }: HttpContextContract) {
+  public async file({ auth, params, response }: HttpContextContract) {
     const doc = await ComplianceDocument.find(params.id)
     if (!doc) return response.notFound()
+
+    const user = auth.user!
+    if (!user.isAdmin && doc.userId !== user.id) {
+      // Also allow if it's an organization document and user is org admin
+      // This part is simplified, system admins are covered.
+      return response.forbidden({ message: 'Access denied to this file' })
+    }
 
     const metadata = doc.metadata || {}
     const fileMeta = metadata.file
