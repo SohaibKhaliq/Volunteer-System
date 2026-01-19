@@ -22,7 +22,7 @@ COPY --chown=node:node . .
 FROM dependencies AS build
 
 RUN pnpm install --frozen-lockfile
-RUN pnpm build
+RUN pnpm run --filter api build
 
 RUN ls -la ./apps/api/build
 
