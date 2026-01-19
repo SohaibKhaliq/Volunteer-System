@@ -29,16 +29,12 @@ export default class extends BaseSchema {
     this.schema.createTable(this.tableNameTeamRequirements, (table) => {
       table.increments('id')
       table.integer('team_id').unsigned().references('id').inTable('teams').onDelete('CASCADE')
-      table.integer('template_id').unsigned().references('id').inTable('certificate_templates').onDelete('CASCADE')
       
       /**
        * Uses timestamptz for PostgreSQL and DATETIME2 for MSSQL
        */
       table.timestamp('created_at', { useTz: true })
       table.timestamp('updated_at', { useTz: true })
-
-      // Prevent duplicate requirements for same cert on same team
-      table.unique(['team_id', 'template_id'])
     })
   }
 
