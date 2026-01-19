@@ -31,5 +31,5 @@ COPY --from=build /app/apps/api/build ./build
 
 EXPOSE 8080
 
-# AdonisJS 6 entrypoint is ALWAYS in build/bin/server.js
-CMD [ "dumb-init", "node", "build/bin/server.js" ]
+# AdonisJS 5 entrypoint is in build/server.js
+CMD [ "dumb-init", "node", "build/server.js" ]
