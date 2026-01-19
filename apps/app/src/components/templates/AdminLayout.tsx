@@ -214,7 +214,6 @@ export default function AdminLayout() {
       title: 'Safety & Compliance',
       items: [
         { path: '/admin/compliance', icon: Shield, label: 'Compliance' },
-        { path: '/admin/certificate-templates', icon: Award, label: 'Certificate Templates' },
         { path: '/admin/certifications', icon: Award, label: 'Certifications' },
         { path: '/admin/background-checks', icon: ClipboardCheck, label: 'Background Checks', showBadge: true }
       ]
@@ -268,7 +267,7 @@ export default function AdminLayout() {
       <div className="min-h-screen bg-gray-50">
         <div className="flex">
           {/* Sidebar */}
-          <aside className="w-64 bg-white border-r border-gray-200 sticky top-0 bottom-0 flex flex-col min-h-0 overflow-hidden">
+          <aside className="w-64 flex-shrink-0 bg-white border-r border-gray-200 sticky top-0 bottom-0 flex flex-col min-h-0 overflow-hidden">
             <div className="p-6 border-b border-gray-200">
               <div className="flex items-center gap-2">
                 {settings?.find((s: any) => s.key === 'logo_url')?.value && (
@@ -289,7 +288,7 @@ export default function AdminLayout() {
               </p>
             </div>
 
-            <nav className="flex-1 p-4 space-y-1 overflow-y-auto min-h-0">
+            <nav className="flex-1 p-4 space-y-1 min-h-0">
               {sidebarGroups.map((group) => (
                 <div key={group.title ?? 'group'}>
                   {group.title && (
@@ -315,7 +314,7 @@ export default function AdminLayout() {
                         )}
                       >
                         <Icon className={cn('h-5 w-5', isActive ? 'text-blue-700' : 'text-gray-500')} />
-                        <span className="flex-1">{item.label}</span>
+                        <span className="flex-1 truncate">{item.label}</span>
                         {item.showBadge ? (
                           // make the badge itself navigable to a filtered, actionable page
                           <button
