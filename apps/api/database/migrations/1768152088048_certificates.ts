@@ -9,7 +9,6 @@ export default class extends BaseSchema {
       table.string('uuid').notNullable().unique().index()
       table.integer('user_id').unsigned().references('id').inTable('users').onDelete('CASCADE')
       table.integer('organization_id').unsigned().references('id').inTable('organizations').onDelete('CASCADE')
-      table.integer('template_id').unsigned().references('id').inTable('certificate_templates').onDelete('RESTRICT')
       table.integer('module_id').unsigned().nullable().references('id').inTable('training_modules').onDelete('SET NULL')
       table.timestamp('issued_at', { useTz: true }).defaultTo(this.now())
       table.enum('status', ['active', 'revoked']).defaultTo('active')
