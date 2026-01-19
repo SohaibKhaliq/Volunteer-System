@@ -234,7 +234,6 @@ Route.group(() => {
   Route.delete('/training-modules/:id', 'TrainingModulesController.destroy').middleware(['auth'])
 
   // Certificates Issuance
-  Route.get('/certificate-templates', 'CertificateTemplatesController.index').middleware(['auth'])
   Route.get('/certificates', 'CertificatesController.issuedByOrganization').middleware(['auth'])
   Route.post('/certificates', 'CertificatesController.issue').middleware(['auth'])
   Route.post('/certificates/:id/revoke', 'CertificatesController.revoke').middleware(['auth'])
