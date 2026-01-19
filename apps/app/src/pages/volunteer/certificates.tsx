@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { Award, Download, FileText, CheckCircle, Clock, BookOpen, ExternalLink, ShieldCheck } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { Progress } from '@/components/ui/progress';
 import { useTranslation } from 'react-i18next';
 
 export default function VolunteerCertificates() {
@@ -168,7 +167,7 @@ export default function VolunteerCertificates() {
                       </Badge>
                     </div>
                     <CardTitle className="text-2xl font-black leading-tight mb-2 group-hover:text-emerald-600 transition-colors">
-                      {cert.template?.name || t('Standard Certificate')}
+                      {cert.fileName || t('Official Certificate')}
                     </CardTitle>
                     <div className="flex items-center gap-2 text-sm font-bold text-muted-foreground">
                       <div className="flex -space-x-2">
@@ -202,11 +201,11 @@ export default function VolunteerCertificates() {
                     </div>
                     <div className="flex gap-3">
                       <Button
-                        className="flex-1 rounded-2xl h-12 font-black shadow-lg shadow-emerald-500/20 bg-emerald-600 hover:bg-emerald-700"
+                        className="flex-1 rounded-2xl h-12 font-black shadow-lg shadow-emerald-500/20 bg-emerald-600 hover:bg-emerald-700 text-white"
                         asChild
                       >
                         <a
-                          href={`${import.meta.env.VITE_API_URL}/volunteer/certificates/${cert.id}/download`}
+                          href={`${import.meta.env.VITE_API_URL}/certificates/${cert.id}/download`}
                           target="_blank"
                           rel="noreferrer"
                         >
@@ -220,7 +219,7 @@ export default function VolunteerCertificates() {
                         asChild
                         title={t('Public Verification Link')}
                       >
-                        <a href={`/verify/${cert.id}`} target="_blank" rel="noreferrer">
+                        <a href={`/verify/${cert.uuid}`} target="_blank" rel="noreferrer">
                           <FileText className="h-5 w-5" />
                         </a>
                       </Button>
