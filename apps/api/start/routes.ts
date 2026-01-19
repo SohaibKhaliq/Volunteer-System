@@ -440,6 +440,8 @@ Route.get('/hours/:id', 'VolunteerHoursController.show').middleware(['auth'])
 Route.put('/hours/:id', 'VolunteerHoursController.update').middleware(['auth'])
 Route.post('/hours/bulk-status', 'VolunteerHoursController.bulkUpdateStatus').middleware(['auth'])
 
+Route.get('/courses/assigned', 'CoursesController.assigned').middleware(['auth'])
+
 Route.resource('courses', 'CoursesController')
   .middleware({ '*': ['auth'] })
   .apiOnly()
@@ -584,6 +586,11 @@ Route.group(() => {
   Route.get('/audit-logs/security-events', 'AuditLogsController.securityEvents')
   Route.get('/audit-logs/action-types', 'AuditLogsController.actionTypes')
   Route.get('/audit-logs/target-types', 'AuditLogsController.targetTypes')
+  
+  // Certificates Management
+  Route.get('/certificates', 'CertificatesController.index')
+  Route.post('/certificates', 'CertificatesController.issue')
+  Route.post('/certificates/:id/revoke', 'CertificatesController.revoke')
 
   // System Monitoring
   Route.get(
@@ -661,13 +668,6 @@ Route.group(() => {
 
 // ==========================================
 // CALENDAR / ICAL ROUTES
-
-// Admin: Certificate Templates
-Route.group(() => {
-  Route.resource('certificate-templates', 'CertificateTemplatesController').apiOnly()
-})
-  .prefix('/admin')
-  .middleware(['auth', 'admin'])
 
 // Public Verification
 Route.get('/verify/:uuid', 'CertificatesController.verify')
