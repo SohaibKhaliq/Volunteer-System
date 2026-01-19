@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -158,156 +159,170 @@ export default function OrganizationTraining() {
                 </Button>
             </div>
 
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Card>
-                    <CardContent className="pt-6">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                                <BookOpen className="h-5 w-5 text-blue-600" />
-                            </div>
-                            <div>
-                                <p className="text-2xl font-bold text-gray-900">{modules.length}</p>
-                                <p className="text-xs text-gray-500">Total Modules</p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardContent className="pt-6">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                                <CheckCircle2 className="h-5 w-5 text-green-600" />
-                            </div>
-                            <div>
-                                <p className="text-2xl font-bold text-gray-900">
-                                    {modules.filter((m: any) => m.status === 'active').length}
-                                </p>
-                                <p className="text-xs text-gray-500">Active Modules</p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardContent className="pt-6">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
-                                <Users className="h-5 w-5 text-purple-600" />
-                            </div>
-                            <div>
-                                <p className="text-2xl font-bold text-gray-900">0</p>
-                                <p className="text-xs text-gray-500">Enrolled Volunteers</p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardContent className="pt-6">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
-                                <Award className="h-5 w-5 text-amber-600" />
-                            </div>
-                            <div>
-                                <p className="text-2xl font-bold text-gray-900">0</p>
-                                <p className="text-xs text-gray-500">Certificates Issued</p>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
+            {/* Tabs */}
+            <Tabs defaultValue="my-modules" className="space-y-6">
+                <TabsList>
+                    <TabsTrigger value="my-modules">My Modules</TabsTrigger>
+                    <TabsTrigger value="assigned-courses">Assigned Courses</TabsTrigger>
+                </TabsList>
 
-            {/* Modules Table */}
-            <Card>
-                <CardHeader className="pb-3">
-                    <div className="flex items-center gap-4">
-                        <div className="relative flex-1">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                            <Input
-                                placeholder="Search training modules..."
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                className="pl-9"
-                            />
-                        </div>
+                <TabsContent value="my-modules" className="space-y-6">
+                    {/* Stats Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <Card>
+                            <CardContent className="pt-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                                        <BookOpen className="h-5 w-5 text-blue-600" />
+                                    </div>
+                                    <div>
+                                        <p className="text-2xl font-bold text-gray-900">{modules.length}</p>
+                                        <p className="text-xs text-gray-500">Total Modules</p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardContent className="pt-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
+                                        <CheckCircle2 className="h-5 w-5 text-green-600" />
+                                    </div>
+                                    <div>
+                                        <p className="text-2xl font-bold text-gray-900">
+                                            {modules.filter((m: any) => m.status === 'active').length}
+                                        </p>
+                                        <p className="text-xs text-gray-500">Active Modules</p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardContent className="pt-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
+                                        <Users className="h-5 w-5 text-purple-600" />
+                                    </div>
+                                    <div>
+                                        <p className="text-2xl font-bold text-gray-900">0</p>
+                                        <p className="text-xs text-gray-500">Enrolled Volunteers</p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardContent className="pt-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center">
+                                        <Award className="h-5 w-5 text-amber-600" />
+                                    </div>
+                                    <div>
+                                        <p className="text-2xl font-bold text-gray-900">0</p>
+                                        <p className="text-xs text-gray-500">Certificates Issued</p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
                     </div>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Module Title</TableHead>
-                                <TableHead>Difficulty</TableHead>
-                                <TableHead>Duration</TableHead>
-                                <TableHead>Passing Score</TableHead>
-                                <TableHead>Created</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {isLoadingModules ? (
-                                <TableRow>
-                                    <TableCell colSpan={6} className="text-center py-10">Loading modules...</TableCell>
-                                </TableRow>
-                            ) : modules.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={6} className="text-center py-10 text-gray-500">
-                                        No training modules yet. Create your first module to get started.
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                modules.map((module: any) => (
-                                    <TableRow key={module.id}>
-                                        <TableCell>
-                                            <div>
-                                                <p className="font-medium text-gray-900">{module.title}</p>
-                                                <p className="text-xs text-gray-500 line-clamp-1">{module.description}</p>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge variant="outline" className={cn(getDifficultyColor(module.difficulty))}>
-                                                {module.difficulty || 'Beginner'}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex items-center gap-1.5 text-sm text-gray-600">
-                                                <Clock className="h-3.5 w-3.5" />
-                                                {module.duration || 'N/A'}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="text-sm text-gray-600">
-                                            {module.passingScore || 70}%
-                                        </TableCell>
-                                        <TableCell className="text-sm text-gray-600">
-                                            {module.created_at ? format(new Date(module.created_at), 'MMM d, yyyy') : '-'}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <div className="flex items-center justify-end gap-2">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => handleEdit(module)}
-                                                    title="Edit"
-                                                >
-                                                    <Edit className="h-4 w-4" />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                                                    onClick={() => handleDelete(module)}
-                                                    title="Delete"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        </TableCell>
+
+                    {/* Modules Table */}
+                    <Card>
+                        <CardHeader className="pb-3">
+                            <div className="flex items-center gap-4">
+                                <div className="relative flex-1">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                    <Input
+                                        placeholder="Search training modules..."
+                                        value={search}
+                                        onChange={(e) => setSearch(e.target.value)}
+                                        className="pl-9"
+                                    />
+                                </div>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Module Title</TableHead>
+                                        <TableHead>Difficulty</TableHead>
+                                        <TableHead>Duration</TableHead>
+                                        <TableHead>Passing Score</TableHead>
+                                        <TableHead>Created</TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
                                     </TableRow>
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
+                                </TableHeader>
+                                <TableBody>
+                                    {isLoadingModules ? (
+                                        <TableRow>
+                                            <TableCell colSpan={6} className="text-center py-10">Loading modules...</TableCell>
+                                        </TableRow>
+                                    ) : modules.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell colSpan={6} className="text-center py-10 text-gray-500">
+                                                No training modules yet. Create your first module to get started.
+                                            </TableCell>
+                                        </TableRow>
+                                    ) : (
+                                        modules.map((module: any) => (
+                                            <TableRow key={module.id}>
+                                                <TableCell>
+                                                    <div>
+                                                        <p className="font-medium text-gray-900">{module.title}</p>
+                                                        <p className="text-xs text-gray-500 line-clamp-1">{module.description}</p>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge variant="outline" className={cn(getDifficultyColor(module.difficulty))}>
+                                                        {module.difficulty || 'Beginner'}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                                                        <Clock className="h-3.5 w-3.5" />
+                                                        {module.duration || 'N/A'}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell className="text-sm text-gray-600">
+                                                    {module.passingScore || 70}%
+                                                </TableCell>
+                                                <TableCell className="text-sm text-gray-600">
+                                                    {module.created_at ? format(new Date(module.created_at), 'MMM d, yyyy') : '-'}
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            onClick={() => handleEdit(module)}
+                                                            title="Edit"
+                                                        >
+                                                            <Edit className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                                            onClick={() => handleDelete(module)}
+                                                            title="Delete"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                <TabsContent value="assigned-courses">
+                    <AssignedCoursesTable />
+                </TabsContent>
+            </Tabs>
 
             {/* Create Modal */}
             <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
@@ -495,5 +510,120 @@ export default function OrganizationTraining() {
                 </DialogContent>
             </Dialog>
         </div>
+    );
+}
+
+function AssignedCoursesTable() {
+    const [search, setSearch] = useState('');
+    const [page, setPage] = useState(1);
+
+    // Fetch assigned courses for the logged-in organization
+    const { data: coursesData, isLoading } = useQuery(['assigned-courses', page], () => api.listAssignedCourses({ page, limit: 10 }));
+
+    const courses = Array.isArray(coursesData) ? coursesData : (coursesData as any)?.data ?? [];
+    const meta = (coursesData as any)?.meta;
+
+    const filteredCourses = useMemo(() => {
+        if (!Array.isArray(courses)) return [];
+        const items = courses;
+        return items.filter((c: any) =>
+            c.title?.toLowerCase().includes(search.toLowerCase()) ||
+            c.description?.toLowerCase().includes(search.toLowerCase())
+        );
+    }, [courses, search]);
+
+    return (
+        <Card>
+            <CardHeader className="pb-3">
+                <div className="flex items-center gap-4">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Input
+                            placeholder="Search assigned courses..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                            className="pl-9"
+                        />
+                    </div>
+                </div>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Course Title</TableHead>
+                            <TableHead>Instructor</TableHead>
+                            <TableHead>Start Date</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Enrolled</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {isLoading ? (
+                            <TableRow>
+                                <TableCell colSpan={5} className="text-center py-10">Loading assigned courses...</TableCell>
+                            </TableRow>
+                        ) : filteredCourses.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={5} className="text-center py-10 text-gray-500">
+                                    No courses assigned to your organization yet.
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            filteredCourses.map((course: any) => (
+                                <TableRow key={course.id}>
+                                    <TableCell>
+                                        <div>
+                                            <p className="font-medium text-gray-900">{course.title}</p>
+                                            <p className="text-xs text-gray-500 line-clamp-1">{course.description}</p>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>{course.instructor || 'N/A'}</TableCell>
+                                    <TableCell>
+                                        {course.startAt ? format(new Date(course.startAt), 'MMM d, yyyy') : 'Self-paced'}
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge variant={course.status === 'Open' ? 'secondary' : 'outline'}>
+                                            {course.status || 'Active'}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex items-center gap-1.5 text-sm text-gray-600">
+                                            <Users className="h-3.5 w-3.5" />
+                                            {course.assigned_count || 0}
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        )}
+                    </TableBody>
+                </Table>
+
+                {/* Simple Pagination if needed */}
+                {meta && (
+                    <div className="flex items-center justify-end space-x-2 py-4">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setPage(p => Math.max(1, p - 1))}
+                            disabled={page === 1}
+                        >
+                            Previous
+                        </Button>
+                        <div className="text-sm text-gray-500">
+                            Page {page} of {meta.last_page || 1}
+                        </div>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setPage(p => p + 1)}
+                            disabled={page >= (meta.last_page || 1)}
+                        >
+                            Next
+                        </Button>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
     );
 }
