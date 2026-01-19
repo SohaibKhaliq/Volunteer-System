@@ -1,5 +1,5 @@
 {
-  "name": "root",
+  "name": "local-aid",
   "private": true,
   "dependencies": {
     "mysql2": "^3.3.0"

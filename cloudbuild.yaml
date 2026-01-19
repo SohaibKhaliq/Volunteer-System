@@ -1,0 +1,62 @@
+steps:
+  # 1. Build the Backend Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/local-aid-api', '-f', 'api.Dockerfile', '.']
+
+  # 2. Push the Backend image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/local-aid-api']
+
+  # 3. Deploy Backend to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'local-aid-api'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/local-aid-api'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+
+  # 4. Build the Frontend Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: 
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/local-aid-web'
+      - '-f'
+      - 'web.Dockerfile'
+      - '--build-arg'
+      - 'VITE_API_URL=${_API_URL}'
+      - '.'
+
+  # 5. Push the Frontend image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/local-aid-web']
+
+  # 6. Deploy Frontend to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'local-aid-web' # New service name for frontend
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/local-aid-web'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--port'
+      - '8080'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+substitutions:
+  _API_URL: 'https://local-aid-api-[YOUR-REGION].a.run.app' # UPDATE THIS IN TRIGGER SETTINGS
