@@ -721,18 +721,18 @@ const api = {
   createBackup: async () => axios.get('/admin/backup'),
   getBackupStatus: async () => axios.get('/admin/backup/status'),
 
+  /* Certificates (Admin) */
+  listAllCertificates: async () => axios.get('/admin/certificates'),
+  adminIssueCertificate: async (data: FormData) => axios.post('/admin/certificates', data, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  adminRevokeCertificate: async (id: number, reason: string) => axios.post(`/admin/certificates/${id}/revoke`, { reason }),
+
   /* Chat */
   listChats: async () => axios.get('/chat'),
   getChat: async (id: number) => axios.get(`/chat/${id}`),
   sendMessage: async (data: any) => axios.post('/chat', data),
   startChat: async (data: any) => axios.post('/chat/start', data),
-  /* Certificate Templates (Admin) */
-  listCertificateTemplates: async (params?: any) => axios.get('/admin/certificate-templates', { params }),
-  createCertificateTemplate: async (data: any) => axios.post('/admin/certificate-templates', data),
-  getCertificateTemplate: async (id: number) => axios.get(`/admin/certificate-templates/${id}`),
-  updateCertificateTemplate: async (id: number, data: any) => axios.put(`/admin/certificate-templates/${id}`, data),
-  deleteCertificateTemplate: async (id: number) => axios.delete(`/admin/certificate-templates/${id}`),
-
   /* Training Modules (Organization) */
   listTrainingModules: async (params?: any) => axios.get('/organization/training-modules', { params }),
   createTrainingModule: async (data: any) => axios.post('/organization/training-modules', data),
@@ -742,7 +742,10 @@ const api = {
 
   /* Certificates (Organization) */
   listIssuedCertificates: async (params?: any) => axios.get('/organization/certificates', { params }),
-  issueCertificate: async (data: any) => axios.post('/organization/certificates', data),
+  listAssignedCourses: async (params?: any) => axios.get('/courses/assigned', { params }),
+  issueCertificate: async (data: FormData) => axios.post('/organization/certificates', data, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
   revokeCertificate: async (id: number, reason: string) =>
     axios.post(`/organization/certificates/${id}/revoke`, { reason }),
 
