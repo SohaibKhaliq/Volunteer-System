@@ -68,23 +68,8 @@ export default class TrainingProgressesController {
         if (passed) progress.completedAt = DateTime.local()
         await progress.save()
 
-        if (passed) {
-             const Certificate = (await import('App/Models/Certificate')).default
-             const CertificateTemplate = (await import('App/Models/CertificateTemplate')).default
-            
-             const template = await CertificateTemplate.query().where('is_global', true).first()
-             
-             if (template) {
-                 await Certificate.firstOrCreate({
-                     userId: auth.user!.id,
-                     moduleId: module.id
-                 }, {
-                     organizationId: module.organizationId,
-                     templateId: template.id,
-                     status: 'active'
-                 })
-             }
-        }
+        // Certificate issuance will be refactored to use the new file-based system.
+        // For now, we skip automatic issuance.
 
         return response.ok(progress)
     }
