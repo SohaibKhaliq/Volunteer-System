@@ -2,44 +2,27 @@ ARG NODE_IMAGE=node:18-alpine
 
 FROM $NODE_IMAGE AS base
 RUN apk --no-cache add dumb-init
-RUN npm install -g pnpm turbo
-RUN mkdir -p /home/node/app && chown node:node /home/node/app
+RUN npm install -g pnpm
 WORKDIR /home/node/app
-USER node
-RUN mkdir tmp
 
-FROM base AS dependencies
-COPY --chown=node:node package.json ./
-COPY --chown=node:node pnpm-lock.yaml ./
-COPY --chown=node:node pnpm-workspace.yaml ./
-COPY --chown=node:node ./apps/api/package.json ./apps/api/package.json
-
-ENV CI=true
-RUN pnpm install --frozen-lockfile
-COPY --chown=node:node . .
-
-
-FROM dependencies AS build
-
+FROM base AS build
+COPY . .
 RUN pnpm install --frozen-lockfile
 RUN pnpm run --filter api build
 
-RUN ls -la ./apps/api/build
-
 FROM base AS production
 ENV NODE_ENV=production
-ENV PORT=$PORT
+ENV PORT=8080
 ENV HOST=0.0.0.0
 
-COPY --chown=node:node package.json ./
-COPY --chown=node:node pnpm-lock.yaml ./
-COPY --chown=node:node pnpm-workspace.yaml ./
-COPY --chown=node:node ./apps/api/package.json ./apps/api/package.json
-
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY apps/api/package.json ./apps/api/package.json
 RUN pnpm install --frozen-lockfile --prod
 
-COPY --chown=node:node --from=build /home/node/app/apps/api/build ./apps/api/
-EXPOSE $PORT
+# Copy the built files from build stage
+COPY --from=build /home/node/app/apps/api/build ./apps/api/build
 
-WORKDIR /home/node/app/apps/api
+EXPOSE 8080
+WORKDIR /home/node/app/apps/api/build
+# Assumes your Adonis/Node entry is server.js in the build folder
 CMD [ "dumb-init", "node", "server.js" ]

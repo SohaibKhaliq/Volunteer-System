@@ -1,11 +1,17 @@
 steps:
   # 1. Build the Backend Docker image
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'gcr.io/$PROJECT_ID/local-aid-api', '-f', 'api.Dockerfile', '.']
+    args: 
+      - 'build'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/local-aid-repo/api'
+      - '-f'
+      - 'api.Dockerfile'
+      - '.'
 
   # 2. Push the Backend image
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/$PROJECT_ID/local-aid-api']
+    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/local-aid-repo/api']
 
   # 3. Deploy Backend to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -15,7 +21,7 @@ steps:
       - 'deploy'
       - 'local-aid-api'
       - '--image'
-      - 'gcr.io/$PROJECT_ID/local-aid-api'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/local-aid-repo/api'
       - '--region'
       - 'us-central1'
       - '--platform'
@@ -27,7 +33,7 @@ steps:
     args: 
       - 'build'
       - '-t'
-      - 'gcr.io/$PROJECT_ID/local-aid-web'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/local-aid-repo/web'
       - '-f'
       - 'web.Dockerfile'
       - '--build-arg'
@@ -36,7 +42,7 @@ steps:
 
   # 5. Push the Frontend image
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/$PROJECT_ID/local-aid-web']
+    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/local-aid-repo/web']
 
   # 6. Deploy Frontend to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
@@ -44,9 +50,9 @@ steps:
     args:
       - 'run'
       - 'deploy'
-      - 'local-aid-web' # New service name for frontend
+      - 'local-aid-web'
       - '--image'
-      - 'gcr.io/$PROJECT_ID/local-aid-web'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/local-aid-repo/web'
       - '--region'
       - 'us-central1'
       - '--platform'
@@ -59,4 +65,8 @@ options:
   logging: CLOUD_LOGGING_ONLY
 
 substitutions:
-  _API_URL: 'https://api.localaid.site' # Default production URL
+  _API_URL: 'https://api.localaid.site'
+
+images:
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/local-aid-repo/api'
+  - 'us-central1-docker.pkg.dev/$PROJECT_ID/local-aid-repo/web'
