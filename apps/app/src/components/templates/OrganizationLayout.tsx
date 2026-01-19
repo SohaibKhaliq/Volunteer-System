@@ -43,9 +43,9 @@ export default function OrganizationLayout() {
     { path: '/organization/reports', icon: FileBarChart, label: 'Reports' },
     { path: '/organization/resources', icon: Package, label: 'Resources' },
     { path: '/organization/training-modules', icon: Briefcase, label: 'Training Modules' },
-    { path: '/organization/certificates', icon: Award, label: 'Certificates' },
     { path: '/organization/achievements', icon: Award, label: 'Achievements' },
     { path: '/organization/communications', icon: MessageSquare, label: 'Communications' },
+    { path: '/organization/certificates', icon: Award, label: 'Certificates' },
     { path: '/organization/settings', icon: Settings, label: 'Settings' }
   ];
 
