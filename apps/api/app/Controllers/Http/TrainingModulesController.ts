@@ -10,12 +10,28 @@ export default class TrainingModulesController {
   }
 
   public async index({ auth, request, response }: HttpContextContract) {
-    const orgId = await this.getOrganizationId(auth)
-    if (!orgId) return response.forbidden({ message: 'User not part of an organization' })
+    const user = auth.user!
+    const isAdmin = user.isAdmin
+
+    let orgId: number | null = null
+
+    if (isAdmin) {
+      if (request.input('organization_id')) {
+        orgId = Number(request.input('organization_id'))
+      }
+    } else {
+      orgId = await this.getOrganizationId(auth)
+      if (!orgId) return response.forbidden({ message: 'User not part of an organization' })
+    }
 
     const page = request.input('page', 1)
     const limit = request.input('limit', 10)
-    const query = TrainingModule.query().where('organization_id', orgId)
+    
+    const query = TrainingModule.query()
+    
+    if (orgId) {
+      query.where('organization_id', orgId)
+    }
 
     if (request.input('type')) {
        query.where('type', request.input('type'))
