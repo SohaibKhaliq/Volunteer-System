@@ -9,6 +9,7 @@ WORKDIR /app
 COPY . .
 
 # Install dependencies
+ENV CI=true
 RUN pnpm install --frozen-lockfile
 
 # Accept API URL as a build argument

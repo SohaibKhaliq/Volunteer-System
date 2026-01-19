@@ -14,6 +14,7 @@ COPY --chown=node:node pnpm-lock.yaml ./
 COPY --chown=node:node pnpm-workspace.yaml ./
 COPY --chown=node:node ./apps/api/package.json ./apps/api/package.json
 
+ENV CI=true
 RUN pnpm install --frozen-lockfile
 COPY --chown=node:node . .
 
