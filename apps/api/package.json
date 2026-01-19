@@ -7,7 +7,6 @@
     "build": "node ace build --production --ignore-ts-errors",
     "start": "node server.js",
     "test": "node ace test",
-    "socket": "node server-socket.js",
     "migrate": "node ace migration:run",
     "migrate:fresh": "node ace migration:refresh",
     "seed": "node ace db:seed",

@@ -22,6 +22,29 @@ import HealthCheck from '@ioc:Adonis/Core/HealthCheck'
 import Route from '@ioc:Adonis/Core/Route'
 import './organization'
 
+// Internal route for socket notifications
+Route.post('/_internal/notify', async ({ request, response }) => {
+  const secret = request.header('x-internal-secret')
+  const envSecret = process.env.SOCKET_INTERNAL_SECRET
+
+  if (envSecret && secret !== envSecret) {
+    return response.forbidden({ error: 'forbidden' })
+  }
+
+  const data = request.body()
+  if (!data) return response.badRequest({ error: 'invalid payload' })
+
+  const Ws = (await import('App/Services/Ws')).default
+
+  if (data.userId) Ws.io.to(`user:${data.userId}`).emit('notification', data)
+  if (data.roomId) {
+    Ws.io.to(`chat:${data.roomId}`).emit('message', data.message || data)
+  }
+  Ws.io.to('admin').emit('notification', data)
+
+  return { ok: true }
+})
+
 Route.get('/', async () => {
   return { hello: 'world' }
 })

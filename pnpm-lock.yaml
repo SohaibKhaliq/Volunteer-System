@@ -39,9 +39,6 @@ importers:
       '@adonisjs/lucid':
         specifier: ^18.4.0
         version: 18.4.2(@adonisjs/application@5.3.0)(@adonisjs/core@5.9.0)(mysql2@3.15.3)
-      '@adonisjs/redis':
-        specifier: ^7.3.3
-        version: 7.3.4(@adonisjs/core@5.9.0)
       '@adonisjs/repl':
         specifier: ^3.1.0
         version: 3.1.11(@adonisjs/core@5.9.0)
@@ -12078,6 +12075,7 @@ snapshots:
       ioredis: 5.8.2
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   '@adonisjs/repl@3.1.11(@adonisjs/core@5.9.0)':
     dependencies:
@@ -14009,7 +14007,8 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@ioredis/commands@1.4.0': {}
+  '@ioredis/commands@1.4.0':
+    optional: true
 
   '@isaacs/balanced-match@4.0.1': {}
 
@@ -14235,10 +14234,7 @@ snapshots:
       jest-runner: 25.5.4
       jest-runtime: 25.5.4
     transitivePeerDependencies:
-      - bufferutil
-      - canvas
       - supports-color
-      - utf-8-validate
 
   '@jest/transform@25.5.1':
     dependencies:
@@ -16749,6 +16745,7 @@ snapshots:
   '@types/ioredis@4.28.10':
     dependencies:
       '@types/node': 20.19.25
+    optional: true
 
   '@types/istanbul-lib-coverage@2.0.6': {}
 
@@ -18190,7 +18187,8 @@ snapshots:
 
   clsx@2.1.1: {}
 
-  cluster-key-slot@1.1.2: {}
+  cluster-key-slot@1.1.2:
+    optional: true
 
   cmd-shim@6.0.1: {}
 
@@ -20498,6 +20496,7 @@ snapshots:
       standard-as-callback: 2.1.0
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   ip-address@10.1.0: {}
 
@@ -21590,13 +21589,15 @@ snapshots:
 
   lodash.debounce@4.0.8: {}
 
-  lodash.defaults@4.2.0: {}
+  lodash.defaults@4.2.0:
+    optional: true
 
   lodash.flatten@4.4.0: {}
 
   lodash.get@4.4.2: {}
 
-  lodash.isarguments@3.1.0: {}
+  lodash.isarguments@3.1.0:
+    optional: true
 
   lodash.isequal@4.5.0: {}
 
@@ -23477,11 +23478,13 @@ snapshots:
     dependencies:
       esprima: 4.0.1
 
-  redis-errors@1.2.0: {}
+  redis-errors@1.2.0:
+    optional: true
 
   redis-parser@3.0.0:
     dependencies:
       redis-errors: 1.2.0
+    optional: true
 
   reflect-metadata@0.1.14: {}
 
@@ -24278,7 +24281,8 @@ snapshots:
       as-table: 1.0.55
       get-source: 2.0.12
 
-  standard-as-callback@2.1.0: {}
+  standard-as-callback@2.1.0:
+    optional: true
 
   state-local@1.0.7: {}
 

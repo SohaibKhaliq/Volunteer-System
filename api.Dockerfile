@@ -34,8 +34,7 @@ RUN npm install -g pnpm && pnpm install --prod --frozen-lockfile
 COPY --from=build /app/packages/shared/dist ./packages/shared/dist
 # The API build (server.js is in here)
 COPY --from=build /app/apps/api/build ./build
-# Copy server-socket.js to root (expected by kernel.ts logic)
-COPY apps/api/server-socket.js ./
+
 
 EXPOSE 8080
 
