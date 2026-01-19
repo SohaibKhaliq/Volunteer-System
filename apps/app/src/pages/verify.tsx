@@ -13,7 +13,7 @@ export default function VerifyCertificate() {
 
     const { data: certificate, isLoading, error } = useQuery({
         queryKey: ['public-certificate', id],
-        queryFn: () => api.getPublicCertificate(id!),
+        queryFn: () => api.verifyCertificate(id!),
         enabled: !!id,
         retry: false
     });
@@ -89,7 +89,7 @@ export default function VerifyCertificate() {
                             <ShieldCheck className="h-8 w-8 text-primary" />
                         </div>
                         <CardTitle className="text-3xl font-bold tracking-tight text-foreground">
-                            {cert.doc_type || 'Certification'}
+                            {cert.fileName || 'Official Certificate'}
                         </CardTitle>
                         <p className="text-muted-foreground font-medium flex items-center justify-center gap-2 mt-3">
                             Issued by <span className="font-bold text-foreground underline decoration-primary/30 decoration-2 underline-offset-4">{cert.organization?.name || 'Local Aid System'}</span>
@@ -102,13 +102,17 @@ export default function VerifyCertificate() {
                             <div className="space-y-2">
                                 <div className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
                                     <User className="h-3 w-3" />
-                                    Issued To
+                                    {cert.recipientType === 'organization' ? 'Issued To Organization' : 'Issued To Volunteer'}
                                 </div>
                                 <div className="text-lg font-bold">
-                                    {cert.user?.firstName} {cert.user?.lastName}
+                                    {cert.recipientType === 'organization'
+                                        ? cert.recipientOrganization?.name
+                                        : `${cert.user?.firstName || ''} ${cert.user?.lastName || ''}`.trim()}
                                 </div>
                                 <div className="text-xs text-muted-foreground font-medium">
-                                    Volunteer ID: {cert.user_id}
+                                    {cert.recipientType === 'organization'
+                                        ? `Org ID: ${cert.recipientOrganizationId}`
+                                        : `Volunteer ID: ${cert.userId}`}
                                 </div>
                             </div>
 
@@ -131,7 +135,7 @@ export default function VerifyCertificate() {
                                     Issued Date
                                 </div>
                                 <div className="text-lg font-bold">
-                                    {cert.issued_at ? format(new Date(cert.issued_at), 'MMMM d, yyyy') : 'N/A'}
+                                    {cert.issuedAt ? format(new Date(cert.issuedAt), 'MMMM d, yyyy') : 'N/A'}
                                 </div>
                             </div>
 
@@ -141,7 +145,7 @@ export default function VerifyCertificate() {
                                     Expiry Date
                                 </div>
                                 <div className={cn("text-lg font-bold", isExpired && "text-destructive")}>
-                                    {cert.expires_at ? format(new Date(cert.expires_at), 'MMMM d, yyyy') : 'No Expiry'}
+                                    {cert.expiresAt ? format(new Date(cert.expiresAt), 'MMMM d, yyyy') : 'No Expiry'}
                                 </div>
                             </div>
                         </div>
@@ -172,10 +176,12 @@ export default function VerifyCertificate() {
 
                     </CardContent>
 
-                    {cert.metadata?.file && (
+                    {cert.id && (
                         <CardFooter className="bg-muted/50 p-6 flex justify-center">
-                            <Button className="font-bold shadow-lg" onClick={() => window.open(cert.metadata.file, '_blank')}>
-                                <Download className="mr-2 h-4 w-4" /> Download Digital Copy
+                            <Button className="font-bold shadow-lg" asChild>
+                                <a href={`${import.meta.env.VITE_API_URL}/certificates/${cert.id}/download`} target="_blank" rel="noreferrer">
+                                    <Download className="mr-2 h-4 w-4" /> Download Digital Copy
+                                </a>
                             </Button>
                         </CardFooter>
                     )}
