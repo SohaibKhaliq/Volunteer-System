@@ -5,14 +5,66 @@ import CourseEnrollment from 'App/Models/CourseEnrollment'
 
 export default class CoursesController {
   public async index({ response }: HttpContextContract) {
-    const courses = await Course.query().preload('enrollments', (e) => e.preload('user'))
+    const courses = await Course.query()
+      .preload('enrollments', (e) => e.preload('user'))
+      .preload('organizations')
     // add helper fields for client convenience
     const payload = courses.map((c) => ({
       ...c.toJSON(),
       assigned_count: (c.enrollments || []).length,
+      assigned_org_count: (c.organizations || []).length,
       assign_all: c.assignAll || false
     }))
     return response.ok(payload)
+  }
+
+  public async assigned({ auth, request, response }: HttpContextContract) {
+    const user = auth.user!
+    const page = request.input('page', 1)
+    const limit = request.input('limit', 10)
+
+    const query = Course.query()
+      .preload('enrollments', (e) => e.preload('user'))
+      .preload('organizations')
+
+    // If Admin request with specific org_id
+    if (user.isAdmin && request.input('organization_id')) {
+        const orgId = request.input('organization_id')
+        query.whereHas('organizations', (q) => q.where('organization_id', orgId))
+    } else {
+        // Determine context
+        // Check if user is Org Member
+        const orgMember = await Database.from('organization_team_members').where('user_id', user.id).first()
+        
+        if (orgMember) {
+             // User is part of an organization, show courses assigned to that org (and potentially to them personally?)
+             // For now focus on Org assignment
+             query.where(q => {
+                q.whereHas('organizations', (sub) => sub.where('organization_id', orgMember.organization_id))
+                .orWhere('assign_all', true)
+             })
+        } else {
+            // Volunteer context
+             query.where(q => {
+                q.whereHas('enrollments', (sub) => sub.where('user_id', user.id))
+                .orWhere('assign_all', true)
+             })
+        }
+    }
+
+    const courses = await query.paginate(page, limit)
+    
+     // Helper data
+     const serialized = courses.toJSON()
+     serialized.data = serialized.data.map((c: any) => ({
+        ...c,
+        assigned_count: (c.enrollments || []).length,
+        assigned_org_count: (c.organizations || []).length,
+        assign_all: !!c.assignAll,
+        // Calculate status for this user/org?
+     }))
+
+    return response.ok(serialized)
   }
 
   public async store({ request, response }: HttpContextContract) {
@@ -25,11 +77,16 @@ export default class CoursesController {
       'endAt',
       'capacity',
       'assign_all',
-      'assigned_user_ids'
+      'assigned_user_ids',
+      'assigned_organization_ids'
     ])
     // extract assignment fields and normalize keys for the Course model
     const assignedUserIds = data.assigned_user_ids || request.input('assigned_user_ids') || []
+    const assignedOrgIds = data.assigned_organization_ids || request.input('assigned_organization_ids') || []
+    
     delete data.assigned_user_ids
+    delete data.assigned_organization_ids
+
     const assignAllInput = request.input('assign_all')
     if (assignAllInput !== undefined) {
       data.assignAll = !!assignAllInput
@@ -53,11 +110,19 @@ export default class CoursesController {
       const rows = valid.map((u: any) => ({ course_id: course.id, user_id: u.id }))
       if (rows.length) await Database.table('course_enrollments').insert(rows)
     }
+    
+    // handle organization assignments
+    if (Array.isArray(assignedOrgIds) && assignedOrgIds.length) {
+      await course.related('organizations').sync(assignedOrgIds)
+    }
 
     await course.load('enrollments', (q) => q.preload('user'))
+    await course.load('organizations')
+    
     return response.created({
       ...course.toJSON(),
       assigned_count: course.enrollments.length,
+      assigned_org_count: course.organizations.length,
       assign_all: !!data.assign_all
     })
   }
@@ -66,10 +131,12 @@ export default class CoursesController {
     const course = await Course.query()
       .where('id', params.id)
       .preload('enrollments', (e) => e.preload('user'))
+      .preload('organizations')
       .firstOrFail()
     return response.ok({
       ...course.toJSON(),
       assigned_count: (course.enrollments || []).length,
+      assigned_org_count: (course.organizations || []).length,
       assign_all: course.assignAll || false
     })
   }
@@ -86,11 +153,16 @@ export default class CoursesController {
       'capacity',
       'status',
       'assign_all',
-      'assigned_user_ids'
+      'assigned_user_ids',
+      'assigned_organization_ids'
     ])
     // normalize incoming keys so we don't try to set unknown model properties
     const assignedUserIds = data.assigned_user_ids || request.input('assigned_user_ids')
+    const assignedOrgIds = data.assigned_organization_ids || request.input('assigned_organization_ids')
+
     delete data.assigned_user_ids
+    delete data.assigned_organization_ids
+
     const assignAllInput = request.input('assign_all')
     if (assignAllInput !== undefined) data.assignAll = !!assignAllInput
     if (data.description_html) {
@@ -117,10 +189,18 @@ export default class CoursesController {
       if (rows.length) await Database.table('course_enrollments').insert(rows)
     }
 
+    // sync organizations if provided
+    if (Array.isArray(assignedOrgIds)) {
+      await course.related('organizations').sync(assignedOrgIds)
+    }
+
     await course.load('enrollments')
+    await course.load('organizations')
+
     return response.ok({
       ...course.toJSON(),
       assigned_count: course.enrollments.length,
+      assigned_org_count: course.organizations.length,
       assign_all: !!data.assign_all
     })
   }
