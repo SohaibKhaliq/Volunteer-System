@@ -8,9 +8,9 @@ COPY . .
 RUN pnpm install --frozen-lockfile
 RUN pnpm run --filter api build
 
-# Stage 2: Prune for production (The "pnpm deploy" magic)
-# This extracts the api package and its prod-only dependencies to /prod/api
-RUN pnpm --filter api --prod deploy /prod/api
+# Stage 2: Prune for production
+# Added --legacy flag to bypass pnpm v10 strict workspace injection requirements
+RUN pnpm --filter api --prod deploy --legacy /prod/api
 
 # Stage 3: Runtime
 FROM $NODE_IMAGE AS production
@@ -21,13 +21,13 @@ ENV HOST=0.0.0.0
 
 WORKDIR /app
 
-# Copy the pruned package from Stage 2
+# Copy the pruned package (prod deps)
 COPY --from=build /prod/api .
 
-# Copy the actual build folder from the build stage (where TS was compiled to JS)
+# Copy the actual build folder (compiled JS)
 COPY --from=build /app/apps/api/build ./build
 
 EXPOSE 8080
 
-# AdonisJS 6 build output puts the server in ./build/bin/server.js
+# AdonisJS 6 entrypoint
 CMD [ "dumb-init", "node", "build/bin/server.js" ]
