@@ -3,7 +3,6 @@ import { BaseModel, column, belongsTo, BelongsTo, beforeCreate } from '@ioc:Adon
 import { randomUUID } from 'node:crypto'
 import User from 'App/Models/User'
 import Organization from 'App/Models/Organization'
-import CertificateTemplate from 'App/Models/CertificateTemplate'
 import TrainingModule from 'App/Models/TrainingModule'
 
 export default class Certificate extends BaseModel {
@@ -14,16 +13,28 @@ export default class Certificate extends BaseModel {
   public uuid: string
 
   @column()
-  public userId: number
+  public userId: number | null
 
   @column()
   public organizationId: number
 
   @column()
-  public templateId: number
+  public recipientOrganizationId: number | null
 
   @column()
   public moduleId: number | null
+
+  @column()
+  public filePath: string
+
+  @column()
+  public fileName: string
+
+  @column()
+  public fileType: string | null
+
+  @column()
+  public recipientType: 'volunteer' | 'organization'
 
   @column.dateTime()
   public issuedAt: DateTime
@@ -40,10 +51,10 @@ export default class Certificate extends BaseModel {
   @belongsTo(() => Organization)
   public organization: BelongsTo<typeof Organization>
 
-  @belongsTo(() => CertificateTemplate, {
-     foreignKey: 'templateId'
+  @belongsTo(() => Organization, {
+    foreignKey: 'recipientOrganizationId'
   })
-  public template: BelongsTo<typeof CertificateTemplate>
+  public recipientOrganization: BelongsTo<typeof Organization>
 
   @belongsTo(() => TrainingModule, {
      foreignKey: 'moduleId'
