@@ -1,5 +1,5 @@
 steps:
-  # 1. Build the Backend Docker image
+  # 1. Build Backend Image
   - name: 'gcr.io/cloud-builders/docker'
     args: 
       - 'build'
@@ -9,26 +9,7 @@ steps:
       - 'api.Dockerfile'
       - '.'
 
-  # 2. Push the Backend image
-  - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/local-aid-repo/api']
-
-  # 3. Deploy Backend to Cloud Run
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: gcloud
-    args:
-      - 'run'
-      - 'deploy'
-      - 'local-aid-api'
-      - '--image'
-      - 'us-central1-docker.pkg.dev/$PROJECT_ID/local-aid-repo/api'
-      - '--region'
-      - 'us-central1'
-      - '--platform'
-      - 'managed'
-      - '--allow-unauthenticated'
-
-  # 4. Build the Frontend Docker image
+  # 2. Build Frontend Image
   - name: 'gcr.io/cloud-builders/docker'
     args: 
       - 'build'
@@ -40,11 +21,28 @@ steps:
       - 'VITE_API_URL=${_API_URL}'
       - '.'
 
-  # 5. Push the Frontend image
+  # 3. Push images to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/local-aid-repo/api']
   - name: 'gcr.io/cloud-builders/docker'
     args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/local-aid-repo/web']
 
-  # 6. Deploy Frontend to Cloud Run
+  # 4. Deploy Backend
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'local-aid-api'
+      - '--image'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/local-aid-repo/api'
+      - '--region'
+      - 'us-central1'
+      - '--set-env-vars'
+      - 'HOST=0.0.0.0,NODE_ENV=production' # Vital for health checks
+      - '--allow-unauthenticated'
+
+  # 5. Deploy Frontend
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: gcloud
     args:
@@ -55,18 +53,10 @@ steps:
       - 'us-central1-docker.pkg.dev/$PROJECT_ID/local-aid-repo/web'
       - '--region'
       - 'us-central1'
-      - '--platform'
-      - 'managed'
       - '--allow-unauthenticated'
-      - '--port'
-      - '8080'
 
 options:
   logging: CLOUD_LOGGING_ONLY
 
 substitutions:
   _API_URL: 'https://api.localaid.site'
-
-images:
-  - 'us-central1-docker.pkg.dev/$PROJECT_ID/local-aid-repo/api'
-  - 'us-central1-docker.pkg.dev/$PROJECT_ID/local-aid-repo/web'
