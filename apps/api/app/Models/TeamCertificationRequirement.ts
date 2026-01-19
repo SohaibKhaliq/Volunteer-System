@@ -1,7 +1,7 @@
 import { BaseModel, column, belongsTo, BelongsTo } from '@ioc:Adonis/Lucid/Orm'
 import { DateTime } from 'luxon'
 import Team from './Team'
-import CertificateTemplate from './CertificateTemplate'
+// import CertificateTemplate from './CertificateTemplate'
 
 export default class TeamCertificationRequirement extends BaseModel {
   @column({ isPrimary: true })
@@ -16,10 +16,12 @@ export default class TeamCertificationRequirement extends BaseModel {
   @belongsTo(() => Team)
   public team: BelongsTo<typeof Team>
 
+  /*
   @belongsTo(() => CertificateTemplate, {
     foreignKey: 'templateId'
   })
   public template: BelongsTo<typeof CertificateTemplate>
+  */
 
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
