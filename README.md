@@ -1,4 +1,33 @@
-# Local Aid - Moroccan volunteer platform
+<div align="center">
+  <h1>🤝 Local Aid — Moroccan Volunteer Platform</h1>
+  <p><strong>Connecting volunteers with people in need across Morocco — Real-time crisis response platform.</strong></p>
+
+  <p>
+    <a href="LICENSE">
+      <img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="License"/>
+    </a>
+    <a href="https://github.com/SohaibKhaliq/Volunteer-System/stargazers">
+      <img src="https://img.shields.io/github/stars/SohaibKhaliq/Volunteer-System?style=flat-square&color=yellow" alt="Stars"/>
+    </a>
+    <a href="https://github.com/SohaibKhaliq/Volunteer-System/forks">
+      <img src="https://img.shields.io/github/forks/SohaibKhaliq/Volunteer-System?style=flat-square&color=orange" alt="Forks"/>
+    </a>
+    <a href="https://github.com/SohaibKhaliq/Volunteer-System/issues">
+      <img src="https://img.shields.io/github/issues/SohaibKhaliq/Volunteer-System?style=flat-square&color=red" alt="Issues"/>
+    </a>
+    <img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript" alt="TypeScript"/>
+    <img src="https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react" alt="React"/>
+    <img src="https://img.shields.io/badge/AdonisJS-5-5A45FF?style=flat-square&logo=adonisjs" alt="AdonisJS"/>
+    <img src="https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql" alt="PostgreSQL"/>
+    <img src="https://img.shields.io/badge/pnpm-monorepo-F69220?style=flat-square&logo=pnpm" alt="pnpm"/>
+    <img src="https://img.shields.io/badge/Docker-ready-2496ED?style=flat-square&logo=docker" alt="Docker"/>
+    <img src="https://img.shields.io/badge/Capacitor-mobile-119EFF?style=flat-square&logo=capacitor" alt="Capacitor"/>
+  </p>
+</div>
+
+---
+
+# Local Aid — Moroccan Volunteer Platform
 
 ## Table of Contents
 
